@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 # Load the T-cell interaction network file
-tcell_interactions_path = 'Tcell_interactions.tsv'
+tcell_interactions_path = './../data/Tcell_interactions.tsv'
 tcell_interactions = pd.read_csv(tcell_interactions_path, sep="\t")
 
 # Create a directed graph using the interaction data
@@ -41,16 +41,35 @@ def simulate_expression(G, num_cells=100, num_iterations=10, noise_level=0.1):
     
     return expression_matrix
 
-# Simulate gene expression for 100 cells and 10 iterations
+# Step 1: Simulate gene expression for 100 cells and 10 iterations
 simulated_expression = simulate_expression(G, num_cells=100, num_iterations=10)
+
+# Step 2: Apply dropout to simulate scRNA-seq-like data
+def apply_dropout(expression_matrix, dropout_rate=0.3):
+    dropout_mask = np.random.rand(*expression_matrix.shape) > dropout_rate
+    return expression_matrix * dropout_mask
+
+# Step 3: Apply noise to the simulated gene expression
+def add_noise(expression_matrix, noise_level=0.1):
+    noise = np.random.normal(0, noise_level, expression_matrix.shape)
+    return expression_matrix + noise
+
+# Apply dropout
+expression_with_dropout = apply_dropout(simulated_expression, dropout_rate=0.3)
+
+# Apply noise
+expression_noisy = add_noise(expression_with_dropout, noise_level=0.1)
 
 # Convert to pandas dataframe for easier manipulation
 nodes = list(G.nodes())
-expression_df = pd.DataFrame(simulated_expression, columns=nodes)
+expression_noisy_df = pd.DataFrame(expression_noisy, columns=nodes)
+
+# Add row names as 'cell1', 'cell2', ..., 'celln'
+expression_noisy_df.index = [f'cell{i+1}' for i in range(expression_noisy_df.shape[0])]
+
+# Save the noisy expression data with row names
+expression_noisy_df.to_csv("simulated_expression_tcell_with_dropout.csv", index=True)
 
 # Display the first few rows of the simulated expression data
-print(expression_df.head())
-
-# You can also save the simulated data
-expression_df.to_csv("simulated_expression_tcell.csv", index=False)
+print(expression_noisy_df.head())
 

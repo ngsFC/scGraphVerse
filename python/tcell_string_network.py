@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 # Load the T-cell interaction network file
-tcell_interactions_path = 'Tcell_interactions.tsv'
+tcell_interactions_path = './../data/Tcell_interactions.tsv'
 tcell_interactions = pd.read_csv(tcell_interactions_path, sep="\t")
 
 # Create a directed graph using the interaction data
