@@ -1,103 +1,93 @@
 import pandas as pd
 import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-# Step 1: Create a Gene Regulatory Network (GRN) from interaction data
-def load_grn_from_file(interaction_file):
-    # Load interaction file
-    data = pd.read_csv(interaction_file, sep='\t')  # Adjust separator if needed (e.g., ',' for CSV)
-    
-    # Create a graph and add edges based on the interaction data
-    G = nx.Graph()
-    
-    for index, row in data.iterrows():
-        gene1 = row['Gene 1']
-        gene2 = row['Gene 2']
-        weight = row['Weight'] if 'Weight' in row else np.random.uniform(-1, 1)  # Assign weights if available
-        G.add_edge(gene1, gene2, weight=weight)
-    
-    return G
+# Step 1: Load gene interaction data from the file
+def load_interaction_data(file):
+    # Load interaction file as tab-separated
+    data = pd.read_csv(file, sep='\t')
+    return data
 
-# Step 2: Simulate Gene Expression using an ODE-based Model
-def simulate_expression(grn, num_cells, num_timepoints, noise_level=0.1):
-    gene_names = list(grn.nodes)  # Get the list of gene names
-    num_genes = len(gene_names)
+# Step 2: Simulate gene expression using a regression-based model
+def simulate_gene_expression_with_regression(interactions, num_cells=1000, num_iterations=10, noise_level=0.01):
+    # Extract unique genes from the interaction data
+    genes = list(set(interactions['Gene 1']).union(set(interactions['Gene 2'])))
+    num_genes = len(genes)
     
-    # Initialize gene expression levels (all start with a baseline expression)
-    expression = np.zeros((num_cells, num_genes))
-    time_series = np.linspace(0, 10, num_timepoints)
+    # Create a mapping from gene name to index
+    gene_index = {gene: idx for idx, gene in enumerate(genes)}
     
-    # Simulate dynamics for each cell independently
-    for cell in range(num_cells):
-        expression_levels = np.random.uniform(0.1, 1, num_genes)  # Random initial expression levels
-        for t in time_series:
-            for gene_idx in range(num_genes):
-                gene = gene_names[gene_idx]  # Use the gene name instead of an index
-                # Get regulation from neighboring genes in the GRN
-                regulation = sum(grn.edges[gene, nbr]['weight'] * expression_levels[gene_names.index(nbr)]
-                                 for nbr in grn.neighbors(gene) if grn.has_edge(gene, nbr))
+    # Initialize an expression matrix (cells x genes) with random initial expression levels
+    expression_matrix = np.random.uniform(0.1, 1.0, (num_cells, num_genes))
+    
+    # Step 3: Iteratively update the expression based on interactions
+    for iteration in range(num_iterations):
+        print(f"--- Iteration {iteration + 1} ---")
+        for cell in range(num_cells):
+            new_expression_levels = np.copy(expression_matrix[cell, :])  # Keep the current expression levels
+            
+            # For each gene, update its expression based on its interacting genes using linear regression
+            for gene_idx, gene in enumerate(genes):
+                interacting_genes = interactions[interactions['Gene 1'] == gene]
                 
-                # Update expression level using a simple ODE
-                expression_levels[gene_idx] += 0.01 * regulation + noise_level * np.random.normal()
-                expression_levels[gene_idx] = max(0, expression_levels[gene_idx])  # No negative expression
+                # If the gene has no interacting neighbors, skip
+                if interacting_genes.empty:
+                    continue
                 
-        expression[cell, :] = expression_levels
+                # Prepare the input for regression: neighbor expression levels and their weights
+                X = []
+                y = []
+                for _, row in interacting_genes.iterrows():
+                    neighbor_gene = row['Gene 2']
+                    weight = row['Weight']
+                    neighbor_idx = gene_index[neighbor_gene]
+                    X.append(expression_matrix[cell, neighbor_idx])
+                    y.append(weight)
+                
+                # Convert lists to numpy arrays for regression
+                X = np.array(X).reshape(-1, 1)  # Features (neighbor expression levels)
+                y = np.array(y)  # Targets (weights)
+                
+                # Perform linear regression (predict the gene expression from its neighbors)
+                if len(X) > 1:  # Ensure there is more than one neighbor
+                    model = LinearRegression()
+                    model.fit(X, y)
+                    predicted_expression = model.predict(X).sum()
+                    
+                    # Show the model parameters (intercept and coefficients)
+                    print(f"Gene: {gene}")
+                    print(f"Model intercept: {model.intercept_}")
+                    print(f"Model coefficients: {model.coef_}\n")
+                else:
+                    predicted_expression = X[0] * y[0]  # Handle the case with only one neighbor
+                
+                # Update the gene expression level with some added noise
+                new_expression_levels[gene_idx] = predicted_expression + noise_level * np.random.normal()
+                new_expression_levels[gene_idx] = max(0, new_expression_levels[gene_idx])  # Ensure no negative values
+            
+            # Update the expression matrix with new expression levels
+            expression_matrix[cell, :] = new_expression_levels
     
-    return expression, gene_names
+    return expression_matrix, genes
 
-# Step 3: Introduce scRNA-seq Noise (Dropout and Technical Variability)
-def introduce_scrnaseq_noise(expression, dropout_rate=0.3, technical_noise_level=0.1):
-    # Apply dropout (zero out some gene expressions)
-    dropout_mask = np.random.binomial(1, 1 - dropout_rate, size=expression.shape)
-    expression_with_dropout = expression * dropout_mask
+# Step 4: Save simulated expression data to a file
+def save_simulated_data(expression_matrix, genes, output_file='simulated_scRNAseq_expression.csv'):
+    # Create DataFrame with cells as rows and genes as columns
+    num_cells = expression_matrix.shape[0]
+    cell_names = [f"Cell_{i+1}" for i in range(num_cells)]
+    expression_df = pd.DataFrame(expression_matrix, columns=genes, index=cell_names)
     
-    # Add technical noise (Gaussian noise)
-    noise = np.random.normal(0, technical_noise_level, size=expression.shape)
-    expression_with_noise = expression_with_dropout + noise
-    
-    # Ensure no negative values after adding noise
-    expression_with_noise[expression_with_noise < 0] = 0
-    
-    return expression_with_noise
-
-# Step 4: Run the Simulation with Interaction Data
-def run_simulation(interaction_file, num_cells=1000, num_timepoints=5):
-    # Load the GRN from the provided interaction file
-    grn = load_grn_from_file(interaction_file)
-    
-    # Simulate gene expression dynamics
-    expression, gene_names = simulate_expression(grn, num_cells, num_timepoints)
-    
-    # Introduce scRNA-seq-like noise (dropout and technical noise)
-    expression_noisy = introduce_scrnaseq_noise(expression)
-    
-    return expression_noisy, gene_names
-
-# Step 5: Save and Visualize the Data
-def save_and_plot_expression(expression, gene_names, output_file="simulated_scrna_seq.csv"):
-    # Create row names as 'cell1', 'cell2', etc.
-    cell_names = [f'cell{i+1}' for i in range(expression.shape[0])]
-    
-    # Create a DataFrame with cell names as rows and gene names as columns
-    expression_df = pd.DataFrame(expression, index=cell_names, columns=gene_names)
-    
-    # Save the expression data to a CSV file
+    # Save to CSV
     expression_df.to_csv(output_file)
-    
-    print(f"Simulation complete. Data saved to '{output_file}'")
-    
-    # Plot a heatmap of a subset of the data for visualization
-    plt.figure(figsize=(10, 8))
-    plt.imshow(expression_df.values[:50, :50], aspect='auto', cmap='viridis')
-    plt.colorbar(label='Gene Expression')
-    plt.title('Heatmap of Simulated scRNA-seq Data (First 50 cells and genes)')
-    plt.xlabel('Genes')
-    plt.ylabel('Cells')
-    plt.show()
+    print(f"Simulated scRNA-seq expression data saved to {output_file}")
 
-# Run the simulation with your interaction data file
-interaction_file = './../data/genemania-interactions.txt'  # Replace with your interaction file path
-expression_data, gene_names = run_simulation(interaction_file, num_cells=500, num_timepoints=10)
-save_and_plot_expression(expression_data, gene_names)
+# Main: Load interaction data and run regression-based simulation
+interaction_file = './../data/genemania-interactions.txt'  # Replace with the correct path
+interactions = load_interaction_data(interaction_file)
+
+# Step 2: Simulate gene expression levels based on interactions
+expression_matrix, gene_names = simulate_gene_expression_with_regression(interactions, num_cells=500, num_iterations=10, noise_level=0.01)
+
+# Step 4: Save the simulated expression data
+save_simulated_data(expression_matrix, gene_names)
 
