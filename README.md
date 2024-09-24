@@ -1,1 +1,1 @@
-# scGRN_simulation
+# BIO scGRN
