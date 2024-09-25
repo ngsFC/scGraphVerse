@@ -18,8 +18,7 @@ knitr::opts_chunk$set("/home/francescoc/Desktop/scGRN_simulation/Bnet")
 ```
 
 ```{r global options, include=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE, fig.height=5, fig.width=10, fig.align = "center")
-#, class.source = "foldable"
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, fig.height=5, fig.width=10, fig.align = "center", class.source = "foldable")
 ```
 
 ```{r libraries}
