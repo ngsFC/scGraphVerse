@@ -12,9 +12,12 @@ colnames(data) <- c("Gene1","Gene2","node1_string_id","node2_string_id","neighbo
 # Create a list of unique genes
 genes <- unique(c(data$Gene1, data$Gene2))
 
-# Initialize an adjacency matrix with zeros
+# Initialize an adjacency matrix with zeros and set diagonal to 1
 adj_matrix <- matrix(0, nrow = length(genes), ncol = length(genes), 
                      dimnames = list(genes, genes))
+
+# Set diagonal elements to 1 (for self-loops)
+diag(adj_matrix) <- 1
 
 # Populate the adjacency matrix with weights
 for (i in 1:nrow(data)) {
@@ -41,3 +44,4 @@ adj_matrix_df[adj_matrix_df > 0] <- 1
 
 # Save the transformed data to a new CSV file
 write.csv(adj_matrix_df, "adjacency_matrix.csv", row.names = TRUE)
+

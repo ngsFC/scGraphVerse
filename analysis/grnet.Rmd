@@ -14,7 +14,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set("/home/francescoc/Desktop/scGRN_simulation/Bnet")
+knitr::opts_chunk$set("/home/francescoc/Desktop/scGRN_simulation/analysis")
 ```
 
 ```{r global options, include=FALSE}
@@ -28,24 +28,31 @@ library(igraph)
 library(tidyverse)
 library(DT)
 library(reticulate)
+library(learn2count)
 ```
 
-```{r}
-count_matrix <- readRDS("./../data/simatx.RDS")
-adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",")
-marker <- read.table("./../data/Tcell.marker.csv", header = T, sep = ",")
-
-count_matrices <- list()
-for (i in 1:5) {
-  count_matrix_i <- as.data.frame(count_matrix[[i]])
-  colnames(count_matrix_i) <- colnames(adjm)
-  rownames(count_matrix_i) <- paste("cell", 1:nrow(count_matrix_i), sep = "")
-  count_matrices[[i]] <- count_matrix_i
-}
-```
-
+# Simulate Data
 
 ```{r}
+#count_matrix <- readRDS("./../data/simatx.RDS")
+adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
+
+ncell <- 1000
+nodes <- nrow(adjm)
+
+set.seed(1130)
+count_matrices <- lapply(1:5, function(i) {
+  set.seed(1130 + i)
+  count_matrix_i <- simdata(n = ncell, p = nodes, B = adjm, family = "ZINB", 
+                            mu = 5, mu_noise = 1, theta = 1, pi = 0.2)
+  
+  count_matrix_df <- as.data.frame(count_matrix_i)
+  colnames(count_matrix_df) <- colnames(adjm)
+  rownames(count_matrix_df) <- paste("cell", 1:nrow(count_matrix_df), sep = "")
+  
+  return(count_matrix_df)
+})
+
 count_matrices[[1]] %>%
     datatable(extensions = 'Buttons',
             options = list(
@@ -54,6 +61,46 @@ count_matrices[[1]] %>%
               scrollX = TRUE,
               pageLength = 10), 
             caption = "Simulated count matrix")
+```
+
+
+```{r}
+add_dropout <- function(matrix, dropout_rate) {
+  total_elements <- length(matrix)
+  num_dropout <- round(dropout_rate * total_elements)
+  dropout_indices <- sample(1:total_elements, num_dropout)
+  matrix[dropout_indices] <- 0
+  return(matrix)
+}
+
+set.seed(5463)
+
+for (i in 1:length(count_matrices)) {
+  set.seed(1130 + i)
+  count_matrices[[i]] <- add_dropout(count_matrices[[i]], dropout_rate = 0.10)
+}
+
+count_matrices[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "Simulated count matrix")
+```
+
+
+
+```{r est_sim}
+est <- PCzinb(as.matrix(t(count_matrices[[1]])), method="zinb1")
+colnames(est) <- as.character(1:10)
+graph_est <- graph_from_adjacency_matrix(est, mode="undirected")
+plot(graph_est)
+```
+
+```{r score}
+prediction_scores(adjm, est)
 ```
 
 
