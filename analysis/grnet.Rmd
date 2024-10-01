@@ -18,10 +18,10 @@ knitr::opts_chunk$set("/home/francescoc/Desktop/scGRN_simulation/analysis")
 ```
 
 ```{r global options, include=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE, fig.height=5, fig.width=10, fig.align = "center", class.source = "foldable")
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, fig.height=5, fig.width=10, fig.align = "center", class.source = "foldable", timing = TRUE)
 ```
 
-```{r libraries}
+```{r libraries, timing = TRUE}
 library(GENIE3)
 library(doParallel)
 library(igraph)
@@ -29,11 +29,13 @@ library(tidyverse)
 library(DT)
 library(reticulate)
 library(learn2count)
+library(rbenchmark)
+library(reshape2)
 ```
 
 # Simulate Data
 
-```{r}
+```{r, timing=T}
 #count_matrix <- readRDS("./../data/simatx.RDS")
 adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
 
@@ -61,6 +63,8 @@ count_matrices[[1]] %>%
               scrollX = TRUE,
               pageLength = 10), 
             caption = "Simulated count matrix")
+
+saveRDS(count_matrices, "count_matrices.RDS")
 ```
 
 
@@ -88,227 +92,314 @@ count_matrices[[1]] %>%
               scrollX = TRUE,
               pageLength = 10), 
             caption = "Simulated count matrix")
-```
 
+saveRDS(count_matrices, "count_matrices_drop010.RDS")
+```
 
 
 ```{r est_sim}
-est <- PCzinb(as.matrix(t(count_matrices[[1]])), method="zinb1")
-colnames(est) <- as.character(1:10)
-graph_est <- graph_from_adjacency_matrix(est, mode="undirected")
-plot(graph_est)
+#est <- PCzinb(as.matrix(t(count_matrices[[1]])), method="zinb1")
+#colnames(est) <- as.character(1:10)
+#graph_est <- graph_from_adjacency_matrix(est, mode="undirected")
+#plot(graph_est)
+#prediction_scores(adjm, est)
 ```
 
-```{r score}
-prediction_scores(adjm, est)
-```
+# GENIE3
 
+This document provides a detailed explanation of the mathematical formulations and algorithms used in the research paper *"Inferring Regulatory Networks from Expression Data Using Tree-Based Methods"*. The algorithm discussed in this paper is GENIE3, which uses tree-based ensemble methods for the inference of genetic regulatory networks (GRNs) from expression data.
 
-## Gene Regulatory Network Inference Using GENIE3 and GRNBoost
+## Problem Definition
 
-Inferring Gene Regulatory Networks (GRNs) from gene expression data is a challenging task, typically tackled using machine learning algorithms. Both **GENIE3** and **GRNBoost** are widely used methods for GRN inference, based on ensemble learning models. GENIE3 employs **random forest regression**, while GRNBoost uses **gradient boosting**—each offering unique strengths for this problem.
+Let \( p \) be the number of genes, and \( x^k \) be a vector representing the expression values of all \( p \) genes in the \( k \)-th experiment. The goal is to predict the regulatory links between these genes.
 
-### GENIE3 Overview
+- **Formula 1**: The expression of a target gene \( j \) in a given condition can be expressed as a function of other genes plus random noise:
 
-#### GENIE3 and Random Forest Regression
-
-GENIE3, which was the top-performing method in the **DREAM5 challenge** for GRN inference, utilizes **random forest** regression. Random forests are an ensemble method that constructs a large number of decision trees during training and outputs the mean prediction (for regression) of the individual trees.
-
-For GRN inference, the random forest algorithm in GENIE3 is used as follows:
-1. For each target gene \( g \), a random forest is trained where the expression of the target gene \( g \) is predicted using the expression levels of all potential transcription factors (TFs) in the dataset.
-2. Each tree in the random forest randomly samples a subset of the available features (transcription factors) and a bootstrap sample of the training data. 
-3. The importance of each transcription factor for predicting the target gene is measured by aggregating the feature importance scores across all trees.
-
-The final output is a ranked list of transcription factors for each target gene, where the importance score reflects the strength of the regulatory relationship.
-
-The random forest model can be described as:
 \[
-f(x) = \frac{1}{T} \sum_{t=1}^{T} h_t(x)
+x_j^k = f_j(x^{-j}_k) + e_k
 \]
-Where \( T \) is the number of trees, and \( h_t(x) \) is the prediction from the \( t \)-th tree. The importance of a transcription factor \( TF_i \) for predicting \( g \) is calculated based on the decrease in impurity (e.g., Gini impurity or variance reduction) across all splits where \( TF_i \) is used.
 
-This approach is advantageous because:
-- **Non-linear relationships**: Random forests can model complex, non-linear interactions between transcription factors and target genes.
-- **Robustness to noise**: By averaging across many trees, random forests reduce the likelihood of overfitting to noise in the data.
+where \( x^{-j}_k \) is the expression values of all genes except gene \( j \), \( f_j \) is an unknown function, and \( e_k \) is a random noise with zero mean.
 
-#### Mathematical Formulation for Random Forest in GENIE3
-Let \( X = \{x_1, x_2, ..., x_p\} \) be the matrix of transcription factor expressions and \( y_g \) be the expression of the target gene \( g \). For each \( g \), the random forest minimizes the mean squared error (MSE):
+## Feature Selection Problem
+
+Identifying regulatory links for gene \( j \) involves selecting features that predict \( x_j \). This can be framed as a feature selection problem in regression.
+
+- **Formula 2**: Variable importance measure in tree-based methods is computed using the total reduction of variance:
+
 \[
-MSE = \frac{1}{n} \sum_{i=1}^{n} \left( y_g^{(i)} - f(X^{(i)}) 
-\right)^2
+I(N) = \#S \, Var(S) - \#S_t \, Var(S_t) - \#S_f \, Var(S_f)
 \]
-Where \( n \) is the number of samples, and \( f(X^{(i)}) \) is the predicted expression for sample \( i \).
 
-#### 1. Handling Zero-Inflation in Single-Cell Data
+where \( S \), \( S_t \), and \( S_f \) denote the sets of samples in the current node, true branch, and false branch, respectively.
 
-In single-cell RNA sequencing (scRNA-seq) data, zero-inflation is a common issue, where many genes have expression levels recorded as zero across a large number of cells. This sparsity can challenge many traditional statistical models. However, GENIE3 is based on tree-based methods, specifically **Random Forests**, which are inherently robust to sparse data. 
+## Performance Metrics
 
-While GENIE3 does not explicitly model zero-inflation, Random Forests naturally handle zero-inflated data due to their ability to partition data based on splits at specific thresholds, thus segregating zeros from non-zero values without overfitting to the zeros. This makes GENIE3 well-suited to noisy and sparse data like scRNA-seq.
+The performance of the algorithm is evaluated using metrics such as **AUPR** (Area Under Precision-Recall Curve) and **AUROC** (Area Under Receiver Operating Characteristic Curve).
 
-#### 2. Random Forest Model in GENIE3
+- **Precision**: The proportion of true positives among the predicted positives.
+- **Recall**: The proportion of true positives that are correctly identified.
 
-GENIE3 constructs a **Random Forest** for each target gene, where the goal is to predict its expression level based on the expression of all other genes. Random Forest is an ensemble method that builds multiple decision trees during training. Each tree is constructed from a random subset of the data, and the final prediction is made by averaging the results (for regression) or taking a majority vote (for classification).
+## Further Improvements
 
-In the context of GENIE3:
+Several aspects of the algorithm can be fine-tuned, such as the choice of the parameter \( K \) in the Random Forest or Extra-Trees method.
 
-- For each target gene, a separate Random Forest is trained.
-- Each tree in the forest helps to identify key genes (predictors) that contribute to the expression of the target gene.
-- The importance of a regulatory relationship is determined by how often a predictor gene is selected in the decision trees and the quality of the split it produces.
-- At the end of this process, GENIE3 provides a ranked list of regulatory interactions, indicating which genes are most likely to regulate each other.
+## References
 
-This method allows GENIE3 to infer gene regulatory networks from expression data, making it a powerful tool for discovering potential regulatory relationships, especially in high-dimensional, sparse datasets like scRNA-seq.
+- Huynh-Thu V, Irrthum A, Wehenkel L, Geurts P (2010). “Inferring regulatory networks from expression data using tree-based methods.” **PLoS ONE**, 5(9), e12776.
 
-
-##### References for GENIE3
-- Huynh-Thu, V. A., et al. (2010). "Inferring regulatory networks from expression data using tree-based methods." *PLoS One*, 5(9): e12776.
-
+- Aibar S, Bravo Gonzalez-Blas C, Moerman T, Huynh-Thu V, Imrichova H, Hulselmans G, Rambow F, Marine J, Geurts P, Aerts J, van den Oord J, Kalender Atak Z, Wouters J, Aerts S (2017). “SCENIC: Single-Cell Regulatory Network Inference And Clustering.” **Nature Methods**, 14, 1083-1086.
 
 ```{r}
 set.seed(123)
-regulatory_network_genie3 <- GENIE3(t(count_matrices[[1]]))
 
-# Extract link list (gene regulatory interactions) from GENIE3 results
-link_list_genie3 <- getLinkList(regulatory_network_genie3)
+link_list_genie3_list <- list()
+
+for (i in seq_along(count_matrices)) {
+  regulatory_network_genie3 <- GENIE3(t(count_matrices[[i]]))
+  link_list_genie3 <- getLinkList(regulatory_network_genie3)
+  link_list_genie3_list[[paste0("Matrix_", i)]] <- link_list_genie3
+  write.csv(link_list_genie3, paste0("genie3_network_matrix_", i, ".csv"), row.names = FALSE)
+  }
 
 link_list_genie3 %>%
     datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "GENIE3 output")
-
-write.csv(link_list_genie3, "genie3_network.csv", row.names = FALSE)
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 output")
 ```
 
 
+
 ```{r}
-gene_names <- unique(c(link_list_genie3$regulator, link_list_genie3$target))
+adj_matrix_list <- list()
 
-adj_matrix_genie3 <- matrix(0, nrow = length(gene_names), ncol = length(gene_names))
-rownames(adj_matrix_genie3) <- colnames(adj_matrix_genie3) <- gene_names
-
-# Fill the adjacency matrix based on the links from GENIE3 with a weight condition
-for (i in 1:nrow(link_list_genie3)) {
-  regulator <- link_list_genie3$regulator[i]
-  target <- link_list_genie3$target[i]
-  weight <- link_list_genie3$weight[i]
+for (name in names(link_list_genie3_list)) {
+  link_list_genie3 <- link_list_genie3_list[[name]]
+  gene_names <- unique(c(link_list_genie3$regulator, link_list_genie3$target))
   
-  # Only set 1 if the weight is >= 0.1
-  if (weight >= 0.1) {
-    adj_matrix_genie3[regulator, target] <- 1
+  adj_matrix_genie3 <- matrix(0, nrow = length(gene_names), ncol = length(gene_names))
+  rownames(adj_matrix_genie3) <- colnames(adj_matrix_genie3) <- gene_names
+  
+  weight_cutoff <- quantile(link_list_genie3$weight, 0.70)  # Adjust this value as needed
+
+  weight_distribution_plot <- ggplot(data = link_list_genie3, aes(x = weight)) +
+    geom_histogram(binwidth = 0.01, fill = "skyblue", color = "black") +
+    geom_vline(aes(xintercept = weight_cutoff), color = "red", linetype = "dashed", size = 1) +
+    theme_minimal() +
+    labs(title = paste("Distribution of Weights for", name),
+         x = "Weight",
+         y = "Frequency",
+         caption = paste("Cut-off point:", round(weight_cutoff, 3))) +
+    theme(plot.title = element_text(hjust = 0.5)) #+
+    #xlim(0, 1)  # Adjust x-axis limits as needed
+  print(weight_distribution_plot)
+  
+  for (i in 1:nrow(link_list_genie3)) {
+    regulator <- link_list_genie3$regulator[i]
+    target <- link_list_genie3$target[i]
+    weight <- link_list_genie3$weight[i]
+    
+    if (weight >= weight_cutoff) {
+      adj_matrix_genie3[regulator, target] <- 1
+      adj_matrix_genie3[target, regulator] <- 1  # Ensure symmetry
+    }
   }
+  
+  diag(adj_matrix_genie3) <- 1
+  
+  adj_matrix_list[[name]] <- adj_matrix_genie3
+  write.csv(adj_matrix_genie3, paste0("genie3_adjacency_matrix_", name, "_cutoff_", round(weight_cutoff, 2), ".csv"), row.names = TRUE)
 }
 
-adj_matrix_genie3 %>%
+adj_matrix_list[[1]] %>%
     datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "GENIE3 adjacency matrix 0.1")
-
-write.csv(adj_matrix_genie3, "genie3_adjacency_matrix.csv")
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
 ```
 
 
-```{r, fig.width=20, fig.height=10}
-# Create igraph objects for both networks
-graph_genie3 <- graph_from_adjacency_matrix(adj_matrix_genie3, mode = "undirected")
-graph_provided <- graph_from_adjacency_matrix(as.matrix(adjm), mode = "undirected")
-
-par(mfrow = c(1, 2))
-
-# Plot GENIE3 Network
-plot(graph_genie3, main = "GENIE3 Inferred Network", vertex.label.color = "black",
-     vertex.size = 10, edge.arrow.size = 0.5, vertex.label.cex = 0.7)
-
-# Plot Provided Network
-plot(graph_provided, main = "Provided Network", vertex.label.color = "black",
-     vertex.size = 10, edge.arrow.size = 0.5, vertex.label.cex = 0.7)
-
-par(mfrow = c(1, 1))
-```
-
-
-
-## GRNBoost2 Overview
-
-### GRNBoost and Gradient Boosting
-
-GRNBoost, an alternative to GENIE3, employs **gradient boosting machines (GBM)**, a method that iteratively builds a sequence of shallow decision trees, where each new tree corrects the errors made by the previous ensemble. It is based on boosting, where weak learners (typically decision stumps or shallow trees) are sequentially added, and the model is updated by minimizing a loss function.
-
-The steps in GRNBoost are:
-1. Similar to GENIE3, a regression model is built for each gene \( g \) to predict its expression using the expression levels of candidate transcription factors.
-2. Instead of using random forests, GRNBoost uses gradient boosting, where each new tree is added to reduce the residual errors of the previous trees.
-3. The importance of each transcription factor is computed based on how much each tree reduces the loss function when it includes that TF as a predictor.
-
-Gradient boosting can be mathematically formulated as:
-\[
-f(x) = \sum_{m=1}^{M} \lambda h_m(x)
-\]
-Where \( h_m(x) \) is a decision tree at step \( m \), \( \lambda \) is the learning rate, and \( M \) is the total number of trees. The loss function is typically the squared error for regression tasks:
-\[
-L(y, f(x)) = \frac{1}{n} \sum_{i=1}^{n} \left( y_i - f(x_i) 
-\right)^2
-\]
-The model is updated by adding a new tree that reduces the gradient of this loss function:
-\[
-\hat{f}_m(x) = \hat{f}_{m-1}(x) + \lambda h_m(x)
-\]
-
-The main advantages of gradient boosting in GRNBoost include:
-- **Efficiency**: By iteratively refining the model with shallow trees, gradient boosting can achieve high accuracy without requiring deep trees like in random forests.
-- **Early stopping**: GRNBoost2 implements an early stopping mechanism based on the out-of-bag improvement estimates, which helps avoid overfitting and reduces computation time.
-
-#### Mathematical Formulation for Gradient Boosting in GRNBoost
-For a target gene \( g \), the expression is modeled as:
-\[
-f(X) = \sum_{m=1}^{M} \lambda h_m(X)
-\]
-Where each \( h_m(X) \) is a shallow tree built to minimize the loss \( L(y_g, f(X)) \), where \( f(X) \) represents the predicted expression values for gene \( g \).
-
-##### References for GRNBoost
-- Friedman, J.H. (2001). "Greedy function approximation: a gradient boosting machine." *Annals of Statistics*, 29(5): 1189-1232.
-- Moerman, T., et al. (2018). "GRNBoost2 and Arboreto: efficient and scalable inference of gene regulatory networks." *Bioinformatics*, 35(12): 2159-2161.
-
-### 1. Handling Zero-Inflation in Single-Cell Data
-
-In single-cell RNA sequencing (scRNA-seq) data, the high occurrence of zero expression values, or zero-inflation, is a significant challenge for many computational models. Zero-inflation occurs when a large number of genes are either not expressed or their expression levels are too low to detect in many cells, leading to sparse datasets.
-
-GRNBoost2 is built on **Gradient Boosting Machines (GBMs)**, which are tree-based models. Like Random Forests, GBMs can handle sparsity well because tree-based methods make decisions by splitting data based on feature values. This allows them to naturally partition and differentiate between zero and non-zero values without requiring explicit modeling of zero-inflation. The ability of GRNBoost2 to efficiently handle sparse data makes it a strong tool for gene regulatory network (GRN) inference in scRNA-seq datasets.
-
-### 2. Gradient Boosting Model in GRNBoost2
-
-GRNBoost2 is an implementation of the **Gradient Boosting Machine (GBM)** algorithm, which is an ensemble learning method that builds models sequentially. Each model attempts to correct the errors of the previous models, creating a stronger predictive model over time. In GRNBoost2, GBMs are used to infer gene regulatory networks by predicting the expression of a target gene based on the expression of other genes.
-
-Here’s how it works in the context of GRNBoost2:
-
-- For each target gene, a separate Gradient Boosting Machine model is built, using the expression of all other genes as input features.
-- GBMs build multiple decision trees sequentially, where each tree attempts to minimize the residual errors made by the previous trees.
-- The regulatory importance of each gene (predictor) is assessed based on how often and how effectively it is used as a splitting feature in the decision trees.
-- At the end of this process, GRNBoost2 provides a ranked list of potential regulatory interactions between genes, with higher scores indicating stronger regulatory influence.
-
-The sequential learning nature of Gradient Boosting allows GRNBoost2 to refine predictions iteratively, making it well-suited to complex data structures like those found in high-dimensional gene expression datasets. 
 ```{r}
-#sudo apt-get install python3-venv
-use_python("/usr/bin/python3", required = TRUE)
-py_config()
+calculate_jaccard_index_adj_matrices <- function(matrix1, matrix2) {
+  # Convert matrices to binary (1 if there's an edge, 0 otherwise)
+  matrix1_binary <- (matrix1 > 0)
+  matrix2_binary <- (matrix2 > 0)
+  
+  intersection_size <- sum(matrix1_binary & matrix2_binary)  # Element-wise AND
+  union_size <- sum(matrix1_binary | matrix2_binary)  # Element-wise OR
+  
+  jaccard_index <- intersection_size / union_size
+  return(jaccard_index)
+}
 
+calculate_jaccard_for_all_pairs <- function(adj_matrix_list) {
+  num_matrices <- length(adj_matrix_list)
+  jaccard_matrix <- matrix(0, nrow = num_matrices, ncol = num_matrices)
+  colnames(jaccard_matrix) <- names(adj_matrix_list)
+  rownames(jaccard_matrix) <- names(adj_matrix_list)
+  
+  for (i in 1:num_matrices) {
+    for (j in i:num_matrices) {
+      jaccard_matrix[i, j] <- calculate_jaccard_index_adj_matrices(adj_matrix_list[[i]], adj_matrix_list[[j]])
+      jaccard_matrix[j, i] <- jaccard_matrix[i, j]  # Symmetric matrix
+    }
+  }
+  
+  return(jaccard_matrix)
+}
+
+jaccard_index_matrix <- calculate_jaccard_for_all_pairs(adj_matrix_list)
+
+jaccard_long <- melt(jaccard_index_matrix)
+ggplot(jaccard_long, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0.5, limit = c(0, 1)) +
+  geom_text(aes(label = round(value, 2)), color = "black") +
+  theme_minimal() +
+  labs(title = "Jaccard Index Heatmap of Adjacency Matrices",
+       x = "Matrix",
+       y = "Matrix",
+       fill = "Jaccard Index") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+plot_non_isolated_genes <- function(adj_matrix_list) {
+  par(mfrow = c(2, 3))
+
+  for (i in seq_along(adj_matrix_list)) {
+    graph <- graph_from_adjacency_matrix(adj_matrix_list[[i]], mode = "undirected", diag = FALSE)
+    non_isolated_vertices <- V(graph)[degree(graph) > 1]
+    subgraph <- induced_subgraph(graph, non_isolated_vertices)
+    
+    plot(subgraph, 
+         main = paste("Graph for Matrix", names(adj_matrix_list)[i]), 
+         vertex.label.color = "black",
+         vertex.size = 1, 
+         edge.width = 2, 
+         vertex.label.cex = 0.8,
+         layout = layout_with_fr)
+  }
+
+  # Reset plotting area to default
+  par(mfrow = c(1, 1))
+}
+
+# Assuming 'adj_matrix_list' contains your adjacency matrices, call the function to plot them
+plot_non_isolated_genes(adj_matrix_list)
+
+```
+
+
+
+```{r}
+create_consensus_matrix <- function(adj_matrix_list) {
+  consensus_matrix <- Reduce("+", adj_matrix_list)
+  threshold <- length(adj_matrix_list)-2  # All matrices should have this edge
+  
+  consensus_matrix_binary <- consensus_matrix >= threshold
+  
+  diag(consensus_matrix_binary) <- 1
+  
+  return(consensus_matrix_binary)
+}
+
+plot_non_isolated_consensus <- function(consensus_matrix) {
+  graph <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
+  non_isolated_vertices <- V(graph)[degree(graph) > 0]
+  subgraph <- induced_subgraph(graph, non_isolated_vertices)
+  
+  plot(subgraph, 
+       main = "", 
+       vertex.label.color = "black",
+       vertex.size = 1, 
+       edge.width = 2, 
+       vertex.label.cex = 0.8,
+       layout = layout_with_fr)
+}
+
+calculate_jaccard_index_adj_matrices <- function(matrix1, matrix2) {
+  # Convert matrices to binary (1 if there's an edge, 0 otherwise)
+  matrix1_binary <- (matrix1 > 0)
+  matrix2_binary <- (matrix2 > 0)
+  
+  intersection_size <- sum(matrix1_binary & matrix2_binary)  # Element-wise AND
+  union_size <- sum(matrix1_binary | matrix2_binary)  # Element-wise OR
+  
+  jaccard_index <- intersection_size / union_size
+  return(jaccard_index)
+}
+
+original_consensus_matrix <- create_consensus_matrix(adj_matrix_list)
+jaccard_index_entire_matrix <- calculate_jaccard_index_adj_matrices(original_consensus_matrix, adjm)
+cat("Jaccard Index :", round(jaccard_index_entire_matrix, 3), "\n")
+
+par(mfrow = c(1, 2)) 
+plot_non_isolated_consensus(original_consensus_matrix)
+plot_non_isolated_consensus(adjm)
+par(mfrow = c(1, 1))
+
+```
+
+```{r}
+plot_original_with_highlight <- function(original_matrix, consensus_matrix) {
+  graph_original <- graph_from_adjacency_matrix(original_matrix, mode = "undirected", diag = FALSE)
+  graph_consensus <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
+  
+  original_edges <- as_edgelist(graph_original)
+  consensus_edges <- as_edgelist(graph_consensus)
+  
+  original_edges_set <- apply(original_edges, 1, function(x) paste(sort(x), collapse = "-"))
+  consensus_edges_set <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
+
+  edge_colors <- ifelse(original_edges_set %in% consensus_edges_set, "red", "blue")
+  
+  plot(graph_original, 
+       edge.color = edge_colors, 
+       main = "Original Graph with Consensus Highlight",
+       vertex.label.color = "black",
+       vertex.size = 1, 
+       edge.width = 2, 
+       vertex.label.cex = 0.8,
+       layout = layout_with_fr)
+}
+
+plot_original_with_highlight(adjm, original_consensus_matrix)
+
+```
+
+
+# GRNBoost2
+
+
+```{r}
+use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
 pandas <- import("pandas")
 numpy <- import("numpy")
 
-count_matrix_df <- as.data.frame(count_matrices[[1]])
-genes <- colnames(count_matrix_df)
-df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
+all_grn_links <- list()
 
-grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
+for (i in seq_along(count_matrices)) {
+  
+  count_matrix_df <- as.data.frame(count_matrices[[i]])
+  genes <- colnames(count_matrix_df)
+  df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
+  grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
+  all_grn_links[[i]] <- grn_links
+}
 
-grn_links %>%
-    datatable(extensions = 'Buttons',
+all_grn_links[[1]] %>%
+  datatable(extensions = 'Buttons',
             options = list(
               dom = 'Bfrtip',
               buttons = c('csv', 'excel'),
@@ -317,41 +408,3 @@ grn_links %>%
             caption = "GRNBoost2 links")
 
 ```
-
-
-```{r, fig.width=20, fig.height=10}
-unique_genes <- unique(c(grn_links$TF, grn_links$target))  # Get unique genes from GRNBoost2
-adj_matrix_grnboost <- matrix(0, nrow = length(unique_genes), ncol = length(unique_genes))
-rownames(adj_matrix_grnboost) <- unique_genes
-colnames(adj_matrix_grnboost) <- unique_genes
-
-for (i in 1:nrow(grn_links)) {
-  tf <- grn_links$TF[i]
-  target <- grn_links$target[i]
-  adj_matrix_grnboost[tf, target] <- 1  # Set the edge in the adjacency matrix
-}
-
-adj_matrix_original <- as.matrix(adjm)
-
-graph_grnboost <- graph_from_adjacency_matrix(adj_matrix_grnboost, mode = "undirected")
-graph_original <- graph_from_adjacency_matrix(adj_matrix_original, mode = "undirected")
-
-# Set up side-by-side plotting
-par(mfrow = c(1, 2))
-
-# Plot GRNBoost2 Network
-plot(graph_grnboost, main = "GRNBoost2 Inferred Network", vertex.label.color = "black",
-     vertex.size = 10, edge.arrow.size = 0.5, vertex.label.cex = 0.7)
-
-# Plot Original Network
-plot(graph_original, main = "Original Network", vertex.label.color = "black",
-     vertex.size = 10, edge.arrow.size = 0.5, vertex.label.cex = 0.7)
-
-# Reset plotting layout
-par(mfrow = c(1, 1))
-
-```
-
-## Conclusion
-
-Both GENIE3 and GRNBoost provide powerful and scalable methods for inferring GRNs from high-dimensional gene expression data. GENIE3 leverages the power of random forests to capture complex relationships, while GRNBoost uses gradient boosting for computational efficiency. These methods are widely applicable, especially in the context of large datasets from single-cell RNA sequencing experiments, enabling high-resolution understanding of gene regulatory dynamics.
