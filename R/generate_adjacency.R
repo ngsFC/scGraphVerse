@@ -53,10 +53,10 @@ generate_adjacency <- function(link_list, weight_quantile = 0.70, output_rds_fil
     adj_matrix_list[[name]] <- adj_matrix_genie3
   }
  
-  return(adj_matrix_list)
-
   # Save the list of adjacency matrices to an RDS file
   saveRDS(adj_matrix_list, output_rds_file)
+  
+  return(adj_matrix_list)
   
   # Arrange all plots in a grid layout
   grid.arrange(grobs = plot_list, ncol = 2)  # Adjust 'ncol' to arrange plots in desired number of columns

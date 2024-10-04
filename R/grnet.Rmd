@@ -38,6 +38,7 @@ library(gridExtra)
 source("dropo.R")
 source("generate_adjacency.R")
 source("simmetric.R")
+source("pscores.R")
 ```
 
 
@@ -202,49 +203,12 @@ adj_matrix_list[[1]] %>%
 
 
 ```{r}
-calculate_jaccard_index_adj_matrices <- function(matrix1, matrix2) {
-  # Convert matrices to binary (1 if there's an edge, 0 otherwise)
-  matrix1_binary <- (matrix1 > 0)
-  matrix2_binary <- (matrix2 > 0)
-  
-  intersection_size <- sum(matrix1_binary & matrix2_binary)  # Element-wise AND
-  union_size <- sum(matrix1_binary | matrix2_binary)  # Element-wise OR
-  
-  jaccard_index <- intersection_size / union_size
-  return(jaccard_index)
-}
+scores <- pscores(adjm, adj_matrix_list)
 
-calculate_jaccard_for_all_pairs <- function(adj_matrix_list) {
-  num_matrices <- length(adj_matrix_list)
-  jaccard_matrix <- matrix(0, nrow = num_matrices, ncol = num_matrices)
-  colnames(jaccard_matrix) <- names(adj_matrix_list)
-  rownames(jaccard_matrix) <- names(adj_matrix_list)
-  
-  for (i in 1:num_matrices) {
-    for (j in i:num_matrices) {
-      jaccard_matrix[i, j] <- calculate_jaccard_index_adj_matrices(adj_matrix_list[[i]], adj_matrix_list[[j]])
-      jaccard_matrix[j, i] <- jaccard_matrix[i, j]  # Symmetric matrix
-    }
-  }
-  
-  return(jaccard_matrix)
-}
-
-jaccard_index_matrix <- calculate_jaccard_for_all_pairs(adj_matrix_list)
-
-jaccard_long <- melt(jaccard_index_matrix)
-ggplot(jaccard_long, aes(x = Var1, y = Var2, fill = value)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0.5, limit = c(0, 1)) +
-  geom_text(aes(label = round(value, 2)), color = "black") +
-  theme_minimal() +
-  labs(title = "Jaccard Index Heatmap of Adjacency Matrices",
-       x = "Matrix",
-       y = "Matrix",
-       fill = "Jaccard Index") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+print(scores$Jaccard_Heatmap)
+print(scores$Metrics_Barplot)
 ```
+
 
 
 ```{r}
