@@ -39,6 +39,9 @@ source("dropo.R")
 source("generate_adjacency.R")
 source("simmetric.R")
 source("pscores.R")
+source("plotg.R")
+source("compare_consensus.R")
+source("earlyj.R")
 ```
 
 
@@ -51,6 +54,7 @@ adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, 
 ncell <- 500
 nodes <- nrow(adjm)
 
+tictoc::tic()
 set.seed(1130)
 count_matrices <- lapply(1:5, function(i) {
   set.seed(1130 + i)
@@ -74,6 +78,7 @@ count_matrices[[1]] %>%
             caption = "Simulated count matrix")
 
 saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
+tictoc::toc()
 ```
 
 
@@ -144,22 +149,22 @@ Several aspects of the algorithm can be fine-tuned, such as the choice of the pa
 
 - Aibar S, Bravo Gonzalez-Blas C, Moerman T, Huynh-Thu V, Imrichova H, Hulselmans G, Rambow F, Marine J, Geurts P, Aerts J, van den Oord J, Kalender Atak Z, Wouters J, Aerts S (2017). “SCENIC: Single-Cell Regulatory Network Inference And Clustering.” **Nature Methods**, 14, 1083-1086.
 
-
-## Late Join
-
+## Early join
 
 ```{r}
+count_matrices <- list(earlyj(count_matrices))
+
 set.seed(123)
 
 link_list_genie3_list <- list()
-
+tictoc::tic()
 for (i in seq_along(count_matrices)) {
   regulatory_network_genie3 <- GENIE3(t(count_matrices[[i]]))
   link_list_genie3 <- getLinkList(regulatory_network_genie3)
   link_list_genie3_list[[paste0("Matrix_", i)]] <- link_list_genie3
   }
 
-saveRDS(link_list_genie3_list, "./../analysis/genie3_network_list.RDS")
+saveRDS(link_list_genie3_list, "./../analysis/early_genie3_network_list.RDS")
 #link_list_genie3_list <- readRDS("./../analysis/genie3_network_list.RDS")
 
 link_list_genie3_list[[1]] %>%
@@ -170,11 +175,12 @@ link_list_genie3_list[[1]] %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "GENIE3 output")
+tictoc::toc()
 ```
 
 
 ```{r}
-link_list_genie3_list <- simmetric(link_list_genie3_list, weight_function = "min")
+link_list_genie3_list <- simmetric(link_list_genie3_list, weight_function = "mean")
 link_list_genie3_list[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
@@ -187,7 +193,7 @@ link_list_genie3_list[[1]] %>%
 
 
 ```{r}
-adj_matrix_list <- generate_adjacency(link_list_genie3_list, weight_quantile = 0.70, output_rds_file = "./../analysis/genie3_adjacency_matrices.RDS")
+adj_matrix_list <- generate_adjacency(link_list_genie3_list, weight_quantile = 0.80, output_rds_file = "./../analysis/early_genie3_adjacency_matrices.RDS")
 
 adj_matrix_list[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -207,113 +213,113 @@ scores <- pscores(adjm, adj_matrix_list)
 
 print(scores$Jaccard_Heatmap)
 print(scores$Metrics_Barplot)
+
+scores$Metrics_Results %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
 ```
 
 
+```{r}
+plots <- plotg(adj_matrix_list)
+```
+
+```{r, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(adj_matrix_list, adjm)
+compare_consensus(adj_matrix_list, adjm)
+```
+
+
+## Late Join
+
 
 ```{r}
-plot_non_isolated_genes <- function(adj_matrix_list) {
-  par(mfrow = c(2, 3))
+set.seed(123)
 
-  for (i in seq_along(adj_matrix_list)) {
-    graph <- graph_from_adjacency_matrix(adj_matrix_list[[i]], mode = "undirected", diag = FALSE)
-    non_isolated_vertices <- V(graph)[degree(graph) > 1]
-    subgraph <- induced_subgraph(graph, non_isolated_vertices)
-    
-    plot(subgraph, 
-         main = paste("Graph for Matrix", names(adj_matrix_list)[i]), 
-         vertex.label.color = "black",
-         vertex.size = 1, 
-         edge.width = 2, 
-         vertex.label.cex = 0.8,
-         layout = layout_with_fr)
+link_list_genie3_list <- list()
+tictoc::tic()
+for (i in seq_along(count_matrices)) {
+  regulatory_network_genie3 <- GENIE3(t(count_matrices[[i]]))
+  link_list_genie3 <- getLinkList(regulatory_network_genie3)
+  link_list_genie3_list[[paste0("Matrix_", i)]] <- link_list_genie3
   }
 
-  # Reset plotting area to default
-  par(mfrow = c(1, 1))
-}
+saveRDS(link_list_genie3_list, "./../analysis/genie3_network_list.RDS")
+#link_list_genie3_list <- readRDS("./../analysis/genie3_network_list.RDS")
+tictoc::toc()
+link_list_genie3_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 output")
+```
 
-# Assuming 'adj_matrix_list' contains your adjacency matrices, call the function to plot them
-plot_non_isolated_genes(adj_matrix_list)
+
+```{r}
+link_list_genie3_list <- simmetric(link_list_genie3_list, weight_function = "mean")
+link_list_genie3_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 simmetric output")
+```
+
+
+```{r}
+adj_matrix_list <- generate_adjacency(link_list_genie3_list, weight_quantile = 0.80, output_rds_file = "./../analysis/genie3_adjacency_matrices.RDS")
+
+adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
 
 ```
 
 
 
 ```{r}
-create_consensus_matrix <- function(adj_matrix_list) {
-  consensus_matrix <- Reduce("+", adj_matrix_list)
-  threshold <- length(adj_matrix_list)-2  # All matrices should have this edge
-  
-  consensus_matrix_binary <- consensus_matrix >= threshold
-  
-  diag(consensus_matrix_binary) <- 1
-  
-  return(consensus_matrix_binary)
-}
+scores <- pscores(adjm, adj_matrix_list)
 
-plot_non_isolated_consensus <- function(consensus_matrix) {
-  graph <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
-  non_isolated_vertices <- V(graph)[degree(graph) > 0]
-  subgraph <- induced_subgraph(graph, non_isolated_vertices)
-  
-  plot(subgraph, 
-       main = "", 
-       vertex.label.color = "black",
-       vertex.size = 1, 
-       edge.width = 2, 
-       vertex.label.cex = 0.8,
-       layout = layout_with_fr)
-}
+print(scores$Jaccard_Heatmap)
+print(scores$Metrics_Barplot)
 
-calculate_jaccard_index_adj_matrices <- function(matrix1, matrix2) {
-  # Convert matrices to binary (1 if there's an edge, 0 otherwise)
-  matrix1_binary <- (matrix1 > 0)
-  matrix2_binary <- (matrix2 > 0)
-  
-  intersection_size <- sum(matrix1_binary & matrix2_binary)  # Element-wise AND
-  union_size <- sum(matrix1_binary | matrix2_binary)  # Element-wise OR
-  
-  jaccard_index <- intersection_size / union_size
-  return(jaccard_index)
-}
-
-original_consensus_matrix <- create_consensus_matrix(adj_matrix_list)
-jaccard_index_entire_matrix <- calculate_jaccard_index_adj_matrices(original_consensus_matrix, adjm)
-cat("Jaccard Index :", round(jaccard_index_entire_matrix, 3), "\n")
-
-par(mfrow = c(1, 2)) 
-plot_non_isolated_consensus(original_consensus_matrix)
-plot_non_isolated_consensus(adjm)
-par(mfrow = c(1, 1))
-
+scores$Metrics_Results %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
 ```
 
+
 ```{r}
-plot_original_with_highlight <- function(original_matrix, consensus_matrix) {
-  graph_original <- graph_from_adjacency_matrix(original_matrix, mode = "undirected", diag = FALSE)
-  graph_consensus <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
-  
-  original_edges <- as_edgelist(graph_original)
-  consensus_edges <- as_edgelist(graph_consensus)
-  
-  original_edges_set <- apply(original_edges, 1, function(x) paste(sort(x), collapse = "-"))
-  consensus_edges_set <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
+plots <- plotg(adj_matrix_list)
+```
 
-  edge_colors <- ifelse(original_edges_set %in% consensus_edges_set, "red", "blue")
-  
-  plot(graph_original, 
-       edge.color = edge_colors, 
-       main = "Original Graph with Consensus Highlight",
-       vertex.label.color = "black",
-       vertex.size = 1, 
-       edge.width = 2, 
-       vertex.label.cex = 0.8,
-       layout = layout_with_fr)
-}
+```{r, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(adj_matrix_list, adjm)
+compare_consensus(adj_matrix_list, adjm)
 
-plot_original_with_highlight(adjm, original_consensus_matrix)
-
+compared_scores <- pscores(adjm,list(ajm_compared$Consensus_Matrix))
+print(compared_scores$Jaccard_Heatmap)
+print(compared_scores$Metrics_Barplot)
 ```
 
 

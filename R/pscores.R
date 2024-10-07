@@ -51,13 +51,16 @@ pscores <- function(ground_truth, predicted_list) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "right")
   
-  # Step 3: Calculate metrics (TP, TN, FP, FN, TPR, FPR, Precision, Recall) for each predicted matrix against the ground truth
+  # Step 3: Calculate metrics (TP, TN, FP, FN, TPR, FPR, Precision) for each predicted matrix against the ground truth
   metrics_results <- data.frame(
     Matrix_Index = character(),
+    TP = numeric(),
+    TN = numeric(),
+    FP = numeric(),
+    FN = numeric(),
     TPR = numeric(),
     FPR = numeric(),
     Precision = numeric(),
-    Recall = numeric(),
     stringsAsFactors = FALSE
   )
   
@@ -88,6 +91,10 @@ pscores <- function(ground_truth, predicted_list) {
       metrics_results,
       data.frame(
         Matrix_Index = paste("Matrix", i),
+        TP = TP,
+        TN = TN,
+        FP = FP,
+        FN = FN,
         TPR = TPR,
         FPR = FPR,
         Precision = Precision,
