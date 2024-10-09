@@ -32,6 +32,8 @@ library(learn2count)
 library(rbenchmark)
 library(reshape2)
 library(gridExtra)
+library(DiagrammeR)
+library(pROC)
 ```
 
 ```{r}
@@ -43,9 +45,61 @@ source("pscores.R")
 source("plotg.R")
 source("compare_consensus.R")
 source("earlyj.R")
-
 ```
 
+
+
+```{r}
+DiagrammeR::grViz("
+digraph biological_workflow {
+  # Set up the graph attributes
+  graph [layout = dot, rankdir = TB]
+
+  # Define consistent node styles
+  node [shape = rectangle, style = filled, color = lightblue, fontsize = 12]
+
+  # Define nodes for each step
+  StartNode [label = 'Biological String Regulatory Network', shape = oval, color = forestgreen, fontcolor = black]
+  AdjacencyMatrix [label = 'Create Adjacency Matrix', shape = rectangle, color = lightblue]
+  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = lightyellow]
+
+  # Reconstruction using Three Packages
+  GENIE3Step [label = 'GENIE3: Calculate Gene Weights', shape = rectangle, color = lightpink]
+  GRNBoostStep [label = 'GRNBoost2: Calculate Gene Weights', shape = rectangle, color = lightpink]
+  Learn2CountStep [label = 'learn2count: Calculate Gene Weights', shape = rectangle, color = lightpink]
+
+  # Generate Adjacency Matrices for Each Package
+  GENIE3Adj [label = 'GENIE3: Generate Adjacency Matrix', shape = rectangle, color = khaki]
+  GRNBoostAdj [label = 'GRNBoost2: Generate Adjacency Matrix', shape = rectangle, color = khaki]
+  Learn2CountAdj [label = 'learn2count: Generate Adjacency Matrix', shape = rectangle, color = khaki]
+
+  # Symmetrize Step
+  Symmetrize [label = 'Symmetrize Adjacency Matrix', shape = rectangle, color = lightyellow]
+
+  # Comparison with Ground Truth
+  Compare [label = 'Compare with Ground Truth Adjacency', shape = rectangle, color = salmon]
+
+  # Analysis and Visualization
+  Analysis [label = 'Analysis and Visualization', shape = rectangle, color = lightcoral]
+
+  # Define the workflow structure
+  StartNode -> AdjacencyMatrix
+  AdjacencyMatrix -> SimulateData
+  SimulateData -> GENIE3Step
+  SimulateData -> GRNBoostStep
+  SimulateData -> Learn2CountStep
+  GENIE3Step -> GENIE3Adj
+  GRNBoostStep -> GRNBoostAdj
+  Learn2CountStep -> Learn2CountAdj
+  GENIE3Adj -> Symmetrize
+  GRNBoostAdj -> Symmetrize
+  Learn2CountAdj -> Symmetrize
+  Symmetrize -> Compare
+  Compare -> Analysis
+}
+")
+
+```
 
 # Load data
 
@@ -54,14 +108,52 @@ adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, 
 link_list_genie3_list <- readRDS("./../analysis/genie3_network_list.RDS")
 elink_list_genie3_list <- readRDS("./../analysis/early_genie3_network_list.RDS")
 all_grn_links <- readRDS("./../analysis/grnboost2_network_list.RDS")
+eall_grn_links <- readRDS("./../analysis/early_grnboost2_network_list.RDS")
 ```
 
 
+# GENIE3
 
-# Early Join
+## Early Join
 
 ```{r}
 elink_list_genie3_list <- simmetric(elink_list_genie3_list, weight_function = "mean")
+
+roc_data <- data.frame()
+auc_values <- data.frame(Matrix = character(), AUC = numeric(), stringsAsFactors = FALSE)
+
+for (i in seq_along(elink_list_genie3_list)) {
+  roclist <- elink_list_genie3_list
+  roclist[[i]]$ground_truth <- mapply(function(reg, tgt) {
+    return(ifelse(adjm[reg, tgt] == 1, 1, 0))
+  }, roclist[[i]]$Gene1, roclist[[i]]$Gene2)
+  
+  roc_curve <- roc(roclist[[i]]$ground_truth, roclist[[i]]$weight)
+  
+  roc_df <- data.frame(
+    FPR = 1 - roc_curve$specificities,
+    TPR = roc_curve$sensitivities,
+    Matrix = paste("Matrix", i)
+  )
+  
+  auc_values <- rbind(auc_values, data.frame(Matrix = paste("Matrix", i), AUC = round(auc(roc_curve), 2)))
+  roc_data <- rbind(roc_data, roc_df)
+}
+
+plot <- ggplot(roc_data, aes(x = 1 - FPR, y = TPR, color = Matrix)) +
+  geom_line(size = 1) +
+  labs(title = "ROC Curves - GRNBoost2 Early join") +
+  xlab("Specificity") +
+  ylab("Sensitivity") +
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(title = " "))
+
+plot + geom_text(data = auc_values, aes(x = 0.10, y = 0.2 - 0.05 * as.numeric(gsub("Matrix ", "", Matrix)),
+                                        label = paste(Matrix, "- AUC:", AUC)),
+                 color = "black", size = 4, show.legend = FALSE)
+
 elink_list_genie3_list[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
@@ -70,7 +162,10 @@ elink_list_genie3_list[[1]] %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "GENIE3 simmetric output")
+
 ```
+
+
 
 ```{r}
 adj_matrix_list <- generate_adjacency(elink_list_genie3_list)
@@ -122,7 +217,6 @@ plots <- plotg(adj_matrix_list$binary_matrices)
 
 ```{r, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(adj_matrix_list$binary_matrices, adjm)
-compare_consensus(adj_matrix_list$binary_matrices, adjm)
 ```
 
 
@@ -130,7 +224,44 @@ compare_consensus(adj_matrix_list$binary_matrices, adjm)
 
 
 ```{r}
+source("simmetric.R")
 link_list_genie3_list <- simmetric(link_list_genie3_list, weight_function = "mean")
+
+roc_data <- data.frame()
+auc_values <- data.frame(Matrix = character(), AUC = numeric(), stringsAsFactors = FALSE)
+
+for (i in seq_along(link_list_genie3_list)) {
+  roclist <- link_list_genie3_list
+  roclist[[i]]$ground_truth <- mapply(function(reg, tgt) {
+    return(ifelse(adjm[reg, tgt] == 1, 1, 0))
+  }, roclist[[i]]$Gene1, roclist[[i]]$Gene2)
+  
+  roc_curve <- roc(roclist[[i]]$ground_truth, roclist[[i]]$weight)
+  
+  roc_df <- data.frame(
+    FPR = 1 - roc_curve$specificities,
+    TPR = roc_curve$sensitivities,
+    Matrix = paste("Matrix", i)
+  )
+  
+  auc_values <- rbind(auc_values, data.frame(Matrix = paste("Matrix", i), AUC = round(auc(roc_curve), 2)))
+  roc_data <- rbind(roc_data, roc_df)
+}
+
+plot <- ggplot(roc_data, aes(x = 1 - FPR, y = TPR, color = Matrix)) +
+  geom_line(size = 1) +
+  labs(title = "ROC Curves - GENIE3 Late join") +
+  xlab("Specificity") +
+  ylab("Sensitivity") +
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(title = " "))
+
+plot + geom_text(data = auc_values, aes(x = 0.10, y = 0.2 - 0.05 * as.numeric(gsub("Matrix ", "", Matrix)),
+                                        label = paste(Matrix, "- AUC:", AUC)),
+                 color = "black", size = 4, show.legend = FALSE)
+
 link_list_genie3_list[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
@@ -141,13 +272,23 @@ link_list_genie3_list[[1]] %>%
               caption = "GENIE3 simmetric output")
 ```
 
-
 ```{r}
 adj_matrix_list <- generate_adjacency(link_list_genie3_list)
 
-saveRDS(link_list_genie3_list, "./../analysis/genie3_adjacency_matrices.RDS.RDS")
+saveRDS(link_list_genie3_list, "./../analysis/genie3_adjacency_matrices.RDS")
 
 adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
+
+adj_matrix_list <- adj_cutoff(adj_matrix_list, weight_quantile = 0.80)
+
+adj_matrix_list$binary_matrices[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -161,7 +302,7 @@ adj_matrix_list[[1]] %>%
 
 
 ```{r}
-scores <- pscores(adjm, adj_matrix_list)
+scores <- pscores(adjm, adj_matrix_list$binary_matrices)
 
 print(scores$Jaccard_Heatmap)
 print(scores$Metrics_Barplot)
@@ -178,11 +319,11 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-plots <- plotg(adj_matrix_list)
+plots <- plotg(adj_matrix_list$binary_matrices)
 ```
 
 ```{r, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(adj_matrix_list, adjm)
+ajm_compared <- compare_consensus(adj_matrix_list$binary_matrices, adjm)
 
 compared_scores <- pscores(adjm,list(ajm_compared$Consensus_Matrix))
 print(compared_scores$Jaccard_Heatmap)
@@ -190,3 +331,135 @@ print(compared_scores$Metrics_Barplot)
 ```
 
 
+# GRNBoost2
+
+## Early Join
+
+```{r}
+eall_grn_links <- simmetric(eall_grn_links, weight_function = "mean")
+
+roc_data <- data.frame()
+auc_values <- data.frame(Matrix = character(), AUC = numeric(), stringsAsFactors = FALSE)
+
+for (i in seq_along(eall_grn_links)) {
+  roclist <- all_grn_links
+  roclist[[i]]$ground_truth <- mapply(function(reg, tgt) {
+    return(ifelse(adjm[reg, tgt] == 1, 1, 0))
+  }, roclist[[i]]$Gene1, roclist[[i]]$Gene2)
+  
+  roc_curve <- roc(roclist[[i]]$ground_truth, roclist[[i]]$weight)
+  
+  roc_df <- data.frame(
+    FPR = 1 - roc_curve$specificities,
+    TPR = roc_curve$sensitivities,
+    Matrix = paste("Matrix", i)
+  )
+  
+  auc_values <- rbind(auc_values, data.frame(Matrix = paste("Matrix", i), AUC = round(auc(roc_curve), 2)))
+  roc_data <- rbind(roc_data, roc_df)
+}
+
+plot <- ggplot(roc_data, aes(x = 1 - FPR, y = TPR, color = Matrix)) +
+  geom_line(size = 1) +
+  labs(title = "ROC Curves - GRNBoost2 Early join") +
+  xlab("Specificity") +
+  ylab("Sensitivity") +
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(title = " "))
+
+plot + geom_text(data = auc_values, aes(x = 0.10, y = 0.2 - 0.05 * as.numeric(gsub("Matrix ", "", Matrix)),
+                                        label = paste(Matrix, "- AUC:", AUC)),
+                 color = "black", size = 4, show.legend = FALSE)
+
+all_grn_links[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 simmetric output")
+```
+
+
+```{r}
+adj_matrix_list <- generate_adjacency(eall_grn_links)
+
+adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
+
+```
+
+
+## Late Join
+
+```{r}
+all_grn_links <- simmetric(all_grn_links, weight_function = "mean")
+
+roc_data <- data.frame()
+auc_values <- data.frame(Matrix = character(), AUC = numeric(), stringsAsFactors = FALSE)
+
+for (i in seq_along(all_grn_links)) {
+  roclist <- all_grn_links
+  roclist[[i]]$ground_truth <- mapply(function(reg, tgt) {
+    return(ifelse(adjm[reg, tgt] == 1, 1, 0))
+  }, roclist[[i]]$Gene1, roclist[[i]]$Gene2)
+  
+  roc_curve <- roc(roclist[[i]]$ground_truth, roclist[[i]]$weight)
+  
+  roc_df <- data.frame(
+    FPR = 1 - roc_curve$specificities,
+    TPR = roc_curve$sensitivities,
+    Matrix = paste("Matrix", i)
+  )
+  
+  auc_values <- rbind(auc_values, data.frame(Matrix = paste("Matrix", i), AUC = round(auc(roc_curve), 2)))
+  roc_data <- rbind(roc_data, roc_df)
+}
+
+plot <- ggplot(roc_data, aes(x = 1 - FPR, y = TPR, color = Matrix)) +
+  geom_line(size = 1) +
+  labs(title = "ROC Curves - GRNBoost2 Late join") +
+  xlab("Specificity") +
+  ylab("Sensitivity") +
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(title = " "))
+
+plot + geom_text(data = auc_values, aes(x = 0.10, y = 0.2 - 0.05 * as.numeric(gsub("Matrix ", "", Matrix)),
+                                        label = paste(Matrix, "- AUC:", AUC)),
+                 color = "black", size = 4, show.legend = FALSE)
+
+all_grn_links[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 simmetric output")
+```
+
+
+```{r}
+adj_matrix_list <- generate_adjacency(all_grn_links)
+
+adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
+
+```

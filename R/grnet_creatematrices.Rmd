@@ -36,14 +36,7 @@ library(gridExtra)
 
 ```{r}
 source("dropo.R")
-source("generate_adjacency.R")
-source("adj_cutoff.R")
-source("simmetric.R")
-source("pscores.R")
-source("plotg.R")
-source("compare_consensus.R")
 source("earlyj.R")
-
 ```
 
 
@@ -217,19 +210,53 @@ use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
 pandas <- import("pandas")
 numpy <- import("numpy")
+```
+
+
+## Early join
+
+```{r}
+count_matrice <- list(earlyj(count_matrices))
+
+set.seed(123)
 
 all_grn_links <- list()
-
 tictoc::tic()
-for (i in seq_along(count_matrices)) {
-  
+for (i in seq_along(count_matrice)) {
   count_matrix_df <- as.data.frame(count_matrices[[i]])
   genes <- colnames(count_matrix_df)
   df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
   grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
   all_grn_links[[i]] <- grn_links
-}
+  }
+
+saveRDS(all_grn_links, "./../analysis/early_grnboost2_network_list.RDS")
+
+all_grn_links[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 Early Join")
 tictoc::toc()
+```
+
+
+## Late Join
+
+```{r}
+all_grn_links <- list()
+
+tictoc::tic()
+for (i in seq_along(count_matrices)) {
+  count_matrix_df <- as.data.frame(count_matrices[[i]])
+  genes <- colnames(count_matrix_df)
+  df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
+  grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
+  all_grn_links[[i]] <- grn_links
+  }
 
 saveRDS(all_grn_links, "./../analysis/grnboost2_network_list.RDS")
 
@@ -240,7 +267,9 @@ all_grn_links[[1]] %>%
               buttons = c('csv', 'excel'),
               scrollX = TRUE,
               pageLength = 10), 
-            caption = "GRNBoost2 links")
+            caption = "GRNBoost2 Late Join")
+tictoc::toc()
 
 ```
+
 
