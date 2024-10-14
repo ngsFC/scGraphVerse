@@ -11,10 +11,10 @@ generate_adjacency <- function(link_list) {
     for (i in 1:nrow(link_list_genie3)) {
       gene1 <- link_list_genie3$Gene1[i]
       gene2 <- link_list_genie3$Gene2[i]
-      weight <- link_list_genie3$weight[i]
+      w <- link_list_genie3$weight[i]
       
-      adj_matrix_genie3[gene1, gene2] <- weight
-      adj_matrix_genie3[gene2, gene1] <- weight  # Ensure symmetry
+      adj_matrix_genie3[gene1, gene2] <- w
+      adj_matrix_genie3[gene2, gene1] <- w  # Ensure symmetry
     }
     
     adj_matrix_weight_list[[name]] <- adj_matrix_genie3

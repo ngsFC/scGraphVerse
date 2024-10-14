@@ -342,7 +342,7 @@ roc_data <- data.frame()
 auc_values <- data.frame(Matrix = character(), AUC = numeric(), stringsAsFactors = FALSE)
 
 for (i in seq_along(eall_grn_links)) {
-  roclist <- all_grn_links
+  roclist <- eall_grn_links
   roclist[[i]]$ground_truth <- mapply(function(reg, tgt) {
     return(ifelse(adjm[reg, tgt] == 1, 1, 0))
   }, roclist[[i]]$Gene1, roclist[[i]]$Gene2)
@@ -394,8 +394,51 @@ adj_matrix_list[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GENIE3 adjacency")
+              caption = "GRNBoost2 EarlyJ adjacency")
 
+modify_adjacency <- function(matrix) {
+  matrix[matrix > 0.936] <- 1
+  diag(matrix) <- 1
+  matrix[matrix <= 0.936] <- 0
+  return(matrix)
+}
+
+adj_matrix_list <- lapply(adj_matrix_list, modify_adjacency)
+
+adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 EarlyJ adjacency")
+
+```
+
+```{r}
+scores <- pscores(adjm, adj_matrix_list)
+
+print(scores$Jaccard_Heatmap)
+print(scores$Metrics_Barplot)
+
+scores$Metrics_Results %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r}
+plots <- plotg(adj_matrix_list)
+```
+
+```{r, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(adj_matrix_list, adjm)
 ```
 
 
@@ -460,6 +503,51 @@ adj_matrix_list[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GENIE3 adjacency")
+              caption = "GRNBoost2 EarlyJ adjacency")
+
+modify_adjacency <- function(matrix) {
+  matrix[matrix > 0.936] <- 1
+  diag(matrix) <- 1
+  matrix[matrix <= 0.936] <- 0
+  return(matrix)
+}
+
+adj_matrix_list <- lapply(adj_matrix_list, modify_adjacency)
+
+adj_matrix_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 EarlyJ adjacency")
 
 ```
+
+```{r}
+scores <- pscores(adjm, adj_matrix_list)
+
+print(scores$Jaccard_Heatmap)
+print(scores$Metrics_Barplot)
+
+scores$Metrics_Results %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r}
+plots <- plotg(adj_matrix_list)
+```
+
+```{r, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(adj_matrix_list, adjm)
+```
+
+

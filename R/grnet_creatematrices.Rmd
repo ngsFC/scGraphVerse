@@ -32,6 +32,7 @@ library(learn2count)
 library(rbenchmark)
 library(reshape2)
 library(gridExtra)
+library(tictoc)
 ```
 
 ```{r}
@@ -86,6 +87,9 @@ for (i in 1:length(count_matrices)) {
 }
 
 saveRDS(count_matrices, "./../analysis/count_matrices_drop010.RDS")
+
+count_matrice <- list(earlyj(count_matrices))
+saveRDS(count_matrice, "./../analysis/count_matrices_drop010_combined.RDS")
 
 count_matrices[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -147,8 +151,6 @@ Several aspects of the algorithm can be fine-tuned, such as the choice of the pa
 ## Early join
 
 ```{r}
-count_matrice <- list(earlyj(count_matrices))
-
 set.seed(123)
 
 link_list_genie3_list <- list()
@@ -223,7 +225,7 @@ set.seed(123)
 all_grn_links <- list()
 tictoc::tic()
 for (i in seq_along(count_matrice)) {
-  count_matrix_df <- as.data.frame(count_matrices[[i]])
+  count_matrix_df <- as.data.frame(count_matrice[[i]])
   genes <- colnames(count_matrix_df)
   df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
   grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
@@ -272,4 +274,78 @@ tictoc::toc()
 
 ```
 
+
+## GRNBoost2 cutoff
+
+
+```{r}
+# Step 1: Create a function to shuffle inside each row of a matrix, with a different seed
+shuffle_rows <- function(matrix, seed_vector) {
+  # Shuffle each row of the matrix based on the seed_vector
+  shuffled_matrix <- matrix
+  for (i in 1:nrow(matrix)) {
+    set.seed(seed_vector[i])
+    shuffled_matrix[i, ] <- sample(matrix[i, ])
+  }
+  return(shuffled_matrix)
+}
+
+# Step 2: Shuffle it and store everything into a list of n shuffles
+create_shuffled_matrices <- function(original_matrix, n) {
+  # Create n shuffled matrices
+  shuffled_matrices <- list()
+  for (i in 1:n) {
+    # Generate a unique seed vector for each shuffle
+    seed_vector <- sample(1:10000, nrow(original_matrix))
+    shuffled_matrix <- shuffle_rows(original_matrix, seed_vector)
+    shuffled_matrices[[i]] <- shuffled_matrix
+  }
+  return(shuffled_matrices)
+}
+
+# Number of shuffles to create
+n_shuffles <- 100
+
+# Generate n shuffled matrices
+shuffled_matrices_list <- create_shuffled_matrices(count_matrice[[1]], n_shuffles)
+
+# Step 3: Use a loop to compute GRNBoost2 results for each shuffled matrix
+all_grn_links <- list()
+
+tictoc::tic()
+for (i in 1:length(shuffled_matrices_list)) {
+  count_matrix_df <- as.data.frame(shuffled_matrices_list[[i]])
+  genes <- colnames(count_matrix_df)
+  
+  df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
+  grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
+  all_grn_links[[i]] <- grn_links
+}
+tictoc::toc()
+
+# Step 4: Run the simmetric.R function on each GRNBoost2 result
+source("simmetric.R")
+all_grn_links <- simmetric(all_grn_links, weight_function = "mean")
+
+# Step 5: Calculate the 5th percentile for the weight column in each GRNBoost2 result
+percentile_values <- sapply(all_grn_links, function(grn_result) {
+  ordered_weights <- sort(grn_result$weight)
+  quantile(ordered_weights, 0.05)
+})
+
+# Print or store the results
+print(percentile_values)
+
+percentile_values <- sapply(all_grn_links, function(grn_result) {
+  ordered_weights <- sort(grn_result$weight)
+  threshold <- quantile(ordered_weights, 0.95)
+  return(threshold)
+})
+
+mean_value <- mean(percentile_values)
+
+hist(percentile_values, main="Histogram of percentile_values", xlab="percentile_values", col="grey")
+abline(v = mean_value, col = "red", lwd = 2, lty = 2)
+legend("topright", legend = paste("Mean:", round(mean_value, 3)), col = "red", lwd = 2, lty = 2)
+```
 
