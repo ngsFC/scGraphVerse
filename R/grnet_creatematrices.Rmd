@@ -79,26 +79,26 @@ tictoc::toc()
 
 
 ```{r}
-set.seed(5463)
+#set.seed(5463)
 
-for (i in 1:length(count_matrices)) {
-  set.seed(1130 + i)
-  count_matrices[[i]] <- dropo(count_matrices[[i]], dropout_rate = 0.10)
-}
+#for (i in 1:length(count_matrices)) {
+#  set.seed(1130 + i)
+#  count_matrices[[i]] <- dropo(count_matrices[[i]], dropout_rate = 0.10)
+#}
 
-saveRDS(count_matrices, "./../analysis/count_matrices_drop010.RDS")
+#saveRDS(count_matrices, "./../analysis/count_matrices_drop010.RDS")
 
 count_matrice <- list(earlyj(count_matrices))
-saveRDS(count_matrice, "./../analysis/count_matrices_drop010_combined.RDS")
+#saveRDS(count_matrice, "./../analysis/count_matrices_drop010_combined.RDS")
 
-count_matrices[[1]] %>%
-    datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "Simulated count matrix")
+#count_matrices[[1]] %>%
+#    datatable(extensions = 'Buttons',
+#            options = list(
+#              dom = 'Bfrtip',
+#              buttons = c('csv', 'excel'),
+#              scrollX = TRUE,
+#              pageLength = 10), 
+#            caption = "Simulated count matrix")
 
 ```
 
