@@ -9,9 +9,9 @@ This repository contains a collection of R scripts and markdown files used to pe
 
 - **cutoff_adjacency.R**: This script is responsible for creating an adjacency matrix based on a specific cutoff threshold. This is a key component of network generation, where the connections between nodes are defined based on their relationships and a cutoff value.
 
-- **pscores.R**: This script appears to compute some form of "p-scores", which could be related to statistical significance in the network or association strength between nodes.
+- **pscores.R**: This script calculate and plot TPR, FPR, PRECISION, F1, ACCURACY.
 
-- **plotROC.R**: This script handles the plotting of ROC curves, which are used to evaluate the performance of binary classification models. In a network analysis context, ROC curves might be used to assess the quality of link prediction models.
+- **plotROC.R**: This script handles the plotting of ROC curves, which are used to evaluate the performance of the models. In a network analysis context, ROC curves might be used to assess the quality of link prediction models.
 
 - **generate_adjacency.R**: This script generates the adjacency matrix for a network. It may either rely on input data or be part of a process that constructs a network from scratch based on node and edge criteria.
 
@@ -19,11 +19,11 @@ This repository contains a collection of R scripts and markdown files used to pe
 
 - **plotg.R**: A script for plotting graphs (networks). This file likely provides functions to visualize the networks generated or analyzed by the other scripts.
 
-- **earlyj.R**: The functionality of this script is unclear from the name, but it could be related to an early stopping criterion or an early phase of a specific algorithm used in network analysis.
+- **earlyj.R**: concatenate and create a single matrix from a list of n matrices for early integration steps.
 
-- **dropo.R**: This script might handle some kind of node or edge dropout, which could be related to the removal of weak or irrelevant connections in a network.
+- **dropo.R**: dropout script.
 
-- **compare_consensus.R**: This script likely compares different network consensus matrices. Consensus matrices are used to summarize the agreement between different network structures or clustering results.
+- **compare_consensus.R**: This script compares different networks. Consensus matrices are used to summarize the agreement between different network structures results.
 
 ## Usage
 
