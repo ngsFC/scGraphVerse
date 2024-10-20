@@ -7,8 +7,7 @@ compare_consensus <- function(adj_matrix_list, original_matrix) {
     threshold <- (length(adj_matrix_list)*3) / 4
     # Create binary consensus matrix (1 if present in >= threshold matrices)
     consensus_matrix_binary <- consensus_matrix >= threshold
-    # Set diagonal to 1 to retain self-loops (if desired)
-    diag(consensus_matrix_binary) <- 1
+    #diag(consensus_matrix_binary) <- 1
     return(consensus_matrix_binary)
   }
   

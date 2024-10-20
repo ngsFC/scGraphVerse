@@ -1,13 +1,10 @@
 pscores <- function(ground_truth, predicted_list) {
   
-  # Ensure that ground_truth is a matrix
   ground_truth <- as.matrix(ground_truth)
   
-  # Step 1: Calculate the Jaccard Index between each pair of matrices (including ground truth and predicted)
   all_matrices <- c(list(ground_truth), predicted_list)
   num_matrices <- length(all_matrices)
   
-  # Create an empty matrix to store the Jaccard Index values
   jaccard_matrix <- matrix(0, nrow = num_matrices, ncol = num_matrices)
   rownames(jaccard_matrix) <- colnames(jaccard_matrix) <- c("Ground Truth", paste("Matrix", seq_along(predicted_list)))
   
@@ -30,7 +27,6 @@ pscores <- function(ground_truth, predicted_list) {
     }
   }
   
-  # Step 2: Create a heatmap for the Jaccard Index among all matrices
   jaccard_df <- as.data.frame(as.table(jaccard_matrix))
   colnames(jaccard_df) <- c("Matrix1", "Matrix2", "Jaccard_Index")
   
@@ -42,7 +38,6 @@ pscores <- function(ground_truth, predicted_list) {
     ggtitle("Jaccard Index Heatmap Among All Matrices") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "right")
   
-  # Step 3: Calculate metrics for each predicted matrix against the ground truth
   metrics_results <- data.frame(
     Matrix_Index = character(),
     TP = numeric(),
@@ -52,7 +47,6 @@ pscores <- function(ground_truth, predicted_list) {
     TPR = numeric(),      # True Positive Rate (Recall)
     FPR = numeric(),      # False Positive Rate
     Precision = numeric(), 
-    Recall = numeric(),   # Same as TPR
     F1_Score = numeric(),
     Accuracy = numeric(),
     stringsAsFactors = FALSE
@@ -75,7 +69,6 @@ pscores <- function(ground_truth, predicted_list) {
     TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)  # True Positive Rate / Recall
     FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)  # False Positive Rate
     Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)  # Precision
-    Recall <- TPR  # Recall is the same as TPR
     F1_Score <- ifelse((Precision + Recall) > 0, 2 * (Precision * Recall) / (Precision + Recall), 0)  # F1 Score
     Accuracy <- ifelse((TP + TN + FP + FN) > 0, (TP + TN) / (TP + TN + FP + FN), 0)  # Accuracy
     
@@ -91,7 +84,6 @@ pscores <- function(ground_truth, predicted_list) {
         TPR = TPR,
         FPR = FPR,
         Precision = Precision,
-        Recall = Recall,
         F1_Score = F1_Score,
         Accuracy = Accuracy,
         stringsAsFactors = FALSE
@@ -99,12 +91,10 @@ pscores <- function(ground_truth, predicted_list) {
     )
   }
   
-  # Step 4: Create a bar plot for all metrics
   # Melt the metrics data for plotting
   melted_metrics <- melt(metrics_results, id.vars = "Matrix_Index", 
                          measure.vars = c("TPR", "FPR", "Precision", "Recall", "F1_Score", "Accuracy"))
   
-  # Create the bar plot
   metrics_barplot <- ggplot(melted_metrics, aes(x = factor(Matrix_Index), y = value, fill = variable)) +
     geom_bar(stat = "identity", position = "dodge") +
     geom_text(aes(label = round(value, 2)), vjust = -0.3, position = position_dodge(width = 0.9), size = 3.5) +
@@ -114,7 +104,6 @@ pscores <- function(ground_truth, predicted_list) {
     labs(x = "Matrix Index", y = "Value") +
     theme(legend.position = "right", legend.title = element_text(size = 12))
   
-  # Return both results and plots
   return(list("Jaccard_Heatmap" = jaccard_heatmap, 
               "Metrics_Barplot" = metrics_barplot, 
               "Metrics_Results" = metrics_results))
