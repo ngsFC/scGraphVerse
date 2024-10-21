@@ -168,14 +168,7 @@ early_matrix <- list(earlyj(count_matrices))
 ### GENIE3
 
 ```{r}
-set.seed(1234)
-genie3_early <- list()
-
-for (i in seq_along(list(early_matrix[[1]]))) {
-  regulatory_network_genie3 <- GENIE3(t(early_matrix[[i]]), nCores = 15,nTrees = 10000)
-  genie3out <- getLinkList(regulatory_network_genie3)
-  genie3_early[[paste0("Matrix_", i)]] <- genie3out
-  }
+genie3_early <- infer_networks(early_matrix, method = "GENIE3")
 
 saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
 

@@ -5,8 +5,13 @@ plotg <- function(adj_matrix_list) {
   }
   library(igraph)
   
-  # Set up the plotting area to have 2 rows and 3 columns
-  par(mfrow = c(2, 3))
+  # Determine the number of matrices
+  num_matrices <- length(adj_matrix_list)
+  
+  # Set up dynamic layout based on the number of matrices
+  num_cols <- ceiling(sqrt(num_matrices))  # Number of columns
+  num_rows <- ceiling(num_matrices / num_cols)  # Number of rows
+  par(mfrow = c(num_rows, num_cols))
   
   # Initialize an empty list to store graph metrics data frames
   graph_metrics_list <- list()
@@ -19,18 +24,21 @@ plotg <- function(adj_matrix_list) {
     non_isolated_vertices <- igraph::V(graph)[igraph::degree(graph) > 0]
     subgraph <- igraph::induced_subgraph(graph, non_isolated_vertices)
     
-    # Plot the subgraph
+    # Calculate metrics for plot title
+    num_nodes <- igraph::gorder(subgraph)  # Number of nodes
+    num_edges <- igraph::gsize(subgraph)  # Number of edges
+    
+    # Plot the subgraph with customized settings
     plot(subgraph, 
-         main = paste("Graph for Matrix", names(adj_matrix_list)[i]), 
-         vertex.label.color = "black",
-         vertex.size = 5, 
+         main = paste("Graph", i, "
+Nodes:", num_nodes, "Edges:", num_edges),
+         vertex.label = NA,  # Remove labels
+         vertex.size = 6, 
          edge.width = 2, 
-         vertex.label.cex = 0.8,
+         vertex.color = "orange",  # Change node color
          layout = igraph::layout_with_fr)
     
     # Calculate and store graph metrics
-    num_nodes <- igraph::gorder(subgraph)  # Number of nodes
-    num_edges <- igraph::gsize(subgraph)  # Number of edges
     avg_degree <- mean(igraph::degree(subgraph))  # Average degree
     density <- igraph::graph.density(subgraph)  # Graph density
     diameter <- if (num_nodes > 1) igraph::diameter(subgraph) else NA  # Diameter (NA if only 1 node)
@@ -39,7 +47,7 @@ plotg <- function(adj_matrix_list) {
     
     # Create a data frame to hold the metrics for this graph
     graph_metrics <- data.frame(
-      Matrix_Index = paste("Matrix", names(adj_matrix_list)[i]),
+      Matrix_Index = i,
       Num_Nodes = num_nodes,
       Num_Edges = num_edges,
       Avg_Degree = avg_degree,
