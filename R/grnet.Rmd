@@ -275,16 +275,7 @@ ajm_compared <- compare_consensus(sgenie3_early_adj$binary_adjm_list, adjm)
 
 ```{r}
 set.seed(1234)
-grnb_early <- list()
-
-for (i in seq_along(list(early_matrix[[1]]))) {
-  count_matrix_df <- as.data.frame(early_matrix[[i]])
-  genes <- colnames(count_matrix_df)
-  df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
-  grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
-  grnb_early[[i]] <- grn_links
-  }
-
+grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
 saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
 
 grnb_early[[1]] %>%

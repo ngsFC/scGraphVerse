@@ -22,12 +22,14 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
   }
   
   # Initialize lists to store results
-  all_percentile_values <- list()
   binary_adjm_list <- list()
   
   # Main loop through count matrices
   for (mat_index in seq_along(count_matrices)) {
     original_matrix <- count_matrices[[mat_index]]
+    
+    # Initialize a list for storing percentiles for this specific matrix
+    all_percentile_values <- list()
     
     # Create shuffled matrices
     shuffled_matrices_list <- create_shuffled_matrices(original_matrix, n)
@@ -45,15 +47,15 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
       symmetric_network <- simmetric(network_results, weight_function = weight_function)[[1]]
       
       # Get weights from the symmetric network and order them
-      ordered_weights <- sort(symmetric_network$weight)
+      ordered_weights <- sort(symmetric_network$weight, decreasing = TRUE)
       
       # Calculate the 95th percentile of the ordered weights
       percentile_95 <- quantile(ordered_weights, 0.95)
-      all_percentile_values[[mat_index]] <- c(all_percentile_values[[mat_index]], percentile_95)
+      all_percentile_values[[i]] <- percentile_95
     }
     
     # Compute mean of 95th percentiles (rounded to 3 decimal places)
-    mean_percentile <- round(mean(unlist(all_percentile_values[[mat_index]])), 3)
+    mean_percentile <- round(mean(unlist(all_percentile_values)), 3)
     
     # Apply cutoff to the corresponding weighted adjacency matrix
     weighted_adjm <- weighted_adjm_list[[mat_index]]
@@ -66,10 +68,9 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
   
   # Plot histograms for cutoff values
   for (mat_index in seq_along(all_percentile_values)) {
-    hist(unlist(all_percentile_values[[mat_index]]), main = paste("Histogram of Cutoff Values for Matrix", mat_index),
+    hist(unlist(all_percentile_values), main = paste("Histogram of Cutoff Values for Matrix", mat_index),
          xlab = "Cutoff Values", ylab = "Frequency", col = "lightblue", breaks = 20)
   }
   
   return(binary_adjm_list)
 }
-
