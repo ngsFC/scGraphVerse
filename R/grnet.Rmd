@@ -172,7 +172,7 @@ set.seed(1234)
 genie3_early <- list()
 
 for (i in seq_along(list(early_matrix[[1]]))) {
-  regulatory_network_genie3 <- GENIE3(t(early_matrix[[i]]))
+  regulatory_network_genie3 <- GENIE3(t(early_matrix[[i]]), nCores = 15,nTrees = 10000)
   genie3out <- getLinkList(regulatory_network_genie3)
   genie3_early[[paste0("Matrix_", i)]] <- genie3out
   }
@@ -187,43 +187,6 @@ genie3_early[[1]] %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "GENIE3 output")
-```
-
-```{r}
-# Set the number of cores you want to use
-n_cores <- 16  # Adjust this based on your machine's available cores
-
-# Set a global seed for reproducibility
-set.seed(1234)
-
-# Initialize the cluster with the specified number of cores
-cl <- makeCluster(n_cores)
-
-# Export necessary variables to the cluster and load the required library in each worker
-clusterExport(cl, c("early_matrix"))
-clusterEvalQ(cl, library(GENIE3))  # This ensures GENIE3 is loaded in each worker
-
-# Run GENIE3 in parallel using parLapply, with seed control for each core
-genie3_early <- parLapply(cl, 1:length(early_matrix), function(i) {
-  # Set the seed in each worker to ensure consistent results across cores
-  set.seed(1234 + i)  # Ensuring different seed for each iteration
-
-  # Apply GENIE3 on the transposed matrix
-  regulatory_network_genie3 <- GENIE3(t(early_matrix[[i]]), nCores = 1)
-  
-  # Get the list of links from GENIE3
-  genie3out <- getLinkList(regulatory_network_genie3)
-  
-  # Return the result as a named list
-  list(name = paste0("Matrix_", i), links = genie3out)
-})
-
-# Stop the cluster after the parallel computation is complete
-stopCluster(cl)
-
-# Convert the results into a named list
-names(genie3_early) <- sapply(genie3_early, function(x) x$name)
-genie3_early <- lapply(genie3_early, function(x) x$links)
 ```
 
 
