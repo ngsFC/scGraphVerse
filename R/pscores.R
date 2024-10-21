@@ -1,110 +1,100 @@
 pscores <- function(ground_truth, predicted_list) {
   
+  # Ensure ground truth is a matrix and zero out the diagonal
   ground_truth <- as.matrix(ground_truth)
+  diag(ground_truth) <- 0  # Set diagonal to zero
   
+  # Combine ground truth with predicted list
   all_matrices <- c(list(ground_truth), predicted_list)
   num_matrices <- length(all_matrices)
   
+  # Prepare matrices to store results
   jaccard_matrix <- matrix(0, nrow = num_matrices, ncol = num_matrices)
   rownames(jaccard_matrix) <- colnames(jaccard_matrix) <- c("Ground Truth", paste("Matrix", seq_along(predicted_list)))
   
-  # Calculate Jaccard Index for each pair of matrices
-  for (i in 1:num_matrices) {
-    for (j in 1:num_matrices) {
-      if (i == j) {
-        jaccard_matrix[i, j] <- 1
-      } else {
-        matrix_i <- as.matrix(all_matrices[[i]])
-        matrix_j <- as.matrix(all_matrices[[j]])
-        binary_i <- ifelse(matrix_i > 0, 1, 0)
-        binary_j <- ifelse(matrix_j > 0, 1, 0)
-        
-        intersection <- sum(binary_i & binary_j)
-        union <- sum(binary_i | binary_j)
-        jaccard_index <- ifelse(union > 0, intersection / union, 0)
-        jaccard_matrix[i, j] <- jaccard_index
-      }
-    }
-  }
-  
-  jaccard_df <- as.data.frame(as.table(jaccard_matrix))
-  colnames(jaccard_df) <- c("Matrix1", "Matrix2", "Jaccard_Index")
-  
-  jaccard_heatmap <- ggplot(jaccard_df, aes(x = Matrix1, y = Matrix2, fill = Jaccard_Index)) +
-    geom_tile(color = "white") +
-    scale_fill_gradient2(low = "red", mid = "yellow", high = "green", midpoint = 0.5, space = "Lab", name = "Jaccard Index") +
-    geom_text(aes(label = round(Jaccard_Index, 2)), color = "black", size = 4) +
-    theme_minimal() +
-    ggtitle("Jaccard Index Heatmap Among All Matrices") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "right")
-  
-  metrics_results <- data.frame(
-    Matrix_Index = character(),
-    TP = numeric(),
-    TN = numeric(),
-    FP = numeric(),
-    FN = numeric(),
-    TPR = numeric(),      # True Positive Rate (Recall)
-    FPR = numeric(),      # False Positive Rate
-    Precision = numeric(), 
-    F1_Score = numeric(),
-    Accuracy = numeric(),
+  # Create a dataframe to store additional statistics
+  stats_df <- data.frame(
+    Matrix = c("Ground Truth", paste("Matrix", seq_along(predicted_list))),
+    Edges = integer(num_matrices),
+    Nodes = integer(num_matrices),
+    TP = integer(num_matrices),
+    TN = integer(num_matrices),
+    FP = integer(num_matrices),
+    FN = integer(num_matrices),
+    TPR = numeric(num_matrices),
+    FPR = numeric(num_matrices),
+    Precision = numeric(num_matrices),
+    F1 = numeric(num_matrices),
+    Accuracy = numeric(num_matrices),
     stringsAsFactors = FALSE
   )
   
-  for (i in seq_along(predicted_list)) {
-    predicted <- as.matrix(predicted_list[[i]])
+  # Function to get the upper triangular part of a matrix (excluding diagonal)
+  get_upper_tri <- function(mat) {
+    mat[upper.tri(mat)]  # Extracts the upper triangular elements
+  }
+  
+  # Binary version of the ground truth upper triangle
+  ground_truth_upper <- ifelse(get_upper_tri(ground_truth) > 0, 1, 0)
+  
+  # Calculate statistics for each predicted matrix
+  for (i in 1:num_matrices) {
+    matrix_i <- as.matrix(all_matrices[[i]])
+    upper_i <- get_upper_tri(matrix_i)
+    binary_i <- ifelse(upper_i > 0, 1, 0)
     
-    if (!all(dim(predicted) == dim(ground_truth))) {
-      stop(paste("Matrix dimensions do not match for matrix at index", i))
-    }
+    # Calculate the number of edges (non-zero values) and nodes (size of the matrix)
+    stats_df$Edges[i] <- sum(binary_i)  # Count non-zero values in the upper triangle
+    stats_df$Nodes[i] <- nrow(matrix_i)  # Number of nodes is the number of rows (or cols)
     
-    predicted_binary <- ifelse(predicted > 0, 1, 0)
+    # Calculate TP, TN, FP, FN
+    TP <- sum(binary_i == 1 & ground_truth_upper == 1)
+    TN <- sum(binary_i == 0 & ground_truth_upper == 0)
+    FP <- sum(binary_i == 1 & ground_truth_upper == 0)
+    FN <- sum(binary_i == 0 & ground_truth_upper == 1)
     
-    TP <- sum((ground_truth == 1) & (predicted_binary == 1))
-    TN <- sum((ground_truth == 0) & (predicted_binary == 0))
-    FP <- sum((ground_truth == 0) & (predicted_binary == 1))
-    FN <- sum((ground_truth == 1) & (predicted_binary == 0))
+    # Store the counts
+    stats_df$TP[i] <- TP
+    stats_df$TN[i] <- TN
+    stats_df$FP[i] <- FP
+    stats_df$FN[i] <- FN
     
-    TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)  # True Positive Rate / Recall
+    # Calculate metrics
+    TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)  # True Positive Rate (Recall)
     FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)  # False Positive Rate
     Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)  # Precision
-    F1_Score <- ifelse((Precision + Recall) > 0, 2 * (Precision * Recall) / (Precision + Recall), 0)  # F1 Score
+    F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)  # F1 Score
     Accuracy <- ifelse((TP + TN + FP + FN) > 0, (TP + TN) / (TP + TN + FP + FN), 0)  # Accuracy
     
     # Store the metrics
-    metrics_results <- rbind(
-      metrics_results,
-      data.frame(
-        Matrix_Index = paste("Matrix", i),
-        TP = TP,
-        TN = TN,
-        FP = FP,
-        FN = FN,
-        TPR = TPR,
-        FPR = FPR,
-        Precision = Precision,
-        F1_Score = F1_Score,
-        Accuracy = Accuracy,
-        stringsAsFactors = FALSE
-      )
-    )
+    stats_df$TPR[i] <- TPR
+    stats_df$FPR[i] <- FPR
+    stats_df$Precision[i] <- Precision
+    stats_df$F1[i] <- F1
+    stats_df$Accuracy[i] <- Accuracy
+    
+    # Calculate Jaccard Index with Ground Truth
+    if (i > 1) {  # Skip the ground truth comparison with itself
+      intersection <- sum(binary_i & ground_truth_upper)
+      union <- sum(binary_i | ground_truth_upper)
+      jaccard_matrix[i, 1] <- ifelse(union > 0, intersection / union, 0)
+    }
   }
   
-  # Melt the metrics data for plotting
-  melted_metrics <- melt(metrics_results, id.vars = "Matrix_Index", 
-                         measure.vars = c("TPR", "FPR", "Precision", "Recall", "F1_Score", "Accuracy"))
+  # Plot the metrics using ggplot2
+  library(ggplot2)
+  long_stats_df <- stats_df %>%
+    tidyr::pivot_longer(cols = c(TPR, FPR, Precision, F1, Accuracy), names_to = "Metric", values_to = "Value")
   
-  metrics_barplot <- ggplot(melted_metrics, aes(x = factor(Matrix_Index), y = value, fill = variable)) +
+  plot <- ggplot(long_stats_df, aes(x = Matrix, y = Value, fill = Metric)) +
     geom_bar(stat = "identity", position = "dodge") +
-    geom_text(aes(label = round(value, 2)), vjust = -0.3, position = position_dodge(width = 0.9), size = 3.5) +
-    scale_fill_brewer(palette = "Set3", name = "Metrics") +
-    ggtitle("Metrics Comparison Across Matrices") +
-    theme_minimal() +
-    labs(x = "Matrix Index", y = "Value") +
-    theme(legend.position = "right", legend.title = element_text(size = 12))
+    geom_text(aes(label = round(Value, 2)), position = position_dodge(width = 0.9), vjust = -0.5) +
+    labs(title = "Metrics Comparison Across Matrices", x = "Matrix Index", y = "Value") +
+    theme_minimal()
   
-  return(list("Jaccard_Heatmap" = jaccard_heatmap, 
-              "Metrics_Barplot" = metrics_barplot, 
-              "Metrics_Results" = metrics_results))
+  # Print the plot
+  print(plot)
+  
+  # Return both the Jaccard matrix and stats dataframe
+  list(Jaccard_Matrix = jaccard_matrix, Statistics = stats_df)
 }
