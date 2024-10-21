@@ -9,13 +9,12 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
   
   # Loop over each matrix in the list
   for (j in seq_along(count_matrices_list)) {
-    network_j <- list()  # To store results for each count matrix
     
     if (method == "GENIE3") {
       # Apply GENIE3 on the j-th count matrix
       regulatory_network <- GENIE3(t(count_matrices_list[[j]]))
       netout <- getLinkList(regulatory_network)
-      network_j[[paste0("Matrix_", j)]] <- netout
+      network_results[[j]] <- netout
       
     } else if (method == "GRNBoost2") {
       # Convert the R matrix to a pandas DataFrame
@@ -29,14 +28,11 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
       
       # Apply GRNBoost2 on the pandas DataFrame
       netout <- arboreto$grnboost2(df_pandas, gene_names = genes)
-      network_j[[paste0("Matrix_", j)]] <- netout
+      network_results[[j]] <- netout
     }
-    
-    # Store results for the j-th matrix
-    network_results[[paste0("Adjacency_", j)]] <- network_j
   }
   
-  # Return the full list of network results
+  # Return the full list of network results (simplified structure)
   return(network_results)
 }
 

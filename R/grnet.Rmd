@@ -107,6 +107,20 @@ digraph biological_workflow {
 
 ```{r, fig.width=5, fig.height=5}
 adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
+
+
+adjm %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "Ground Truth")
+```
+
+
+```{r, fig.width=5, fig.height=5}
 gtruth <- igraph::graph_from_adjacency_matrix(adjm, mode = "undirected", diag = F)
 
 num_nodes <- vcount(gtruth)
@@ -206,7 +220,7 @@ sgenie3_early[[1]] %>%
 sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
                  weighted_adjm_list = sgenie3_early_wadj, 
-                 n = 50,
+                 n = 2,
                  method = "GENIE3")
 
 sgenie3_early_wadj[[1]] %>%
