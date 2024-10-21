@@ -3,11 +3,10 @@ compare_consensus <- function(adj_matrix_list, original_matrix) {
   create_consensus_matrix <- function(adj_matrix_list) {
     # Sum all adjacency matrices to get consensus values
     consensus_matrix <- Reduce("+", adj_matrix_list)
-    # Define threshold (present in at least half of the adjacency matrices)
-    threshold <- (length(adj_matrix_list)*3) / 4
+    # Define threshold (present in at least 75% of the adjacency matrices)
+    threshold <- round(length(adj_matrix_list) * 0.75)
     # Create binary consensus matrix (1 if present in >= threshold matrices)
     consensus_matrix_binary <- consensus_matrix >= threshold
-    #diag(consensus_matrix_binary) <- 1
     return(consensus_matrix_binary)
   }
   
@@ -15,49 +14,72 @@ compare_consensus <- function(adj_matrix_list, original_matrix) {
     graph <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
     non_isolated_vertices <- V(graph)[degree(graph) > 0]
     subgraph <- induced_subgraph(graph, non_isolated_vertices)
+    
+    # Calculate metrics for plot title
+    num_nodes <- igraph::gorder(subgraph)  # Number of nodes
+    num_edges <- igraph::gsize(subgraph)  # Number of edges
+    
+    # Plot the subgraph with customized settings
     plot(subgraph, 
-         main = title, 
-         vertex.label.color = "black",
-         vertex.size = 5, 
+         main = paste(title, "\nNodes:", num_nodes, "Edges:", num_edges),
+         vertex.label = NA,  # Remove labels
+         vertex.size = 6, 
          edge.width = 2, 
-         vertex.label.cex = 0.8,
-         layout = layout_with_fr)
+         vertex.color = "orange",  # Change node color
+         layout = igraph::layout_with_fr)
   }
   
-  plot_original_with_highlight <- function(original_matrix, consensus_matrix) {
+  plot_original_matrix <- function(original_matrix, title = "Original Graph") {
+    graph <- graph_from_adjacency_matrix(original_matrix, mode = "undirected", diag = FALSE)
+    non_isolated_vertices <- V(graph)[degree(graph) > 0]
+    subgraph <- induced_subgraph(graph, non_isolated_vertices)
+    
+    # Calculate metrics for plot title
+    num_nodes <- igraph::gorder(subgraph)  # Number of nodes
+    num_edges <- igraph::gsize(subgraph)  # Number of edges
+    
+    # Plot the subgraph for the original matrix
+    plot(subgraph, 
+         main = paste(title, "\nNodes:", num_nodes, "Edges:", num_edges),
+         vertex.label = NA,  # Remove labels
+         vertex.size = 6, 
+         edge.width = 2, 
+         vertex.color = "lightblue",  # Change node color
+         layout = igraph::layout_with_fr)
+  }
+  
+  plot_comparison_graph <- function(original_matrix, consensus_matrix, title = "Original vs Consensus Edges") {
     graph_original <- graph_from_adjacency_matrix(original_matrix, mode = "undirected", diag = FALSE)
     graph_consensus <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
     
-    original_edges <- as_edgelist(graph_original)
-    consensus_edges <- as_edgelist(graph_consensus)
+    # Create edge colors based on whether they are in the consensus or not
+    edge_colors <- ifelse(E(graph_original) %in% E(graph_consensus), "red", "blue")
     
-    # Create sets of edges for comparison
-    original_edges_set <- apply(original_edges, 1, function(x) paste(sort(x), collapse = "-"))
-    consensus_edges_set <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
-    
-    # Color edges red if they are in the consensus matrix, blue otherwise
-    edge_colors <- ifelse(original_edges_set %in% consensus_edges_set, "red", "blue")
-    
-    # Plot the original graph with highlighted edges
+    # Plot the original graph with edges colored based on consensus
     plot(graph_original, 
-         edge.color = edge_colors, 
-         main = "Original Graph with Consensus Highlight",
-         vertex.label.color = "black",
-         vertex.size = 5, 
+         main = title,
+         vertex.label = NA,  # Remove labels
+         vertex.size = 6, 
          edge.width = 2, 
-         vertex.label.cex = 0.8,
-         layout = layout_with_fr)
+         edge.color = edge_colors,  # Color edges
+         vertex.color = "lightgreen",  # Original nodes in light green
+         layout = igraph::layout_with_fr)
   }
 
+  # Create the consensus matrix from the list of adjacency matrices
   consensus_matrix <- create_consensus_matrix(adj_matrix_list)
   
-  par(mfrow = c(1, 2)) 
-  plot_non_isolated_consensus(consensus_matrix, title = "Consensus Graph")
-  plot_non_isolated_consensus(original_matrix, title = "Original Graph")
-  par(mfrow = c(1, 1))  # Reset plotting area
+  # Plot the consensus graph
+  par(mfrow = c(1, 2))  # Set up for side by side plotting
+  plot_non_isolated_consensus(consensus_matrix, title = "Final Consensus Graph")
   
-  plot_original_with_highlight(original_matrix, consensus_matrix)
+  # Plot the original graph with node/edge counts in the title
+  plot_original_matrix(original_matrix, title = "Original Matrix Graph")
   
-  return(list("Consensus_Matrix" = consensus_matrix))
+  # Plot comparison of original matrix with consensus highlighted
+  par(mfrow = c(1, 1))  # Return to single plot layout
+  plot_comparison_graph(original_matrix, consensus_matrix, title = "Original with Consensus Edges")
+  
+  return(consensus_matrix)
 }
 

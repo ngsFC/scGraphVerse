@@ -232,7 +232,7 @@ sgenie3_early_wadj[[1]] %>%
                 pageLength = 10), 
               caption = "GENIE3 weight adjacency")
 
-sgenie3_early_adj$binary_adjm_list[[1]] %>%
+sgenie3_early_adj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -246,12 +246,9 @@ sgenie3_early_adj$binary_adjm_list[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r}
-scores <- pscores(adjm, sgenie3_early_adj$binary_adjm_list)
+scores <- pscores(adjm, sgenie3_early_adj)
 
-print(scores$Jaccard_Heatmap)
-print(scores$Metrics_Barplot)
-
-scores$Metrics_Results %>%
+scores$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -263,15 +260,25 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-plots <- plotg(sgenie3_single_adj$binary_adjm_list)
+plots <- plotg(sgenie3_early_adj)
 ```
 
 ```{r, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgenie3_early_adj$binary_adjm_list, adjm)
+source("compare_consensus.R")
+
+ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
 ```
 
 
 ### GRNBoost2
+
+```{r}
+use_python("/usr/bin/python3", required = TRUE)
+arboreto <- import("arboreto.algo")
+pandas <- import("pandas")
+numpy <- import("numpy")
+```
+
 
 ```{r}
 set.seed(1234)
@@ -310,7 +317,7 @@ sgrnb_early[[1]] %>%
 sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
 sgrnb_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
                  weighted_adjm_list = sgrnb_early_wadj, 
-                 n = 50,
+                 n = 2,
                  method = "GRNBoost2")
 
 sgrnb_early_wadj[[1]] %>%
@@ -322,7 +329,7 @@ sgrnb_early_wadj[[1]] %>%
                 pageLength = 10), 
               caption = "GRNBoost2 weight adjacency")
 
-sgrnb_early_adj$binary_adjm_list[[1]] %>%
+sgrnb_early_adj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -336,12 +343,9 @@ sgrnb_early_adj$binary_adjm_list[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r}
-scores <- pscores(adjm, sgrnb_early_adj$binary_adjm_list)
+scores <- pscores(adjm, sgrnb_early_adj)
 
-print(scores$Jaccard_Heatmap)
-print(scores$Metrics_Barplot)
-
-scores$Metrics_Results %>%
+scores$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -353,11 +357,11 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-#plots <- plotg(sgrnb3_single_adj$binary_adjm_list)
+plots <- plotg(sgrnb_early_adj)
 ```
 
 ```{r, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgrnb_early_adj$binary_adjm_list, adjm)
+ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 ```
 
 
@@ -367,14 +371,7 @@ ajm_compared <- compare_consensus(sgrnb_early_adj$binary_adjm_list, adjm)
 
 ```{r}
 set.seed(1234)
-genie3_late <- list()
-
-for (i in seq_along(count_matrices)) {
-  regulatory_network_genie3 <- GENIE3(t(count_matrices[[i]]), nCores=16)
-  genie3out <- getLinkList(regulatory_network_genie3)
-  genie3_late[[paste0("Matrix_", i)]] <- genie3out
-  }
-
+genie3_late <- infer_networks(early_matrix, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
 
 genie3_late[[1]] %>%
@@ -409,7 +406,7 @@ sgenie3_late[[1]] %>%
 sgenie3_late_wadj <- generate_adjacency(sgenie3_late)
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
-                 n = 5,
+                 n = 2,
                  method = "GENIE3")
 
 sgenie3_late_wadj[[1]] %>%
@@ -421,7 +418,7 @@ sgenie3_late_wadj[[1]] %>%
                 pageLength = 10), 
               caption = "GENIE3 weight adjacency")
 
-sgenie3_late_adj$binary_adjm_list[[1]] %>%
+sgenie3_late_adj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -435,12 +432,9 @@ sgenie3_late_adj$binary_adjm_list[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r}
-scores <- pscores(adjm, sgenie3_late_adj$binary_adjm_list)
+scores <- pscores(adjm, sgenie3_late_adj)
 
-print(scores$Jaccard_Heatmap)
-print(scores$Metrics_Barplot)
-
-scores$Metrics_Results %>%
+scores$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -452,11 +446,11 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-plots <- plotg(sgenie3_late_adj$binary_adjm_list)
+plots <- plotg(sgenie3_late_adj)
 ```
 
 ```{r, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgenie3_late_adj$binary_adjm_list, adjm)
+ajm_compared <- compare_consensus(sgenie3_late_adj, adjm)
 ```
 
 
@@ -464,16 +458,7 @@ ajm_compared <- compare_consensus(sgenie3_late_adj$binary_adjm_list, adjm)
 
 ```{r}
 set.seed(1234)
-grnb_late <- list()
-
-for (i in seq_along(count_matrices)) {
-  count_matrix_df <- as.data.frame(count_matrices[[i]])
-  genes <- colnames(count_matrix_df)
-  df_pandas <- pandas$DataFrame(data = count_matrix_df, columns = genes, index = rownames(count_matrix_df))
-  grn_links <- arboreto$grnboost2(df_pandas, gene_names = genes)
-  grnb_late[[i]] <- grn_links
-  }
-
+grnb_late <- infer_networks(early_matrix, method="GENIE3")
 saveRDS(grnb_late, "./../analysis/grnb_late.RDS")
 
 grnb_late[[1]] %>%
@@ -508,7 +493,7 @@ sgrnb_late[[1]] %>%
 sgrnb_late_wadj <- generate_adjacency(sgrnb_late)
 sgrnb_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgrnb_late_wadj, 
-                 n = 5,
+                 n = 2,
                  method = "GRNBoost2")
 
 sgrnb_late_wadj[[1]] %>%
@@ -520,7 +505,7 @@ sgrnb_late_wadj[[1]] %>%
                 pageLength = 10), 
               caption = "GRNBoost2 weight adjacency")
 
-sgrnb_late_adj$binary_adjm_list[[1]] %>%
+sgrnb_late_adj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -534,12 +519,9 @@ sgrnb_late_adj$binary_adjm_list[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r}
-scores <- pscores(adjm, sgrnb_late_adj$binary_adjm_list)
+scores <- pscores(adjm, sgrnb_late_adj)
 
-print(scores$Jaccard_Heatmap)
-print(scores$Metrics_Barplot)
-
-scores$Metrics_Results %>%
+scores$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -551,11 +533,11 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-plots <- plotg(sgrnb_late_adj$binary_adjm_list)
+plots <- plotg(sgrnb_late_adj)
 ```
 
 ```{r, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgrnb_late_adj$binary_adjm_list, adjm)
+ajm_compared <- compare_consensus(sgrnb_late_adj, adjm)
 ```
 
 

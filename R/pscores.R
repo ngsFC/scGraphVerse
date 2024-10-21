@@ -8,10 +8,6 @@ pscores <- function(ground_truth, predicted_list) {
   all_matrices <- c(list(ground_truth), predicted_list)
   num_matrices <- length(all_matrices)
   
-  # Prepare matrices to store results
-  jaccard_matrix <- matrix(0, nrow = num_matrices, ncol = num_matrices)
-  rownames(jaccard_matrix) <- colnames(jaccard_matrix) <- c("Ground Truth", paste("Matrix", seq_along(predicted_list)))
-  
   # Create a dataframe to store additional statistics
   stats_df <- data.frame(
     Matrix = c("Ground Truth", paste("Matrix", seq_along(predicted_list))),
@@ -72,19 +68,21 @@ pscores <- function(ground_truth, predicted_list) {
     stats_df$Precision[i] <- Precision
     stats_df$F1[i] <- F1
     stats_df$Accuracy[i] <- Accuracy
-    
-    # Calculate Jaccard Index with Ground Truth
-    if (i > 1) {  # Skip the ground truth comparison with itself
-      intersection <- sum(binary_i & ground_truth_upper)
-      union <- sum(binary_i | ground_truth_upper)
-      jaccard_matrix[i, 1] <- ifelse(union > 0, intersection / union, 0)
-    }
   }
+  
+  # Remove ground truth from stats_df for plotting
+  stats_df_filtered <- stats_df[-1, ]  # Exclude the first row (Ground Truth)
+  
+  # Reorder the columns in the desired metric order
+  ordered_metrics <- c("TPR", "FPR", "F1", "Precision", "Accuracy")
   
   # Plot the metrics using ggplot2
   library(ggplot2)
-  long_stats_df <- stats_df %>%
-    tidyr::pivot_longer(cols = c(TPR, FPR, Precision, F1, Accuracy), names_to = "Metric", values_to = "Value")
+  long_stats_df <- stats_df_filtered %>%
+    tidyr::pivot_longer(cols = all_of(ordered_metrics), names_to = "Metric", values_to = "Value")
+  
+  # Reorder the 'Metric' factor levels to ensure the desired order
+  long_stats_df$Metric <- factor(long_stats_df$Metric, levels = ordered_metrics)
   
   plot <- ggplot(long_stats_df, aes(x = Matrix, y = Value, fill = Metric)) +
     geom_bar(stat = "identity", position = "dodge") +
@@ -95,6 +93,7 @@ pscores <- function(ground_truth, predicted_list) {
   # Print the plot
   print(plot)
   
-  # Return both the Jaccard matrix and stats dataframe
-  list(Jaccard_Matrix = jaccard_matrix, Statistics = stats_df)
+  # Return the stats dataframe
+  list(Statistics = stats_df_filtered)
 }
+
