@@ -130,9 +130,9 @@ ncell <- 500
 nodes <- nrow(adjm)
 
 set.seed(1130)
-mu_values <- c(1.5, 2, 3, 4, 5)
+mu_values <- c(1.5, 3, 5)
 
-count_matrices <- lapply(1:5, function(i) {
+count_matrices <- lapply(1:3, function(i) {
   set.seed(1130 + i)
   mu_i <- mu_values[i]
   
@@ -168,7 +168,8 @@ early_matrix <- list(earlyj(count_matrices))
 ### GENIE3
 
 ```{r}
-genie3_early <- infer_networks(early_matrix, method = "GENIE3")
+set.seed(1234)
+genie3_early <- infer_networks(early_matrix, method="GENIE3")
 
 saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
 
@@ -248,7 +249,7 @@ scores$Metrics_Results %>%
 
 
 ```{r}
-#plots <- plotg(sgenie3_single_adj$binary_adjm_list)
+plots <- plotg(sgenie3_single_adj$binary_adjm_list)
 ```
 
 ```{r, fig.width=8,fig.width=10}

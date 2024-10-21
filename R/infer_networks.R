@@ -13,8 +13,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
     if (method == "GENIE3") {
       # Apply GENIE3 to each count matrix
       for (i in seq_along(matrices_j)) {
-        set.seed(1234)  # Set seed for reproducibility
-        regulatory_network_genie3 <- GENIE3(t(matrices_j[[i]]))  # Transpose for GENIE3
+        regulatory_network_genie3 <- GENIE3(t(matrices_j))  # Transpose for GENIE3
         genie3out <- getLinkList(regulatory_network_genie3)
         network_j[[paste0("Matrix_", i)]] <- genie3out
       }
@@ -22,9 +21,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
     } else if (method == "GRNBoost2") {
       # Apply GRNBoost2 to each count matrix
       for (i in seq_along(matrices_j)) {
-        set.seed(1234)  # Set seed for reproducibility
-        
-        count_matrix_df <- as.data.frame(matrices_j[[i]])
+        count_matrix_df <- as.data.frame(matrices_j)
         genes <- colnames(count_matrix_df)
         
         df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
