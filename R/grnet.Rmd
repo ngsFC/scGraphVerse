@@ -38,7 +38,7 @@ library(DiagrammeR)
 library(pROC)
 ```
 
-```{r}
+```{r myfunc}
 source("dropo.R")
 source("generate_adjacency.R")
 source("simmetric.R")
@@ -51,7 +51,7 @@ source("cutoff_adjacency.R")
 source("infer_networks.R")
 ```
 
-```{r}
+```{r flowchart}
 DiagrammeR::grViz("
 digraph biological_workflow {
   # Set up the graph attributes
@@ -105,7 +105,7 @@ digraph biological_workflow {
 
 # Tcell Ground Truth
 
-```{r, fig.width=5, fig.height=5}
+```{r readGT, fig.width=5, fig.height=5}
 adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
 
 
@@ -120,7 +120,7 @@ adjm %>%
 ```
 
 
-```{r, fig.width=5, fig.height=5}
+```{r plotGT, fig.width=5, fig.height=5}
 gtruth <- igraph::graph_from_adjacency_matrix(adjm, mode = "undirected", diag = F)
 
 num_nodes <- vcount(gtruth)
@@ -139,7 +139,7 @@ plot(gtruth,
 
 # Simulate Data
 
-```{r, timing=T}
+```{r simulate matrices}
 ncell <- 500
 nodes <- nrow(adjm)
 
@@ -175,13 +175,13 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 # Matrices Integration
 ## Early Integration
 
-```{r}
+```{r earlym}
 early_matrix <- list(earlyj(count_matrices))
 ```
 
 ### GENIE3
 
-```{r}
+```{r run GENIE3 early}
 set.seed(1234)
 genie3_early <- infer_networks(early_matrix, method="GENIE3")
 
@@ -200,7 +200,7 @@ genie3_early[[1]] %>%
 
 #### Simmetric Output and ROC
 
-```{r}
+```{r GENIE3 simmetricROC early}
 sgenie3_early <- simmetric(list(genie3_early[[1]]), weight_function = "mean")
 plotROC(sgenie3_early, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 
@@ -216,7 +216,7 @@ sgenie3_early[[1]] %>%
 
 #### Generate Adjacency and Apply Cutoff
 
-```{r}
+```{r GENIE3 cutoff early}
 sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
                  weighted_adjm_list = sgenie3_early_wadj, 
@@ -245,7 +245,7 @@ sgenie3_early_adj[[1]] %>%
 
 #### Comparison with the Ground Truth
 
-```{r}
+```{r GENIE3 metrics early}
 scores <- pscores(adjm, sgenie3_early_adj)
 
 scores$Statistics %>%
@@ -259,11 +259,11 @@ scores$Statistics %>%
 ```
 
 
-```{r}
+```{r GENIE3 plotg early}
 plots <- plotg(sgenie3_early_adj)
 ```
 
-```{r, fig.width=8,fig.width=10}
+```{r GENIE3 compare early, fig.width=8,fig.width=10}
 source("compare_consensus.R")
 
 ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
@@ -272,7 +272,7 @@ ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
 
 ### GRNBoost2
 
-```{r}
+```{r load python}
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
 pandas <- import("pandas")
@@ -280,7 +280,7 @@ numpy <- import("numpy")
 ```
 
 
-```{r}
+```{r GRNBoost2 early}
 set.seed(1234)
 grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
 saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
@@ -297,7 +297,7 @@ grnb_early[[1]] %>%
 
 #### Simmetric Output and ROC
 
-```{r}
+```{r GRNBoost2 simmetricROC early}
 sgrnb_early <- simmetric(list(grnb_early[[1]]), weight_function = "mean")
 plotROC(sgrnb_early, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
 
@@ -313,7 +313,7 @@ sgrnb_early[[1]] %>%
 
 #### Generate Adjacency and Apply Cutoff
 
-```{r}
+```{r GRNBoost2 cutoff early}
 sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
 sgrnb_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
                  weighted_adjm_list = sgrnb_early_wadj, 
@@ -342,7 +342,7 @@ sgrnb_early_adj[[1]] %>%
 
 #### Comparison with the Ground Truth
 
-```{r}
+```{r GRNBoost2 metrics early}
 scores <- pscores(adjm, sgrnb_early_adj)
 
 scores$Statistics %>%
@@ -356,11 +356,11 @@ scores$Statistics %>%
 ```
 
 
-```{r}
+```{r GRNBoost2 plotg early}
 plots <- plotg(sgrnb_early_adj)
 ```
 
-```{r, fig.width=8,fig.width=10}
+```{r GRNBoost2 compare early, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 ```
 
@@ -369,7 +369,7 @@ ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 
 ### GENIE3
 
-```{r}
+```{r GENIE3 late}
 set.seed(1234)
 genie3_late <- infer_networks(early_matrix, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
@@ -386,7 +386,7 @@ genie3_late[[1]] %>%
 
 #### Simmetric Output and ROC
 
-```{r}
+```{r GENIE3 simmetricROC late}
 sgenie3_late <- simmetric(genie3_late, weight_function = "mean")
 plotROC(sgenie3_late, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
 
@@ -402,7 +402,7 @@ sgenie3_late[[1]] %>%
 
 #### Generate Adjacency and Apply Cutoff
 
-```{r}
+```{r GENIE3 cutoff late}
 sgenie3_late_wadj <- generate_adjacency(sgenie3_late)
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
@@ -431,7 +431,7 @@ sgenie3_late_adj[[1]] %>%
 
 #### Comparison with the Ground Truth
 
-```{r}
+```{r GENIE3 metrics late}
 scores <- pscores(adjm, sgenie3_late_adj)
 
 scores$Statistics %>%
@@ -445,18 +445,18 @@ scores$Statistics %>%
 ```
 
 
-```{r}
+```{r GENIE3 plotg late}
 plots <- plotg(sgenie3_late_adj)
 ```
 
-```{r, fig.width=8,fig.width=10}
+```{r GENIE3 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgenie3_late_adj, adjm)
 ```
 
 
 ### GRNBoost2
 
-```{r}
+```{r GRNBoost2 late}
 set.seed(1234)
 grnb_late <- infer_networks(early_matrix, method="GENIE3")
 saveRDS(grnb_late, "./../analysis/grnb_late.RDS")
@@ -473,7 +473,7 @@ grnb_late[[1]] %>%
 
 #### Simmetric Output and ROC
 
-```{r}
+```{r GRNBoost2 simmetricROC late}
 sgrnb_late <- simmetric(grnb_late, weight_function = "mean")
 plotROC(sgrnb_late, adjm, plot_title = "ROC curve - GRNBoost2 Late Integration")
 
@@ -489,7 +489,7 @@ sgrnb_late[[1]] %>%
 
 #### Generate Adjacency and Apply Cutoff
 
-```{r}
+```{r GRNBoost2 cutoff late}
 sgrnb_late_wadj <- generate_adjacency(sgrnb_late)
 sgrnb_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgrnb_late_wadj, 
@@ -518,7 +518,7 @@ sgrnb_late_adj[[1]] %>%
 
 #### Comparison with the Ground Truth
 
-```{r}
+```{r GRNBoost2 metrics late}
 scores <- pscores(adjm, sgrnb_late_adj)
 
 scores$Statistics %>%
@@ -532,11 +532,11 @@ scores$Statistics %>%
 ```
 
 
-```{r}
+```{r GRNBoost2 plotg late}
 plots <- plotg(sgrnb_late_adj)
 ```
 
-```{r, fig.width=8,fig.width=10}
+```{r GRNBoost2 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgrnb_late_adj, adjm)
 ```
 
