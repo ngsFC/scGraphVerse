@@ -21,40 +21,39 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
     return(shuffled_matrices)
   }
   
+  # Initialize lists to store results
   all_percentile_values <- list()
   binary_adjm_list <- list()
   
+  # Main loop through count matrices
   for (mat_index in seq_along(count_matrices)) {
     original_matrix <- count_matrices[[mat_index]]
     
+    # Create shuffled matrices
     shuffled_matrices_list <- create_shuffled_matrices(original_matrix, n)
     
     all_grn_links <- list()
     
-    # Choose method to apply (GRNBoost2 or GENIE3)
-    if (method == "GRNBoost2") {
-      calculate_grn_links <- function(matrix) {
-        return(runif(nrow(matrix), 0, 1))
-      }
-    } else if (method == "GENIE3") {
-      calculate_grn_links <- function(matrix) {
-        return(runif(nrow(matrix), 0, 1))
-      }
-    } else {
-      stop("Invalid method specified. Choose either 'GRNBoost2' or 'GENIE3'.")
-    }
-    
     # Compute 95th percentile for each shuffled matrix
     for (i in seq_along(shuffled_matrices_list)) {
       shuffled_matrix <- shuffled_matrices_list[[i]]
-      grn_links <- calculate_grn_links(shuffled_matrix)
-      all_grn_links[[i]] <- grn_links
-      percentile_95 <- quantile(grn_links, 0.95)
+      
+      # Infer network using the specified method
+      network_results <- infer_networks(list(shuffled_matrix), method = method)
+      
+      # Make the result symmetric using the simmetric function
+      symmetric_network <- simmetric(network_results, weight_function = weight_function)[[1]]
+      
+      # Get weights from the symmetric network and order them
+      ordered_weights <- sort(symmetric_network$weight)
+      
+      # Calculate the 95th percentile of the ordered weights
+      percentile_95 <- quantile(ordered_weights, 0.95)
       all_percentile_values[[mat_index]] <- c(all_percentile_values[[mat_index]], percentile_95)
     }
     
     # Compute mean of 95th percentiles (rounded to 3 decimal places)
-    mean_percentile <- round(mean(unlist(all_percentile_values[[mat_index]])), 5)
+    mean_percentile <- round(mean(unlist(all_percentile_values[[mat_index]])), 3)
     
     # Apply cutoff to the corresponding weighted adjacency matrix
     weighted_adjm <- weighted_adjm_list[[mat_index]]
@@ -73,3 +72,4 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
   
   return(binary_adjm_list)
 }
+
