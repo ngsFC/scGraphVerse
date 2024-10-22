@@ -543,7 +543,7 @@ ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 
 ### Joint Random Forest
 
-```{r}
+```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 
