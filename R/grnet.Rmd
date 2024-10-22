@@ -541,6 +541,32 @@ ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 
 ## Joint Integration
 
+### Joint Random Forest
+
+```{r}
+#https://cran.r-project.org/src/contrib/Archive/JRF/
+#install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
+
+library(JRF)
+jrf_matrices <- count_matrices
+jrf_matrices[[1]] <- t(jrf_matrices[[1]])
+jrf_matrices[[2]] <- t(jrf_matrices[[2]])
+jrf_matrices[[3]] <- t(jrf_matrices[[3]])
+
+result <- JRF(X=jrf_matrices, genes.name = rownames(jrf_matrices[[1]]), ntree = 500, mtry = round(sqrt(length(rownames(jrf_matrices[[1]]))-1)))
+
+result %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF output")
+```
 
 
+```{r}
+sessionInfo()
+```
 
