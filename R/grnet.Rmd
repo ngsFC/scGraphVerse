@@ -36,6 +36,12 @@ library(reshape2)
 library(gridExtra)
 library(DiagrammeR)
 library(pROC)
+
+use_python("/usr/bin/python3", required = TRUE)
+arboreto <- import("arboreto.algo")
+pandas <- import("pandas")
+numpy <- import("numpy")
+
 ```
 
 ```{r myfunc}
@@ -61,46 +67,46 @@ digraph biological_workflow {
   node [shape = rectangle, style = filled, color = lightblue, fontsize = 12]
 
   # Define nodes for each step
-  StartNode [label = 'Biological String Regulatory Network', shape = oval, color = forestgreen, fontcolor = black]
-  AdjacencyMatrix [label = 'Create Adjacency Matrix', shape = rectangle, color = lightblue]
-  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = lightyellow]
+  StartNode [label = 'Ground Thruth - String Regulatory Network', shape = oval, color = seagreen, fontcolor = black]
+  AdjacencyMatrix [label = 'Thruth Adjacency Matrix', shape = rectangle, color = seagreen]
+  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = goldenrod]
 
   # Reconstruction using Three Packages
-  GENIE3Step [label = 'GENIE3: Calculate Gene Weights', shape = rectangle, color = lightpink]
-  GRNBoostStep [label = 'GRNBoost2: Calculate Gene Weights', shape = rectangle, color = lightpink]
-  Learn2CountStep [label = 'learn2count: Calculate Gene Weights', shape = rectangle, color = lightpink]
+  LateIntegration [label = 'Late\nIntegration', shape = oval, color = khaki]
+  EarlyIntegration [label = 'Early\nIntegration', shape = oval, color = khaki]
+  Jointanalysis [label = 'Joint\nanalysis', shape = oval, color = khaki]
+  
 
-  # Generate Adjacency Matrices for Each Package
-  GENIE3Adj [label = 'GENIE3: Generate Adjacency Matrix', shape = rectangle, color = khaki]
-  GRNBoostAdj [label = 'GRNBoost2: Generate Adjacency Matrix', shape = rectangle, color = khaki]
-  Learn2CountAdj [label = 'learn2count: Generate Adjacency Matrix', shape = rectangle, color = khaki]
-
-  # Symmetrize Step
-  Symmetrize [label = 'Symmetrize Adjacency Matrix', shape = rectangle, color = lightyellow]
-
-  # Comparison with Ground Truth
-  Compare [label = 'Compare with Ground Truth Adjacency', shape = rectangle, color = salmon]
-
-  # Analysis and Visualization
-  Analysis [label = 'Analysis and Visualization', shape = rectangle, color = lightcoral]
+  # Process 
+  earlyj [label = 'earlyj.R', shape=diamond, color=lightblue, fontcolor=black]
+  networkinference [label = 'infer_networks.R\nGENIE3\nGRNBoost2\nJRF', shape = rectangle, color = goldenrod, fontcolor=black]
+  simmetric [label = 'simmetric.R', shape = rectangle, color = goldenrod, fontcolor=black]
+  plotROC [label = 'plotROC.R', shape=diamond, color=lightblue, fontcolor=black]
+  generateadjacency [label='generate_adjacency.R\nWeighted Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
+  cutoffadjacency [label='cutoff_adjacency.R\nBinary Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
+  pscores [label='pscores.R\nTPR\nFPR\nF1\nAccuracy\nPrecision', shape=diamond, color=lightblue, fontcolor=black]
+  voting [label='Edges voting', shape=diamond, color=lightblue, fontcolor=black]
+  plotgcompare  [label='plotg.R\ncompare_consesus.R\nPlot Graphs', shape=rectangle, color=goldenrod, fontcolor=black]
 
   # Define the workflow structure
   StartNode -> AdjacencyMatrix
   AdjacencyMatrix -> SimulateData
-  SimulateData -> GENIE3Step
-  SimulateData -> GRNBoostStep
-  SimulateData -> Learn2CountStep
-  GENIE3Step -> GENIE3Adj
-  GRNBoostStep -> GRNBoostAdj
-  Learn2CountStep -> Learn2CountAdj
-  GENIE3Adj -> Symmetrize
-  GRNBoostAdj -> Symmetrize
-  Learn2CountAdj -> Symmetrize
-  Symmetrize -> Compare
-  Compare -> Analysis
+  SimulateData -> LateIntegration
+  SimulateData -> EarlyIntegration
+  SimulateData -> Jointanalysis
+  EarlyIntegration -> earlyj
+  earlyj -> networkinference
+  LateIntegration -> networkinference
+  Jointanalysis -> networkinference
+  networkinference -> simmetric
+  simmetric -> plotROC
+  simmetric -> generateadjacency
+  generateadjacency -> cutoffadjacency
+  cutoffadjacency -> pscores
+  cutoffadjacency -> voting
+  voting -> plotgcompare
 }
 ")
-
 ```
 
 # Tcell Ground Truth
@@ -173,196 +179,6 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 ```
 
 # Matrices Integration
-## Early Integration
-
-```{r earlym}
-early_matrix <- list(earlyj(count_matrices))
-```
-
-### GENIE3
-
-```{r run GENIE3 early}
-set.seed(1234)
-genie3_early <- infer_networks(early_matrix, method="GENIE3")
-
-saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
-
-genie3_early[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 output")
-```
-
-
-#### Simmetric Output and ROC
-
-```{r GENIE3 simmetricROC early}
-sgenie3_early <- simmetric(list(genie3_early[[1]]), weight_function = "mean")
-plotROC(sgenie3_early, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
-
-sgenie3_early[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 simmetric output")
-```
-
-#### Generate Adjacency and Apply Cutoff
-
-```{r GENIE3 cutoff early}
-sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
-sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
-                 weighted_adjm_list = sgenie3_early_wadj, 
-                 n = 2,
-                 method = "GENIE3")
-
-sgenie3_early_wadj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 weight adjacency")
-
-sgenie3_early_adj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 adjacency")
-
-```
-
-#### Comparison with the Ground Truth
-
-```{r GENIE3 metrics early}
-scores <- pscores(adjm, sgenie3_early_adj)
-
-scores$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-```
-
-
-```{r GENIE3 plotg early}
-plots <- plotg(sgenie3_early_adj)
-```
-
-```{r GENIE3 compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
-```
-
-
-### GRNBoost2
-
-```{r load python}
-use_python("/usr/bin/python3", required = TRUE)
-arboreto <- import("arboreto.algo")
-pandas <- import("pandas")
-numpy <- import("numpy")
-```
-
-
-```{r GRNBoost2 early}
-set.seed(1234)
-grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
-saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
-
-grnb_early[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 output")
-```
-
-#### Simmetric Output and ROC
-
-```{r GRNBoost2 simmetricROC early}
-sgrnb_early <- simmetric(list(grnb_early[[1]]), weight_function = "mean")
-plotROC(sgrnb_early, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
-
-sgrnb_early[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 simmetric output")
-```
-
-#### Generate Adjacency and Apply Cutoff
-
-```{r GRNBoost2 cutoff early}
-sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
-sgrnb_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
-                 weighted_adjm_list = sgrnb_early_wadj, 
-                 n = 2,
-                 method = "GRNBoost2")
-
-sgrnb_early_wadj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 weight adjacency")
-
-sgrnb_early_adj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 adjacency")
-
-```
-
-#### Comparison with the Ground Truth
-
-```{r GRNBoost2 metrics early}
-scores <- pscores(adjm, sgrnb_early_adj)
-
-scores$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-```
-
-
-```{r GRNBoost2 plotg early}
-plots <- plotg(sgrnb_early_adj)
-```
-
-```{r GRNBoost2 compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
-```
-
-
 ## Late Integration
 
 ### GENIE3
@@ -536,6 +352,189 @@ plots <- plotg(sgrnb_late_adj)
 
 ```{r GRNBoost2 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgrnb_late_adj, adjm)
+```
+
+
+
+## Early Integration
+
+```{r earlym}
+early_matrix <- list(earlyj(count_matrices))
+```
+
+### GENIE3
+
+```{r run GENIE3 early}
+set.seed(1234)
+genie3_early <- infer_networks(early_matrix, method="GENIE3")
+
+saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
+
+genie3_early[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 output")
+```
+
+
+#### Simmetric Output and ROC
+
+```{r GENIE3 simmetricROC early}
+sgenie3_early <- simmetric(list(genie3_early[[1]]), weight_function = "mean")
+plotROC(sgenie3_early, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
+
+sgenie3_early[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 simmetric output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r GENIE3 cutoff early}
+sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
+sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
+                 weighted_adjm_list = sgenie3_early_wadj, 
+                 n = 2,
+                 method = "GENIE3")
+
+sgenie3_early_wadj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 weight adjacency")
+
+sgenie3_early_adj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 adjacency")
+
+```
+
+#### Comparison with the Ground Truth
+
+```{r GENIE3 metrics early}
+scores <- pscores(adjm, sgenie3_early_adj)
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r GENIE3 plotg early}
+plots <- plotg(sgenie3_early_adj)
+```
+
+```{r GENIE3 compare early, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
+```
+
+
+### GRNBoost2
+
+```{r GRNBoost2 early}
+set.seed(1234)
+grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
+saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
+
+grnb_early[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 output")
+```
+
+#### Simmetric Output and ROC
+
+```{r GRNBoost2 simmetricROC early}
+sgrnb_early <- simmetric(list(grnb_early[[1]]), weight_function = "mean")
+plotROC(sgrnb_early, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
+
+sgrnb_early[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 simmetric output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r GRNBoost2 cutoff early}
+sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
+sgrnb_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
+                 weighted_adjm_list = sgrnb_early_wadj, 
+                 n = 2,
+                 method = "GRNBoost2")
+
+sgrnb_early_wadj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 weight adjacency")
+
+sgrnb_early_adj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 adjacency")
+
+```
+
+#### Comparison with the Ground Truth
+
+```{r GRNBoost2 metrics early}
+scores <- pscores(adjm, sgrnb_early_adj)
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r GRNBoost2 plotg early}
+plots <- plotg(sgrnb_early_adj)
+```
+
+```{r GRNBoost2 compare early, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 ```
 
 
