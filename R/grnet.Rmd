@@ -264,8 +264,6 @@ plots <- plotg(sgenie3_early_adj)
 ```
 
 ```{r GENIE3 compare early, fig.width=8,fig.width=10}
-source("compare_consensus.R")
-
 ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
 ```
 
@@ -371,7 +369,7 @@ ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 
 ```{r GENIE3 late}
 set.seed(1234)
-genie3_late <- infer_networks(early_matrix, method="GENIE3")
+genie3_late <- infer_networks(count_matrices, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
 
 genie3_late[[1]] %>%
@@ -458,7 +456,7 @@ ajm_compared <- compare_consensus(sgenie3_late_adj, adjm)
 
 ```{r GRNBoost2 late}
 set.seed(1234)
-grnb_late <- infer_networks(early_matrix, method="GENIE3")
+grnb_late <- infer_networks(count_matrices, method="GRNBoost2")
 saveRDS(grnb_late, "./../analysis/grnb_late.RDS")
 
 grnb_late[[1]] %>%
@@ -543,5 +541,7 @@ ajm_compared <- compare_consensus(sgrnb_late_adj, adjm)
 
 
 ## Joint Integration
+
+
 
 
