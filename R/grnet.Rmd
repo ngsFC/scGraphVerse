@@ -37,6 +37,8 @@ library(gridExtra)
 library(DiagrammeR)
 library(pROC)
 library(JRF)
+library(DiagrammeRsvg)
+library(rsvg)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -58,8 +60,8 @@ source("cutoff_adjacency.R")
 source("infer_networks.R")
 ```
 
-```{r flowchart}
-DiagrammeR::grViz("
+```{r flowchart, fig.width=9, fig.height=15}
+grViz_output <- DiagrammeR::grViz("
 digraph biological_workflow {
   # Set up the graph attributes
   graph [layout = dot, rankdir = TB]
@@ -108,6 +110,10 @@ digraph biological_workflow {
   voting -> plotgcompare
 }
 ")
+
+svg_code <- export_svg(grViz_output)
+rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart.png")
+print(grViz_output)
 ```
 
 # Tcell Ground Truth
@@ -575,59 +581,6 @@ sjrf_mat[[1]] %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "jrf simmetric output")
-```
-
-#### Generate Adjacency and Apply Cutoff
-
-```{r jrf cutoff late}
-sjrf_mat_wadj <- generate_adjacency(sjrf_mat)
-sjrf_mat_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                 weighted_adjm_list = sjrf_mat_wadj, 
-                 n = 2,
-                 method = "JRF")
-
-sjrf_late_wadj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "jrf weight adjacency")
-
-sjrf_late_adj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "jrf adjacency")
-
-```
-
-#### Comparison with the Ground Truth
-
-```{r jrf metrics late}
-scores <- pscores(adjm, sjrf_late_adj)
-
-scores$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-```
-
-
-```{r jrf plotg late}
-plots <- plotg(sjrf_late_adj)
-```
-
-```{r jrf compare late, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sjrf_late_adj, adjm)
 ```
 
 
