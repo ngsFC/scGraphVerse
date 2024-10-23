@@ -54,6 +54,7 @@ source("simmetric.R")
 source("pscores.R")
 source("plotg.R")
 source("compare_consensus.R")
+source("consensus.R")
 source("earlyj.R")
 source("plotROC.R")
 source("cutoff_adjacency.R")
@@ -270,10 +271,25 @@ scores$Statistics %>%
 plots <- plotg(sgenie3_late_adj)
 ```
 
-```{r GENIE3 compare late, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgenie3_late_adj, adjm)
+```{r GENIE3 consensus and score late}
+consesusm <- create_consensus(sgenie3_late_adj)
+scores <- pscores(adjm, consesusm)
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+
 ```
 
+
+```{r GENIE3 compare late, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(consesusm, adjm)
+```
 
 ### GRNBoost2
 
@@ -357,8 +373,23 @@ scores$Statistics %>%
 plots <- plotg(sgrnb_late_adj)
 ```
 
+```{r GRNBoost2 consensus and score late}
+consesusm <- create_consensus(sgrnb_late_adj)
+scores <- pscores(adjm, consesusm)
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+
+```
+
 ```{r GRNBoost2 compare late, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgrnb_late_adj, adjm)
+ajm_compared <- compare_consensus(consesusm, adjm)
 ```
 
 
@@ -454,7 +485,7 @@ plots <- plotg(sgenie3_early_adj)
 ```
 
 ```{r GENIE3 compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgenie3_early_adj, adjm)
+ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 ```
 
 
@@ -541,9 +572,8 @@ plots <- plotg(sgrnb_early_adj)
 ```
 
 ```{r GRNBoost2 compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
+ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 ```
-
 
 
 ## Joint Integration

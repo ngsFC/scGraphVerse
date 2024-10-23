@@ -1,14 +1,4 @@
-compare_consensus <- function(adj_matrix_list, original_matrix) {
-  
-  create_consensus_matrix <- function(adj_matrix_list) {
-    # Sum all adjacency matrices to get consensus values
-    consensus_matrix <- Reduce("+", adj_matrix_list)
-    # Define threshold (present in at least 75% of the adjacency matrices)
-    threshold <- round(length(adj_matrix_list) * 0.75)
-    # Create binary consensus matrix (1 if present in >= threshold matrices)
-    consensus_matrix_binary <- consensus_matrix >= threshold
-    return(consensus_matrix_binary)
-  }
+compare_consensus <- function(consensus_matrix, original_matrix) {
   
   plot_non_isolated_consensus <- function(consensus_matrix, title = "Consensus Graph") {
     graph <- graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
@@ -66,9 +56,6 @@ compare_consensus <- function(adj_matrix_list, original_matrix) {
          layout = igraph::layout_with_fr)
   }
 
-  # Create the consensus matrix from the list of adjacency matrices
-  consensus_matrix <- create_consensus_matrix(adj_matrix_list)
-  
   # Plot the consensus graph
   par(mfrow = c(1, 2))  # Set up for side by side plotting
   plot_non_isolated_consensus(consensus_matrix, title = "Final Consensus Graph")
@@ -79,7 +66,5 @@ compare_consensus <- function(adj_matrix_list, original_matrix) {
   # Plot comparison of original matrix with consensus highlighted
   par(mfrow = c(1, 1))  # Return to single plot layout
   plot_comparison_graph(original_matrix, consensus_matrix, title = "Original with Consensus Edges")
-  
-  return(consensus_matrix)
 }
 

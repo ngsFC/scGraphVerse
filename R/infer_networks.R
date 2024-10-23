@@ -37,7 +37,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
       # Run JRF
       result <- JRF(X = jrf_matrices, 
                     genes.name = rownames(jrf_matrices[[1]]), 
-                    ntree = 1000, 
+                    ntree = 500, 
                     mtry = round(sqrt(length(rownames(jrf_matrices[[1]])) - 1)))
       
       first_two_columns <- result[, 1:2]
