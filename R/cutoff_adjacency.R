@@ -43,6 +43,13 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
       # Infer network using the specified method
       network_results <- infer_networks(list(shuffled_matrix), method = method)
       
+      # Handle the output for "JRF"
+      if (method == "JRF") {
+        # JRF produces a list of n networks, each with 2+ columns
+        # We need to process the first network result, which will have 2 columns + the third column for weights
+        network_results <- network_results[[1]]
+      }
+      
       # Make the result symmetric using the simmetric function
       symmetric_network <- simmetric(network_results, weight_function = weight_function)[[1]]
       
@@ -64,12 +71,6 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
     
     # Print cutoff value for each matrix
     cat("Matrix", mat_index, "Mean 95th Percentile Cutoff:", mean_percentile, "\n")
-  }
-  
-  # Plot histograms for cutoff values
-  for (mat_index in seq_along(all_percentile_values)) {
-    hist(unlist(all_percentile_values), main = paste("Histogram of Cutoff Values for Matrix", mat_index),
-         xlab = "Cutoff Values", ylab = "Frequency", col = "lightblue", breaks = 20)
   }
   
   return(binary_adjm_list)

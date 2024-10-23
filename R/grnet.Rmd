@@ -36,6 +36,7 @@ library(reshape2)
 library(gridExtra)
 library(DiagrammeR)
 library(pROC)
+library(JRF)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -547,15 +548,9 @@ ajm_compared <- compare_consensus(sgrnb_early_adj, adjm)
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 
-library(JRF)
-jrf_matrices <- count_matrices
-jrf_matrices[[1]] <- t(jrf_matrices[[1]])
-jrf_matrices[[2]] <- t(jrf_matrices[[2]])
-jrf_matrices[[3]] <- t(jrf_matrices[[3]])
+jrf_mat <- infer_networks(count_matrices, method="JRF")
 
-result <- JRF(X=jrf_matrices, genes.name = rownames(jrf_matrices[[1]]), ntree = 500, mtry = round(sqrt(length(rownames(jrf_matrices[[1]]))-1)))
-
-result %>%
+jrf_mat[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -563,6 +558,76 @@ result %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "JRF output")
+
+```
+
+#### Simmetric Output and ROC
+
+```{r jrf simmetricROC late}
+sjrf_mat <- simmetric(jrf_mat, weight_function = "mean")
+plotROC(sjrf_mat, adjm, plot_title = "ROC curve - jrf Late Integration")
+
+sjrf_mat[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "jrf simmetric output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r jrf cutoff late}
+sjrf_mat_wadj <- generate_adjacency(sjrf_mat)
+sjrf_mat_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                 weighted_adjm_list = sjrf_mat_wadj, 
+                 n = 2,
+                 method = "JRF")
+
+sjrf_late_wadj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "jrf weight adjacency")
+
+sjrf_late_adj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "jrf adjacency")
+
+```
+
+#### Comparison with the Ground Truth
+
+```{r jrf metrics late}
+scores <- pscores(adjm, sjrf_late_adj)
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r jrf plotg late}
+plots <- plotg(sjrf_late_adj)
+```
+
+```{r jrf compare late, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(sjrf_late_adj, adjm)
 ```
 
 
