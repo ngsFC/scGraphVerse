@@ -3,6 +3,8 @@
 
 This repository contains a collection of R scripts and markdown files used to perform various analyses related to network generation, adjacency matrices, and ROC (Receiver Operating Characteristic) curve plotting. The files in this repository are designed to work together for the analysis and visualization of network properties.
 
+![Analysis Flowchart](./analysis/flowchart.png)
+
 ## Overview of Files
 
 - **grnet.Rmd**: This R Markdown file likely serves as the main document that ties together all the scripts in this repository. It likely contains explanations, visualizations, and code executions for generating results from the other scripts.
