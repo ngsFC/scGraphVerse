@@ -3,7 +3,9 @@
 
 This repository contains a collection of R scripts and markdown files used to perform various analyses related to network generation, adjacency matrices, and ROC (Receiver Operating Characteristic) curve plotting. The files in this repository are designed to work together for the analysis and visualization of network properties.
 
-![Analysis Flowchart](./analysis/flowchart.png)
+<div align="center">
+<img src="./analysis/flowchart.png" alt="flowchart" \>
+</div>
 
 ## Overview of Files
 
