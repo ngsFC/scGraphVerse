@@ -113,10 +113,10 @@ digraph biological_workflow {
 }
 ")
 
-print(grViz_output)
 svg_code <- export_svg(grViz_output)
 rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart.png")
-print(grViz_output)
+
+grViz_output
 ```
 
 # Tcell Ground Truth
