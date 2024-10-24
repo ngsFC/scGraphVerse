@@ -54,7 +54,7 @@ source("simmetric.R")
 source("pscores.R")
 source("plotg.R")
 source("compare_consensus.R")
-source("consensus.R")
+source("create_consensus.R")
 source("earlyj.R")
 source("plotROC.R")
 source("cutoff_adjacency.R")
@@ -109,9 +109,11 @@ digraph biological_workflow {
   cutoffadjacency -> pscores
   cutoffadjacency -> voting
   voting -> plotgcompare
+  voting -> pscores
 }
 ")
 
+print(grViz_output)
 svg_code <- export_svg(grViz_output)
 rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart.png")
 print(grViz_output)
@@ -273,7 +275,7 @@ plots <- plotg(sgenie3_late_adj)
 
 ```{r GENIE3 consensus and score late}
 consesusm <- create_consensus(sgenie3_late_adj)
-scores <- pscores(adjm, consesusm)
+scores <- pscores(adjm, list(consesusm))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -375,7 +377,7 @@ plots <- plotg(sgrnb_late_adj)
 
 ```{r GRNBoost2 consensus and score late}
 consesusm <- create_consensus(sgrnb_late_adj)
-scores <- pscores(adjm, consesusm)
+scores <- pscores(adjm, list(consesusm))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',

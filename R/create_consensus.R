@@ -5,7 +5,9 @@ create_consensus <- function(adj_matrix_list) {
   # Define threshold (present in at least 75% of the adjacency matrices)
   threshold <- round(length(adj_matrix_list) * 0.75)
   
-  # Create binary consensus matrix (1 if present in >= threshold matrices)
-  consensus_matrix_binary <- consensus_matrix >= threshold
-  return(consensus_matrix_binary)
+  # Modify the consensus matrix in place: 1 if >= threshold, 0 if < threshold
+  consensus_matrix[consensus_matrix < threshold] <- 0
+  consensus_matrix[consensus_matrix >= threshold] <- 1
+  
+  return(consensus_matrix)
 }
