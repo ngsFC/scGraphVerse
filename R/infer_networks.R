@@ -1,11 +1,10 @@
-infer_networks <- function(count_matrices_list, method = "GENIE3") {
+infer_networks <- function(count_matrices_list, ground.truth, method = "GENIE3") {
   if (!method %in% c("GENIE3", "GRNBoost2", "JRF")) {
     stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', or 'JRF'.")
   }
   
   # Detect the number of available cores
   nCores <- parallel::detectCores()-1
-  
   network_results <- list()
   
   # Loop over each matrix in the list
@@ -14,8 +13,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
     if (method == "GENIE3") {
       # Apply GENIE3 using dynamic nCores
       regulatory_network <- GENIE3(t(count_matrices_list[[j]]), nCores = nCores)
-      netout <- getLinkList(regulatory_network)
-      network_results[[j]] <- netout
+      netout <- regulatory_network
       
     } else if (method == "GRNBoost2") {
       # Apply GRNBoost2
@@ -27,7 +25,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
                                     index = rownames(count_matrix_df))
       
       netout <- arboreto$grnboost2(df_pandas, gene_names = genes)
-      network_results[[j]] <- netout
       
     } else if (method == "JRF") {
       # Normalize the matrix
@@ -47,9 +44,14 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
       for (i in 1:length(jrf_matrices)) {
         specific_column <- result[, 2 + i]
         netout <- cbind(first_two_columns, specific_column)
-        network_results[[i]] <- netout
       }
     }
+    
+    # Reorder netout to match ground.truth row and column names
+    reordered_netout <- netout[rownames(ground.truth), colnames(ground.truth)]
+    
+    # Add reordered netout to the results list
+    network_results[[j]] <- reordered_netout
   }
   
   return(network_results)

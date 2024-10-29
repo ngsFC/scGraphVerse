@@ -62,7 +62,7 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
     }
     
     # Compute mean of 95th percentiles (rounded to 3 decimal places)
-    mean_percentile <- round(mean(unlist(all_percentile_values)), 3)
+    mean_percentile <- mean(unlist(all_percentile_values))
     
     # Apply cutoff to the corresponding weighted adjacency matrix
     weighted_adjm <- weighted_adjm_list[[mat_index]]
