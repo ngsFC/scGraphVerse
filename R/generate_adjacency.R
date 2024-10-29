@@ -1,25 +1,37 @@
-generate_adjacency <- function(link_list) {
-  adj_matrix_weight_list <- list()
+generate_adjacency <- function(df_list) {
+  # Initialize a list to store the adjacency matrices
+  adj_matrix_list <- list()
   
-  for (i in seq_along(link_list)) {
-    link_df <- as.data.frame(link_list[[i]])
-    gene_names <- unique(c(link_df$Gene1, link_df$Gene2))
+  # Loop over each data frame in the input list
+  for (k in seq_along(df_list)) {
+    data <- df_list[[k]]
     
-    adj_matrix <- matrix(0, nrow = length(gene_names), ncol = length(gene_names))
-    rownames(adj_matrix) <- colnames(adj_matrix) <- gene_names
+    # Extract unique genes to determine matrix dimensions
+    unique_genes <- sort(unique(c(data$Gene1, data$Gene2)))
+    p <- length(unique_genes)
     
-    for (j in 1:nrow(link_df)) {
-      gene1 <- link_df$Gene1[j]
-      gene2 <- link_df$Gene2[j]
-      w <- link_df$weight[j]
+    # Initialize an empty matrix with zeroes
+    adj_matrix <- matrix(0, nrow = p, ncol = p)
+    rownames(adj_matrix) <- colnames(adj_matrix) <- unique_genes
+    
+    # Fill the matrix with weights
+    for (i in 1:nrow(data)) {
+      gene1 <- data$Gene1[i]
+      gene2 <- data$Gene2[i]
+      weight <- data$weight[i]
       
-      adj_matrix[gene1, gene2] <- w
-      adj_matrix[gene2, gene1] <- w  # Ensure symmetry
+      # Find the row and column indices for each gene
+      row_index <- which(rownames(adj_matrix) == gene1)
+      col_index <- which(colnames(adj_matrix) == gene2)
+      
+      # Assign the weight to both [gene1, gene2] and [gene2, gene1] to ensure symmetry
+      adj_matrix[row_index, col_index] <- weight
+      adj_matrix[col_index, row_index] <- weight
     }
     
-    adj_matrix_weight_list[[i]] <- adj_matrix
+    # Add the matrix to the list
+    adj_matrix_list[[k]] <- adj_matrix
   }
   
-  return(adj_matrix_weight_list)
+  return(adj_matrix_list)
 }
-
