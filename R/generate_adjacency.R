@@ -1,37 +1,34 @@
-generate_adjacency <- function(df_list) {
-  # Initialize a list to store the adjacency matrices
-  adj_matrix_list <- list()
+generate_adjacency <- function(df_list, ground.truth) {
+  # Initialize an empty list to store the adjacency matrices
+  adjacency_matrix_list <- list()
   
   # Loop over each data frame in the input list
   for (k in seq_along(df_list)) {
     data <- df_list[[k]]
     
-    # Extract unique genes to determine matrix dimensions
-    unique_genes <- sort(unique(c(data$Gene1, data$Gene2)))
-    p <- length(unique_genes)
+    # Initialize an empty adjacency matrix with the same dimensions as ground.truth
+    adjacency_matrix <- matrix(0, nrow = nrow(ground.truth), ncol = ncol(ground.truth))
+    rownames(adjacency_matrix) <- rownames(ground.truth)
+    colnames(adjacency_matrix) <- colnames(ground.truth)
     
-    # Initialize an empty matrix with zeroes
-    adj_matrix <- matrix(0, nrow = p, ncol = p)
-    rownames(adj_matrix) <- colnames(adj_matrix) <- unique_genes
-    
-    # Fill the matrix with weights
+    # Populate the adjacency matrix based on the first, second, and third columns of the data frame
     for (i in 1:nrow(data)) {
-      gene1 <- data$Gene1[i]
-      gene2 <- data$Gene2[i]
-      weight <- data$weight[i]
+      gene1 <- as.character(data[i, 1])  # First column: Regulatory gene
+      gene2 <- as.character(data[i, 2])  # Second column: Target gene
+      weight <- data[i, 3]               # Third column: Weight
       
-      # Find the row and column indices for each gene
-      row_index <- which(rownames(adj_matrix) == gene1)
-      col_index <- which(colnames(adj_matrix) == gene2)
-      
-      # Assign the weight to both [gene1, gene2] and [gene2, gene1] to ensure symmetry
-      adj_matrix[row_index, col_index] <- weight
-      adj_matrix[col_index, row_index] <- weight
+      # Place the weight in the adjacency matrix in the correct position
+      if (gene1 %in% rownames(adjacency_matrix) && gene2 %in% colnames(adjacency_matrix)) {
+        adjacency_matrix[gene1, gene2] <- weight
+      }
     }
     
-    # Add the matrix to the list
-    adj_matrix_list[[k]] <- adj_matrix
+    # Ensure the diagonal is set to 0, matching ground.truth
+    diag(adjacency_matrix) <- 0
+    
+    # Add the adjacency matrix to the list
+    adjacency_matrix_list[[k]] <- adjacency_matrix
   }
   
-  return(adj_matrix_list)
+  return(adjacency_matrix_list)
 }

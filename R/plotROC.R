@@ -1,8 +1,7 @@
-# Function to calculate and plot ROC curves for multiple weighted adjacency matrices using ggplot
 plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
   
-  # Convert the ground truth matrix to a vector
-  truth_vec <- as.vector(ground_truth)
+  # Convert the upper triangle of the ground truth matrix to a vector (excluding the diagonal)
+  truth_vec <- as.vector(ground_truth[upper.tri(ground_truth)])
   
   # Initialize a data frame to store ROC data for ggplot
   roc_data <- data.frame()
@@ -14,8 +13,8 @@ plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
     weight_matrix <- as.data.frame(weighted_matrices_list[[i]])
     weight_matrix <- weight_matrix[rownames(ground_truth), colnames(ground_truth)]
     
-    # Convert the matrix to a vector
-    pred_vec <- as.vector(as.matrix(weight_matrix))
+    # Convert the upper triangle of the matrix to a vector (excluding the diagonal)
+    pred_vec <- as.vector(as.matrix(weight_matrix)[upper.tri(weight_matrix)])
     
     # Calculate the ROC curve
     roc_obj <- roc(truth_vec, pred_vec, plot=FALSE)

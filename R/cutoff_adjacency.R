@@ -1,4 +1,4 @@
-cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GRNBoost2", weight_function = "mean") {
+cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GRNBoost2", weight_function = "mean") {
   
   # Function to shuffle rows of a matrix
   shuffle_rows <- function(matrix, seed_vector) {
@@ -50,11 +50,13 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
         network_results <- network_results[[1]]
       }
       
-      # Make the result symmetric using the simmetric function
-      symmetric_network <- simmetric(network_results, weight_function = weight_function)[[1]]
+      # Make the result symmetric using the symmetrize function
+      genie3_late_wadj <- generate_adjacency(network_results, ground.truth = ground.truth)
+      symmetric_network <- symmetrize(network_results, weight_function = weight_function)[[1]]
       
       # Get weights from the symmetric network and order them
-      ordered_weights <- sort(symmetric_network$weight, decreasing = TRUE)
+      upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
+      ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
       
       # Calculate the 95th percentile of the ordered weights
       percentile_95 <- quantile(ordered_weights, 0.95)

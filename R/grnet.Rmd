@@ -50,7 +50,7 @@ numpy <- import("numpy")
 
 ```{r myfunc}
 source("generate_adjacency.R")
-source("simmetric.R")
+source("symmetrize.R")
 source("pscores.R")
 source("plotg.R")
 source("compare_consensus.R")
@@ -84,7 +84,7 @@ digraph biological_workflow {
   # Process 
   earlyj [label = 'earlyj.R', shape=diamond, color=lightblue, fontcolor=black]
   networkinference [label = 'infer_networks.R\nGENIE3\nGRNBoost2\nJRF', shape = rectangle, color = goldenrod, fontcolor=black]
-  simmetric [label = 'simmetric.R', shape = rectangle, color = goldenrod, fontcolor=black]
+  symmetrize [label = 'symmetrize.R', shape = rectangle, color = goldenrod, fontcolor=black]
   plotROC [label = 'plotROC.R', shape=diamond, color=lightblue, fontcolor=black]
   generateadjacency [label='generate_adjacency.R\nWeighted Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
   cutoffadjacency [label='cutoff_adjacency.R\nBinary Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
@@ -102,9 +102,9 @@ digraph biological_workflow {
   earlyj -> networkinference
   LateIntegration -> networkinference
   Jointanalysis -> networkinference
-  networkinference -> simmetric
-  simmetric -> plotROC
-  simmetric -> generateadjacency
+  networkinference -> symmetrize
+  symmetrize -> plotROC
+  symmetrize -> generateadjacency
   generateadjacency -> cutoffadjacency
   cutoffadjacency -> pscores
   cutoffadjacency -> voting
@@ -123,7 +123,7 @@ grViz_output
 
 ```{r readGT, fig.width=5, fig.height=5}
 adjm <- read.table("./../data/adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
-
+diag(adjm) <- 0
 
 adjm %>%
     datatable(extensions = 'Buttons',
@@ -195,7 +195,7 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 
 ```{r GENIE3 late}
 set.seed(1234)
-genie3_late <- infer_networks(count_matrices, method="GENIE3", ground.truth = adjm)
+genie3_late <- infer_networks(count_matrices, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
 
 genie3_late[[1]] %>%
@@ -208,30 +208,12 @@ genie3_late[[1]] %>%
               caption = "GENIE3 output")
 ```
 
-#### Simmetric Output and ROC
+#### symmetrize Output and ROC
 
-```{r GENIE3 simmetricROC late}
-sgenie3_late <- simmetric(genie3_late, weight_function = "mean")
-sgenie3_late_wadj <- generate_adjacency(sgenie3_late)
+```{r GENIE3 symmetrizeROC late}
+genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
+sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
-
-sgenie3_late[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 simmetric output")
-```
-
-#### Generate Adjacency and Apply Cutoff
-
-```{r GENIE3 cutoff late}
-sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                 weighted_adjm_list = sgenie3_late_wadj, 
-                 n = 2,
-                 method = "GENIE3")
 
 sgenie3_late_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -240,7 +222,17 @@ sgenie3_late_wadj[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GENIE3 weight adjacency")
+              caption = "GENIE3 symmetrize output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r GENIE3 cutoff late}
+sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                 weighted_adjm_list = sgenie3_late_wadj, 
+                 ground.truth = adjm,
+                 n = 2,
+                 method = "GENIE3")
 
 sgenie3_late_adj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -310,30 +302,12 @@ grnb_late[[1]] %>%
               caption = "GRNBoost2 output")
 ```
 
-#### Simmetric Output and ROC
+#### symmetrize Output and ROC
 
-```{r GRNBoost2 simmetricROC late}
-sgrnb_late <- simmetric(grnb_late, weight_function = "mean")
+```{r GRNBoost2 symmetrizeROC late}
+sgrnb_late <- symmetrize(grnb_late, weight_function = "mean")
 sgrnb_late_wadj <- generate_adjacency(sgrnb_late)
 plotROC(sgrnb_late_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Late Integration")
-
-sgrnb_late[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 simmetric output")
-```
-
-#### Generate Adjacency and Apply Cutoff
-
-```{r GRNBoost2 cutoff late}
-sgrnb_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                 weighted_adjm_list = sgrnb_late_wadj, 
-                 n = 2,
-                 method = "GRNBoost2")
 
 sgrnb_late_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -342,7 +316,17 @@ sgrnb_late_wadj[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GRNBoost2 weight adjacency")
+              caption = "GRNBoost2 symmetrize output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r GRNBoost2 cutoff late}
+sgrnb_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                 weighted_adjm_list = sgrnb_late_wadj, 
+                 ground.truth = adjm,
+                 n = 2,
+                 method = "GRNBoost2")
 
 sgrnb_late_adj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -421,10 +405,10 @@ genie3_early[[1]] %>%
 ```
 
 
-#### Simmetric Output and ROC
+#### symmetrize Output and ROC
 
-```{r GENIE3 simmetricROC early}
-sgenie3_early <- simmetric(list(genie3_early[[1]]), weight_function = "mean")
+```{r GENIE3 symmetrizeROC early}
+sgenie3_early <- symmetrize(list(genie3_early[[1]]), weight_function = "mean")
 sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
 plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 
@@ -435,7 +419,7 @@ sgenie3_early[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GENIE3 simmetric output")
+              caption = "GENIE3 symmetrize output")
 ```
 
 #### Generate Adjacency and Apply Cutoff
@@ -508,10 +492,10 @@ grnb_early[[1]] %>%
               caption = "GRNBoost2 output")
 ```
 
-#### Simmetric Output and ROC
+#### symmetrize Output and ROC
 
-```{r GRNBoost2 simmetricROC early}
-sgrnb_early <- simmetric(list(grnb_early[[1]]), weight_function = "mean")
+```{r GRNBoost2 symmetrizeROC early}
+sgrnb_early <- symmetrize(list(grnb_early[[1]]), weight_function = "mean")
 sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
 plotROC(sgrnb_early_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
 
@@ -522,7 +506,7 @@ sgrnb_early[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GRNBoost2 simmetric output")
+              caption = "GRNBoost2 symmetrize output")
 ```
 
 #### Generate Adjacency and Apply Cutoff
@@ -599,10 +583,10 @@ jrf_mat[[1]] %>%
 
 ```
 
-#### Simmetric Output and ROC
+#### symmetrize Output and ROC
 
-```{r jrf simmetricROC late}
-sjrf_mat <- simmetric(jrf_mat, weight_function = "mean")
+```{r jrf symmetrizeROC late}
+sjrf_mat <- symmetrize(jrf_mat, weight_function = "mean")
 sjrf_mat_wadj <- generate_adjacency(sjrf_mat)
 plotROC(sjrf_mat_wadj, adjm, plot_title = "ROC curve - JRF Joint Integration")
 
@@ -613,7 +597,7 @@ sjrf_mat[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "JRF simmetric output")
+              caption = "JRF symmetrize output")
 ```
 
 

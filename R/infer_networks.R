@@ -1,4 +1,4 @@
-infer_networks <- function(count_matrices_list, ground.truth, method = "GENIE3") {
+infer_networks <- function(count_matrices_list, method = "GENIE3") {
   if (!method %in% c("GENIE3", "GRNBoost2", "JRF")) {
     stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', or 'JRF'.")
   }
@@ -13,6 +13,7 @@ infer_networks <- function(count_matrices_list, ground.truth, method = "GENIE3")
     if (method == "GENIE3") {
       # Apply GENIE3 using dynamic nCores
       regulatory_network <- GENIE3(t(count_matrices_list[[j]]), nCores = nCores)
+      regulatory_network <- getLinkList(regulatory_network)
       netout <- regulatory_network
       
     } else if (method == "GRNBoost2") {
@@ -47,11 +48,7 @@ infer_networks <- function(count_matrices_list, ground.truth, method = "GENIE3")
       }
     }
     
-    # Reorder netout to match ground.truth row and column names
-    reordered_netout <- netout[rownames(ground.truth), colnames(ground.truth)]
-    
-    # Add reordered netout to the results list
-    network_results[[j]] <- reordered_netout
+    network_results[[j]] <- netout
   }
   
   return(network_results)
