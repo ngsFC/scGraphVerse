@@ -570,9 +570,10 @@ jrf_mat[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r jrf symmetrizeROC late}
-genes <- rownames(count_matrices[[1]])
-out.perm <- Run_permutation(lapply(count_matrices, t),mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
-final.net <- JRF_network(jrf_mat,out.perm,0.001)
+#genes <- colnames(count_matrices[[1]])
+#tcount_matrices <- lapply(count_matrices, t)
+#out.perm <- Run_permutation(tcount_matrices,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
+#final.net <- JRF_network(jrf_mat[[1]],out.perm,0.001)
 ```
 
 
