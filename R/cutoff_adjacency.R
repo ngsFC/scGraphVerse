@@ -51,9 +51,9 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
       }
       
       # Make the result symmetric using the symmetrize function
-      genie3_late_wadj <- generate_adjacency(network_results, ground.truth = ground.truth)
-      symmetric_network <- symmetrize(network_results, weight_function = weight_function)[[1]]
-      
+      network_results_adjm <- generate_adjacency(network_results, ground.truth)
+      symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
+      symmetric_network <- symmetric_network[[1]]
       # Get weights from the symmetric network and order them
       upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
       ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
@@ -77,3 +77,4 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
   
   return(binary_adjm_list)
 }
+ 

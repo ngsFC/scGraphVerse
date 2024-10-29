@@ -228,6 +228,7 @@ sgenie3_late_wadj[[1]] %>%
 #### Generate Adjacency and Apply Cutoff
 
 ```{r GENIE3 cutoff late}
+source("cutoff_adjacency.R")
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
                  ground.truth = adjm,
@@ -305,8 +306,8 @@ grnb_late[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r GRNBoost2 symmetrizeROC late}
-sgrnb_late <- symmetrize(grnb_late, weight_function = "mean")
-sgrnb_late_wadj <- generate_adjacency(sgrnb_late)
+grnb_late_wadj <- generate_adjacency(grnb_late, ground.truth = adjm)
+sgrnb_late_wadj <- symmetrize(grnb_late_wadj, weight_function = "mean")
 plotROC(sgrnb_late_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Late Integration")
 
 sgrnb_late_wadj[[1]] %>%
@@ -408,11 +409,11 @@ genie3_early[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r GENIE3 symmetrizeROC early}
-sgenie3_early <- symmetrize(list(genie3_early[[1]]), weight_function = "mean")
-sgenie3_early_wadj <- generate_adjacency(sgenie3_early)
+genie3_early_wadj <- generate_adjacency(genie3_early, ground.truth = adjm)
+sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
 plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 
-sgenie3_early[[1]] %>%
+sgenie3_early_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -425,19 +426,11 @@ sgenie3_early[[1]] %>%
 #### Generate Adjacency and Apply Cutoff
 
 ```{r GENIE3 cutoff early}
-sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
+sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgenie3_early_wadj, 
+                 ground.truth = adjm,
                  n = 2,
                  method = "GENIE3")
-
-sgenie3_early_wadj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 weight adjacency")
 
 sgenie3_early_adj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -495,11 +488,11 @@ grnb_early[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r GRNBoost2 symmetrizeROC early}
-sgrnb_early <- symmetrize(list(grnb_early[[1]]), weight_function = "mean")
-sgrnb_early_wadj <- generate_adjacency(sgrnb_early)
+grnb_early_wadj <- generate_adjacency(grnb_early, ground.truth = adjm)
+sgrnb_early_wadj <- symmetrize(grnb_early_wadj, weight_function = "mean")
 plotROC(sgrnb_early_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
 
-sgrnb_early[[1]] %>%
+grnb_early_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -512,19 +505,11 @@ sgrnb_early[[1]] %>%
 #### Generate Adjacency and Apply Cutoff
 
 ```{r GRNBoost2 cutoff early}
-sgrnb_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix[[1]]),
+sgrnb_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgrnb_early_wadj, 
+                 ground.truth = adjm,
                  n = 2,
                  method = "GRNBoost2")
-
-sgrnb_early_wadj[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 weight adjacency")
 
 sgrnb_early_adj[[1]] %>%
     datatable(extensions = 'Buttons',
