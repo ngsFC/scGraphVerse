@@ -554,7 +554,6 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 ```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
-
 jrf_mat <- infer_networks(count_matrices, method="JRF")
 
 jrf_mat[[1]] %>%
@@ -571,18 +570,9 @@ jrf_mat[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r jrf symmetrizeROC late}
-sjrf_mat <- symmetrize(jrf_mat, weight_function = "mean")
-sjrf_mat_wadj <- generate_adjacency(sjrf_mat)
-plotROC(sjrf_mat_wadj, adjm, plot_title = "ROC curve - JRF Joint Integration")
-
-sjrf_mat[[1]] %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "JRF symmetrize output")
+genes <- rownames(count_matrices[[1]])
+out.perm <- Run_permutation(lapply(count_matrices, t),mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
+final.net <- JRF_network(jrf_mat,out.perm,0.001)
 ```
 
 
