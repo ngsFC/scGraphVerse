@@ -267,10 +267,23 @@ plots <- plotg(sgenie3_late_adj)
 ```
 
 ```{r GENIE3 consensus and score late}
-consesusm <- create_consensus(sgenie3_late_adj)
+consesusm <- create_consensus(sgenie3_late_adj, method="vote")
+consesusu <- create_consensus(sgenie3_late_adj, method="union")
+
+par(mfrow = c(2, 1))
 scores <- pscores(adjm, list(consesusm))
+scoresu <- pscores(adjm, list(consesusu))
+par(mfrow = c(1, 1))
 
 scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+scoresu$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -284,6 +297,7 @@ scores$Statistics %>%
 
 ```{r GENIE3 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(consesusm, adjm)
+ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 ### GRNBoost2
@@ -361,8 +375,13 @@ plots <- plotg(sgrnb_late_adj)
 ```
 
 ```{r GRNBoost2 consensus and score late}
-consesusm <- create_consensus(sgrnb_late_adj)
+consesusm <- create_consensus(sgrnb_late_adj, method="vote")
+consesusu <- create_consensus(sgrnb_late_adj, method="union")
+
+par(mfrow = c(2, 1))
 scores <- pscores(adjm, list(consesusm))
+scoresu <- pscores(adjm, list(consesusu))
+par(mfrow = c(1, 1))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -372,13 +391,20 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-
+scoresu$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
 ```
 
 ```{r GRNBoost2 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(consesusm, adjm)
+ajm_compared <- compare_consensus(consesusu, adjm)
 ```
-
 
 
 ## Early Integration
