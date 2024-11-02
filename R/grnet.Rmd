@@ -647,6 +647,17 @@ for (i in seq_along(importance_columns)) {
   # Add the data frame to the output list
   jrf_list[[i]] <- df
 }
+
+saveRDS(jrf_list, "./../analysis/jrf.RDS")
+
+jrf_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF output")
 ```
 
 #### symmetrize Output and ROC
@@ -663,13 +674,12 @@ sjrf_wadj[[1]] %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "GRNBoost2 symmetrize output")
+              caption = "JRF symmetrize output")
 ```
 
 #### Generate Adjacency and Apply Cutoff
 
 ```{r JRF cutoff late}
-source("cutoff_adjacency.R")
 sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sjrf_wadj, 
                  ground.truth = adjm,
