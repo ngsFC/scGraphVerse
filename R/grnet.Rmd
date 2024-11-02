@@ -660,6 +660,7 @@ jrf_list[[1]] %>%
               caption = "JRF output")
 ```
 
+
 #### symmetrize Output and ROC
 
 ```{r JRF symmetrizeROC late}
@@ -714,7 +715,7 @@ scores$Statistics %>%
 
 
 ```{r JRF plotg late}
-plots <- plotg(sjrfadj)
+plots <- plotg(sjrf_adj)
 ```
 
 ```{r JRF consensus and score late}
