@@ -1,4 +1,4 @@
-cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GRNBoost2", weight_function = "mean") {
+cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GENIE3", weight_function = "mean") {
   
   # Function to shuffle rows of a matrix
   shuffle_rows <- function(matrix, seed_vector) {
@@ -31,36 +31,55 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
     # Initialize a list for storing percentiles for this specific matrix
     all_percentile_values <- list()
     
-    # Create shuffled matrices
+    # Create shuffled matrices for the current original matrix
     shuffled_matrices_list <- create_shuffled_matrices(original_matrix, n)
     
-    all_grn_links <- list()
-    
-    # Compute 95th percentile for each shuffled matrix
-    for (i in seq_along(shuffled_matrices_list)) {
-      shuffled_matrix <- shuffled_matrices_list[[i]]
+    # If method is "JRF", infer network across all shuffled matrices at once
+    if (method == "JRF") {
+      jrf_mat <- infer_networks(shuffled_matrices_list, method = method)
+      network_results <- list()
       
-      # Infer network using the specified method
-      network_results <- infer_networks(list(shuffled_matrix), method = method)
+      importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
       
-      # Handle the output for "JRF"
-      if (method == "JRF") {
-        # JRF produces a list of n networks, each with 2+ columns
-        # We need to process the first network result, which will have 2 columns + the third column for weights
-        network_results <- network_results[[1]]
+      for (i in seq_along(importance_columns)) {
+        df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
+        names(df)[3] <- importance_columns[i]
+        network_results[[i]] <- df
       }
       
-      # Make the result symmetric using the symmetrize function
-      network_results_adjm <- generate_adjacency(network_results, ground.truth)
-      symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
-      symmetric_network <- symmetric_network[[1]]
-      # Get weights from the symmetric network and order them
-      upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
-      ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
+      # Process the JRF output by iterating over each inferred network in the results
+      for (i in seq_along(network_results)) {
+        # Make each result symmetric and calculate the 95th percentile
+        network_results_adjm <- generate_adjacency(network_results[[i]], ground.truth)
+        symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
+        symmetric_network <- symmetric_network[[1]]
+        
+        # Extract weights and compute the 95th percentile for the symmetric network
+        upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
+        ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
+        percentile_95 <- quantile(ordered_weights, 0.95)
+        
+        all_percentile_values[[i]] <- percentile_95
+      }
       
-      # Calculate the 95th percentile of the ordered weights
-      percentile_95 <- quantile(ordered_weights, 0.95)
-      all_percentile_values[[i]] <- percentile_95
+    } else {
+      # For other methods, run network inference within the loop for each shuffled matrix
+      for (i in seq_along(shuffled_matrices_list)) {
+        shuffled_matrix <- shuffled_matrices_list[[i]]
+        network_results <- infer_networks(list(shuffled_matrix), method = method)
+        
+        # Make the result symmetric using the symmetrize function
+        network_results_adjm <- generate_adjacency(network_results, ground.truth)
+        symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
+        symmetric_network <- symmetric_network[[1]]
+        
+        # Extract weights and compute the 95th percentile for the symmetric network
+        upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
+        ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
+        percentile_95 <- quantile(ordered_weights, 0.95)
+        
+        all_percentile_values[[i]] <- percentile_95
+      }
     }
     
     # Compute mean of 95th percentiles (rounded to 3 decimal places)
@@ -77,4 +96,3 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
   
   return(binary_adjm_list)
 }
- 

@@ -1,13 +1,25 @@
 symmetrize <- function(matrix_list, weight_function = "mean") {
+  # Function to symmetrize a single matrix
   process_matrix <- function(mat, weight_function) {
-    # Ensure the matrix is symmetric by averaging corresponding pairs
     p <- nrow(mat)
-    sym_mat <- mat  # Initialize with the original matrix
+    sym_mat <- mat  # Start with the original matrix
     
-    for (i in 1:(p-1)) {
-      for (j in (i+1):p) {
-        # Calculate the average of mat[i, j] and mat[j, i] using the weight_function
-        symmetric_value <- match.fun(weight_function)(c(mat[i, j], mat[j, i]))
+    for (i in 1:(p - 1)) {
+      for (j in (i + 1):p) {
+        # Get values at (i, j) and (j, i)
+        val_ij <- mat[i, j]
+        val_ji <- mat[j, i]
+        
+        # Check for zeros and apply logic
+        if (val_ij == 0 || val_ji == 0) {
+          # Use the non-zero or the higher value if one is zero
+          symmetric_value <- max(val_ij, val_ji)
+        } else {
+          # Use the specified weight function if both are non-zero
+          symmetric_value <- match.fun(weight_function)(c(val_ij, val_ji))
+        }
+        
+        # Set both (i, j) and (j, i) to the symmetric value
         sym_mat[i, j] <- symmetric_value
         sym_mat[j, i] <- symmetric_value
       }
@@ -16,7 +28,7 @@ symmetrize <- function(matrix_list, weight_function = "mean") {
     return(sym_mat)
   }
   
-  # Apply the process_matrix function to each matrix in the list
+  # Apply symmetrization to each matrix in the list
   symmetrized_matrices <- lapply(matrix_list, process_matrix, weight_function = weight_function)
   
   return(symmetrized_matrices)
