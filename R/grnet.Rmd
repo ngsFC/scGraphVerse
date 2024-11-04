@@ -408,6 +408,56 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 
+
+### ZILGM Park
+
+```{r}
+tictoc::tic()
+est_graphs <- list()
+
+for (i in seq_along(count_matrices)) {
+  lambda_max <- find_lammax(as.matrix(count_matrices[[i]]))
+  lambda_min <- 1e-4 * lambda_max
+  lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+  
+  nb2_fit <- zilgm(X = as.matrix(count_matrices[[i]]), lambda = lambs, family = "NBII",
+                   update_type = "IRLS", do_boot = TRUE, boot_num = 30, sym = "OR")
+  
+  est_graphs[[i]] <- nb2_fit$network[[nb2_fit$opt_index]]
+}
+tictoc::toc()
+```
+
+#### Comparison with the Ground Truth
+
+```{r}
+scores <- pscores(adjm, list(as.matrix(est_graph)))
+scoresu <- pscores(adjm, list(as.matrix(est_graph)))
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+scoresu$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+```{r ZILGM compare early, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
+```
+
+
+
 ## Early Integration
 
 ```{r earlym}
@@ -571,6 +621,49 @@ plots <- plotg(sgrnb_early_adj)
 
 ```{r GRNBoost2 compare early, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
+```
+
+
+### ZILGM Park
+
+```{r}
+tictoc::tic()
+lambda_max = find_lammax(as.matrix(early_matrix[[1]]))
+lambda_min = 1e-4 * lambda_max
+lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+nb2_fit = zilgm(X = as.matrix(early_matrix[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
+                  boot_num = 30, sym = "OR")
+
+est_graph = nb2_fit$network[[nb2_fit$opt_index]]
+tictoc::toc()
+```
+
+#### Comparison with the Ground Truth
+
+```{r}
+scores <- pscores(adjm, list(as.matrix(est_graph)))
+scoresu <- pscores(adjm, list(as.matrix(est_graph)))
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+scoresu$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+```{r ZILGM compare early, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
 ```
 
 
