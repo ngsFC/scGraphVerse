@@ -411,7 +411,7 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 
 ### ZILGM Park
 
-```{r}
+```{r ZILGM late}
 tictoc::tic()
 est_graphs <- list()
 
@@ -626,7 +626,7 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 
 ### ZILGM Park
 
-```{r}
+```{r ZILGM early}
 tictoc::tic()
 lambda_max = find_lammax(as.matrix(early_matrix[[1]]))
 lambda_min = 1e-4 * lambda_max
