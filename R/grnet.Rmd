@@ -41,12 +41,14 @@ library(DiagrammeRsvg)
 library(rsvg)
 library(RColorBrewer)
 library(rbenchmark)
+library(ZILGM)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
 pandas <- import("pandas")
 numpy <- import("numpy")
 
+execution_times <- list()
 ```
 
 ```{r myfunc}
@@ -196,8 +198,10 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 
 ```{r GENIE3 late}
 set.seed(1234)
+tictoc::tic("GENIE3 late")
 genie3_late <- infer_networks(count_matrices, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
+execution_times[['GENIE3 late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 genie3_late[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -271,10 +275,8 @@ plots <- plotg(sgenie3_late_adj)
 consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 
-par(mfrow = c(2, 1))
 scores <- pscores(adjm, list(consesusm))
 scoresu <- pscores(adjm, list(consesusu))
-par(mfrow = c(1, 1))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -305,8 +307,10 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 
 ```{r GRNBoost2 late}
 set.seed(1234)
+tictoc::tic("GRNBoost2 late")
 grnb_late <- infer_networks(count_matrices, method="GRNBoost2")
 saveRDS(grnb_late, "./../analysis/grnb_late.RDS")
+execution_times[['GRNBoost2 late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 grnb_late[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -379,10 +383,8 @@ plots <- plotg(sgrnb_late_adj)
 consesusm <- create_consensus(sgrnb_late_adj, method="vote")
 consesusu <- create_consensus(sgrnb_late_adj, method="union")
 
-par(mfrow = c(2, 1))
 scores <- pscores(adjm, list(consesusm))
 scoresu <- pscores(adjm, list(consesusu))
-par(mfrow = c(1, 1))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -412,7 +414,8 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 ### ZILGM Park
 
 ```{r ZILGM late}
-tictoc::tic()
+set.seed(123)
+tictoc::tic("ZILGM late")
 est_graphs <- list()
 
 for (i in seq_along(count_matrices)) {
@@ -421,18 +424,30 @@ for (i in seq_along(count_matrices)) {
   lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
   
   nb2_fit <- zilgm(X = as.matrix(count_matrices[[i]]), lambda = lambs, family = "NBII",
-                   update_type = "IRLS", do_boot = TRUE, boot_num = 30, sym = "OR")
+                   update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = 15)
   
   est_graphs[[i]] <- nb2_fit$network[[nb2_fit$opt_index]]
 }
-tictoc::toc()
+execution_times[['ZILGM late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 ```
 
 #### Comparison with the Ground Truth
 
-```{r}
-scores <- pscores(adjm, list(as.matrix(est_graph)))
-scoresu <- pscores(adjm, list(as.matrix(est_graph)))
+```{r ZILGM scores late}
+est_graphs <- list(as.matrix(est_graphs[[1]]), as.matrix(est_graphs[[2]]), as.matrix(est_graphs[[3]]))
+
+rownames(est_graphs[[1]]) <- rownames(adjm)
+colnames(est_graphs[[1]]) <- colnames(adjm)
+rownames(est_graphs[[3]]) <- rownames(adjm)
+colnames(est_graphs[[3]]) <- colnames(adjm)
+rownames(est_graphs[[2]]) <- rownames(adjm)
+colnames(est_graphs[[2]]) <- colnames(adjm)
+
+consesusm <- create_consensus(est_graphs, method="vote")
+consesusu <- create_consensus(est_graphs, method="union")
+
+scores <- pscores(adjm, list(consesusm))
+scoresu <- pscores(adjm, list(consesusu))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -452,10 +467,10 @@ scoresu$Statistics %>%
               caption = "scores")
 ```
 
-```{r ZILGM compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
+```{r ZILGM compare late, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(consesusm, adjm)
+ajm_compared <- compare_consensus(consesusu, adjm)
 ```
-
 
 
 ## Early Integration
@@ -468,7 +483,9 @@ early_matrix <- list(earlyj(count_matrices))
 
 ```{r run GENIE3 early}
 set.seed(1234)
+tictoc::tic("GENIE3 early")
 genie3_early <- infer_networks(early_matrix, method="GENIE3")
+execution_times[['GENIE3 early']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
 
@@ -549,7 +566,10 @@ ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 
 ```{r GRNBoost2 early}
 set.seed(1234)
+tictoc::tic("GRNBoost2 early")
 grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
+execution_times[['GRNBoost2 early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+
 saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
 
 grnb_early[[1]] %>%
@@ -627,20 +647,22 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 ### ZILGM Park
 
 ```{r ZILGM early}
-tictoc::tic()
+set.seed(123)
+
+tictoc::tic("ZILGM early")
 lambda_max = find_lammax(as.matrix(early_matrix[[1]]))
 lambda_min = 1e-4 * lambda_max
 lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
 nb2_fit = zilgm(X = as.matrix(early_matrix[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
-                  boot_num = 30, sym = "OR")
+                  boot_num = 10, sym = "OR", nCores = 15)
 
 est_graph = nb2_fit$network[[nb2_fit$opt_index]]
-tictoc::toc()
+execution_times[['ZILGM early']] <- tictoc::toc(log = TRUE)$toc[[1]]
 ```
 
 #### Comparison with the Ground Truth
 
-```{r}
+```{r ZIGLM score early}
 scores <- pscores(adjm, list(as.matrix(est_graph)))
 scoresu <- pscores(adjm, list(as.matrix(est_graph)))
 
@@ -710,7 +732,9 @@ ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
 ```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
+tictoc::tic("JRF")
 jrf_mat <- infer_networks(count_matrices, method="JRF")
+execution_times[['JRF']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 jrf_mat[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -839,6 +863,19 @@ scoresu$Statistics %>%
 ```{r JRF compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
+```
+
+
+```{r plot_execution_times, echo=FALSE}
+time_data <- data.frame(
+  Method = names(execution_times),
+  Time_in_Hours = unlist(execution_times) / 3600
+)
+
+ggplot(time_data, aes(x = Method, y = Time_in_Hours)) +
+  geom_bar(stat = 'identity') +
+  labs(title = 'Execution Time for Each Method', y = 'Time (Hours)', x = 'Method') +
+  theme_minimal()
 ```
 
 ```{r}
