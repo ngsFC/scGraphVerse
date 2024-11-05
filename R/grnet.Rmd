@@ -86,13 +86,13 @@ digraph biological_workflow {
 
   # Process 
   earlyj [label = 'earlyj.R', shape=diamond, color=lightblue, fontcolor=black]
-  networkinference [label = 'infer_networks.R\nGENIE3\nGRNBoost2\nJRF', shape = rectangle, color = goldenrod, fontcolor=black]
+  networkinference [label = 'infer_networks.R\nGENIE3\nGRNBoost2\nZILGM\nJRF', shape = rectangle, color = goldenrod, fontcolor=black]
   symmetrize [label = 'symmetrize.R', shape = rectangle, color = goldenrod, fontcolor=black]
   plotROC [label = 'plotROC.R', shape=diamond, color=lightblue, fontcolor=black]
   generateadjacency [label='generate_adjacency.R\nWeighted Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
   cutoffadjacency [label='cutoff_adjacency.R\nBinary Adjacency', shape=rectangle, color=goldenrod, fontcolor=black]
   pscores [label='pscores.R\nTPR\nFPR\nF1\nAccuracy\nPrecision', shape=diamond, color=lightblue, fontcolor=black]
-  voting [label='Edges voting', shape=diamond, color=lightblue, fontcolor=black]
+  voting [label='Voting\nUnion\nIntersection', shape=diamond, color=lightblue, fontcolor=black]
   plotgcompare  [label='plotg.R\ncompare_consesus.R\nPlot Graphs', shape=rectangle, color=goldenrod, fontcolor=black]
 
   # Define the workflow structure
@@ -163,7 +163,7 @@ ncell <- 500
 nodes <- nrow(adjm)
 
 set.seed(1130)
-mu_values <- c(3, 5, 7)
+mu_values <- c(3, 6, 9)
 
 count_matrices <- lapply(1:3, function(i) {
   set.seed(1130 + i)
@@ -233,7 +233,6 @@ sgenie3_late_wadj[[1]] %>%
 #### Generate Adjacency and Apply Cutoff
 
 ```{r GENIE3 cutoff late}
-source("cutoff_adjacency.R")
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
                  ground.truth = adjm,
@@ -433,7 +432,7 @@ execution_times[['ZILGM late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 #### Comparison with the Ground Truth
 
-```{r ZILGM scores late}
+```{r ZILGM adjust matrices}
 est_graphs <- list(as.matrix(est_graphs[[1]]), as.matrix(est_graphs[[2]]), as.matrix(est_graphs[[3]]))
 
 rownames(est_graphs[[1]]) <- rownames(adjm)
@@ -442,7 +441,38 @@ rownames(est_graphs[[3]]) <- rownames(adjm)
 colnames(est_graphs[[3]]) <- colnames(adjm)
 rownames(est_graphs[[2]]) <- rownames(adjm)
 colnames(est_graphs[[2]]) <- colnames(adjm)
+```
 
+```{r ZILGM scores late}
+scores <- pscores(adjm, list(est_graphs))
+scoresu <- pscores(adjm, list(est_graphs))
+
+scores$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+scoresu$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+
+```
+
+
+```{r}
+plots <- plotg(list(est_graphs))
+```
+
+
+```{r ZILGM scores consensus}
 consesusm <- create_consensus(est_graphs, method="vote")
 consesusu <- create_consensus(est_graphs, method="union")
 
@@ -664,7 +694,6 @@ execution_times[['ZILGM early']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 ```{r ZIGLM score early}
 scores <- pscores(adjm, list(as.matrix(est_graph)))
-scoresu <- pscores(adjm, list(as.matrix(est_graph)))
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -674,14 +703,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
+
 ```
 
 ```{r ZILGM compare early, fig.width=8,fig.width=10}
@@ -866,17 +888,29 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 
+# Time analysis
+
+
 ```{r plot_execution_times, echo=FALSE}
 time_data <- data.frame(
   Method = names(execution_times),
   Time_in_Hours = unlist(execution_times) / 3600
 )
 
+time_data$Time_in_Minutes <- time_data$Time_in_Hours * 60
+
+time_data <- time_data[order(time_data$Time_in_Hours), ]
+time_data$Method <- factor(time_data$Method, levels = time_data$Method)
+
 ggplot(time_data, aes(x = Method, y = Time_in_Hours)) +
   geom_bar(stat = 'identity') +
+  geom_text(aes(label = sprintf("%.1f min", Time_in_Minutes)), 
+            vjust = -0.5) +
   labs(title = 'Execution Time for Each Method', y = 'Time (Hours)', x = 'Method') +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
 
 ```{r}
 sessionInfo()
