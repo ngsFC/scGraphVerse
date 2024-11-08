@@ -443,9 +443,10 @@ rownames(est_graphs[[2]]) <- rownames(adjm)
 colnames(est_graphs[[2]]) <- colnames(adjm)
 ```
 
+
 ```{r ZILGM scores late}
-scores <- pscores(adjm, list(est_graphs))
-scoresu <- pscores(adjm, list(est_graphs))
+scores <- pscores(adjm, est_graphs)
+scoresu <- pscores(adjm, est_graphs)
 
 scores$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -468,7 +469,7 @@ scoresu$Statistics %>%
 
 
 ```{r}
-plots <- plotg(list(est_graphs))
+plots <- plotg(est_graphs)
 ```
 
 
@@ -502,7 +503,6 @@ ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
-
 ## Early Integration
 
 ```{r earlym}
@@ -528,7 +528,6 @@ genie3_early[[1]] %>%
                 pageLength = 10), 
               caption = "GENIE3 output")
 ```
-
 
 #### symmetrize Output and ROC
 
@@ -590,7 +589,6 @@ plots <- plotg(sgenie3_early_adj)
 ```{r GENIE3 compare early, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 ```
-
 
 ### GRNBoost2
 
@@ -673,7 +671,6 @@ plots <- plotg(sgrnb_early_adj)
 ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 ```
 
-
 ### ZILGM Park
 
 ```{r ZILGM early}
@@ -683,6 +680,7 @@ tictoc::tic("ZILGM early")
 lambda_max = find_lammax(as.matrix(early_matrix[[1]]))
 lambda_min = 1e-4 * lambda_max
 lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+
 nb2_fit = zilgm(X = as.matrix(early_matrix[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
                   boot_num = 10, sym = "OR", nCores = 15)
 
@@ -721,32 +719,73 @@ ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 #jrf_mat <- infer_networks(count_matrices, method="JRF")
 
-#jrf_matrices <- lapply(count_matrices, t)
-#jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
-#  (x - mean(x)) / sd(x)
-#  })
+jrf_matrices <- lapply(count_matrices, t)
+jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
+  (x - mean(x)) / sd(x)
+  })
 
-#genes <- rownames(jrf_matrices_norm[[1]])
-      
-#netout <- JRF(X = jrf_matrices_norm, 
-#              genes.name = genes, 
-#              ntree = 500, 
-#              mtry = round(sqrt(length(genes) - 1)))
+genes <- rownames(jrf_matrices_norm[[1]])
 
-#netout %>%
-#    datatable(extensions = 'Buttons',
-#              options = list(
-#                dom = 'Bfrtip',
-#                buttons = c('csv', 'excel'),
-#                scrollX = TRUE,
-#                pageLength = 10), 
-#              caption = "JRF output")
+set.seed(1234)
+tictoc::tic("JRF_out")
+netout <- JRF(X = jrf_matrices_norm, 
+              genes.name = genes, 
+              ntree = 500, 
+              mtry = round(sqrt(length(genes) - 1)))
+execution_times[['JRF_out']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
-#out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,3)
+netout %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF output")
+
+out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,3)
 #out <- JRF_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500,genes,2)
 
-#final.net <- JRF_network(netout,out.perm,0.001)
-#final.net
+final.net <- JRF_network(netout,out.perm,0.001)
+final.net
+```
+
+
+
+#### Finalnet 
+
+```{r}
+myJRF_network <- function(out.jrf, out.perm, TH) {
+  
+  nclasses <- dim(out.perm)[3]
+  M <- dim(out.perm)[2]
+  out <- vector("list", nclasses)  # Initialize the list to store results for each class
+
+  for (net in 1:nclasses) { 
+    j.np <- sort(out.jrf[, 2 + net], decreasing = TRUE)
+    FDR <- matrix(0, dim(out.perm)[1], 1)
+    
+    th <- NULL  # Initialize threshold variable
+    for (s in 1:length(j.np)) { 
+      FP <- sum(sum(out.perm[, , net] >= j.np[s])) / M
+      FDR[s] <- FP / s
+      
+      if (FDR[s] > TH) {
+        th <- j.np[s]
+        break
+      }
+    }
+    
+    # Store the results for the current class in the `out` list
+    out[[net]] <- out.jrf[out.jrf[, 2 + net] > th, seq(1, 2)]
+  }
+  
+  return(out)
+}
+
+mynet <- myJRF_network(netout,out.perm,0.001)
+mynet
+
 ```
 
 
@@ -754,6 +793,7 @@ ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
 ```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
+set.seed(1234)
 tictoc::tic("JRF")
 jrf_mat <- infer_networks(count_matrices, method="JRF")
 execution_times[['JRF']] <- tictoc::toc(log = TRUE)$toc[[1]]
@@ -798,7 +838,6 @@ jrf_list[[1]] %>%
                 pageLength = 10), 
               caption = "JRF output")
 ```
-
 
 #### symmetrize Output and ROC
 
@@ -889,7 +928,6 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 
 
 # Time analysis
-
 
 ```{r plot_execution_times, echo=FALSE}
 time_data <- data.frame(

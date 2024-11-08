@@ -8,7 +8,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
   network_results <- list()
   
   if (method == "JRF") {
-    # Apply JRF to the entire list of matrices at once
+    # normalize matrices for JRF
     jrf_matrices <- lapply(count_matrices_list, t)
     jrf_matrices <- lapply(jrf_matrices, function(x) {
       (x - mean(x)) / sd(x)
@@ -33,7 +33,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
         netout <- regulatory_network
         
       } else if (method == "GRNBoost2") {
-        # Apply GRNBoost2
         count_matrix_df <- as.data.frame(count_matrices_list[[j]])
         genes <- colnames(count_matrix_df)
         
