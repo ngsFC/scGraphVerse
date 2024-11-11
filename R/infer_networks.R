@@ -1,6 +1,6 @@
 infer_networks <- function(count_matrices_list, method = "GENIE3") {
-  if (!method %in% c("GENIE3", "GRNBoost2", "JRF")) {
-    stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', or 'JRF'.")
+  if (!method %in% c("GENIE3", "GRNBoost2", "ZILGM","JRF")) {
+    stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', 'ZILGM' or 'JRF'.")
   }
   
   # Detect the number of available cores
@@ -24,7 +24,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
     network_results[[1]] <- netout
     
   } else {
-    # Loop over each matrix in the list for GENIE3 and GRNBoost2
+    # Loop over each matrix in the list for GENIE3, GRNBoost2, and ZILGM
     for (j in seq_along(count_matrices_list)) {
       if (method == "GENIE3") {
         # Apply GENIE3 using dynamic nCores
@@ -41,11 +41,46 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
                                       index = rownames(count_matrix_df))
         
         netout <- arboreto$grnboost2(df_pandas, gene_names = genes)
+        
+      } else if (method == "ZILGM") {
+        mlamb <- list()
+        llamb <- list()
+        lambda_max <- find_lammax(as.matrix(count_matrices_list[[j]]))
+        lambda_min <- 1e-4 * lambda_max
+        lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+        
+        nb2_fit <- zilgm(X = as.matrix(count_matrices_list[[j]]), lambda = lambs, family = "NBII",
+                         update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
+        
+        netout <- nb2_fit$network[[nb2_fit$opt_index]]
+        network_results[[j]] <- netout
+        llamb[[j]] <- nb2_fit$lambda
+        mlamb[[j]] <- nb2_fit$network
+        }
       }
-      
-      network_results[[j]] <- netout
-    }
   }
   
-  return(network_results)
-}
+  # Return network_results and mlamb separately if method is ZILGM
+  if (method == "ZILGM") {
+    network_results <- lapply(network_results, as.matrix)
+    if (!is.null(adjm)) {
+      for (k in seq_along(network_results)) {
+        rownames(network_results[[k]]) <- rownames(adjm)
+        colnames(network_results[[k]]) <- colnames(adjm)
+      }
+    }
+    for (z in seq_along(mlamb)) {
+      lamb <- mlamb[[z]]
+      lamb <- lapply(lamb, as.matrix)
+      names(lamb) <- llamb[[z]]
+    for (k in seq_along(lamb)) {
+        rownames(lamb[[k]]) <- rownames(adjm)
+        colnames(lamb[[k]]) <- colnames(adjm)
+        lambda_results[[z]] <- lamb
+        }
+  }
+    return(list(network_results = network_results, lambda_results = lambda_results))
+  } else {
+    return(network_results)
+  }
+ }

@@ -28,6 +28,7 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
     num_nodes <- igraph::gorder(subgraph)  # Number of nodes
     num_edges <- igraph::gsize(subgraph)  # Number of edges
     
+    set.seed(1234)
     # Plot the subgraph for the original matrix
     plot(subgraph, 
          main = paste(title, "\nNodes:", num_nodes, "Edges:", num_edges),
@@ -45,6 +46,7 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
     # Create edge colors based on whether they are in the consensus or not
     edge_colors <- ifelse(E(graph_original) %in% E(graph_consensus), "red", "blue")
     
+    set.seed(1234)
     # Plot the original graph with edges colored based on consensus
     plot(graph_original, 
          main = title,

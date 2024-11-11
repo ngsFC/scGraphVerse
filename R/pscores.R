@@ -76,8 +76,6 @@ pscores <- function(ground_truth, predicted_list) {
   # Reorder the columns in the desired metric order
   ordered_metrics <- c("TPR", "FPR", "F1", "Precision", "Accuracy")
   
-  # Plot the metrics using ggplot2
-  library(ggplot2)
   long_stats_df <- stats_df_filtered %>%
     tidyr::pivot_longer(cols = all_of(ordered_metrics), names_to = "Metric", values_to = "Value")
   
@@ -90,10 +88,8 @@ pscores <- function(ground_truth, predicted_list) {
     labs(title = "Metrics Comparison Across Matrices", x = "Matrix Index", y = "Value") +
     theme_minimal()
   
-  # Print the plot
   print(plot)
   
-  # Return the stats dataframe
   list(Statistics = stats_df_filtered)
 }
 

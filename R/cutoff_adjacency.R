@@ -34,12 +34,8 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
     # Create shuffled matrices
     shuffled_matrices_list <- create_shuffled_matrices(original_matrix, n)
     
-    # Variable to store inferred network results
     if (method == "JRF") {
-      # Apply JRF directly to the list of shuffled matrices
       jrf_mat <- infer_networks(shuffled_matrices_list, method = "JRF")
-      
-      # Transform JRF output into jrf_list format
       jrf_list <- list()
       importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
       
@@ -93,7 +89,7 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
     
     # Apply cutoff to the corresponding weighted adjacency matrix
     weighted_adjm <- weighted_adjm_list[[mat_index]]
-    binary_adjm <- ifelse(weighted_adjm >= mean_percentile, 1, 0)
+    binary_adjm <- ifelse(weighted_adjm > mean_percentile, 1, 0)
     binary_adjm_list[[mat_index]] <- binary_adjm
     
     # Print cutoff value for each matrix

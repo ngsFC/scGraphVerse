@@ -1,8 +1,8 @@
 symmetrize <- function(matrix_list, weight_function = "mean") {
-  # Function to symmetrize a single matrix
+  
   process_matrix <- function(mat, weight_function) {
     p <- nrow(mat)
-    sym_mat <- mat  # Start with the original matrix
+    sym_mat <- mat  
     
     for (i in 1:(p - 1)) {
       for (j in (i + 1):p) {
@@ -28,7 +28,6 @@ symmetrize <- function(matrix_list, weight_function = "mean") {
     return(sym_mat)
   }
   
-  # Apply symmetrization to each matrix in the list
   symmetrized_matrices <- lapply(matrix_list, process_matrix, weight_function = weight_function)
   
   return(symmetrized_matrices)

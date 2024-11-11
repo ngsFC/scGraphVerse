@@ -1,5 +1,4 @@
 generate_adjacency <- function(df_list, ground.truth) {
-  # Initialize an empty list to store the adjacency matrices
   adjacency_matrix_list <- list()
   
   # Loop over each data frame in the input list
@@ -13,8 +12,8 @@ generate_adjacency <- function(df_list, ground.truth) {
     
     # Populate the adjacency matrix based on the first, second, and third columns of the data frame
     for (i in 1:nrow(data)) {
-      gene1 <- as.character(data[i, 1])  # First column: Regulatory gene
-      gene2 <- as.character(data[i, 2])  # Second column: Target gene
+      gene1 <- as.character(data[i, 1])  # First column: Gene1
+      gene2 <- as.character(data[i, 2])  # Second column: Gene2
       weight <- data[i, 3]               # Third column: Weight
       
       # Place the weight in the adjacency matrix in the correct position

@@ -253,9 +253,9 @@ sgenie3_late_adj[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r GENIE3 metrics late}
-scores <- pscores(adjm, sgenie3_late_adj)
+scores.genie3.late.all <- pscores(adjm, sgenie3_late_adj)
 
-scores$Statistics %>%
+scores.genie3.late.all$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -274,10 +274,10 @@ plots <- plotg(sgenie3_late_adj)
 consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 
-scores <- pscores(adjm, list(consesusm))
-scoresu <- pscores(adjm, list(consesusu))
+scores.genie3.late <- pscores(adjm, list(consesusm))
+scoresu.genie3.late <- pscores(adjm, list(consesusu))
 
-scores$Statistics %>%
+scores.genie3.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -285,7 +285,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
+scores.genie3.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -361,9 +361,9 @@ sgrnb_late_adj[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r GRNBoost2 metrics late}
-scores <- pscores(adjm, sgrnb_late_adj)
+scores.grn.late.all <- pscores(adjm, sgrnb_late_adj)
 
-scores$Statistics %>%
+scores.grn.late.all$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -382,10 +382,10 @@ plots <- plotg(sgrnb_late_adj)
 consesusm <- create_consensus(sgrnb_late_adj, method="vote")
 consesusu <- create_consensus(sgrnb_late_adj, method="union")
 
-scores <- pscores(adjm, list(consesusm))
-scoresu <- pscores(adjm, list(consesusu))
+scores.grn.late <- pscores(adjm, list(consesusm))
+scoresu.grn.late <- pscores(adjm, list(consesusu))
 
-scores$Statistics %>%
+scores.grn.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -393,7 +393,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
+scoresu.grn.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -413,42 +413,24 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 ### ZILGM Park
 
 ```{r ZILGM late}
-set.seed(123)
+source("infer_networks.R")
+set.seed(1234)
 tictoc::tic("ZILGM late")
-est_graphs <- list()
-
-for (i in seq_along(count_matrices)) {
-  lambda_max <- find_lammax(as.matrix(count_matrices[[i]]))
-  lambda_min <- 1e-4 * lambda_max
-  lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-  
-  nb2_fit <- zilgm(X = as.matrix(count_matrices[[i]]), lambda = lambs, family = "NBII",
-                   update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = 15)
-  
-  est_graphs[[i]] <- nb2_fit$network[[nb2_fit$opt_index]]
-}
+zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM")
+saveRDS(zilgm_late, "./../analysis/zilgm_late.RDS")
 execution_times[['ZILGM late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 ```
 
+
 #### Comparison with the Ground Truth
 
-```{r ZILGM adjust matrices}
-est_graphs <- list(as.matrix(est_graphs[[1]]), as.matrix(est_graphs[[2]]), as.matrix(est_graphs[[3]]))
-
-rownames(est_graphs[[1]]) <- rownames(adjm)
-colnames(est_graphs[[1]]) <- colnames(adjm)
-rownames(est_graphs[[3]]) <- rownames(adjm)
-colnames(est_graphs[[3]]) <- colnames(adjm)
-rownames(est_graphs[[2]]) <- rownames(adjm)
-colnames(est_graphs[[2]]) <- colnames(adjm)
-```
 
 
 ```{r ZILGM scores late}
-scores <- pscores(adjm, est_graphs)
-scoresu <- pscores(adjm, est_graphs)
+scores.zilgm.late.all <- pscores(adjm, est_graphs)
+scoresu.zilgm.late.all <- pscores(adjm, est_graphs)
 
-scores$Statistics %>%
+scores.zilgm.late.all$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -456,7 +438,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
+scoresu.zilgm.late.all$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -477,10 +459,10 @@ plots <- plotg(est_graphs)
 consesusm <- create_consensus(est_graphs, method="vote")
 consesusu <- create_consensus(est_graphs, method="union")
 
-scores <- pscores(adjm, list(consesusm))
-scoresu <- pscores(adjm, list(consesusu))
+scores.zilgm.late <- pscores(adjm, list(consesusm))
+scoresu.zilgm.late <- pscores(adjm, list(consesusu))
 
-scores$Statistics %>%
+scores.zilgm.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -488,7 +470,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
+scoresu.zilgm.late$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -569,9 +551,9 @@ sgenie3_early_adj[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r GENIE3 metrics early}
-scores <- pscores(adjm, sgenie3_early_adj)
+scores.genie3.early <- pscores(adjm, sgenie3_early_adj)
 
-scores$Statistics %>%
+scores.genie3.early$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -650,9 +632,9 @@ sgrnb_early_adj[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r GRNBoost2 metrics early}
-scores <- pscores(adjm, sgrnb_early_adj)
+scores.grn.early <- pscores(adjm, sgrnb_early_adj)
 
-scores$Statistics %>%
+scores.grn.early$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -688,12 +670,26 @@ est_graph = nb2_fit$network[[nb2_fit$opt_index]]
 execution_times[['ZILGM early']] <- tictoc::toc(log = TRUE)$toc[[1]]
 ```
 
+```{r ZILGM early}
+set.seed(123)
+
+lambda_max = find_lammax(as.matrix(count_matrices[[1]]))
+lambda_min = 1e-4 * lambda_max
+lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+
+nb2_fit = zilgm(X = as.matrix(count_matrices[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
+                  boot_num = 10, sym = "OR", nCores = 15)
+
+est_graph = nb2_fit$network[[nb2_fit$opt_index]]
+```
+
+
 #### Comparison with the Ground Truth
 
 ```{r ZIGLM score early}
-scores <- pscores(adjm, list(as.matrix(est_graph)))
+scores.zilgm.early <- pscores(adjm, list(as.matrix(est_graph)))
 
-scores$Statistics %>%
+scores.zilgm.early$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -879,9 +875,9 @@ sjrf_adj[[1]] %>%
 #### Comparison with the Ground Truth
 
 ```{r JRF metrics late}
-scores <- pscores(adjm, sjrf_adj)
+scores.jrf.all <- pscores(adjm, sjrf_adj)
 
-scores$Statistics %>%
+scores.jrf.all$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -900,10 +896,10 @@ plots <- plotg(sjrf_adj)
 consesusm <- create_consensus(sjrf_adj, method="vote")
 consesusu <- create_consensus(sjrf_adj, method="union")
 
-scores <- pscores(adjm, list(consesusm))
-scoresu <- pscores(adjm, list(consesusu))
+scores.jrf <- pscores(adjm, list(consesusm))
+scoresu.jrf <- pscores(adjm, list(consesusu))
 
-scores$Statistics %>%
+scores.jrf$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -911,7 +907,7 @@ scores$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu$Statistics %>%
+scoresu.jrf$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -922,12 +918,16 @@ scoresu$Statistics %>%
 ```
 
 ```{r JRF compare late, fig.width=8,fig.width=10}
+source("compare_consensus.R")
 ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 
-# Time analysis
+# Method Comparison
+
+
+## Time analysis
 
 ```{r plot_execution_times, echo=FALSE}
 time_data <- data.frame(
@@ -950,7 +950,90 @@ ggplot(time_data, aes(x = Method, y = Time_in_Hours)) +
 ```
 
 
+## Statistics
+
+
+```{r, fig.height=7, fig.width=5}
+mplot <- list()
+
+for (k in c("TPR", "FPR", "Precision", "F1", "Accuracy")) {
+  mplot[[k]] <- data.frame(
+    GENIE3_late = scores.genie3.late$Statistics[[k]],
+    GENIE3_early = scores.genie3.early$Statistics[[k]],
+    GRNBoost2_late = scores.grn.late$Statistics[[k]],
+    GRNBoost2_early = scores.grn.early$Statistics[[k]],
+    ZILGM_late = scores.zilgm.late$Statistics[[k]],
+    ZILGM_early = scores.zilgm.early$Statistics[[k]],
+    JRF = scores.jrf$Statistics[[k]]
+  )
+}
+
+library(patchwork)  # For arranging plots into panels
+
+# Convert mplot list into a long data frame for ggplot2
+plot_data <- bind_rows(lapply(names(mplot), function(metric) {
+  data.frame(
+    Metric = metric,
+    Method = names(mplot[[metric]]),
+    Value = as.numeric(mplot[[metric]][1, ])
+  )
+}))
+
+# Extract method groups for coloring and order the Method factor so JRF appears last
+plot_data <- plot_data %>%
+  mutate(Method_Group = case_when(
+    grepl("GENIE3", Method) ~ "GENIE3",
+    grepl("GRNBoost2", Method) ~ "GRNBoost2",
+    grepl("ZILGM", Method) ~ "ZILGM",
+    grepl("JRF", Method) ~ "JRF"
+  )) %>%
+  mutate(Method = factor(Method, levels = c(
+    "GENIE3_early", "GENIE3_late", 
+    "GRNBoost2_early", "GRNBoost2_late", 
+    "ZILGM_early", "ZILGM_late", 
+    "JRF"  # Ensure JRF is last
+  )))
+
+# Define color palette for each method group
+method_colors <- c("GENIE3" = "darkblue", "GRNBoost2" = "darkgreen", "ZILGM" = "orange", "JRF" = "red")
+
+# Create a separate ggplot for each metric, with y-axis limits set to 0-1 and no legend
+plots <- lapply(unique(plot_data$Metric), function(metric) {
+  # Determine if x-axis text should be displayed
+  show_x_text <- metric %in% c("Accuracy", "F1")
+  
+  ggplot(plot_data %>% filter(Metric == metric), aes(x = Method, y = Value, fill = Method_Group)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+    labs(title = metric, y = "Value", x = NULL) +
+    scale_y_continuous(limits = c(0, 1)) +  # Set y-axis limits
+    scale_fill_manual(values = method_colors) +
+    theme_minimal() +
+    theme(
+      axis.text.x = if (show_x_text) element_text(angle = 45, hjust = 1) else element_blank(),
+      axis.title.x = element_blank(),
+      legend.position = "none"  # Remove legend from individual plots
+    )
+})
+
+# Create a shared legend using one of the plots and add it at the bottom
+# Assemble all plots in a 3x2 grid with the legend positioned at the bottom
+final_plot <- (plots[[1]] | plots[[2]]) /
+              (plots[[3]] | plots[[4]]) /
+              (plots[[5]] + plot_spacer()) +
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "bottom")
+
+# Display the final plot
+print(final_plot)
+```
+
+
+
 ```{r}
 sessionInfo()
 ```
+
+
+
+
 

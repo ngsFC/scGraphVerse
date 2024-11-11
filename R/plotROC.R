@@ -3,7 +3,6 @@ plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
   # Convert the upper triangle of the ground truth matrix to a vector (excluding the diagonal)
   truth_vec <- as.vector(ground_truth[upper.tri(ground_truth)])
   
-  # Initialize a data frame to store ROC data for ggplot
   roc_data <- data.frame()
   auc_values <- vector("character", length(weighted_matrices_list))
   
@@ -33,21 +32,17 @@ plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
     auc_values[i] <- paste("Matrix", i, "(AUC=", round(roc_obj$auc, 2), ")", sep = "")
   }
   
-  # Generate a dynamic color palette for an arbitrary number of matrices
   color_count <- length(unique(roc_data$Matrix))
   colors <- brewer.pal(min(color_count, 9), "Set1")
   
-  # Plotting with ggplot2
   ggplot(roc_data, aes(x=FPR, y=TPR, color=Matrix)) +
     geom_line(size=1.2) +
     labs(title=plot_title,
          x="False Positive Rate (1 - Specificity)",
          y="True Positive Rate (Sensitivity)") +
     theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      legend.position = "bottom"  # Move legend to the bottom
-    ) +
-    scale_color_manual(values=colors, labels=auc_values) +  # Display AUC values in the legend
-    scale_x_reverse()  # Reverse the x-axis
+    theme(plot.title = element_text(hjust = 0.5),
+      legend.position = "bottom") +
+    scale_color_manual(values=colors, labels=auc_values) +  
+    scale_x_reverse()
 }
