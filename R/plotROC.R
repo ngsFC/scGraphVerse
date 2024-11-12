@@ -20,8 +20,8 @@ plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
     
     # Extract TPR and FPR values for ggplot and add them to the data frame
     roc_df <- data.frame(
-      FPR = rev(roc_obj$specificities), 
-      TPR = rev(roc_obj$sensitivities),
+      FPR = 1-roc_obj$specificities, 
+      TPR = roc_obj$sensitivities,
       Matrix = paste("Matrix", i)
     )
     
@@ -43,6 +43,5 @@ plotROC <- function(weighted_matrices_list, ground_truth, plot_title) {
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5),
       legend.position = "bottom") +
-    scale_color_manual(values=colors, labels=auc_values) +  
-    scale_x_reverse()
+    scale_color_manual(values=colors, labels=auc_values)
 }

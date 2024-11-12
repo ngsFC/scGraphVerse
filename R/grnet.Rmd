@@ -216,6 +216,7 @@ genie3_late[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r GENIE3 symmetrizeROC late}
+source("plotROC.R")
 genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
@@ -741,11 +742,9 @@ netout %>%
 
 out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,3)
 #out <- JRF_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500,genes,2)
-
-final.net <- JRF_network(netout,out.perm,0.001)
-final.net
+#final.net <- JRF_network(netout,out.perm,0.001)
+#final.net
 ```
-
 
 
 #### Finalnet 
@@ -755,13 +754,13 @@ myJRF_network <- function(out.jrf, out.perm, TH) {
   
   nclasses <- dim(out.perm)[3]
   M <- dim(out.perm)[2]
-  out <- vector("list", nclasses)  # Initialize the list to store results for each class
+  out <- vector("list", nclasses)  
 
   for (net in 1:nclasses) { 
     j.np <- sort(out.jrf[, 2 + net], decreasing = TRUE)
     FDR <- matrix(0, dim(out.perm)[1], 1)
     
-    th <- NULL  # Initialize threshold variable
+    th <- NULL  
     for (s in 1:length(j.np)) { 
       FP <- sum(sum(out.perm[, , net] >= j.np[s])) / M
       FDR[s] <- FP / s
@@ -772,15 +771,15 @@ myJRF_network <- function(out.jrf, out.perm, TH) {
       }
     }
     
-    # Store the results for the current class in the `out` list
     out[[net]] <- out.jrf[out.jrf[, 2 + net] > th, seq(1, 2)]
   }
   
   return(out)
 }
 
-mynet <- myJRF_network(netout,out.perm,0.001)
-mynet
+mynet <- myJRF_network(netout,out.perm,0.05)
+
+
 
 ```
 

@@ -31,6 +31,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
         regulatory_network <- GENIE3(t(count_matrices_list[[j]]), nCores = nCores)
         regulatory_network <- getLinkList(regulatory_network)
         netout <- regulatory_network
+        network_results[[j]] <- netout
         
       } else if (method == "GRNBoost2") {
         count_matrix_df <- as.data.frame(count_matrices_list[[j]])
@@ -41,6 +42,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
                                       index = rownames(count_matrix_df))
         
         netout <- arboreto$grnboost2(df_pandas, gene_names = genes)
+        network_results[[j]] <- netout
         
       } else if (method == "ZILGM") {
         mlamb <- list()
@@ -62,6 +64,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
   
   # Return network_results and mlamb separately if method is ZILGM
   if (method == "ZILGM") {
+    lambda_results <- list() 
     network_results <- lapply(network_results, as.matrix)
     if (!is.null(adjm)) {
       for (k in seq_along(network_results)) {
@@ -76,8 +79,8 @@ infer_networks <- function(count_matrices_list, method = "GENIE3") {
     for (k in seq_along(lamb)) {
         rownames(lamb[[k]]) <- rownames(adjm)
         colnames(lamb[[k]]) <- colnames(adjm)
-        lambda_results[[z]] <- lamb
-        }
+    }
+      lambda_results[[z]] <- lamb
   }
     return(list(network_results = network_results, lambda_results = lambda_results))
   } else {
