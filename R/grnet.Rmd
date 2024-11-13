@@ -42,6 +42,7 @@ library(rsvg)
 library(RColorBrewer)
 library(rbenchmark)
 library(ZILGM)
+library(patchwork)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -137,7 +138,6 @@ adjm %>%
               pageLength = 10), 
             caption = "Ground Truth")
 ```
-
 
 ```{r plotGT, fig.width=5, fig.height=5}
 gtruth <- igraph::graph_from_adjacency_matrix(adjm, mode = "undirected", diag = F)
@@ -266,7 +266,6 @@ scores.genie3.late.all$Statistics %>%
               caption = "scores")
 ```
 
-
 ```{r GENIE3 plotg late}
 plots <- plotg(sgenie3_late_adj)
 ```
@@ -296,7 +295,6 @@ scores.genie3.late$Statistics %>%
               caption = "scores")
 
 ```
-
 
 ```{r GENIE3 compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(consesusm, adjm)
@@ -374,7 +372,6 @@ scores.grn.late.all$Statistics %>%
               caption = "scores")
 ```
 
-
 ```{r GRNBoost2 plotg late}
 plots <- plotg(sgrnb_late_adj)
 ```
@@ -409,27 +406,80 @@ ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
-
-
 ### ZILGM Park
 
 ```{r ZILGM late}
-source("infer_networks.R")
 set.seed(1234)
 tictoc::tic("ZILGM late")
-zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM")
+zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm)
 saveRDS(zilgm_late, "./../analysis/zilgm_late.RDS")
 execution_times[['ZILGM late']] <- tictoc::toc(log = TRUE)$toc[[1]]
+
+est_graphs <- zilgm_late$network_results
+lambdas <- zilgm_late$lambda_results
+```
+
+```{r ZILGM fix dataset, fig.show='hide'}
+scores.zilgm1 <- pscores(adjm, lambdas[[1]])
+scores.zilgm2 <- pscores(adjm, lambdas[[2]])
+scores.zilgm3 <- pscores(adjm, lambdas[[3]])
+
+m1 <- scores.zilgm1$Statistics %>% mutate(K="M1") 
+m2 <- scores.zilgm2$Statistics %>% mutate(K="M2") 
+m3 <- scores.zilgm3$Statistics %>% mutate(K="M3") 
+
+allm <- rbind(m1,m2,m3)
 ```
 
 
+```{r ZILGM plot ROC}
+ggplot(allm, aes(x=FPR, y=TPR, color=K)) +
+  geom_point() +
+  geom_line(size=1.2) +
+  labs(x="False Positive Rate (1 - Specificity)",
+         y="True Positive Rate (Sensitivity)") +
+  theme_minimal() +
+  theme(legend.position = "bottom") 
+
+```
+
+
+```{r ZILGM scores consensus lambda, fig.show='hide'}
+consensus_matrices <- vector("list", 50)
+
+for (i in 1:50) {
+  ranklambda <- list(lambdas[[1]][[i]], lambdas[[2]][[i]], lambdas[[3]][[i]])
+  consensus_matrices[[i]] <- create_consensus(ranklambda, method="vote")
+}
+
+scores.zilgm.voting <- pscores(adjm, consensus_matrices)
+
+scores.zilgm.voting$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+```
+
+
+```{r ZILGM plot ROC all voting}
+ggplot(scores.zilgm.voting$Statistics, aes(x=FPR, y=TPR)) +
+  geom_point() +
+  geom_line(size=1.2) +
+  labs(x="False Positive Rate (1 - Specificity)",
+         y="True Positive Rate (Sensitivity)") +
+  theme_minimal() +
+  theme(legend.position = "bottom") 
+
+```
+
 #### Comparison with the Ground Truth
-
-
 
 ```{r ZILGM scores late}
 scores.zilgm.late.all <- pscores(adjm, est_graphs)
-scoresu.zilgm.late.all <- pscores(adjm, est_graphs)
 
 scores.zilgm.late.all$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -439,22 +489,13 @@ scores.zilgm.late.all$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores")
-scoresu.zilgm.late.all$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-
 ```
 
 
-```{r}
+
+```{r ZILGM late plot graph}
 plots <- plotg(est_graphs)
 ```
-
 
 ```{r ZILGM scores consensus}
 consesusm <- create_consensus(est_graphs, method="vote")
@@ -480,6 +521,7 @@ scoresu.zilgm.late$Statistics %>%
                 pageLength = 10), 
               caption = "scores")
 ```
+
 
 ```{r ZILGM compare late, fig.width=8,fig.width=10}
 ajm_compared <- compare_consensus(consesusm, adjm)
@@ -564,7 +606,6 @@ scores.genie3.early$Statistics %>%
               caption = "scores")
 ```
 
-
 ```{r GENIE3 plotg early}
 plots <- plotg(sgenie3_early_adj)
 ```
@@ -645,7 +686,6 @@ scores.grn.early$Statistics %>%
               caption = "scores")
 ```
 
-
 ```{r GRNBoost2 plotg early}
 plots <- plotg(sgrnb_early_adj)
 ```
@@ -657,38 +697,38 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 ### ZILGM Park
 
 ```{r ZILGM early}
-set.seed(123)
-
+set.seed(1234)
 tictoc::tic("ZILGM early")
-lambda_max = find_lammax(as.matrix(early_matrix[[1]]))
-lambda_min = 1e-4 * lambda_max
-lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-
-nb2_fit = zilgm(X = as.matrix(early_matrix[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
-                  boot_num = 10, sym = "OR", nCores = 15)
-
-est_graph = nb2_fit$network[[nb2_fit$opt_index]]
+zilgm_late <- infer_networks(count_matrices_list = early_matrix, method = "ZILGM", adjm = adjm)
+saveRDS(zilgm_late, "./../analysis/zilgm_early.RDS")
 execution_times[['ZILGM early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+
+est_graphs <- zilgm_late$network_results
+lambdas <- zilgm_late$lambda_results
 ```
 
-```{r ZILGM early}
-set.seed(123)
+```{r ZILGM fix dataset early, fig.show='hide'}
+scores.zilgm1 <- pscores(adjm, lambdas[[1]])
+m1 <- scores.zilgm1$Statistics %>% mutate(K="M1") 
+```
 
-lambda_max = find_lammax(as.matrix(count_matrices[[1]]))
-lambda_min = 1e-4 * lambda_max
-lambs = exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
 
-nb2_fit = zilgm(X = as.matrix(count_matrices[[1]]), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE,
-                  boot_num = 10, sym = "OR", nCores = 15)
+```{r ZILGM plot ROC early}
+ggplot(m1, aes(x=FPR, y=TPR, color=K)) +
+  geom_point() +
+  geom_line(size=1.2) +
+  labs(x="False Positive Rate (1 - Specificity)",
+         y="True Positive Rate (Sensitivity)") +
+  theme_minimal() +
+  theme(legend.position = "bottom") 
 
-est_graph = nb2_fit$network[[nb2_fit$opt_index]]
 ```
 
 
 #### Comparison with the Ground Truth
 
 ```{r ZIGLM score early}
-scores.zilgm.early <- pscores(adjm, list(as.matrix(est_graph)))
+scores.zilgm.early <- pscores(adjm, est_graphs)
 
 scores.zilgm.early$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -702,14 +742,12 @@ scores.zilgm.early$Statistics %>%
 ```
 
 ```{r ZILGM compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(as.matrix(est_graph), adjm)
+ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
 ```
-
 
 ## Joint Integration
 
 ### Joint Random Forest
-
 
 ```{r}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
@@ -778,12 +816,8 @@ myJRF_network <- function(out.jrf, out.perm, TH) {
 }
 
 mynet <- myJRF_network(netout,out.perm,0.05)
-
-
-
+mynet
 ```
-
-
 
 ```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
@@ -886,7 +920,6 @@ scores.jrf.all$Statistics %>%
               caption = "scores")
 ```
 
-
 ```{r JRF plotg late}
 plots <- plotg(sjrf_adj)
 ```
@@ -923,34 +956,15 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 
-# Method Comparison
-
-
-## Time analysis
-
-```{r plot_execution_times, echo=FALSE}
-time_data <- data.frame(
-  Method = names(execution_times),
-  Time_in_Hours = unlist(execution_times) / 3600
-)
-
-time_data$Time_in_Minutes <- time_data$Time_in_Hours * 60
-
-time_data <- time_data[order(time_data$Time_in_Hours), ]
-time_data$Method <- factor(time_data$Method, levels = time_data$Method)
-
-ggplot(time_data, aes(x = Method, y = Time_in_Hours)) +
-  geom_bar(stat = 'identity') +
-  geom_text(aes(label = sprintf("%.1f min", Time_in_Minutes)), 
-            vjust = -0.5) +
-  labs(title = 'Execution Time for Each Method', y = 'Time (Hours)', x = 'Method') +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```{r}
+#est <- PCzinb(as.matrix(count_matrices[[1]]), method="zinb1", maxcard=3, alpha=0.1)
+#colnames(est) <- as.character(1:10)
+#graph_est <- graph_from_adjacency_matrix(est, mode="undirected")
+#plot(graph_est)
 ```
 
 
-## Statistics
-
+# Method Comparison
 
 ```{r, fig.height=7, fig.width=5}
 mplot <- list()
@@ -966,8 +980,6 @@ for (k in c("TPR", "FPR", "Precision", "F1", "Accuracy")) {
     JRF = scores.jrf$Statistics[[k]]
   )
 }
-
-library(patchwork)  # For arranging plots into panels
 
 # Convert mplot list into a long data frame for ggplot2
 plot_data <- bind_rows(lapply(names(mplot), function(metric) {
@@ -1014,25 +1026,51 @@ plots <- lapply(unique(plot_data$Metric), function(metric) {
     )
 })
 
-# Create a shared legend using one of the plots and add it at the bottom
-# Assemble all plots in a 3x2 grid with the legend positioned at the bottom
+# Add time data to the plotting dataset
+time_data <- data.frame(
+  Method = names(execution_times),
+  Time_in_Hours = unlist(execution_times) / 3600
+)
+time_data$Time_in_Minutes <- time_data$Time_in_Hours * 60
+time_data <- time_data[order(time_data$Time_in_Hours), ]
+time_data$Method <- factor(time_data$Method, levels = time_data$Method)
+
+# Assign group colors to time_data for consistency
+time_data <- time_data %>%
+  mutate(Method_Group = case_when(
+    grepl("GENIE3", Method) ~ "GENIE3",
+    grepl("GRNBoost2", Method) ~ "GRNBoost2",
+    grepl("ZILGM", Method) ~ "ZILGM",
+    grepl("JRF", Method) ~ "JRF"
+  ))
+
+# Create the execution time plot
+time_plot <- ggplot(time_data, aes(x = Method, y = Time_in_Hours, fill = Method_Group)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f min", Time_in_Minutes)), vjust = -0.5) +
+  labs(title = "Execution Time for Each Method", y = "Time (Hours)", x = NULL) +
+  scale_fill_manual(values = method_colors) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
+
+# Add the execution time plot to the existing list of plots
+plots <- append(plots, list(time_plot))
+
+# Adjust the layout to accommodate the extra plot
 final_plot <- (plots[[1]] | plots[[2]]) /
               (plots[[3]] | plots[[4]]) /
-              (plots[[5]] + plot_spacer()) +
+              (plots[[5]] | plots[[6]]) +
   plot_layout(guides = "collect") & 
   theme(legend.position = "bottom")
 
-# Display the final plot
 print(final_plot)
-```
 
+```
 
 
 ```{r}
 sessionInfo()
 ```
-
-
-
-
-
