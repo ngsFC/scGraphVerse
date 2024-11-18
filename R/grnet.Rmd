@@ -43,6 +43,7 @@ library(RColorBrewer)
 library(rbenchmark)
 library(ZILGM)
 library(patchwork)
+library(scales)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -198,10 +199,10 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 
 ```{r GENIE3 late}
 set.seed(1234)
-tictoc::tic("GENIE3 late")
+tictoc::tic("GENIE3 late 15Cores")
 genie3_late <- infer_networks(count_matrices, method="GENIE3")
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
-execution_times[['GENIE3 late']] <- tictoc::toc(log = TRUE)$toc[[1]]
+execution_times[['GENIE3 late 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 genie3_late[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -216,10 +217,9 @@ genie3_late[[1]] %>%
 #### symmetrize Output and ROC
 
 ```{r GENIE3 symmetrizeROC late}
-source("plotROC.R")
 genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
-plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
+genie3_late_auc <- plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
 
 sgenie3_late_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -237,7 +237,7 @@ sgenie3_late_wadj[[1]] %>%
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
                  ground.truth = adjm,
-                 n = 2,
+                 n = 3,
                  method = "GENIE3")
 
 sgenie3_late_adj[[1]] %>%
@@ -325,7 +325,7 @@ grnb_late[[1]] %>%
 ```{r GRNBoost2 symmetrizeROC late}
 grnb_late_wadj <- generate_adjacency(grnb_late, ground.truth = adjm)
 sgrnb_late_wadj <- symmetrize(grnb_late_wadj, weight_function = "mean")
-plotROC(sgrnb_late_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Late Integration")
+grnb_late_auc <- plotROC(sgrnb_late_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Late Integration")
 
 sgrnb_late_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -343,7 +343,7 @@ sgrnb_late_wadj[[1]] %>%
 sgrnb_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgrnb_late_wadj, 
                  ground.truth = adjm,
-                 n = 2,
+                 n = 3,
                  method = "GRNBoost2")
 
 sgrnb_late_adj[[1]] %>%
@@ -410,38 +410,22 @@ ajm_compared <- compare_consensus(consesusu, adjm)
 
 ```{r ZILGM late}
 set.seed(1234)
-tictoc::tic("ZILGM late")
+tictoc::tic("ZILGM late 15Cores")
 zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm)
 saveRDS(zilgm_late, "./../analysis/zilgm_late.RDS")
-execution_times[['ZILGM late']] <- tictoc::toc(log = TRUE)$toc[[1]]
+execution_times[['ZILGM late 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 est_graphs <- zilgm_late$network_results
 lambdas <- zilgm_late$lambda_results
 ```
 
-```{r ZILGM fix dataset, fig.show='hide'}
-scores.zilgm1 <- pscores(adjm, lambdas[[1]])
-scores.zilgm2 <- pscores(adjm, lambdas[[2]])
-scores.zilgm3 <- pscores(adjm, lambdas[[3]])
-
-m1 <- scores.zilgm1$Statistics %>% mutate(K="M1") 
-m2 <- scores.zilgm2$Statistics %>% mutate(K="M2") 
-m3 <- scores.zilgm3$Statistics %>% mutate(K="M3") 
-
-allm <- rbind(m1,m2,m3)
+```{r plotROC changing lambda}
+plotROC(lambdas[[1]], adjm, plot_title = "Lambda ROC Matrix1", is_binary = T)
+plotROC(lambdas[[2]], adjm, plot_title = "Lambda ROC Matrix2", is_binary = T)
+plotROC(lambdas[[3]], adjm, plot_title = "Lambda ROC Matrix3", is_binary = T)
 ```
 
 
-```{r ZILGM plot ROC}
-ggplot(allm, aes(x=FPR, y=TPR, color=K)) +
-  geom_point() +
-  geom_line(size=1.2) +
-  labs(x="False Positive Rate (1 - Specificity)",
-         y="True Positive Rate (Sensitivity)") +
-  theme_minimal() +
-  theme(legend.position = "bottom") 
-
-```
 
 
 ```{r ZILGM scores consensus lambda, fig.show='hide'}
@@ -452,29 +436,9 @@ for (i in 1:50) {
   consensus_matrices[[i]] <- create_consensus(ranklambda, method="vote")
 }
 
-scores.zilgm.voting <- pscores(adjm, consensus_matrices)
-
-scores.zilgm.voting$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
+zilgm_late_auc <- plotROC(consensus_matrices, adjm, plot_title = "ROC voting lambda", is_binary = T)
 ```
 
-
-```{r ZILGM plot ROC all voting}
-ggplot(scores.zilgm.voting$Statistics, aes(x=FPR, y=TPR)) +
-  geom_point() +
-  geom_line(size=1.2) +
-  labs(x="False Positive Rate (1 - Specificity)",
-         y="True Positive Rate (Sensitivity)") +
-  theme_minimal() +
-  theme(legend.position = "bottom") 
-
-```
 
 #### Comparison with the Ground Truth
 
@@ -538,9 +502,9 @@ early_matrix <- list(earlyj(count_matrices))
 
 ```{r run GENIE3 early}
 set.seed(1234)
-tictoc::tic("GENIE3 early")
+tictoc::tic("GENIE3 early 15Cores")
 genie3_early <- infer_networks(early_matrix, method="GENIE3")
-execution_times[['GENIE3 early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+execution_times[['GENIE3 early 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
 
@@ -559,7 +523,7 @@ genie3_early[[1]] %>%
 ```{r GENIE3 symmetrizeROC early}
 genie3_early_wadj <- generate_adjacency(genie3_early, ground.truth = adjm)
 sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
-plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
+genie3_early_auc <- plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 
 sgenie3_early_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -639,7 +603,7 @@ grnb_early[[1]] %>%
 ```{r GRNBoost2 symmetrizeROC early}
 grnb_early_wadj <- generate_adjacency(grnb_early, ground.truth = adjm)
 sgrnb_early_wadj <- symmetrize(grnb_early_wadj, weight_function = "mean")
-plotROC(sgrnb_early_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
+grnb_early_auc <- plotROC(sgrnb_early_wadj, adjm, plot_title = "ROC curve - GRNBoost2 Early Integration")
 
 grnb_early_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -698,32 +662,18 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 
 ```{r ZILGM early}
 set.seed(1234)
-tictoc::tic("ZILGM early")
+tictoc::tic("ZILGM early 15Cores")
 zilgm_late <- infer_networks(count_matrices_list = early_matrix, method = "ZILGM", adjm = adjm)
 saveRDS(zilgm_late, "./../analysis/zilgm_early.RDS")
-execution_times[['ZILGM early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+execution_times[['ZILGM early 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 est_graphs <- zilgm_late$network_results
 lambdas <- zilgm_late$lambda_results
 ```
 
-```{r ZILGM fix dataset early, fig.show='hide'}
-scores.zilgm1 <- pscores(adjm, lambdas[[1]])
-m1 <- scores.zilgm1$Statistics %>% mutate(K="M1") 
+```{r}
+zilgm_early_auc <- plotROC(lambdas[[1]], adjm, plot_title = "ROC ZILGM early", is_binary = T)
 ```
-
-
-```{r ZILGM plot ROC early}
-ggplot(m1, aes(x=FPR, y=TPR, color=K)) +
-  geom_point() +
-  geom_line(size=1.2) +
-  labs(x="False Positive Rate (1 - Specificity)",
-         y="True Positive Rate (Sensitivity)") +
-  theme_minimal() +
-  theme(legend.position = "bottom") 
-
-```
-
 
 #### Comparison with the Ground Truth
 
@@ -749,27 +699,15 @@ ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
 
 ### Joint Random Forest
 
-```{r}
+```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
-#jrf_mat <- infer_networks(count_matrices, method="JRF")
-
-jrf_matrices <- lapply(count_matrices, t)
-jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
-  (x - mean(x)) / sd(x)
-  })
-
-genes <- rownames(jrf_matrices_norm[[1]])
-
 set.seed(1234)
-tictoc::tic("JRF_out")
-netout <- JRF(X = jrf_matrices_norm, 
-              genes.name = genes, 
-              ntree = 500, 
-              mtry = round(sqrt(length(genes) - 1)))
-execution_times[['JRF_out']] <- tictoc::toc(log = TRUE)$toc[[1]]
+tictoc::tic("JRF")
+jrf_mat <- infer_networks(count_matrices, method="JRF")
+execution_times[['JRF']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
-netout %>%
+jrf_mat[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -778,16 +716,21 @@ netout %>%
                 pageLength = 10), 
               caption = "JRF output")
 
-out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,3)
-#out <- JRF_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500,genes,2)
-#final.net <- JRF_network(netout,out.perm,0.001)
-#final.net
 ```
 
-
-#### Finalnet 
+#### Their Permutation
 
 ```{r}
+jrf_matrices <- lapply(count_matrices, t)
+jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
+  (x - mean(x)) / sd(x)
+  })
+
+genes <- rownames(jrf_matrices_norm[[1]])
+
+set.seed(1234)
+out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
+
 myJRF_network <- function(out.jrf, out.perm, TH) {
   
   nclasses <- dim(out.perm)[3]
@@ -815,27 +758,97 @@ myJRF_network <- function(out.jrf, out.perm, TH) {
   return(out)
 }
 
-mynet <- myJRF_network(netout,out.perm,0.05)
+mynet <- myJRF_network(jrf_mat[[1]],out.perm,0.05)
 mynet
+
 ```
 
-```{r JRF inference}
-#https://cran.r-project.org/src/contrib/Archive/JRF/
-#install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
-set.seed(1234)
-tictoc::tic("JRF")
-jrf_mat <- infer_networks(count_matrices, method="JRF")
-execution_times[['JRF']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
-jrf_mat[[1]] %>%
+```{r}
+jrf_adj <- function(df_list, adjm) {
+  # Ensure the genes (row and column names) are in the adjacency matrix
+  genes <- rownames(adjm)
+  
+  # Initialize a list to store adjacency matrices
+  adjacency_matrices <- list()
+  
+  # Loop through each data frame in the list
+  for (i in seq_along(df_list)) {
+    df <- df_list[[i]]
+    
+    # Initialize a new adjacency matrix with zeros
+    adj_matrix <- adjm * 0  # Reset to zero for each df
+    
+    # Update the adjacency matrix for the gene pairs
+    for (j in seq_len(nrow(df))) {
+      gene1 <- df$gene1[j]
+      gene2 <- df$gene2[j]
+      
+      # Check if both genes are present in the adjacency matrix
+      if (gene1 %in% genes && gene2 %in% genes) {
+        idx1 <- which(genes == gene1)  # Find the row index for gene1
+        idx2 <- which(genes == gene2)  # Find the column index for gene2
+        
+        # Update the adjacency matrix to set an edge
+        adj_matrix[idx1, idx2] <- 1
+        adj_matrix[idx2, idx1] <- 1  # Ensure symmetry
+      } else {
+        warning(paste("Gene pair not found in adjm:", gene1, "-", gene2))
+      }
+    }
+    
+    # Store the resulting adjacency matrix in the list
+    adjacency_matrices[[i]] <- adj_matrix
+  }
+  
+  # Return the list of adjacency matrices
+  return(adjacency_matrices)
+}
+
+
+jrf_adj_mynet <- jrf_adj(mynet, adjm)
+
+```
+
+```{r}
+jrf_auc_perm <- plotROC(jrf_adj_mynet, adjm, plot_title = "ROC curve - JRF perm out", is_binary = T)
+```
+
+```{r JRF perm scores}
+scores.jrf.perm <- pscores(adjm, jrf_adj_mynet)
+
+scores.jrf.perm$Statistics %>%
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "JRF output")
+              caption = "scores")
+```
 
+```{r JRF perm plotg}
+plots <- plotg(jrf_adj_mynet)
+```
+
+```{r GENIE3 consensus and score late}
+consesusu <- create_consensus(jrf_adj_mynet, method="union")
+
+scoresu.jrf.perm <- pscores(adjm, list(consesusu))
+
+scoresu.jrf.perm$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+
+```
+
+```{r GENIE3 compare late, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 #### Prepare the output
@@ -873,7 +886,7 @@ jrf_list[[1]] %>%
 ```{r JRF symmetrizeROC late}
 jrf_wadj <- generate_adjacency(jrf_list, ground.truth = adjm)
 sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
-plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration")
+jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration")
 
 sjrf_wadj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -891,7 +904,7 @@ sjrf_wadj[[1]] %>%
 sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sjrf_wadj, 
                  ground.truth = adjm,
-                 n = 2,
+                 n = 3,
                  method = "JRF")
 
 sjrf_adj[[1]] %>%
@@ -950,81 +963,25 @@ scoresu.jrf$Statistics %>%
 ```
 
 ```{r JRF compare late, fig.width=8,fig.width=10}
-source("compare_consensus.R")
 ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 
 ```{r}
-#est <- PCzinb(as.matrix(count_matrices[[1]]), method="zinb1", maxcard=3, alpha=0.1)
+#tictoc::tic()
+#est <- PCzinb(as.matrix(count_matrices[[1]]), method="zinb1", maxcard=2, alpha=0.1)
+#tictoc::toc()
+
 #colnames(est) <- as.character(1:10)
 #graph_est <- graph_from_adjacency_matrix(est, mode="undirected")
 #plot(graph_est)
 ```
 
-
 # Method Comparison
 
+
 ```{r, fig.height=7, fig.width=5}
-mplot <- list()
-
-for (k in c("TPR", "FPR", "Precision", "F1", "Accuracy")) {
-  mplot[[k]] <- data.frame(
-    GENIE3_late = scores.genie3.late$Statistics[[k]],
-    GENIE3_early = scores.genie3.early$Statistics[[k]],
-    GRNBoost2_late = scores.grn.late$Statistics[[k]],
-    GRNBoost2_early = scores.grn.early$Statistics[[k]],
-    ZILGM_late = scores.zilgm.late$Statistics[[k]],
-    ZILGM_early = scores.zilgm.early$Statistics[[k]],
-    JRF = scores.jrf$Statistics[[k]]
-  )
-}
-
-# Convert mplot list into a long data frame for ggplot2
-plot_data <- bind_rows(lapply(names(mplot), function(metric) {
-  data.frame(
-    Metric = metric,
-    Method = names(mplot[[metric]]),
-    Value = as.numeric(mplot[[metric]][1, ])
-  )
-}))
-
-# Extract method groups for coloring and order the Method factor so JRF appears last
-plot_data <- plot_data %>%
-  mutate(Method_Group = case_when(
-    grepl("GENIE3", Method) ~ "GENIE3",
-    grepl("GRNBoost2", Method) ~ "GRNBoost2",
-    grepl("ZILGM", Method) ~ "ZILGM",
-    grepl("JRF", Method) ~ "JRF"
-  )) %>%
-  mutate(Method = factor(Method, levels = c(
-    "GENIE3_early", "GENIE3_late", 
-    "GRNBoost2_early", "GRNBoost2_late", 
-    "ZILGM_early", "ZILGM_late", 
-    "JRF"  # Ensure JRF is last
-  )))
-
-# Define color palette for each method group
-method_colors <- c("GENIE3" = "darkblue", "GRNBoost2" = "darkgreen", "ZILGM" = "orange", "JRF" = "red")
-
-# Create a separate ggplot for each metric, with y-axis limits set to 0-1 and no legend
-plots <- lapply(unique(plot_data$Metric), function(metric) {
-  # Determine if x-axis text should be displayed
-  show_x_text <- metric %in% c("Accuracy", "F1")
-  
-  ggplot(plot_data %>% filter(Metric == metric), aes(x = Method, y = Value, fill = Method_Group)) +
-    geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
-    labs(title = metric, y = "Value", x = NULL) +
-    scale_y_continuous(limits = c(0, 1)) +  # Set y-axis limits
-    scale_fill_manual(values = method_colors) +
-    theme_minimal() +
-    theme(
-      axis.text.x = if (show_x_text) element_text(angle = 45, hjust = 1) else element_blank(),
-      axis.title.x = element_blank(),
-      legend.position = "none"  # Remove legend from individual plots
-    )
-})
 
 # Add time data to the plotting dataset
 time_data <- data.frame(
@@ -1056,8 +1013,80 @@ time_plot <- ggplot(time_data, aes(x = Method, y = Time_in_Hours, fill = Method_
     legend.position = "none"
   )
 
-# Add the execution time plot to the existing list of plots
-plots <- append(plots, list(time_plot))
+print(time_plot) 
+
+```
+
+
+```{r, fig.height=7, fig.width=5}
+mplot <- list()
+
+for (k in c("TPR", "FPR", "Precision", "F1", "Accuracy")) {
+  mplot[[k]] <- data.frame(
+    GENIE3_late = scores.genie3.late$Statistics[[k]],
+    GENIE3_early = scores.genie3.early$Statistics[[k]],
+    GRNBoost2_late = scores.grn.late$Statistics[[k]],
+    GRNBoost2_early = scores.grn.early$Statistics[[k]],
+    ZILGM_late = scores.zilgm.late$Statistics[[k]],
+    ZILGM_early = scores.zilgm.early$Statistics[[k]],
+    JRF = scores.jrf$Statistics[[k]]
+  )
+}
+
+mplot[["AUC"]] <- data.frame(
+    GENIE3_late = mean(genie3_late_auc$AUC),
+    GENIE3_early = genie3_early_auc$AUC,
+    GRNBoost2_late = mean(grnb_late_auc$AUC),
+    GRNBoost2_early = grnb_early_auc$AUC,
+    ZILGM_late = zilgm_late_auc$AUC,
+    ZILGM_early = zilgm_early_auc$AUC,
+    JRF = jrf_auc_mine$AUC
+)
+
+# Convert mplot list into a long data frame for ggplot2
+plot_data <- bind_rows(lapply(names(mplot), function(metric) {
+  data.frame(
+    Metric = metric,
+    Method = names(mplot[[metric]]),
+    Value = as.numeric(mplot[[metric]][1, ])
+  )
+}))
+
+# Extract method groups for coloring and order the Method factor so JRF appears last
+plot_data <- plot_data %>%
+  mutate(Method_Group = case_when(
+    grepl("GENIE3", Method) ~ "GENIE3",
+    grepl("GRNBoost2", Method) ~ "GRNBoost2",
+    grepl("ZILGM", Method) ~ "ZILGM",
+    grepl("JRF", Method) ~ "JRF"
+  )) %>%
+  mutate(Method = factor(Method, levels = c(
+    "GENIE3_early", "GENIE3_late", 
+    "GRNBoost2_early", "GRNBoost2_late", 
+    "ZILGM_early", "ZILGM_late", 
+    "JRF"  # Ensure JRF is last
+  )))
+
+# Define color palette for each method group
+method_colors <- c("GENIE3" = "darkblue", "GRNBoost2" = "darkgreen", "ZILGM" = "orange", "JRF" = "red")
+
+# Create a separate ggplot for each metric, with y-axis limits set to 0-1 and no legend
+plots <- lapply(unique(plot_data$Metric), function(metric) {
+  # Determine if x-axis text should be displayed
+  show_x_text <- metric %in% c("Accuracy", "AUC")
+  
+  ggplot(plot_data %>% filter(Metric == metric), aes(x = Method, y = Value, fill = Method_Group)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+    labs(title = metric, y = "Value", x = NULL) +
+    scale_y_continuous(limits = c(0, 1)) +  # Set y-axis limits
+    scale_fill_manual(values = method_colors) +
+    theme_minimal() +
+    theme(
+      axis.text.x = if (show_x_text) element_text(angle = 45, hjust = 1) else element_blank(),
+      axis.title.x = element_blank(),
+      legend.position = "none"  # Remove legend from individual plots
+    )
+})
 
 # Adjust the layout to accommodate the extra plot
 final_plot <- (plots[[1]] | plots[[2]]) /
@@ -1067,7 +1096,39 @@ final_plot <- (plots[[1]] | plots[[2]]) /
   theme(legend.position = "bottom")
 
 print(final_plot)
+```
 
+
+
+```{r}
+library(INetTool)
+# gene as row and samples as column
+list_genie3_norm <- lapply(genie3_late_wadj, function(mat) mat / max(mat))
+
+Con <- consensusNet(list_genie3_norm, theta=0.04, ncores = 15) 
+Con$graphConsensus 
+Con$Comparison
+Con$similarGraphs
+
+consensus_adj <- as.matrix(as_adjacency_matrix(Con$graphConsensus))
+```
+
+```{r}
+scoresinet.genie3.late <- pscores(adjm, list(consensus_adj))
+
+scoresinet.genie3.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores")
+
+```
+
+```{r GENIE3 compare late, fig.width=8,fig.width=10}
+ajm_compared <- compare_consensus(consensus_adj, adjm)
 ```
 
 
