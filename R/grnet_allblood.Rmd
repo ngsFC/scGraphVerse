@@ -573,7 +573,7 @@ sgenie3_early_wadj[[1]] %>%
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgenie3_early_wadj, 
                  ground.truth = adjm,
-                 n = 2,
+                 n = 3,
                  method = "GENIE3")
 
 sgenie3_early_adj[[1]] %>%
@@ -653,7 +653,7 @@ grnb_early_wadj[[1]] %>%
 sgrnb_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgrnb_early_wadj, 
                  ground.truth = adjm,
-                 n = 2,
+                 n = 3,
                  method = "GRNBoost2")
 
 sgrnb_early_adj[[1]] %>%

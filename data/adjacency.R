@@ -26,7 +26,7 @@ binary_matrix[binary_matrix != 0] <- 1
 write.csv(binary_matrix, "Tcell_adjacency_matrix.csv", row.names = TRUE)
 
 
-data <- read_tsv("allblood_string_interactions.tsv")
+data <- read_tsv("allblood_string_interactions.tsv") 
 genes <- unique(c(data$`#node1`, data$node2))
 pxp_matrix <- matrix(0, nrow = length(genes), ncol = length(genes))
 rownames(pxp_matrix) <- genes
@@ -42,10 +42,27 @@ for (i in 1:nrow(data)) {
 }
 
 diag(pxp_matrix) <- 1
+pxp_matrix <- pxp_matrix[!(rownames(pxp_matrix) == "MT-CO2"), ]
+pxp_matrix <- pxp_matrix[,!(colnames(pxp_matrix) == "MT-CO2")]
+
 write.csv(pxp_matrix, "allblood_weighted_adjacency_matrix.csv", row.names = TRUE)
 
 binary_matrix <- pxp_matrix
 binary_matrix[binary_matrix != 0] <- 1
+
+is_symmetric <- function(mat) {
+  if (!is.matrix(mat)) {
+    stop("Input must be a matrix.")
+  }
+  
+  if (nrow(mat) != ncol(mat)) {
+    return(FALSE) # A non-square matrix can't be symmetric
+  }
+  
+  return(all(mat == t(mat), na.rm = TRUE))
+}
+
+is_symmetric(binary_matrix)
 
 write.csv(binary_matrix, "allblood_adjacency_matrix.csv", row.names = TRUE)
 

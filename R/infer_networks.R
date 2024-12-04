@@ -1,10 +1,8 @@
-infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL) {
-  if (!method %in% c("GENIE3", "GRNBoost2", "ZILGM","JRF")) {
-    stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', 'ZILGM' or 'JRF'.")
+infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (detectCores()-1)) {
+  if (!method %in% c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb")) {
+    stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', 'ZILGM', 'PCzinb', or 'JRF'.")
   }
   
-  # Detect the number of available cores
-  nCores <- parallel::detectCores() - 1
   network_results <- list()
   
   if (method == "JRF") {
@@ -14,7 +12,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL) 
       (x - mean(x)) / sd(x)
     })
     
-    # Run JRF on all matrices at once
     netout <- JRF(X = jrf_matrices, 
                   genes.name = rownames(jrf_matrices[[1]]), 
                   ntree = 500, 
@@ -29,7 +26,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL) 
     # Loop over each matrix in the list for GENIE3, GRNBoost2, and ZILGM
     for (j in seq_along(count_matrices_list)) {
       if (method == "GENIE3") {
-        # Apply GENIE3 using dynamic nCores
         regulatory_network <- GENIE3(t(count_matrices_list[[j]]), nCores = nCores)
         regulatory_network <- getLinkList(regulatory_network)
         netout <- regulatory_network
@@ -52,20 +48,23 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL) 
         lambda_min <- 1e-4 * lambda_max
         lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
         
-        # Fit the ZILGM model
         nb2_fit <- zilgm(X = as.matrix(count_matrices_list[[j]]), lambda = lambs, family = "NBII",
                          update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
         
-        # Store the optimal network in network_results and add lambda information to mlamb and llamb
         netout <- nb2_fit$network[[nb2_fit$opt_index]]
         network_results[[j]] <- netout
         llamb[[j]] <- nb2_fit$lambda
         mlamb[[j]] <- nb2_fit$network
+        
+      } else if (method == "PCzinb") {
+        netout <- PCzinb(as.matrix(count_matrices_list[[j]]), method="zinb1", maxcard=2)
+        rownames(netout) <- rownames(adjm)
+        colnames(netout) <- colnames(adjm)
+        network_results[[j]] <- netout
       }
     }
   }
   
-  # Return network_results and mlamb separately if method is ZILGM
   if (method == "ZILGM") {
     lambda_results <- vector("list", length(mlamb))
     
@@ -82,7 +81,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL) 
       lamb <- lapply(lamb, as.matrix)
       names(lamb) <- llamb[[z]]
       
-      # Set row and column names for each matrix in lamb if adjm is available
       if (!is.null(adjm)) {
         for (k in seq_along(lamb)) {
           rownames(lamb[[k]]) <- rownames(adjm)

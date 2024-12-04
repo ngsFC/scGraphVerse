@@ -1,4 +1,4 @@
-cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GRNBoost2", weight_function = "mean") {
+cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GRNBoost2", weight_function = "mean", nCores = NULL) {
   
   # Function to shuffle rows of a matrix
   shuffle_rows <- function(matrix, seed_vector) {
@@ -67,7 +67,7 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
     } else {
       # For other methods (GENIE3, GRNBoost2), infer networks for each shuffled matrix
       for (shuffled_matrix in shuffled_matrices_list) {
-        network_results <- infer_networks(list(shuffled_matrix), method = method)
+        network_results <- infer_networks(list(shuffled_matrix), method = method, nCores = nCores)
         
         # Make the result symmetric using the symmetrize function
         network_results_adjm <- generate_adjacency(network_results, ground.truth)
