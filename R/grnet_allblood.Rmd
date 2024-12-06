@@ -51,7 +51,7 @@ arboreto <- import("arboreto.algo")
 pandas <- import("pandas")
 numpy <- import("numpy")
 
-execution_times <- list()
+time <- list()
 ```
 
 ```{r myfunc}
@@ -202,10 +202,11 @@ saveRDS(count_matrices, "./../analysis/count_matrices.RDS")
 
 ```{r GENIE3 late}
 set.seed(1234)
-tictoc::tic("GENIE3 late 15Cores")
-genie3_late <- infer_networks(count_matrices, method="GENIE3")
+time[["GENIE3_late_15Cores"]] <- system.time(
+  genie3_late <- infer_networks(count_matrices, method="GENIE3", nCores = 15)
+)
+
 saveRDS(genie3_late, "./../analysis/genie3_late.RDS")
-execution_times[['GENIE3 late 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 genie3_late[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -241,7 +242,8 @@ sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sgenie3_late_wadj, 
                  ground.truth = adjm,
                  n = 3,
-                 method = "GENIE3")
+                 method = "GENIE3",
+                 nCores = 15)
 
 sgenie3_late_adj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -321,10 +323,11 @@ ajm_compared <- compare_consensus(consesunet, adjm)
 
 ```{r GRNBoost2 late}
 set.seed(1234)
-tictoc::tic("GRNBoost2 late")
-grnb_late <- infer_networks(count_matrices, method="GRNBoost2")
+time[["GRNBoost_late"]] <- system.time(
+  grnb_late <- infer_networks(count_matrices, method="GRNBoost2")
+)
+
 saveRDS(grnb_late, "./../analysis/grnb_late.RDS")
-execution_times[['GRNBoost2 late']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 grnb_late[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -442,10 +445,11 @@ ajm_compared <- compare_consensus(consesunet, adjm)
 
 ```{r ZILGM late}
 set.seed(1234)
-tictoc::tic("ZILGM late 15Cores")
-zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm)
+time[["ZILGM_late_15Cores"]] <- system.time(
+  zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm, nCores = 15)
+)
+
 saveRDS(zilgm_late, "./../analysis/zilgm_late.RDS")
-execution_times[['ZILGM late 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 est_graphs <- zilgm_late$network_results
 lambdas <- zilgm_late$lambda_results
@@ -524,6 +528,48 @@ ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
+### PCzinb
+
+```{r}
+#tictoc::tic("PCzinb late")
+#zinbres <- infer_networks(count_matrices_list = count_matrices, 
+#                          method = "PCzinb",
+#                          adjm = adjm)
+#execution_times[['PCzinb late']] <- tictoc::toc(log = TRUE)$toc[[1]]
+```
+
+```{r}
+#consesusm <- create_consensus(zinbres, method="vote")
+#consesusu <- create_consensus(zinbres, method="union")
+
+#scores.pc.late <- pscores(adjm, list(consesusm))
+#scoresu.pc.late <- pscores(adjm, list(consesusu))
+
+#scores.pc.late$Statistics %>%
+#    datatable(extensions = 'Buttons',
+#              options = list(
+#                dom = 'Bfrtip',
+#                buttons = c('csv', 'excel'),
+#                scrollX = TRUE,
+#                pageLength = 10), 
+#              caption = "scores vote")
+
+#scoresu.pc.late$Statistics %>%
+#    datatable(extensions = 'Buttons',
+#              options = list(
+#                dom = 'Bfrtip',
+#                buttons = c('csv', 'excel'),
+#                scrollX = TRUE,
+#                pageLength = 10), 
+#              caption = "scores union")
+```
+
+
+```{r}
+#ajm_compared <- compare_consensus(consesusm, adjm)
+#ajm_compared <- compare_consensus(consesusu, adjm)
+```
+
 ## Early Integration
 
 ```{r earlym}
@@ -534,9 +580,9 @@ early_matrix <- list(earlyj(count_matrices))
 
 ```{r run GENIE3 early}
 set.seed(1234)
-tictoc::tic("GENIE3 early 15Cores")
-genie3_early <- infer_networks(early_matrix, method="GENIE3")
-execution_times[['GENIE3 early 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
+time[["GENIE3_early_15Cores"]] <- system.time(
+  genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
+)
 
 saveRDS(genie3_early, "./../analysis/genie3_early.RDS")
 
@@ -573,8 +619,9 @@ sgenie3_early_wadj[[1]] %>%
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgenie3_early_wadj, 
                  ground.truth = adjm,
-                 n = 3,
-                 method = "GENIE3")
+                 n = 2,
+                 method = "GENIE3",
+                 nCores = 15)
 
 sgenie3_early_adj[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -614,9 +661,10 @@ ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 
 ```{r GRNBoost2 early}
 set.seed(1234)
-tictoc::tic("GRNBoost2 early")
-grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
-execution_times[['GRNBoost2 early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+start_time <- Sys.time()
+time[["GRNBoost2_early"]] <- system.time(
+  grnb_early <- infer_networks(early_matrix, method="GRNBoost2")
+)
 
 saveRDS(grnb_early, "./../analysis/grnb_early.RDS")
 
@@ -653,7 +701,7 @@ grnb_early_wadj[[1]] %>%
 sgrnb_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                  weighted_adjm_list = sgrnb_early_wadj, 
                  ground.truth = adjm,
-                 n = 3,
+                 n = 2,
                  method = "GRNBoost2")
 
 sgrnb_early_adj[[1]] %>%
@@ -694,10 +742,12 @@ ajm_compared <- compare_consensus(sgrnb_early_adj[[1]], adjm)
 
 ```{r ZILGM early}
 set.seed(1234)
-tictoc::tic("ZILGM early 15Cores")
-zilgm_late <- infer_networks(count_matrices_list = early_matrix, method = "ZILGM", adjm = adjm)
+
+time[["ZILGM_early_15Cores"]] <- system.time(
+  zilgm_late <- infer_networks(count_matrices_list = early_matrix, method = "ZILGM", adjm = adjm, nCores = 15)
+)
+
 saveRDS(zilgm_late, "./../analysis/zilgm_early.RDS")
-execution_times[['ZILGM early 15Cores']] <- tictoc::toc(log = TRUE)$toc[[1]]
 
 est_graphs <- zilgm_late$network_results
 lambdas <- zilgm_late$lambda_results
@@ -727,6 +777,34 @@ scores.zilgm.early$Statistics %>%
 ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
 ```
 
+### PCzinb
+
+```{r}
+#tictoc::tic("PCzinb early")
+#zinbres <- infer_networks(count_matrices_list = early_matrix, 
+#                          method = "PCzinb",
+#                          adjm = adjm)
+#execution_times[['PCzinb early']] <- tictoc::toc(log = TRUE)$toc[[1]]
+```
+
+```{r}
+#scores.pc.early <- pscores(adjm, zinbres)
+
+#scores.pc.early$Statistics %>%
+#    datatable(extensions = 'Buttons',
+#              options = list(
+#               dom = 'Bfrtip',
+#                buttons = c('csv', 'excel'),
+#                scrollX = TRUE,
+#                pageLength = 10), 
+#             caption = "scores early")
+```
+
+
+```{r}
+#ajm_compared <- compare_consensus(zinbres[[1]], adjm)
+```
+
 ## Joint Integration
 
 ### Joint Random Forest
@@ -735,10 +813,10 @@ ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 set.seed(1234)
-tictoc::tic("JRF")
-jrf_mat <- infer_networks(count_matrices, method="JRF")
-execution_times[['JRF']] <- tictoc::toc(log = TRUE)$toc[[1]]
-
+time[["JRF"]] <- system.time(
+  jrf_mat <- infer_networks(count_matrices, method="JRF")
+)
+ 
 jrf_mat[[1]] %>%
     datatable(extensions = 'Buttons',
               options = list(
@@ -753,134 +831,134 @@ jrf_mat[[1]] %>%
 #### Their Permutation
 
 ```{r}
-jrf_matrices <- lapply(count_matrices, t)
-jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
-  (x - mean(x)) / sd(x)
-  })
+#jrf_matrices <- lapply(count_matrices, t)
+#jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
+#  (x - mean(x)) / sd(x)
+#  })
 
-genes <- rownames(jrf_matrices_norm[[1]])
+#genes <- rownames(jrf_matrices_norm[[1]])
 
-set.seed(1234)
-out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
+#set.seed(1234)
+#out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
 
-myJRF_network <- function(out.jrf, out.perm, TH) {
+#myJRF_network <- function(out.jrf, out.perm, TH) {
   
-  nclasses <- dim(out.perm)[3]
-  M <- dim(out.perm)[2]
-  out <- vector("list", nclasses)  
+#  nclasses <- dim(out.perm)[3]
+#  M <- dim(out.perm)[2]
+#  out <- vector("list", nclasses)  
 
-  for (net in 1:nclasses) { 
-    j.np <- sort(out.jrf[, 2 + net], decreasing = TRUE)
-    FDR <- matrix(0, dim(out.perm)[1], 1)
+#  for (net in 1:nclasses) { 
+#    j.np <- sort(out.jrf[, 2 + net], decreasing = TRUE)
+#    FDR <- matrix(0, dim(out.perm)[1], 1)
     
-    th <- NULL  
-    for (s in 1:length(j.np)) { 
-      FP <- sum(sum(out.perm[, , net] >= j.np[s])) / M
-      FDR[s] <- FP / s
+#    th <- NULL  
+#    for (s in 1:length(j.np)) { 
+#      FP <- sum(sum(out.perm[, , net] >= j.np[s])) / M
+#      FDR[s] <- FP / s
       
-      if (FDR[s] > TH) {
-        th <- j.np[s]
-        break
-      }
-    }
+#      if (FDR[s] > TH) {
+#        th <- j.np[s]
+#        break
+#      }
+#    }
     
-    out[[net]] <- out.jrf[out.jrf[, 2 + net] > th, seq(1, 2)]
-  }
+#    out[[net]] <- out.jrf[out.jrf[, 2 + net] > th, seq(1, 2)]
+#  }
   
-  return(out)
-}
+#  return(out)
+#}
 
-mynet <- myJRF_network(jrf_mat[[1]],out.perm,0.05)
-mynet
+#mynet <- myJRF_network(jrf_mat[[1]],out.perm,0.05)
+#mynet
 
 ```
 
 
 ```{r}
-jrf_adj <- function(df_list, adjm) {
+#jrf_adj <- function(df_list, adjm) {
   # Ensure the genes (row and column names) are in the adjacency matrix
-  genes <- rownames(adjm)
+#  genes <- rownames(adjm)
   
   # Initialize a list to store adjacency matrices
-  adjacency_matrices <- list()
+#  adjacency_matrices <- list()
   
   # Loop through each data frame in the list
-  for (i in seq_along(df_list)) {
-    df <- df_list[[i]]
+#  for (i in seq_along(df_list)) {
+#    df <- df_list[[i]]
     
     # Initialize a new adjacency matrix with zeros
-    adj_matrix <- adjm * 0  # Reset to zero for each df
+#    adj_matrix <- adjm * 0  # Reset to zero for each df
     
     # Update the adjacency matrix for the gene pairs
-    for (j in seq_len(nrow(df))) {
-      gene1 <- df$gene1[j]
-      gene2 <- df$gene2[j]
+#    for (j in seq_len(nrow(df))) {
+#      gene1 <- df$gene1[j]
+#      gene2 <- df$gene2[j]
       
       # Check if both genes are present in the adjacency matrix
-      if (gene1 %in% genes && gene2 %in% genes) {
-        idx1 <- which(genes == gene1)  # Find the row index for gene1
-        idx2 <- which(genes == gene2)  # Find the column index for gene2
+#      if (gene1 %in% genes && gene2 %in% genes) {
+#        idx1 <- which(genes == gene1)  # Find the row index for gene1
+#        idx2 <- which(genes == gene2)  # Find the column index for gene2
         
         # Update the adjacency matrix to set an edge
-        adj_matrix[idx1, idx2] <- 1
-        adj_matrix[idx2, idx1] <- 1  # Ensure symmetry
-      } else {
-        warning(paste("Gene pair not found in adjm:", gene1, "-", gene2))
-      }
-    }
+#        adj_matrix[idx1, idx2] <- 1
+#        adj_matrix[idx2, idx1] <- 1  # Ensure symmetry
+#      } else {
+#        warning(paste("Gene pair not found in adjm:", gene1, "-", gene2))
+#      }
+#    }
     
     # Store the resulting adjacency matrix in the list
-    adjacency_matrices[[i]] <- adj_matrix
-  }
+#    adjacency_matrices[[i]] <- adj_matrix
+#  }
   
   # Return the list of adjacency matrices
-  return(adjacency_matrices)
-}
+#  return(adjacency_matrices)
+#}
 
 
-jrf_adj_mynet <- jrf_adj(mynet, adjm)
+#jrf_adj_mynet <- jrf_adj(mynet, adjm)
 
 ```
 
 ```{r}
-jrf_auc_perm <- plotROC(jrf_adj_mynet, adjm, plot_title = "ROC curve - JRF perm out", is_binary = T)
+#jrf_auc_perm <- plotROC(jrf_adj_mynet, adjm, plot_title = "ROC curve - JRF perm out", is_binary = T)
 ```
 
 ```{r JRF perm scores}
-scores.jrf.perm <- pscores(adjm, jrf_adj_mynet)
+#scores.jrf.perm <- pscores(adjm, jrf_adj_mynet)
 
-scores.jrf.perm$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
+#scores.jrf.perm$Statistics %>%
+#    datatable(extensions = 'Buttons',
+#              options = list(
+#                dom = 'Bfrtip',
+#                buttons = c('csv', 'excel'),
+#                scrollX = TRUE,
+#                pageLength = 10), 
+#              caption = "scores")
 ```
 
 ```{r JRF perm plotg}
-plots <- plotg(jrf_adj_mynet)
+#plots <- plotg(jrf_adj_mynet)
 ```
 
 ```{r JRF consensus and score their perm}
-consesusu <- create_consensus(jrf_adj_mynet, method="union")
+#consesusu <- create_consensus(jrf_adj_mynet, method="union")
 
-scoresu.jrf.perm <- pscores(adjm, list(consesusu))
+#scoresu.jrf.perm <- pscores(adjm, list(consesusu))
 
-scoresu.jrf.perm$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
+#scoresu.jrf.perm$Statistics %>%
+#    datatable(extensions = 'Buttons',
+#              options = list(
+#                dom = 'Bfrtip',
+#                buttons = c('csv', 'excel'),
+#                scrollX = TRUE,
+#                pageLength = 10), 
+#              caption = "scores")
 
 ```
 
 ```{r JRF compare their perm, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(consesusu, adjm)
+#ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 #### Prepare the output
@@ -891,7 +969,7 @@ jrf_list <- list()
 importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
 
 for (i in seq_along(importance_columns)) {
-  # Select the 'gene1', 'gene2', and the current 'importance' column
+# Select the 'gene1', 'gene2', and the current 'importance' column
   df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
   
   # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
@@ -1014,62 +1092,20 @@ ajm_compared <- compare_consensus(consesunet, adjm)
 ```
 
 
-```{r}
-est <- list()
-tictoc::tic()
-for (k in seq_along(count_matrices)) { 
-est[[k]] <- PCzinb(as.matrix(count_matrices[[k]]), method="zinb1", maxcard=2)
-}
-tictoc::toc()
-```
-
-
-```{r}
-for (k in seq_along(est)) {
-          rownames(est[[k]]) <- rownames(adjm)
-          colnames(est[[k]]) <- colnames(adjm)
-        }
-```
-
-```{r}
-consesusm <- create_consensus(est, method="vote")
-consesusu <- create_consensus(est, method="union")
-
-scores.pc <- pscores(adjm, list(consesusm))
-scoresu.pc <- pscores(adjm, list(consesusu))
-
-scores.pc$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores vote")
-
-scoresu.pc$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores union")
-
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-
-```
-
 # Method Comparison
 
-```{r, fig.height=7, fig.width=5}
+```{r, fig.height=10, fig.width=5}
 
 time_data <- data.frame(
-  Method = names(execution_times),
-  Time_in_Hours = unlist(execution_times) / 3600
+  Method = names(time),
+  Time_in_Seconds = sapply(time, function(x) {
+    if ("elapsed" %in% names(x)) x["elapsed"] else NA
+  })
 )
-time_data$Time_in_Minutes <- time_data$Time_in_Hours * 60
+
+time_data$Time_in_Minutes <- as.numeric(time_data$Time_in_Seconds) / 60
+time_data$Time_in_Hours <- as.numeric(time_data$Time_in_Seconds) / 3600
+
 time_data <- time_data[order(time_data$Time_in_Hours), ]
 time_data$Method <- factor(time_data$Method, levels = time_data$Method)
 
@@ -1078,10 +1114,11 @@ time_data <- time_data %>%
     grepl("GENIE3", Method) ~ "GENIE3",
     grepl("GRNBoost2", Method) ~ "GRNBoost2",
     grepl("ZILGM", Method) ~ "ZILGM",
-    grepl("JRF", Method) ~ "JRF"
+    grepl("JRF", Method) ~ "JRF",
+    grepl("PCzinb", Method) ~ "PCzinb"
   ))
 
-method_colors <- c("GENIE3" = "darkblue", "GRNBoost2" = "darkgreen", "ZILGM" = "orange", "JRF" = "red")
+method_colors <- c("GENIE3" = "darkblue", "GRNBoost2" = "darkgreen", "ZILGM" = "orange", "JRF" = "red", "PCzinb" = "purple")
 
 time_plot <- ggplot(time_data, aes(x = Method, y = Time_in_Hours, fill = Method_Group)) +
   geom_bar(stat = "identity") +
@@ -1110,6 +1147,8 @@ for (k in c("TPR", "FPR", "Precision", "F1", "Accuracy")) {
     GRNBoost2_early = scores.grn.early$Statistics[[k]],
     ZILGM_late = scores.zilgm.late$Statistics[[k]],
     ZILGM_early = scores.zilgm.early$Statistics[[k]],
+    #PCzinb_late = scores.pc.late$Statistics[[k]],
+    #PCzinb_early = scores.pc.early$Statistics[[k]],
     JRF = scores.jrf$Statistics[[k]]
   )
 }
@@ -1142,7 +1181,7 @@ plot_data <- plot_data %>%
   mutate(Method = factor(Method, levels = c(
     "GENIE3_early", "GENIE3_late", 
     "GRNBoost2_early", "GRNBoost2_late", 
-    "ZILGM_early", "ZILGM_late", 
+    "ZILGM_early", "ZILGM_late","PCzinb_early", "PCzinb_late", 
     "JRF"  # Ensure JRF is last
   )))
 
