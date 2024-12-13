@@ -45,6 +45,10 @@ library(scales)
 library(INetTool)
 library(knitr)
 library(microbenchmark)
+library(Seurat)
+library(biomaRt)
+library(STRINGdb)
+library(httr)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -66,8 +70,8 @@ source("plotROC.R")
 source("cutoff_adjacency.R")
 source("infer_networks.R")
 source("download_Atlas.R")
-source("topExp.R")
 source("exploreCells.R")
+source("topExp.R")
 ```
 
 ```{r flowchart, fig.width=9, fig.height=15}
@@ -147,6 +151,10 @@ seurat_url <- "https://datasets.cellxgene.cziscience.com/8e64f5c1-e56c-4b0a-bc83
 
 seurat_object <- download_Atlas(seurat_url)
 celltype <- exploreCells(seurat_object)
+
+mart <- biomaRt::useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
+
+topgenes <- topExp(seurat_object, "mature NK T cell", mart, 300)
 
 ```
 
