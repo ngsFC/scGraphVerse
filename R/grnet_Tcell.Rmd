@@ -65,6 +65,9 @@ source("earlyj.R")
 source("plotROC.R")
 source("cutoff_adjacency.R")
 source("infer_networks.R")
+source("download_Atlas.R")
+source("topExp.R")
+source("exploreCells.R")
 ```
 
 ```{r flowchart, fig.width=9, fig.height=15}
@@ -128,17 +131,23 @@ grViz_output
 # Tcell Ground Truth
 
 ```{r readGT, fig.width=5, fig.height=5}
-adjm <- read.table("./../data/Tcell_adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
-diag(adjm) <- 0
+#adjm <- read.table("./../data/Tcell_adjacency_matrix.csv", header = T, row.names = 1, sep = ",") %>% as.matrix()
+#diag(adjm) <- 0
 
-adjm %>%
-    datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "Ground Truth")
+#adjm %>%
+#    datatable(extensions = 'Buttons',
+#            options = list(
+#              dom = 'Bfrtip',
+#              buttons = c('csv', 'excel'),
+#              scrollX = TRUE,
+#              pageLength = 10), 
+#            caption = "Ground Truth")
+
+seurat_url <- "https://datasets.cellxgene.cziscience.com/8e64f5c1-e56c-4b0a-bc83-1447fed2e7a4.rds"
+
+seurat_object <- download_Atlas(seurat_url)
+celltype <- exploreCells(seurat_object)
+
 ```
 
 ```{r plotGT, fig.width=5, fig.height=5}
