@@ -1,13 +1,14 @@
-download_Atlas <- function(file_url, dest_file) {
+download_Atlas <- function(file_url) {
   if (!requireNamespace("httr", quietly = TRUE)) {
     stop("The 'httr' package is required but not installed.")
   }
   
-  httr::GET(file_url, httr::write_disk(dest_file, overwrite = TRUE))
+  response <- httr::GET(file_url)
   
-  if (file.exists(dest_file)) {
-    message("File downloaded successfully: ", dest_file)
-  } else {
-    stop("File download failed.")
+  if (httr::status_code(response) != 200) {
+    stop("Failed to download the data. HTTP status code: ", httr::status_code(response))
   }
+  
+  raw_data <- httr::content(response, as = "raw")
+  readRDS(gzcon(rawConnection(raw_data)))
 }

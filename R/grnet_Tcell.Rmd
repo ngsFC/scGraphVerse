@@ -16,7 +16,7 @@ output:
 # Flowchart
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set("/home/francescoc/Desktop/scGRN_simulation/R")
+knitr::opts_chunk$set("/home/francescoc/Desktop/GRN_project/R")
 ```
 
 ```{r global options, include=FALSE}
