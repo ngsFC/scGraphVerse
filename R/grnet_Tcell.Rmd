@@ -72,6 +72,7 @@ source("infer_networks.R")
 source("download_Atlas.R")
 source("exploreCells.R")
 source("topExp.R")
+source("getAdj.R")
 ```
 
 ```{r flowchart, fig.width=9, fig.height=15}
@@ -146,7 +147,7 @@ grViz_output
 #              scrollX = TRUE,
 #              pageLength = 10), 
 #            caption = "Ground Truth")
-
+options(timeout = 600)
 seurat_url <- "https://datasets.cellxgene.cziscience.com/8e64f5c1-e56c-4b0a-bc83-1447fed2e7a4.rds"
 
 seurat_object <- download_Atlas(seurat_url)
@@ -154,8 +155,10 @@ celltype <- exploreCells(seurat_object)
 
 mart <- biomaRt::useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
-topgenes <- topExp(seurat_object, "mature NK T cell", mart, 300)
+topgenes <- topExp(seurat_object, "mature NK T cell", mart, 200)
+wbadj <- getAdj(topgenes, mart, score_threshold = 700)
 
+adjm <- as.matrix(wbadj[[2]])
 ```
 
 ```{r plotGT, fig.width=5, fig.height=5}

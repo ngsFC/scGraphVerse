@@ -1,5 +1,4 @@
-# Function to create STRING adjacency matrices
-get_string_adjacency <- function(top_genes, mart, score_threshold = 900, excluded_interactions = c("textmining")) {
+getAdj <- function(top_genes, mart, score_threshold = 900) {
   # Load the STRING database
   string_db <- STRINGdb$new(version = "11.5", species = 9606, score_threshold = score_threshold)
   
@@ -12,16 +11,11 @@ get_string_adjacency <- function(top_genes, mart, score_threshold = 900, exclude
   # Retrieve interactions for mapped genes
   interactions <- string_db$get_interactions(mapped_genes$STRING_id)
   
-  # Filter interactions by type (exclude unwanted interaction types)
-  if (!is.null(excluded_interactions)) {
-    interactions <- interactions[!interactions$evidence %in% excluded_interactions, ]
-  }
-  
   # Filter interactions based on the score threshold
   interactions <- interactions[interactions$combined_score >= score_threshold, ]
   
   if (nrow(interactions) == 0) {
-    stop("No interactions remain after filtering by type and score threshold.")
+    stop("No interactions remain after filtering by score threshold.")
   }
   
   # Construct weighted adjacency matrix
@@ -63,4 +57,3 @@ get_string_adjacency <- function(top_genes, mart, score_threshold = 900, exclude
   # Return both matrices as a list
   return(list(weighted = weighted_adj_matrix, binary = binary_adj_matrix))
 }
-
