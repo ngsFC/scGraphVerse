@@ -49,6 +49,7 @@ library(Seurat)
 library(biomaRt)
 library(STRINGdb)
 library(httr)
+library(msigdbr)
 
 use_python("/usr/bin/python3", required = TRUE)
 arboreto <- import("arboreto.algo")
@@ -132,6 +133,75 @@ rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart.png")
 
 grViz_output
 ```
+
+```{r flowchart, fig.width=9, fig.height=15}
+grViz_output <- DiagrammeR::grViz("
+digraph biological_workflow {
+  # Set up the graph attributes
+  graph [layout = dot, rankdir = TB]
+
+  # Define consistent node styles
+  node [shape = rectangle, style = filled, color = lightblue, fontsize = 12]
+
+  # Define nodes for each step
+  StartNode [label = 'Ground Thruth - String Regulatory Network', shape = oval, color = seagreen, fontcolor = black]
+  AdjacencyMatrix [label = 'Thruth Adjacency Matrix', shape = rectangle, color = seagreen]
+  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = goldenrod]
+
+  # Define the workflow structure
+  StartNode -> AdjacencyMatrix
+  AdjacencyMatrix -> SimulateData
+}
+")
+
+svg_code <- export_svg(grViz_output)
+rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart1.png")
+
+grViz_output
+
+
+grViz_output <- DiagrammeR::grViz("
+digraph biological_workflow {
+  # Set up the graph attributes
+  graph [layout = dot, rankdir = LR]
+
+  # Define consistent node styles
+  node [shape = rectangle, style = filled, color = lightblue, fontsize = 12]
+
+  # Define nodes for each step
+  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = goldenrod]
+
+  # Reconstruction using Three Packages
+  LateIntegration [label = 'Late\nIntegration', shape = oval, color = khaki]
+  EarlyIntegration [label = 'Early\nIntegration', shape = oval, color = khaki]
+  Jointanalysis [label = 'Joint\nanalysis', shape = oval, color = khaki]
+  
+
+  # Process 
+  networkinference [label = 'infer_networks.R', shape = rectangle, color = goldenrod, fontcolor=black]
+  symmetrize [label = 'symmetrize.R', shape = rectangle, color = goldenrod, fontcolor=black]
+  generateadjacency [label='generate_adjacency.R', shape=rectangle, color=goldenrod, fontcolor=black]
+  cutoffadjacency [label='cutoff_adjacency.R', shape=rectangle, color=goldenrod, fontcolor=black]
+  
+  # Define the workflow structure
+  SimulateData -> LateIntegration
+  SimulateData -> EarlyIntegration
+  SimulateData -> Jointanalysis
+  EarlyIntegration -> networkinference
+  LateIntegration -> networkinference
+  Jointanalysis -> networkinference
+  networkinference -> symmetrize
+  symmetrize -> generateadjacency
+  generateadjacency -> cutoffadjacency
+  }
+")
+
+svg_code <- export_svg(grViz_output)
+rsvg::rsvg_png(charToRaw(svg_code), "./../analysis/flowchart2.png")
+
+grViz_output
+```
+
 
 # Tcell Ground Truth
 
