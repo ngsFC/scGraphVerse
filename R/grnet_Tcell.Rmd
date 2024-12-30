@@ -72,7 +72,7 @@ source("cutoff_adjacency.R")
 source("infer_networks.R")
 source("download_Atlas.R")
 source("exploreCells.R")
-source("topExp.R")
+source("pathg.R")
 source("getAdj.R")
 ```
 
@@ -145,12 +145,14 @@ digraph biological_workflow {
 
   # Define nodes for each step
   StartNode [label = 'Ground Thruth - String Regulatory Network', shape = oval, color = seagreen, fontcolor = black]
-  AdjacencyMatrix [label = 'Thruth Adjacency Matrix', shape = rectangle, color = seagreen]
   SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = goldenrod]
-
+  Netinf [label = 'Implemented functions', shape = rectangle, color = lightblue]
+  Performance [label = 'Performance metrics', shape = rectangle, color = goldenrod]
+  
   # Define the workflow structure
-  StartNode -> AdjacencyMatrix
-  AdjacencyMatrix -> SimulateData
+  StartNode -> SimulateData
+  SimulateData -> Netinf
+  Netinf -> Performance
 }
 ")
 
@@ -169,7 +171,7 @@ digraph biological_workflow {
   node [shape = rectangle, style = filled, color = lightblue, fontsize = 12]
 
   # Define nodes for each step
-  SimulateData [label = 'Simulate Single-Cell Data', shape = rectangle, color = goldenrod]
+  SimulateData [label = 'Raw count matrices\nfrom Single-cell experiments', shape = rectangle, color = goldenrod]
 
   # Reconstruction using Three Packages
   LateIntegration [label = 'Late\nIntegration', shape = oval, color = khaki]
@@ -225,8 +227,17 @@ celltype <- exploreCells(seurat_object)
 
 mart <- biomaRt::useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
-topgenes <- topExp(seurat_object, "mature NK T cell", mart, 200)
-wbadj <- getAdj(topgenes, mart, score_threshold = 700)
+msigdb_collections <- msigdbr_collections()
+print(msigdb_collections)
+kegg_pathways <- msigdbr(species = "Homo sapiens", category = "C2", subcategory = "CP:KEGG")
+unique(kegg_pathways$gs_name)  # List KEGG pathway names
+
+keggf <- kegg_pathways %>% filter(gs_name %in% c("KEGG_T_CELL_RECEPTOR_SIGNALING_PATHWAY", "KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION", "KEGG_JAK_STAT_SIGNALING_PATHWAY", "KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY")) 
+
+#topgenes <- topExp(seurat_object, "mature NK T cell", mart, 200)
+pathgenes <- pathg(seurat_object, "mature NK T cell", mart, unique(keggf$human_ensembl_gene))
+
+wbadj <- getAdj(pathgenes, mart, score_threshold = 700)
 
 adjm <- as.matrix(wbadj[[2]])
 ```
