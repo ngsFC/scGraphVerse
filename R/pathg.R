@@ -1,4 +1,4 @@
-pathg <- function(seurat_object, cell_type, mart, pathway_genes) {
+pathg <- function(seurat_object, cell_type, mart, pathway_genes = NULL, top_n = NULL) {
   
   # Validate cell type
   if (!"cell_type" %in% colnames(seurat_object@meta.data)) {
@@ -18,39 +18,46 @@ pathg <- function(seurat_object, cell_type, mart, pathway_genes) {
   
   # Remove duplicate row names
   normalized_data <- normalized_data[!duplicated(rownames(normalized_data)), , drop = FALSE]
-  
   # Remove duplicate column names
   normalized_data <- normalized_data[, !duplicated(colnames(normalized_data)), drop = FALSE]
   
-  # Filter by pathway or functional genes
+  # Determine the genes to use
   if (!is.null(pathway_genes)) {
+    # Use pathway genes if provided
     pathway_filtered_genes <- intersect(rownames(normalized_data), pathway_genes)
     message("Genes found in the pathway: ", length(pathway_filtered_genes))
     print(pathway_filtered_genes)
+    
+    if (length(pathway_filtered_genes) == 0) {
+      warning("No genes matched the pathway. Returning an empty list.")
+      return(NULL)
+    }
+    selected_genes <- pathway_filtered_genes
+    
+  } else if (!is.null(top_n)) {
+    # Select top n expressed genes if specified
+    avg_expression <- rowMeans(normalized_data[, cells_in_type, drop = FALSE])
+    sorted_genes <- names(sort(avg_expression, decreasing = TRUE))
+    selected_genes <- head(sorted_genes, top_n)
+    message("Top ", top_n, " genes selected based on mean expression.")
+    
   } else {
-    stop("No pathway genes provided. Please supply a list of pathway genes.")
+    stop("Neither pathway genes nor top_n parameter provided. Please specify one.")
   }
   
-  if (length(pathway_filtered_genes) > 0) {
-    selected_expression <- normalized_data[pathway_filtered_genes, cells_in_type, drop = FALSE]
-    melted_data <- melt(selected_expression)
-    colnames(melted_data) <- c("Gene", "Cell", "Expression")
-    
-    plot <- ggplot(melted_data, aes(x = Gene, y = Expression)) +
-      geom_violin(trim = TRUE, fill = "lightblue", color = "darkblue") +
-      geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA) +
-      theme_minimal() +
-      labs(
-        title = paste("Expression Distribution of Pathway Genes in", cell_type),
-        x = "Gene",
-        y = "Expression Level"
-      ) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    
-    print(plot)
-  } else {
-    warning("No genes matched the pathway for plotting.")
-  }
+  # Extract expression data for the selected genes
+  selected_expression <- normalized_data[selected_genes, cells_in_type, drop = FALSE]
   
-  return(pathway_filtered_genes)
+  # Remove duplicated genes (rows) based on maximum expression value
+  selected_expression <- selected_expression[!duplicated(rownames(selected_expression)), , drop = FALSE]
+  
+  # Melt the data for ggplot visualization
+  melted_data <- reshape2::melt(selected_expression)
+  colnames(melted_data) <- c("Gene", "Cell", "Expression")
+  
+  # Plot the average expression per gene
+  avg_expression <- rowMeans(selected_expression)
+  sorted_genes <- names(sort(avg_expression, decreasing = TRUE))
+  
+  return(selected_genes)
 }

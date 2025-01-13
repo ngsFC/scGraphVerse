@@ -73,7 +73,7 @@ source("infer_networks.R")
 source("download_Atlas.R")
 source("exploreCells.R")
 source("pathg.R")
-source("getAdj.R")
+source("BioGRID_Adj.R")
 ```
 
 ```{r flowchart, fig.width=9, fig.height=15}
@@ -219,6 +219,7 @@ grViz_output
 #              scrollX = TRUE,
 #              pageLength = 10), 
 #            caption = "Ground Truth")
+
 options(timeout = 600)
 seurat_url <- "https://datasets.cellxgene.cziscience.com/8e64f5c1-e56c-4b0a-bc83-1447fed2e7a4.rds"
 
@@ -227,19 +228,38 @@ celltype <- exploreCells(seurat_object)
 
 mart <- biomaRt::useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
-msigdb_collections <- msigdbr_collections()
-print(msigdb_collections)
-kegg_pathways <- msigdbr(species = "Homo sapiens", category = "C2", subcategory = "CP:KEGG")
-unique(kegg_pathways$gs_name)  # List KEGG pathway names
+#msigdb_collections <- msigdbr_collections()
+#print(msigdb_collections)
+#kegg_pathways <- msigdbr(species = "Homo sapiens", category = "C2", subcategory = "CP:KEGG")
+#unique(kegg_pathways$gs_name)  # List KEGG pathway names
 
-keggf <- kegg_pathways %>% filter(gs_name %in% c("KEGG_T_CELL_RECEPTOR_SIGNALING_PATHWAY", "KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION", "KEGG_JAK_STAT_SIGNALING_PATHWAY", "KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY")) 
+#keggf <- kegg_pathways %>% filter(gs_name %in% c("KEGG_T_CELL_RECEPTOR_SIGNALING_PATHWAY", "KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION", "KEGG_JAK_STAT_SIGNALING_PATHWAY", "KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY")) 
 
 #topgenes <- topExp(seurat_object, "mature NK T cell", mart, 200)
-pathgenes <- pathg(seurat_object, "mature NK T cell", mart, unique(keggf$human_ensembl_gene))
+pathgenes <- pathg(seurat_object = seurat_object, cell_type = "mature NK T cell", mart = mart, top_n = 1000)
 
-wbadj <- getAdj(pathgenes, mart, score_threshold = 700)
+#unique(keggf$human_ensembl_gene)
 
-adjm <- as.matrix(wbadj[[2]])
+biogrid_data <- read.delim("/home/francescoc/Desktop/GRN_project/data/biogrid_physical_s400.txt", header = TRUE, stringsAsFactors = FALSE)
+
+#quantile(abs(Score), 0.75)
+mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+top_genes <- getBM(
+  attributes = c("ensembl_gene_id", "external_gene_name"),
+  filters = "ensembl_gene_id",
+  values = pathgenes,
+  mart = mart
+)
+
+result <- getAdjFromBioGRID(top_genes$external_gene_name, biogrid_data)
+wadjm <- result$weighted
+adjm <- result$binary
+
+common_names <- intersect(rownames(adjm), colnames(adjm))
+adjm <- adjm[common_names, common_names, drop = FALSE]
+
+print(dim(adjm))
 ```
 
 ```{r plotGT, fig.width=5, fig.height=5}
