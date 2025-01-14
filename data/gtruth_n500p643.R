@@ -113,4 +113,4 @@ count_matrices <- lapply(1:3, function(i) {
   return(count_matrix_df)
 })
 
-saveRDS(count_matrices, "./../analysis/count_matrices_p500xn643.RDS")
+saveRDS(count_matrices, "./../analysis/count_matrices_n500xp643.RDS")
