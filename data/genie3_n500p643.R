@@ -25,6 +25,9 @@ source("./../R/compare_consensus.R")
 
 time <- list()
 
+ddir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/data"
+pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
+
 # ---- Load Count matrices and adjm ----
 
 adjm <- as.matrix(read.table("./../analysis/adjm_n500p643.txt"))
@@ -40,14 +43,14 @@ time[["GENIE3_late_15Cores"]] <- system.time(
                                 nCores = 15)
 )
 
-saveRDS(genie3_late, "./../analysis/genie3_late_n500p643.RDS")
+saveRDS(genie3_late, paste(ddir, "genie3_late_n500p643.RDS", sep = "/"))
 
 # ---- Symmetrize and ROC ----
 
 genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 
-png("./../analysis/plots/genie3_late_n500p643_auc.png", width = 2400, height = 1800, res = 300)
+png(paste(pdir, "genie3_late_n500p643_auc.png", sep = "/"), width = 2400, height = 1800, res = 300)
 genie3_late_auc <- plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
 dev.off()
 
@@ -60,13 +63,15 @@ sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      method = "GENIE3",
                                      nCores = 15)
 
-png("./../analysis/plots/genie3_late_n500p643_scores.png", width = 2400, height = 1800, res = 300)
+png(paste(pdir, "genie3_late_n500p643_scores.png", sep = "/"), width = 2400, height = 1800, res = 300)
 scores.genie3.late.all <- pscores(adjm, sgenie3_late_adj)
 dev.off()
 
-png("./../analysis/plots/genie3_late_n500p643_mplots.png", width = 2400, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_mplots.png", sep = "/"), width = 2400, height = 2400, res = 300)
 plots <- plotg(sgenie3_late_adj)
 dev.off()
+
+cbind(scores.genie3.late.all$Statistics, genie3_late_auc) %>% write.table(., paste(ddir, "genie3_late_n500p643_perf.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
 
 # ---- Consensus ----
 
@@ -74,25 +79,25 @@ consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sgenie3_late_adj, weighted_list = sgenie3_late_wadj, method = "INet", threshold = 0.05, ncores = 15)
 
-png("./../analysis/plots/genie3_late_n500p643_vote_score.png", width = 2400, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_vote_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
 scores.genie3.late <- pscores(adjm, list(consesusm))
 dev.off()
-png("./../analysis/plots/genie3_late_n500p643_union_score.png", width = 2400, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_union_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
 scoresu.genie3.late <- pscores(adjm, list(consesusu))
 dev.off()
-png("./../analysis/plots/genie3_late_n500p643_inet_score.png", width = 2400, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_inet_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
 scoresnet.genie3.late <- pscores(adjm, list(consesunet))
 dev.off()
 
 # ---- Plot comparison ----
 
-png("./../analysis/plots/genie3_late_n500p643_vote_plot.png", width = 4000, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_vote_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
 ajm_compared <- compare_consensus(consesusm, adjm)
 dev.off()
-png("./../analysis/plots/genie3_late_n500p643_union_plot.png", width = 4000, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_union_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
 ajm_compared <- compare_consensus(consesusu, adjm)
 dev.off()
-png("./../analysis/plots/genie3_late_n500p643_inet_plot.png", width = 4000, height = 2400, res = 300)
+png(paste(pdir, "genie3_late_n500p643_inet_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
 ajm_compared <- compare_consensus(consesunet, adjm)
 dev.off()
 
@@ -105,13 +110,14 @@ time[["GENIE3_early_15Cores"]] <- system.time(
   genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
 
-saveRDS(genie3_early, "./../analysis/genie3_early_n500p643.RDS")
+saveRDS(genie3_early, paste(ddir, "genie3_early_n500p643.RDS", sep = "/"))
 
 # ---- Symmetrize and ROC ----
 
 genie3_early_wadj <- generate_adjacency(genie3_early, ground.truth = adjm)
 sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
-png("./../analysis/plots/genie3_early_n500p643_auc.png", width = 2400, height = 1800, res = 300)
+
+png(paste(pdir, "genie3_early_n500p643_auc.png", sep = "/"), width = 2400, height = 1800, res = 300)
 genie3_early_auc <- plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 dev.off()
 
@@ -124,17 +130,33 @@ sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       method = "GENIE3",
                                       nCores = 15)
 
-png("./../analysis/plots/genie3_early_n500p643_scores.png", width = 2400, height = 1800, res = 300)
+png(paste(pdir, "genie3_early_n500p643_scores.png", sep = "/"), width = 2400, height = 1800, res = 300)
 scores.genie3.early <- pscores(adjm, sgenie3_early_adj)
 dev.off()
 
-png("./../analysis/plots/genie3_early_n500p643_mplots.png", width = 2400, height = 2400, res = 300)
+png(paste(pdir, "genie3_early_n500p643_mplots.png", sep = "/"), width = 2400, height = 2400, res = 300)
 plots <- plotg(sgenie3_early_adj)
 dev.off()
 
+cbind(scores.genie3.early$Statistics, genie3_early_auc) %>% write.table(., paste(ddir, "genie3_early_n500p643_perf.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
+
 # ---- Plot comparison ----
 
-png("./../analysis/plots/genie3_early_n500p643_plot.png", width = 4000, height = 2400, res = 300)
+png(paste(pdir, "genie3_early_n500p643_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
 ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 dev.off()
 
+time_data <- data.frame(
+  Method = names(time),
+  Time_in_Seconds = sapply(time, function(x) {
+    if ("elapsed" %in% names(x)) x["elapsed"] else NA
+  })
+)
+
+time_data$Time_in_Minutes <- as.numeric(time_data$Time_in_Seconds) / 60
+time_data$Time_in_Hours <- as.numeric(time_data$Time_in_Seconds) / 3600
+
+time_data <- time_data[order(time_data$Time_in_Hours), ]
+time_data$Method <- factor(time_data$Method, levels = time_data$Method)
+
+write.table(time_data, paste(ddir, "genie3_n500p643_timeres.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
