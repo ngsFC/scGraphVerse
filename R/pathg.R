@@ -1,4 +1,4 @@
-pathg <- function(seurat_object, cell_type, mart, pathway_genes = NULL, top_n = NULL) {
+pathg <- function(seurat_object, cell_type, pathway_genes = NULL, top_n = NULL) {
   
   # Validate cell type
   if (!"cell_type" %in% colnames(seurat_object@meta.data)) {
