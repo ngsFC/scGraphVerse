@@ -1,0 +1,12 @@
+Package: NodeVerse
+Title: NodeVerse: A Gene Regulatory Network Analysis Package
+Version: 0.1.0
+Authors@R: 
+    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+Author: Francesco Cecere [aut, cre]
+Maintainer: Francesco Cecere <francesco.cecerengs@gmail.com>
+Description: A package for analyzing gene regulatory networks.
+License: MIT
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
