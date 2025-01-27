@@ -1,3 +1,40 @@
+#' Calculate performance metrics for predicted adjacency matrices against ground truth
+#'
+#' This function computes a variety of performance metrics (such as precision, recall, F1 score, 
+#' accuracy, true positive rate, false positive rate) for a list of predicted adjacency matrices 
+#' by comparing them with a provided ground truth matrix. The function calculates metrics 
+#' for the upper triangular part of the adjacency matrices, excluding the diagonal.
+#' It then creates a bar plot comparing the performance of each predicted matrix.
+#'
+#' @param ground_truth A square matrix representing the ground truth adjacency matrix. The diagonal 
+#'        elements will be set to zero.
+#' @param predicted_list A list of square matrices representing predicted adjacency matrices that 
+#'        will be compared to the ground truth.
+#'
+#' @return A list containing:
+#'   - `Statistics`: A data frame with the performance metrics (TP, TN, FP, FN, TPR, FPR, Precision, 
+#'      F1, Accuracy) for each matrix in the `predicted_list`.
+#'   - A bar plot displaying the comparison of metrics (TPR, FPR, F1, Precision, Accuracy) 
+#'      across all matrices.
+#' 
+#' @details 
+#' This function computes the following performance metrics:
+#'   - **True Positive Rate (TPR)**: The proportion of actual positive edges that were correctly 
+#'     predicted (also known as recall).
+#'   - **False Positive Rate (FPR)**: The proportion of actual negative edges that were incorrectly 
+#'     predicted as positive.
+#'   - **Precision**: The proportion of predicted positive edges that were actually positive.
+#'   - **F1 Score**: The harmonic mean of Precision and TPR.
+#'   - **Accuracy**: The proportion of correct predictions (TP + TN) to all predictions (TP + TN + FP + FN).
+#' 
+#' The function also excludes diagonal elements from both the ground truth and predicted matrices,
+#' and operates only on the upper triangular part of the adjacency matrices (which represents the 
+#' directed edges).
+#'
+#' @importFrom ggplot2 ggplot aes geom_bar geom_text position_dodge labs theme_minimal
+#' @importFrom tidyr pivot_longer
+#' 
+#' @export
 pscores <- function(ground_truth, predicted_list) {
   
   # Ensure ground truth is a matrix and zero out the diagonal
@@ -82,6 +119,7 @@ pscores <- function(ground_truth, predicted_list) {
   # Reorder the 'Metric' factor levels to ensure the desired order
   long_stats_df$Metric <- factor(long_stats_df$Metric, levels = ordered_metrics)
   
+  # Plot the metrics comparison across matrices
   plot <- ggplot(long_stats_df, aes(x = Matrix, y = Value, fill = Metric)) +
     geom_bar(stat = "identity", position = "dodge") +
     geom_text(aes(label = round(Value, 2)), position = position_dodge(width = 0.9), vjust = -0.5) +
@@ -90,6 +128,7 @@ pscores <- function(ground_truth, predicted_list) {
   
   print(plot)
   
+  # Return the statistics data frame (filtered for plotting)
   list(Statistics = stats_df_filtered)
 }
 

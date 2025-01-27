@@ -1,4 +1,35 @@
+#' Compare Consensus and Original Graphs
+#'
+#' This function compares a consensus adjacency matrix with an original adjacency matrix, visualizing the true 
+#' positives (TP), false negatives (FN), and false positives (FP) between the two graphs. It uses the 
+#' `ggraph` package to create visualizations that show the agreement and disagreement between the two graphs.
+#' The function generates two plots:
+#' 1. A plot showing the edges present in both the ground truth and consensus matrix (TP) and the edges 
+#'    present only in the ground truth (FN).
+#' 2. A plot showing the edges present in the consensus matrix but absent in the ground truth (FP).
+#'
+#' @param consensus_matrix A binary adjacency matrix representing the consensus graph.
+#' @param original_matrix A binary adjacency matrix representing the original or ground truth graph.
+#'
+#' @return This function does not return any values. It generates two plots:
+#'         - One for true positives and false negatives.
+#'         - Another for false positives.
+#'
+#' @details
+#' The function compares two graphs: the consensus graph and the ground truth graph. It computes:
+#' - True Positives (TP): Edges that are present in both graphs.
+#' - False Negatives (FN): Edges that are present in the original graph but not in the consensus graph.
+#' - False Positives (FP): Edges that are present in the consensus graph but not in the original graph.
+#' 
+#' The true positives (TP) and false negatives (FN) are plotted together, while the false positives (FP) are plotted separately.
+#'
+#' @importFrom igraph graph_from_adjacency_matrix as_edgelist
+#' @importFrom ggraph ggraph geom_edge_link geom_node_point
+#' @importFrom gridExtra grid.arrange
+#'
+#' @export
 compare_consensus <- function(consensus_matrix, original_matrix) {
+  
   # Helper function to create graphs from adjacency matrices
   create_graph <- function(adj_matrix) {
     graph <- graph_from_adjacency_matrix(adj_matrix, mode = "undirected", diag = FALSE)
@@ -59,3 +90,4 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   # Combine plots using gridExtra
   grid.arrange(plot_ground_truth, plot_fp, nrow = 1)
 }
+

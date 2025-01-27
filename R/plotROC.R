@@ -1,12 +1,54 @@
+#' Plot ROC Curve for a List of Matrices
+#'
+#' This function takes a list of matrices and their corresponding ground truth 
+#' to calculate and plot the Receiver Operating Characteristic (ROC) curve for 
+#' each matrix. The function supports both binary and weighted matrices. If the 
+#' matrices are binary, the function computes the True Positive Rate (TPR) and 
+#' False Positive Rate (FPR) for each matrix. If the matrices are weighted, 
+#' the function computes the ROC curve using the predicted values from the weighted matrices.
+#'
+#' @param matrices_list A list of matrices. Each matrix is either binary or weighted. 
+#'   For binary matrices, values are assumed to be either 0 or 1.
+#' @param ground_truth A square matrix representing the ground truth. It contains binary values 
+#'   where the upper triangle represents the interactions (1) or lack of interactions (0).
+#' @param plot_title A string to be used as the title for the ROC curve plot.
+#' @param is_binary A boolean indicating whether the matrices in the list are binary. 
+#'   Default is FALSE, indicating that the matrices are weighted.
+#' 
+#' @return A data frame containing the AUC values for each matrix in the list.
+#' 
+#' @details 
+#' The function computes the ROC curve for each matrix, calculates the AUC value, 
+#' and plots the ROC curves. For binary matrices, the AUC is calculated based on the 
+#' True Positive Rate (TPR) and False Positive Rate (FPR). For weighted matrices, 
+#' the AUC is computed using the continuous predicted values. The function supports 
+#' multiple matrices in the input list and generates a dynamic plot for comparison.
+#'
+#' @examples
+#' \dontrun{
+#' # Example of plotting the ROC curve for a list of weighted matrices
+#' plotROC(matrices_list = list(mat1, mat2), ground_truth = truth_matrix, 
+#'         plot_title = "ROC Curve for Weighted Matrices", is_binary = FALSE)
+#' }
+#' 
+#' @import ggplot2
+#' @importFrom pROC roc
+#' @importFrom scales hue_pal
+#' 
+#' @export
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
+  
+  # Convert the ground truth matrix to a vector of values for the upper triangle
   truth_vec <- as.vector(ground_truth[upper.tri(ground_truth)])
   
+  # Initialize empty data frames to store ROC data and AUC values
   roc_data <- data.frame()
   auc_values <- data.frame(Matrix = character(), AUC = numeric())
   
   if (is_binary) {
     # For binary matrices, calculate the ROC curve from aggregated points
     binary_points <- data.frame(FPR = numeric(), TPR = numeric())
+    
     for (i in seq_along(matrices_list)) {
       binary_matrix <- as.data.frame(matrices_list[[i]])
       binary_matrix <- binary_matrix[rownames(ground_truth), colnames(ground_truth)]
@@ -48,12 +90,14 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
       weight_matrix <- weight_matrix[rownames(ground_truth), colnames(ground_truth)]
       pred_vec <- as.vector(as.matrix(weight_matrix)[upper.tri(weight_matrix)])
       
+      # Compute ROC for the weighted matrix
       roc_obj <- roc(truth_vec, pred_vec, plot=FALSE)
       auc_value <- round(roc_obj$auc, 2)
       
       # Store AUC values in a data frame
       auc_values <- bind_rows(auc_values, data.frame(Matrix = paste("Weighted Matrix", i), AUC = auc_value))
       
+      # Prepare data for plotting the ROC curve
       roc_df <- data.frame(
         FPR = 1 - roc_obj$specificities, 
         TPR = roc_obj$sensitivities,
@@ -80,19 +124,19 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
   
   # Add lines for weighted matrices or binary matrix ROC curve
   if (!is_binary) {
-    p <- p +
-      geom_line(data=roc_data, aes(x=FPR, y=TPR, color=Matrix), size=1.2)
+    p <- p + geom_line(data=roc_data, aes(x=FPR, y=TPR, color=Matrix), size=1.2)
   } else {
     # Add the line connecting binary dots and draw the ROC curve
-    p <- p +
-      geom_line(data=roc_data, aes(x=FPR, y=TPR, color=Matrix), size=1.2) +
+    p <- p + geom_line(data=roc_data, aes(x=FPR, y=TPR, color=Matrix), size=1.2) +
       geom_point(data=binary_points, aes(x=FPR, y=TPR), size=2, color="blue")
   }
   
   # Add dynamic color mapping
   p <- p + scale_color_manual(values=colors)
   
+  # Print the plot
   print(p)
   
   return(auc_values)
 }
+

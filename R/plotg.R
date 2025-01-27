@@ -1,3 +1,48 @@
+#' Plot Multiple Graphs from Adjacency Matrices
+#'
+#' This function generates and visualizes graphs from a list of adjacency matrices.
+#' Each adjacency matrix is converted into an `igraph` object and plotted using the
+#' `ggraph` package with a force-directed layout. The generated plots are then 
+#' arranged in a grid for easy comparison. 
+#'
+#' @param adj_matrix_list A list of adjacency matrices, where each matrix represents
+#'   an undirected graph. The function assumes that the matrices are symmetric and
+#'   have zeros on the diagonal (no self-loops).
+#' 
+#' @details
+#' Each adjacency matrix in `adj_matrix_list` is processed individually, converting it
+#' into an `igraph` object. The graphs are then visualized using the `ggraph` package, which
+#' employs a force-directed layout for graph visualization. The title of each plot displays the
+#' graph index and basic graph statistics (number of nodes and edges). All individual graphs are
+#' arranged into a grid layout, with the number of columns dynamically determined by the square root
+#' of the total number of graphs.
+#'
+#' @note
+#' This function requires the following packages:
+#'   - `igraph`
+#'   - `ggraph`
+#'   - `gridExtra`
+#'
+#' If any of these packages are not installed, the function will stop and display an error message.
+#'
+#' @return A combined plot grid of all graphs generated from the adjacency matrices.
+#' Each graph is visualized with nodes and edges, and the title includes the graph's index,
+#' number of nodes, and number of edges.
+#'
+#' @examples
+#' # Example adjacency matrices (binary, undirected)
+#' adj_matrix_1 <- matrix(c(0, 1, 0, 1, 1, 0), nrow = 3, byrow = TRUE)
+#' adj_matrix_2 <- matrix(c(0, 1, 1, 1, 0, 0), nrow = 3, byrow = TRUE)
+#'
+#' # Create a list of adjacency matrices
+#' adj_matrices <- list(adj_matrix_1, adj_matrix_2)
+#'
+#' # Call the plotg function to visualize the graphs
+#' plotg(adj_matrices)
+#'
+#' @import igraph
+#' @import ggraph
+#' @import gridExtra
 plotg <- function(adj_matrix_list) {
   # Load required packages
   if (!requireNamespace("igraph", quietly = TRUE)) {
@@ -47,3 +92,4 @@ plotg <- function(adj_matrix_list) {
   # Print the combined plot
   print(final_plot)
 }
+
