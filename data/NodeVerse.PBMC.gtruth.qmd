@@ -116,13 +116,10 @@ expression_matrices <- lapply(seurat_split, function(obj) {
 
 names(expression_matrices) <- names(seurat_split)
 
-str(expression_matrices)
-saveRDS(expression_matrices, "PBMC.top1000.RDS")
 
 ```
 
 ## Adjacency matrix
-
 
 ```{r}
 
@@ -140,6 +137,25 @@ print(dim(adjm))
 
 write.table(adjm, "./../analysis/adjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 write.table(wadjm, "./../analysis/wadjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+
+```
+
+```{r}
+str(expression_matrices)
+expression_matrices[[1]] <- as.matrix(expression_matrices[[1]])
+expression_matrices[[2]] <- as.matrix(expression_matrices[[2]])
+expression_matrices[[3]] <- as.matrix(expression_matrices[[3]])
+
+expression_matrices[[1]] <- expression_matrices[[1]][rownames(expression_matrices[[1]]) %in% pathgenes, ]
+expression_matrices[[2]] <- expression_matrices[[2]][rownames(expression_matrices[[2]]) %in% pathgenes, ]
+expression_matrices[[3]] <- expression_matrices[[3]][rownames(expression_matrices[[3]]) %in% pathgenes, ]
+
+expression_matrices[[1]] <- t(expression_matrices[[1]])
+expression_matrices[[2]] <- t(expression_matrices[[2]])
+expression_matrices[[3]] <- t(expression_matrices[[3]])
+
+
+saveRDS(expression_matrices, "PBMC.top1000.RDS")
 
 ```
 
@@ -169,7 +185,6 @@ ggsave("./../analysis/gtruth_top1000_s300.png", p1, width = 8, height = 6, dpi =
 
 ## Simulate n500 p677 matrices
 
-
 ```{r}
 ncell <- 500
 nodes <- nrow(adjm)
@@ -197,4 +212,3 @@ count_matrices <- lapply(1:3, function(i) {
 saveRDS(count_matrices, "./../analysis/sim_n500p677.RDS")
 
 ```
-

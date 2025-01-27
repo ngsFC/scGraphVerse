@@ -1,0 +1,4 @@
+Matrix	Edges	Nodes	TP	TN	FP	FN	TPR	FPR	Precision	F1	Accuracy	Matrix	AUC
+Matrix 1	0	677	0	227858	0	968	0	0	0	0	0.995769711483835	Weighted Matrix 1	0.5
+Matrix 2	0	677	0	227858	0	968	0	0	0	0	0.995769711483835	Weighted Matrix 2	0.5
+Matrix 3	0	677	0	227858	0	968	0	0	0	0	0.995769711483835	Weighted Matrix 3	0.5
