@@ -26,9 +26,7 @@ execute:
 ```{r load-libraries}
 knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data")
 
-library(tidyverse)
 library(biomaRt)
-library(learn2count)
 library(Seurat)
 library(DT)
 
