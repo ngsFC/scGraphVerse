@@ -1,65 +1,99 @@
+# NodeVerse: A Package for Network Inference
 
-# Gene Regulatory Network (GRN) Analysis
+## Overview
+NodeVerse is an R package designed for inferring and analyzing gene regulatory networks (GRNs). The package provides tools for generating adjacency matrices, inferring networks using different methods, comparing inferred networks to ground truth, and visualizing network properties.
 
-This repository contains a collection of R scripts and markdown files used to perform various analyses related to network generation, adjacency matrices, and ROC (Receiver Operating Characteristic) curve plotting. The files in this repository are designed to work together for the analysis and visualization of network properties.
+## Installation
+To install NodeVerse, you can use the following command:
 
-<div align="center">
-<img src="./analysis/flowchart.png" alt="flowchart" \>
-</div>
+```r
+# Install from GitHub (if hosted there)
+if (!requireNamespace("devtools", quietly = TRUE)) {
+    install.packages("devtools")
+}
+devtools::install_github("ngsFC/NodeVerse")
+```
 
-## Overview of Files
+## Functions
 
-- **grnet.Rmd**: This R Markdown file likely serves as the main document that ties together all the scripts in this repository. It likely contains explanations, visualizations, and code executions for generating results from the other scripts.
+### 1. `infer_networks()`
+Infers gene regulatory networks using different methods, including GENIE3, GRNBoost2, ZILGM, JRF, and PCzinb.
 
-- **cutoff_adjacency.R**: This script is responsible for creating an adjacency matrix based on a specific cutoff threshold. This is a key component of network generation, where the connections between nodes are defined based on their relationships and a cutoff value.
+#### Usage:
+```r
+network <- infer_networks(count_matrices_list, method = "GENIE3")
+```
 
-- **pscores.R**: This script calculate and plot TPR, FPR, PRECISION, F1, ACCURACY.
+### 2. `generate_adjacency()`
+Generates adjacency matrices from a list of data frames containing gene interaction data.
 
-- **plotROC.R**: This script handles the plotting of ROC curves, which are used to evaluate the performance of the models. In a network analysis context, ROC curves might be used to assess the quality of link prediction models.
+#### Usage:
+```r
+adjacency_matrices <- generate_adjacency(data_frames_list)
+```
 
-- **generate_adjacency.R**: This script generates the adjacency matrix for a network. It may either rely on input data or be part of a process that constructs a network from scratch based on node and edge criteria.
+### 3. `symmetrize()`
+Ensures adjacency matrices are symmetric by applying a specified function to corresponding off-diagonal elements.
 
-- **simmetric.R**: This script might calculate symmetric properties of an adjacency matrix or network, which is important in undirected network analysis where relationships between nodes are mutual.
+#### Usage:
+```r
+symmetric_matrices <- symmetrize(matrix_list, method = "mean")
+```
 
-- **plotg.R**: A script for plotting graphs (networks). This file likely provides functions to visualize the networks generated or analyzed by the other scripts.
+### 4. `plotROC()`
+Plots the Receiver Operating Characteristic (ROC) curve for different inferred networks.
 
-- **earlyj.R**: concatenate and create a single matrix from a list of n matrices for early integration steps.
+#### Usage:
+```r
+plotROC(predicted_matrices, ground_truth)
+```
 
-- **dropo.R**: dropout script.
+### 5. `cutoff_adjacency()`
+Applies a cutoff to adjacency matrices based on percentile values from shuffled networks.
 
-- **compare_consensus.R**: This script compares different networks. Consensus matrices are used to summarize the agreement between different network structures results.
+#### Usage:
+```r
+filtered_adjacency <- cutoff_adjacency(count_matrices, method = "GRNBoost2")
+```
 
-## Usage
+### 6. `pscores()`
+Computes performance metrics for predicted adjacency matrices compared to a ground truth.
 
-To reproduce the analysis or explore the network generation process, you can run the provided scripts in R. Here's a general workflow to get started:
+#### Usage:
+```r
+pscores(predicted_matrices, ground_truth)
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
-   ```
+### 7. `plotg()`
+Generates network visualizations from adjacency matrices.
 
-2. Install the necessary R packages:
-   Ensure you have all the required packages installed. You can install the necessary libraries by adding the following to your R session:
-   ```R
-   install.packages(c("ggplot2", "igraph", "pROC"))  # Add more as needed
-   ```
+#### Usage:
+```r
+plotg(adjacency_matrices)
+```
 
-3. Run the R scripts individually or use the `grnet.Rmd` file to generate the full analysis:
-   ```R
-   rmarkdown::render("grnet.Rmd")
-   ```
+### 8. `create_consensus()`
+Creates a consensus adjacency matrix using voting, union, or INet methods.
 
-4. Customization:
-   Modify the cutoff thresholds, input data, or network parameters in the individual scripts to suit your needs.
+#### Usage:
+```r
+consensus_matrix <- create_consensus(adjacency_list, method = "vote")
+```
 
-## Contributions
+### 9. `compare_consensus()`
+Compares consensus adjacency matrices to original graphs and visualizes their differences.
 
-If you would like to contribute to this project, feel free to submit a pull request or report issues. Contributions such as bug fixes, enhancements, and suggestions are welcome!
+#### Usage:
+```r
+compare_consensus(ground_truth_matrix, consensus_matrix)
+```
 
 ## License
+This package is licensed under the MIT License.
 
-This project is licensed under the MIT License.
-
-## Founding
+## Aknowledge
 "National Centre for HPC, Big Data and Quantum Computing" - CN00000013 - CUP B93C22999629996
+
+## Author
+Developed by [Francesco Cecere].
+

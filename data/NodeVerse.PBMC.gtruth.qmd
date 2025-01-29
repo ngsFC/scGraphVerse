@@ -4,39 +4,40 @@ author: "Francesco Cecere"
 date: "`r Sys.Date()`"
 format: 
   html:
-    code-fold: true
-    toc: true
-    toc-depth: 2
+    code-fold: true  # Collapse code blocks
+    toc: true        # Table of contents
+    toc-depth: 2     # Depth of TOC headings
     toc-location: left
     number-sections: true
-    theme: superhero
-  execute:
-   echo: true
-   warning: false
-   error: true
+    theme: minty # Use a predefined theme
+    smooth-scroll: true  # Enable smooth scrolling
+    code-summary: "Show the Code"  # Custom label for code folding
+    highlight-style: github # Syntax highlighting style
+    link-external-newwindow: true  # Open external links in a new window
 editor: visual
+execute:
+  warning: false  # Suppress warnings globally
+  message: false  # Suppress package messages globally
+  error: false    # Prevent the document from halting on errors
 ---
 
 ## Load Libraries
 
 ```{r load-libraries}
-setwd("/home/francescoc/Desktop/GRN_project/data")
+knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data")
 
 library(tidyverse)
 library(biomaRt)
-library(igraph)
 library(learn2count)
-library(ggraph)
 library(Seurat)
+library(DT)
 
-source("./../R/download_Atlas.R")
-source("./../R/pathg.R")
-source("./../R/BioGRID_Adj.R")
+library(NodeVerse)
 ```
 
 ## Load BioGRID Data
 
-```{r}
+```{r Download and format BioGRID data}
 biogrid_data <- read.delim("/home/francescoc/Downloads/BIOGRID-ALL-4.4.241.tab3.txt", header = TRUE, stringsAsFactors = FALSE)
 
 biogrid_data <- biogrid_data[, c("Official.Symbol.Interactor.A", 
@@ -55,11 +56,21 @@ biogrid_data <- biogrid_data %>%
   filter(org1 == "Homo sapiens" & org2 == "Homo sapiens")
 
 write.table(biogrid_data, "biogrid_physical_s300.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+
+biogrid_data %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "BioGRID data")
+
 ```
 
 ## Load Atlas Data
 
-```{r}
+```{r Download Seurat Object}
 options(timeout = 600)
 
 # PBMC Dataset: Local and systemic responses to SARS-CoV-2 infection in children and adults
@@ -74,54 +85,100 @@ seurat_subset <- subset(
 
 ```
 
-```{r}
-# Extract the meta.features dataframe
+```{r Filter Seurat object}
 meta_features <- seurat_subset[["RNA"]]@meta.features
-
-# Ensure the rownames of meta.features match the rownames of the data
 stopifnot(all(rownames(meta_features) == rownames(seurat_subset[["RNA"]]@data)))
 
-# Get the 'name' column to use as new rownames
 new_rownames <- meta_features$name
-
-# Define the new rownames
 new_rownames <- seurat_subset@assays$RNA@meta.features$name
 
-# Ensure that the length of new_rownames matches the current features
 if (length(new_rownames) != nrow(seurat_subset[["RNA"]]@data)) {
   stop("The length of new_rownames does not match the number of features.")
 }
-# Update all relevant components together
+
 assay <- seurat_subset[["RNA"]] # Access the RNA assay
 rownames(assay@counts) <- new_rownames
 rownames(assay@data) <- new_rownames
 rownames(assay@meta.features) <- new_rownames
 
-# Assign the updated assay back to the Seurat object
 seurat_subset[["RNA"]] <- assay
 
 ```
 
-## Split data for donor_id
+## Filtering step
 
 ```{r}
+seurat_subset <- PercentageFeatureSet(seurat_subset, "^MT-", col.name = "percent_mito")
+# Ribosomal
+seurat_subset <- PercentageFeatureSet(seurat_subset, "^RP[SL]", col.name = "percent_ribo")
+
+feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo")
+VlnPlot(seurat_subset, group.by = "donor_id", split.by = "donor_id", features = feats, pt.size = 0.1, ncol = 3)
+FeatureScatter(seurat_subset, "nCount_RNA", "nFeature_RNA", group.by = "donor_id", pt.size = .5)
+```
+
+```{r}
+selected_c <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
+selected_f <- rownames(seurat_subset)[Matrix::rowSums(seurat_subset) > 3]
+
+seurat_subset_filt <- subset(seurat_subset, features = selected_f, cells = selected_c)
+dim(seurat_subset_filt)
+table(seurat_subset_filt$donor_id)
+
+C <- seurat_subset_filt@assays$RNA@counts
+C@x <- C@x / rep.int(colSums(C), diff(C@p)) * 100
+most_expressed <- order(Matrix::rowSums(C), decreasing = T)[20:1]
+boxplot(as.matrix(t(C[most_expressed, ])),
+    cex = 0.1, las = 1, xlab = "Percent counts per cell",
+    col = (scales::hue_pal())(20)[20:1], horizontal = TRUE
+)
+```
+
+```{r}
+selected_mito <- WhichCells(seurat_subset_filt, expression = percent_mito < 20)
+selected_ribo <- WhichCells(seurat_subset_filt, expression = percent_ribo > 5)
+
+# and subset the object to only keep those cells
+seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_mito)
+seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_ribo)
+dim(seurat_subset_filt)
+
+feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo")
+VlnPlot(seurat_subset_filt, group.by = "donor_id", features = feats, pt.size = 0.1, ncol = 3) + NoLegend()
+```
+
+```{r}
+# Filter MALAT1
+seurat_subset_filt <- seurat_subset_filt[!grepl("MALAT1", rownames(seurat_subset_filt)), ]
+
+# Filter Mitocondrial
+seurat_subset_filt <- seurat_subset_filt[!grepl("^MT-", rownames(seurat_subset_filt)), ]
+
+# Filter Ribossomal gene (optional if that is a problem on your data)
+data.filt <- seurat_subset_filt[ ! grepl("^RP[SL]", rownames(seurat_subset_filt)), ]
+
+dim(seurat_subset_filt)
+```
+
+## Split data for donor_id
+
+```{r Splitting in k matrices}
 seurat_split <- SplitObject(
   object = seurat_subset,
   split.by = "donor_id"
 )
+
 
 expression_matrices <- lapply(seurat_split, function(obj) {
   GetAssayData(obj, assay = "RNA", layer = "counts") # Use `layer` instead of `slot`
 })
 
 names(expression_matrices) <- names(seurat_split)
-
-
 ```
 
 ## Adjacency matrix
 
-```{r}
+```{r Generate Adjacency matrice}
 
 pathgenes <- pathg(seurat_object = seurat_subset, cell_type = "CD4-positive helper T cell", top_n = 1000)
 
@@ -138,41 +195,48 @@ print(dim(adjm))
 write.table(adjm, "./../analysis/adjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 write.table(wadjm, "./../analysis/wadjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 
+wadjm %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "BioGRID Adjacency Top1000 genes")
+
+adjm %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "BioGRID Adjacency Top1000 genes")
+
 ```
 
-```{r}
-str(expression_matrices)
-expression_matrices[[1]] <- as.matrix(expression_matrices[[1]])
-expression_matrices[[2]] <- as.matrix(expression_matrices[[2]])
-expression_matrices[[3]] <- as.matrix(expression_matrices[[3]])
-
-expression_matrices[[1]] <- expression_matrices[[1]][rownames(expression_matrices[[1]]) %in% pathgenes, ]
-expression_matrices[[2]] <- expression_matrices[[2]][rownames(expression_matrices[[2]]) %in% pathgenes, ]
-expression_matrices[[3]] <- expression_matrices[[3]][rownames(expression_matrices[[3]]) %in% pathgenes, ]
-
-expression_matrices[[1]] <- t(expression_matrices[[1]])
-expression_matrices[[2]] <- t(expression_matrices[[2]])
-expression_matrices[[3]] <- t(expression_matrices[[3]])
-
+```{r format control Seurat data}
+expression_matrices <- lapply(expression_matrices, as.matrix)
+expression_matrices <- lapply(expression_matrices, function(mat) mat[rownames(mat) %in% pathgenes, ])
+expression_matrices <- lapply(expression_matrices, t)
 
 saveRDS(expression_matrices, "PBMC.top1000.RDS")
-
 ```
 
 ## Create Ground Truth Network
 
-```{r}
+```{r plot Ground truth}
 gtruth <- igraph::graph_from_adjacency_matrix(adjm, mode = "undirected", diag = FALSE)
 
-num_nodes <- vcount(gtruth)
-num_edges <- ecount(gtruth)
+num_nodes <- igraph::vcount(gtruth)
+num_edges <- igraph::ecount(gtruth)
 
 set.seed(1234)
 
-p1 <- ggraph(gtruth, layout = "fr") + 
-  geom_edge_link(color = "gray", width = 0.5) +  # Set edge color and width
-  geom_node_point(color = "steelblue", size = 0.7) +  # Set node color and size
-  labs(title = paste("Ground Truth\nNodes:", vcount(gtruth), "Edges:", ecount(gtruth))) +
+p1 <- ggraph::ggraph(gtruth, layout = "fr") + 
+  ggraph::geom_edge_link(color = "gray", width = 0.5) +  # Set edge color and width
+  ggraph::geom_node_point(color = "steelblue", size = 0.7) +  # Set node color and size
+  labs(title = paste("Ground Truth\nNodes:", igraph::vcount(gtruth), "Edges:", igraph::ecount(gtruth))) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
@@ -185,7 +249,7 @@ ggsave("./../analysis/gtruth_top1000_s300.png", p1, width = 8, height = 6, dpi =
 
 ## Simulate n500 p677 matrices
 
-```{r}
+```{r Simulate k matrices with n cells (500) and p genes}
 ncell <- 500
 nodes <- nrow(adjm)
 
@@ -210,5 +274,14 @@ count_matrices <- lapply(1:3, function(i) {
 
 # Optionally save the results
 saveRDS(count_matrices, "./../analysis/sim_n500p677.RDS")
+
+count_matrices[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "Simulated Matrix")
 
 ```
