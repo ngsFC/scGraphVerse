@@ -38,13 +38,12 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   
   # Helper function for ggraph plot
   plot_ggraph <- function(graph, plot_title, edge_colors = NULL) {
-    ggraph(graph, layout = "fr") +
-      geom_edge_link(aes(color = edge_colors), width = 0.5) +
-      geom_node_point(color = "steelblue", size = 0.7) +
-      labs(title = plot_title) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+	  ggraph::ggraph(graph, layout = "fr") +
+		  ggraph::geom_edge_link(aes(color = edge_colors), width = 0.5) +
+		  ggraph::geom_node_point(color = "steelblue", size = 0.7) +
+		  labs(title = plot_title) +
+		  theme_minimal() +
+		  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         legend.position = "none"
       )
   }
@@ -77,9 +76,9 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   # Add purple color to FP edges
   edge_colors_fp <- rep("purple", nrow(FP_edges_matrix))
   set.seed(1234)
-  plot_fp <- ggraph(graph_fp, layout = "fr") +
-    geom_edge_link(color = "purple", width = 0.5) +
-    geom_node_point(color = "steelblue", size = 0.7) +
+  plot_fp <- ggraph::ggraph(graph_fp, layout = "fr") +
+    ggraph::geom_edge_link(color = "purple", width = 0.5) +
+    ggraph::geom_node_point(color = "steelblue", size = 0.7) +
     labs(title = paste("False Positives\nFP:", FP_count)) +
     theme_minimal() +
     theme(
