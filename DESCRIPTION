@@ -10,3 +10,12 @@ License: MIT
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Imports:
+    ggplot2,
+    ggraph,
+    gridExtra,
+    igraph,
+    pROC,
+    scales,
+    tidyr
+
