@@ -12,16 +12,8 @@
 #' @param original_matrix A binary adjacency matrix representing the original or ground truth graph.
 #'
 #' @return This function does not return any values. It generates two plots:
-#'         - One for true positives and false negatives.
-#'         - Another for false positives.
-#'
-#' @details
-#' The function compares two graphs: the consensus graph and the ground truth graph. It computes:
-#' - True Positives (TP): Edges that are present in both graphs.
-#' - False Negatives (FN): Edges that are present in the original graph but not in the consensus graph.
-#' - False Positives (FP): Edges that are present in the consensus graph but not in the original graph.
-#' 
-#' The true positives (TP) and false negatives (FN) are plotted together, while the false positives (FP) are plotted separately.
+#'         - One for true positives and false positives.
+#'         - Another for false negatives.
 #'
 #' @importFrom igraph graph_from_adjacency_matrix as_edgelist
 #' @importFrom ggraph ggraph geom_edge_link geom_node_point
@@ -37,13 +29,15 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   }
   
   # Helper function for ggraph plot
-  plot_ggraph <- function(graph, plot_title, edge_colors = NULL) {
-	  ggraph::ggraph(graph, layout = "fr") +
-		  ggraph::geom_edge_link(aes(color = edge_colors), width = 0.5) +
-		  ggraph::geom_node_point(color = "steelblue", size = 0.7) +
-		  labs(title = plot_title) +
-		  theme_minimal() +
-		  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+  plot_ggraph <- function(graph, plot_title, edge_colors) {
+    ggraph(graph, layout = "fr") +
+      geom_edge_link(aes(color = edge_colors), width = 0.5) +
+      geom_node_point(color = "steelblue", size = 0.7) +
+      scale_color_manual(values = c("red" = "red", "blue" = "blue")) +  # Map red and blue
+      labs(title = plot_title) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         legend.position = "none"
       )
   }
@@ -52,41 +46,53 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   graph_original <- create_graph(original_matrix)
   graph_consensus <- create_graph(consensus_matrix)
   
-  # Edge comparison
+  # Extract edge lists
   original_edges <- as_edgelist(graph_original)
   consensus_edges <- as_edgelist(graph_consensus)
   
+  # Convert edge lists to strings for easy comparison
   original_edges_str <- apply(original_edges, 1, function(x) paste(sort(x), collapse = "-"))
   consensus_edges_str <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
   
-  edge_colors_ground_truth <- ifelse(original_edges_str %in% consensus_edges_str, "red", "blue")
-  TP_count <- sum(edge_colors_ground_truth == "red")
-  FN_count <- sum(edge_colors_ground_truth == "blue")
+  # Determine edge colors for TP and FP
+  edge_colors <- ifelse(original_edges_str %in% consensus_edges_str, "red", "blue")  # Red = TP, Blue = FP
   
-  # Plot ground truth with TP and FN
+  # True Positives (TP) and False Positives (FP)
+  TP_count <- sum(edge_colors == "red")
+  FP_count <- sum(edge_colors == "blue")
+  
+  # Plot ground truth with TP (red) and FP (blue)
   set.seed(1234)
-  plot_ground_truth <- plot_ggraph(graph_original, plot_title = paste("Ground Truth\nTP:", TP_count, "FN:", FN_count), edge_colors = edge_colors_ground_truth)
+  plot_comparison <- plot_ggraph(graph_original, 
+                                 plot_title = paste("Ground Truth & Consensus\nTP:", TP_count, "FP:", FP_count), 
+                                 edge_colors = edge_colors)
   
-  # False Positive Graph
-  FP_edges <- setdiff(consensus_edges_str, original_edges_str)
-  FP_count <- length(FP_edges)
-  FP_edges_matrix <- matrix(unlist(strsplit(FP_edges, "-")), ncol = 2, byrow = TRUE)
-  graph_fp <- graph_from_edgelist(FP_edges_matrix, directed = FALSE)
-  
-  # Add purple color to FP edges
-  edge_colors_fp <- rep("purple", nrow(FP_edges_matrix))
-  set.seed(1234)
-  plot_fp <- ggraph::ggraph(graph_fp, layout = "fr") +
-    ggraph::geom_edge_link(color = "purple", width = 0.5) +
-    ggraph::geom_node_point(color = "steelblue", size = 0.7) +
-    labs(title = paste("False Positives\nFP:", FP_count)) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-      legend.position = "none"
-    )
+  # False Negatives (FN) edges
+  FN_edges <- setdiff(original_edges_str, consensus_edges_str)
+  FN_count <- length(FN_edges)
+  if (FN_count > 0) {
+    FN_edges_matrix <- matrix(unlist(strsplit(FN_edges, "-")), ncol = 2, byrow = TRUE)
+    graph_fn <- graph_from_edgelist(FN_edges_matrix, directed = FALSE)
+    
+    # Plot False Negatives
+    set.seed(1234)
+    plot_fn <- ggraph(graph_fn, layout = "fr") +
+      geom_edge_link(color = "blue", width = 0.5) +  # FN are blue
+      geom_node_point(color = "steelblue", size = 0.7) +
+      labs(title = paste("False Negatives\nFN:", FN_count)) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        legend.position = "none"
+      )
+  } else {
+    plot_fn <- NULL  # No FN to plot
+  }
   
   # Combine plots using gridExtra
-  grid.arrange(plot_ground_truth, plot_fp, nrow = 1)
+  if (!is.null(plot_fn)) {
+    grid.arrange(plot_comparison, plot_fn, nrow = 1)
+  } else {
+    grid.arrange(plot_comparison)
+  }
 }
-
