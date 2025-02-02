@@ -40,9 +40,12 @@
 #' # Call the plotg function to visualize the graphs
 #' plotg(adj_matrices)
 #'
-#' @import igraph
-#' @import ggraph
-#' @import gridExtra
+#' @importFrom igraph graph_from_adjacency_matrix as_edgelist
+#' @importFrom ggraph ggraph geom_edge_link geom_node_point
+#' @importFrom gridExtra grid.arrange
+#'
+#' @export
+
 plotg <- function(adj_matrix_list) {
   # Load required packages
   if (!requireNamespace("igraph", quietly = TRUE)) {
@@ -54,10 +57,6 @@ plotg <- function(adj_matrix_list) {
   if (!requireNamespace("gridExtra", quietly = TRUE)) {
     stop("The 'gridExtra' package is required but not installed.")
   }
-  
-  library(igraph)
-  library(ggraph)
-  library(gridExtra)
   
   # List to store individual plots
   plot_list <- list()
