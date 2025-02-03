@@ -23,70 +23,58 @@
 #' @export
 compare_consensus <- function(consensus_matrix, original_matrix) {
   
-  # Helper function to create an igraph from an adjacency matrix
+  # Helper function
   create_graph <- function(adj_matrix) {
     graph_from_adjacency_matrix(adj_matrix, mode = "undirected", diag = FALSE)
   }
   
-  # Helper function for a ggraph plot
-  plot_ggraph <- function(graph, plot_title, edge_colors) {
-    ggraph(graph, layout = "fr") +
-      geom_edge_link(aes(color = edge_colors), width = 0.5) +
-      geom_node_point(color = "steelblue", size = 0.7) +
-      scale_color_manual(values = c("red" = "red", "blue" = "blue")) +
-      labs(title = plot_title) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-        legend.position = "none"
-      )
-  }
-  
-  # Create igraph objects
+  # Make igraph objects
   graph_original  <- create_graph(original_matrix)
   graph_consensus <- create_graph(consensus_matrix)
   
-  # Extract edge lists (each row is a pair of vertices)
+  # Edge lists
   original_edges  <- as_edgelist(graph_original)
   consensus_edges <- as_edgelist(graph_consensus)
   
-  # Convert each edge to a "string" for easy set comparisons
+  # "Stringify" edges for set comparison
   original_edges_str  <- apply(original_edges,  1, function(x) paste(sort(x), collapse = "-"))
   consensus_edges_str <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
   
-  # Color edges of the original graph:
-  #   red  = TP (edge also in consensus)
-  #   blue = FP (edge not in consensus)
+  # Color in the original graph:
+  #   red = TP (in both)
+  #   blue = FP (in original only)
   edge_colors <- ifelse(original_edges_str %in% consensus_edges_str, "red", "blue")
   
   # Count TPs and FPs
   TP_count <- sum(edge_colors == "red")
   FP_count <- sum(edge_colors == "blue")
   
-  # First plot: original graph with TP (red) and FP (blue)
-  set.seed(1234)
-  plot_comparison <- plot_ggraph(
-    graph_original,
-    plot_title = paste("Ground Truth & Consensus\nTP:", TP_count, " FP:", FP_count),
-    edge_colors = edge_colors
-  )
+  # Plot 1: Original graph (TP=red, FP=blue)
+  plot_1 <- ggraph(graph_original, layout = "fr") +
+    geom_edge_link(aes(color = edge_colors), width = 0.5) +
+    geom_node_point(color = "steelblue", size = 0.7) +
+    scale_color_manual(values = c("red" = "red", "blue" = "blue")) +
+    labs(title = paste("Ground Truth & Consensus\nTP:", TP_count, " FP:", FP_count)) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      legend.position = "none"
+    )
   
-  # Identify edges that are in consensus but not in original => False Negatives (FN)
+  # FN edges: in consensus only
   FN_edges_str <- setdiff(consensus_edges_str, original_edges_str)
   FN_count     <- length(FN_edges_str)
   
-  # Build a separate graph from those FN edges
   if (FN_count > 0) {
-    # Turn the "a-b" strings back into a two-column edge list
+    # NO as.numeric() here!
     FN_edges_matrix <- do.call(
       rbind,
-      lapply(strsplit(FN_edges_str, "-"), function(x) as.numeric(x))
+      lapply(strsplit(FN_edges_str, "-"), function(x) x)
     )
     graph_fn <- graph_from_edgelist(FN_edges_matrix, directed = FALSE)
     
-    # Plot these FN edges (purple)
-    set.seed(1234)
-    plot_fn <- ggraph(graph_fn, layout = "fr") +
+    # Plot 2: FN edges in purple
+    plot_2 <- ggraph(graph_fn, layout = "fr") +
       geom_edge_link(color = "purple", width = 0.5) +
       geom_node_point(color = "steelblue", size = 0.7) +
       labs(title = paste("False Negatives\nFN:", FN_count)) +
@@ -95,14 +83,10 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         legend.position = "none"
       )
+    
+    grid.arrange(plot_1, plot_2, nrow = 1)
   } else {
-    plot_fn <- NULL
-  }
-  
-  # Combine the two plots
-  if (!is.null(plot_fn)) {
-    grid.arrange(plot_comparison, plot_fn, nrow = 1)
-  } else {
-    grid.arrange(plot_comparison)
+    # Just show the first plot if no FN
+    grid.arrange(plot_1)
   }
 }

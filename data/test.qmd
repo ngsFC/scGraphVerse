@@ -39,7 +39,7 @@ ddir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/data"
 pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
 
 adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
-adjm <- adjm[1:50,1:50]
+adjm <- adjm[1:200,1:200]
 
 count_matrices <- readRDS("./../data/PBMC.top1000.RDS")
 dim(count_matrices[[1]])
@@ -51,7 +51,7 @@ count_matrices[[3]] <- as.matrix(count_matrices[[3]])
 
 ```{r}
 crop_to_50x50 <- function(mat) {
-  mat[1:50, 1:50]   # Take the first 50 rows and columns
+  mat[1:200, 1:200]   # Take the first 50 rows and columns
 }
 
 count_matrices <- lapply(count_matrices, crop_to_50x50)
