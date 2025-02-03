@@ -41,7 +41,10 @@ pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
 #adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
 
 biogrid_data <- read.table("/home/francescoc/Desktop/NodeVerse/data/biogrid_physical_s300.txt", sep = "\t")
-wadjm <- generate_adjacency(list(biogrid_data))
+adjm <- generate_adjacency(list(biogrid_data))
+adjm <- symmetrize(adjm, weight_function = "mean")
+adjm <- as.matrix(adjm[[1]])
+adjm[adjm > 0] <- 1
 
 count_matrices <- readRDS("./../data/PBMC.top1000.RDS")
 dim(count_matrices[[1]])
@@ -57,6 +60,12 @@ crop_to_50x50 <- function(mat) {
 }
 
 count_matrices <- lapply(count_matrices, crop_to_50x50)
+adjm <- adjm[colnames(count_matrices[[1]]),colnames(count_matrices[[1]])]
+
+
+genes <- as.data.frame(count_matrices[[1]]) %>% t() %>% as.data.frame() %>% rownames_to_column("gene") %>% filter(gene %in% rownames(adjm))
+
+adjm <- adjm[genes$gene,genes$gene]
 
 ```
 
@@ -78,7 +87,7 @@ saveRDS(genie3_late, paste(ddir, "genie3_late_pbmc1000.RDS", sep = "/"))
 #### Symmetrize and ROC
 
 ```{r}
-genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
+genie3_late_wadj <- generate_adjacency(genie3_late)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 
 #genie3_late_auc <- plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")

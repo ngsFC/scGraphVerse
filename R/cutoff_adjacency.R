@@ -7,7 +7,6 @@
 #'
 #' @param count_matrices A list of count matrices (expression data) used to infer networks.
 #' @param weighted_adjm_list A list of precomputed weighted adjacency matrices for the count data.
-#' @param ground.truth A square matrix representing the ground truth network.
 #' @param n The number of shuffled matrices to generate for calculating percentiles.
 #' @param method The method for network inference. It can be one of the following: 
 #'   "GRNBoost2", "GENIE3", or "JRF".
@@ -30,7 +29,6 @@
 #' # Example usage of the cutoff_adjacency function
 #' binary_adjm_list <- cutoff_adjacency(count_matrices = count_matrices,
 #'                                      weighted_adjm_list = weighted_adjm_list,
-#'                                      ground.truth = ground_truth_matrix,
 #'                                      n = 100,
 #'                                      method = "GRNBoost2",
 #'                                      weight_function = "mean",
@@ -41,7 +39,7 @@
 #' @importFrom pROC roc
 #' 
 #' @export
-cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n, method = "GRNBoost2", weight_function = "mean", nCores = NULL) {
+cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GRNBoost2", weight_function = "mean", nCores = NULL) {
   
   # Function to shuffle rows of a matrix
   shuffle_rows <- function(matrix, seed_vector) {
@@ -64,14 +62,14 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
     return(shuffled_matrices)
   }
   
-  # Initialize lists to store results
+  # Initialize list to store binary adjacency matrices
   binary_adjm_list <- list()
   
   # Main loop through count matrices
   for (mat_index in seq_along(count_matrices)) {
     original_matrix <- count_matrices[[mat_index]]
     
-    # Initialize a list for storing percentiles for this specific matrix
+    # Initialize a list for storing 95th percentile values for this specific matrix
     all_percentile_values <- list()
     
     # Create shuffled matrices
@@ -93,13 +91,14 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
         jrf_list[[i]] <- df
       }
       
-      # Generate adjacency matrices and calculate percentiles for each matrix in jrf_list
+      # Generate adjacency matrices and calculate percentiles for each data frame in jrf_list
       for (k in seq_along(jrf_list)) {
-        network_results_adjm <- generate_adjacency(list(jrf_list[[k]]), ground.truth)
+        # Note: ground.truth parameter has been removed.
+        network_results_adjm <- generate_adjacency(list(jrf_list[[k]]))
         symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
         symmetric_network <- symmetric_network[[1]]
         
-        # Extract and order weights from the symmetric network
+        # Extract and order weights from the upper triangle of the symmetric network
         upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
         ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
         
@@ -108,16 +107,16 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
         all_percentile_values <- c(all_percentile_values, percentile_95)
       }
     } else {
-      # For other methods (GENIE3, GRNBoost2), infer networks for each shuffled matrix
+      # For methods such as GENIE3 or GRNBoost2, process each shuffled matrix
       for (shuffled_matrix in shuffled_matrices_list) {
         network_results <- infer_networks(list(shuffled_matrix), method = method, nCores = nCores)
         
-        # Make the result symmetric using the symmetrize function
-        network_results_adjm <- generate_adjacency(network_results, ground.truth)
+        # Generate adjacency matrices without the ground.truth parameter
+        network_results_adjm <- generate_adjacency(network_results)
         symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
         symmetric_network <- symmetric_network[[1]]
         
-        # Extract and order weights from the symmetric network
+        # Extract and order weights from the upper triangle of the symmetric network
         upper_triangle_weights <- symmetric_network[upper.tri(symmetric_network)]
         ordered_weights <- sort(upper_triangle_weights, decreasing = TRUE)
         
@@ -141,4 +140,3 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, ground.truth, n
   
   return(binary_adjm_list)
 }
-
