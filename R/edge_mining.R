@@ -69,9 +69,9 @@ edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field =
       stop(paste("Predicted matrix at index", i, "does not have proper row and column names."))
     }
     
-    # Identify all gene pairs that are present in either predicted or ground_truth.
-    # (This excludes pairs where both matrices have a 0.)
-    indices <- which((predicted == 1) | (ground_truth == 1), arr.ind = TRUE)
+    # Identify all gene pairs present in either predicted or ground_truth,
+    # and restrict to the upper-triangle to avoid duplicate (symmetric) pairs.
+    indices <- which(((predicted == 1) | (ground_truth == 1)) & upper.tri(predicted), arr.ind = TRUE)
     
     # If no gene pairs are found, store an empty data frame.
     if (nrow(indices) == 0) {
@@ -110,9 +110,9 @@ edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field =
     # Filter gene pairs based on the query_edge_types parameter.
     gene_pairs <- gene_pairs[gene_pairs$edge_type %in% query_edge_types, , drop = FALSE]
     
-    # Initialize columns for PubMed query results.
-    gene_pairs$pubmed_hits <- NA_integer_
-    gene_pairs$PMIDs <- NA_character_
+    # Initialize columns for PubMed query results with the correct length.
+    gene_pairs$pubmed_hits <- rep(NA_integer_, nrow(gene_pairs))
+    gene_pairs$PMIDs <- rep(NA_character_, nrow(gene_pairs))
     
     # Loop over each gene pair and query PubMed.
     for (j in seq_len(nrow(gene_pairs))) {

@@ -51,8 +51,9 @@ crop_to_50x50 <- function(mat) {
 }
 
 count_matrices <- lapply(count_matrices, crop_to_50x50)
-
-
+count_matrices <- lapply(count_matrices, function(mat) {
+  mat[, order(colnames(mat))]
+})
 genes_expr <- colnames(count_matrices[[1]])
 adj <- matrix(0, 
                   nrow = length(genes_expr), 
@@ -139,7 +140,7 @@ ajm_compared <- compare_consensus(consesunet, adj)
 #### PubMed Query
 
 ```{r}
-query <- edge_mining(list(consesusm), adj)
+query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
 ```
 
 ### Early integration
@@ -152,13 +153,13 @@ time[["GENIE3_early_15Cores"]] <- system.time(
   genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
 
-saveRDS(genie3_early, paste(ddir, "genie3_early_pbmc1000.RDS", sep = "/"))
+#saveRDS(genie3_early, paste(ddir, "genie3_early_pbmc1000.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-genie3_early_wadj <- generate_adjacency(genie3_early, ground.truth = adjm)
+genie3_early_wadj <- generate_adjacency(genie3_early)
 sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
 #genie3_early_auc <- plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
 
@@ -169,7 +170,6 @@ sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
 ```{r}
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       weighted_adjm_list = sgenie3_early_wadj, 
-                                      ground.truth = adjm,
                                       n = 2,
                                       method = "GENIE3",
                                       nCores = 15)
