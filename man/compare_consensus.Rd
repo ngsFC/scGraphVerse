@@ -13,27 +13,21 @@ compare_consensus(consensus_matrix, original_matrix)
 }
 \value{
 This function does not return any values. It generates two plots:
-- One for true positives and false negatives.
-- Another for false positives.
+- The first for True Positives (red) and False Positives (blue).
+- The second for False Negatives (purple).
 }
 \description{
-This function compares a consensus adjacency matrix with an original adjacency matrix, visualizing the true
-positives (TP), false negatives (FN), and false positives (FP) between the two graphs. It uses the
-\code{ggraph} package to create visualizations that show the agreement and disagreement between the two graphs.
-The function generates two plots:
-\enumerate{
-\item A plot showing the edges present in both the ground truth and consensus matrix (TP) and the edges
-present only in the ground truth (FN).
-\item A plot showing the edges present in the consensus matrix but absent in the ground truth (FP).
+This function compares a consensus adjacency matrix with an original adjacency matrix, visualizing edges as:
+\itemize{
+\item True Positives (TP): edges that are 1 in both (red).
+\item False Positives (FP): edges that are 1 in the original but 0 in the consensus (blue).
+\item False Negatives (FN): edges that are 0 in the original but 1 in the consensus (purple).
 }
 }
 \details{
-The function compares two graphs: the consensus graph and the ground truth graph. It computes:
-\itemize{
-\item True Positives (TP): Edges that are present in both graphs.
-\item False Negatives (FN): Edges that are present in the original graph but not in the consensus graph.
-\item False Positives (FP): Edges that are present in the consensus graph but not in the original graph.
+It generates two plots:
+\enumerate{
+\item A plot of the original (ground truth) graph with TP edges in red and FP edges in blue.
+\item A plot showing only the FN edges (purple).
 }
-
-The true positives (TP) and false negatives (FN) are plotted together, while the false positives (FP) are plotted separately.
 }
