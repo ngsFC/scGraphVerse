@@ -68,26 +68,45 @@ edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field =
       stop(paste("Predicted matrix at index", i, "does not have proper row and column names."))
     }
     
-    # Identify discrepant gene pairs: where predicted == 1 but ground_truth == 0.
-    diff_indices <- which(predicted == 1 & ground_truth == 0, arr.ind = TRUE)
+    # Identify all gene pairs that are present in either predicted or ground_truth.
+    # (This excludes pairs where both matrices have a 0.)
+    indices <- which((predicted == 1) | (ground_truth == 1), arr.ind = TRUE)
     
-    # If no discrepancies are found, store an empty data frame.
-    if (nrow(diff_indices) == 0) {
-      message("No discrepant gene pairs found for predicted matrix index ", i)
+    # If no gene pairs are found, store an empty data frame.
+    if (nrow(indices) == 0) {
+      message("No gene pairs found for predicted matrix index ", i)
       results_list[[i]] <- data.frame(gene1 = character(0),
                                       gene2 = character(0),
+                                      edge_type = character(0),
                                       pubmed_hits = integer(0),
                                       PMIDs = character(0),
                                       stringsAsFactors = FALSE)
       next
     }
     
-    # Create a data frame of the discrepant gene pairs.
+    # Create a data frame of the gene pairs.
     gene_pairs <- data.frame(
-      gene1 = rownames(predicted)[diff_indices[, "row"]],
-      gene2 = colnames(predicted)[diff_indices[, "col"]],
+      gene1 = rownames(predicted)[indices[, "row"]],
+      gene2 = colnames(predicted)[indices[, "col"]],
       stringsAsFactors = FALSE
     )
+    
+    # Determine the edge type (TP, FP, or FN) for each gene pair.
+    gene_pairs$edge_type <- NA_character_
+    for (k in seq_len(nrow(gene_pairs))) {
+      r <- indices[k, "row"]
+      c <- indices[k, "col"]
+      
+      if (predicted[r, c] == 1 && ground_truth[r, c] == 1) {
+        gene_pairs$edge_type[k] <- "TP"
+      } else if (predicted[r, c] == 1 && ground_truth[r, c] == 0) {
+        gene_pairs$edge_type[k] <- "FP"
+      } else if (predicted[r, c] == 0 && ground_truth[r, c] == 1) {
+        gene_pairs$edge_type[k] <- "FN"
+      }
+    }
+    
+    # Initialize columns for PubMed query results.
     gene_pairs$pubmed_hits <- NA_integer_
     gene_pairs$PMIDs <- NA_character_
     

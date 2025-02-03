@@ -26,6 +26,7 @@ execute:
 ```{r}
 library(RColorBrewer)
 library(DT)
+library(tidyverse)
 library(NodeVerse)
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
@@ -35,11 +36,6 @@ numpy <- reticulate::import("numpy")
 
 time <- list()
 
-ddir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/data"
-pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
-
-#adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
-
 biogrid_data <- read.table("/home/francescoc/Desktop/NodeVerse/data/biogrid_physical_s300.txt", sep = "\t")
 adjm <- generate_adjacency(list(biogrid_data))
 adjm <- symmetrize(adjm, weight_function = "mean")
@@ -47,11 +43,6 @@ adjm <- as.matrix(adjm[[1]])
 adjm[adjm > 0] <- 1
 
 count_matrices <- readRDS("./../data/PBMC.top1000.RDS")
-dim(count_matrices[[1]])
-count_matrices[[1]] <- as.matrix(count_matrices[[1]])
-count_matrices[[2]] <- as.matrix(count_matrices[[2]])
-count_matrices[[3]] <- as.matrix(count_matrices[[3]])
-
 ```
 
 ```{r}
@@ -60,12 +51,20 @@ crop_to_50x50 <- function(mat) {
 }
 
 count_matrices <- lapply(count_matrices, crop_to_50x50)
-adjm <- adjm[colnames(count_matrices[[1]]),colnames(count_matrices[[1]])]
 
 
-genes <- as.data.frame(count_matrices[[1]]) %>% t() %>% as.data.frame() %>% rownames_to_column("gene") %>% filter(gene %in% rownames(adjm))
+genes_expr <- colnames(count_matrices[[1]])
+adj <- matrix(0, 
+                  nrow = length(genes_expr), 
+                  ncol = length(genes_expr),
+                  dimnames = list(genes_expr, genes_expr))
 
-adjm <- adjm[genes$gene,genes$gene]
+common_genes <- intersect(genes_expr, rownames(adjm))
+ordered_common_genes <- genes_expr[genes_expr %in% common_genes]
+
+if (length(ordered_common_genes) > 0) {
+  adj[ordered_common_genes, ordered_common_genes] <- adjm[ordered_common_genes, ordered_common_genes]
+}
 
 ```
 
@@ -99,7 +98,6 @@ sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 ```{r}
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      weighted_adjm_list = sgenie3_late_wadj, 
-                                     ground.truth = adjm,
                                      n = 3,
                                      method = "GENIE3",
                                      nCores = 15)
@@ -130,10 +128,18 @@ plotg(list(consesunet))
 #### Plot comparison
 
 ```{r}
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-ajm_compared <- compare_consensus(consesunet, adjm)
+plotg(list(adj))
 
+ajm_compared <- compare_consensus(consesusm, adj)
+ajm_compared <- compare_consensus(consesusu, adj)
+ajm_compared <- compare_consensus(consesunet, adj)
+
+```
+
+#### PubMed Query
+
+```{r}
+query <- edge_mining(list(consesusm), adj)
 ```
 
 ### Early integration
