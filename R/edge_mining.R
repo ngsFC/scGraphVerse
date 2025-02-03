@@ -48,7 +48,8 @@
 #' @import rentrez
 #' @export
 
-edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field = "Title/Abstract") {
+edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field = "Title/Abstract", 
+                        query_edge_types = c("TP", "FP", "FN")) {
   
   # Check that the ground_truth matrix has gene names in its row and column names.
   if (is.null(rownames(ground_truth)) || is.null(colnames(ground_truth))) {
@@ -105,6 +106,9 @@ edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field =
         gene_pairs$edge_type[k] <- "FN"
       }
     }
+    
+    # Filter gene pairs based on the query_edge_types parameter.
+    gene_pairs <- gene_pairs[gene_pairs$edge_type %in% query_edge_types, , drop = FALSE]
     
     # Initialize columns for PubMed query results.
     gene_pairs$pubmed_hits <- NA_integer_

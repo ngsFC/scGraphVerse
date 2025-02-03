@@ -80,7 +80,7 @@ time[["GENIE3_late_15Cores"]] <- system.time(
                                 nCores = 15)
 )
 
-saveRDS(genie3_late, paste(ddir, "genie3_late_pbmc1000.RDS", sep = "/"))
+#saveRDS(genie3_late, paste(ddir, "genie3_late_pbmc1000.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
