@@ -106,6 +106,10 @@ consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sgenie3_late_adj, weighted_list = sgenie3_late_wadj, method = "INet", threshold = 0.05, ncores = 15)
 
+plotg(list(consesusm))
+plotg(list(consesusu))
+plotg(list(consesunet))
+
 #scores.genie3.late <- pscores(adjm, list(consesusm))
 #scoresu.genie3.late <- pscores(adjm, list(consesusu))
 #scoresnet.genie3.late <- pscores(adjm, list(consesunet))

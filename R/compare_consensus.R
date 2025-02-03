@@ -22,71 +22,74 @@
 #'
 #' @export
 compare_consensus <- function(consensus_matrix, original_matrix) {
+  library(igraph)
+  library(ggraph)
+  library(gridExtra)
   
-  # Helper function
-  create_graph <- function(adj_matrix) {
-    graph_from_adjacency_matrix(adj_matrix, mode = "undirected", diag = FALSE)
-  }
+  # 1) Build igraphs from adjacency matrices
+  graph_original  <- graph_from_adjacency_matrix(original_matrix,  mode="undirected", diag=FALSE)
+  graph_consensus <- graph_from_adjacency_matrix(consensus_matrix, mode="undirected", diag=FALSE)
   
-  # Make igraph objects
-  graph_original  <- create_graph(original_matrix)
-  graph_consensus <- create_graph(consensus_matrix)
-  
-  # Edge lists
+  # 2) Extract edges as two-column matrices
   original_edges  <- as_edgelist(graph_original)
   consensus_edges <- as_edgelist(graph_consensus)
   
-  # "Stringify" edges for set comparison
-  original_edges_str  <- apply(original_edges,  1, function(x) paste(sort(x), collapse = "-"))
-  consensus_edges_str <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse = "-"))
+  # "Stringify" each edge so we can compare sets easily
+  original_edges_str  <- apply(original_edges,  1, function(x) paste(sort(x), collapse="-"))
+  consensus_edges_str <- apply(consensus_edges, 1, function(x) paste(sort(x), collapse="-"))
   
-  # Color in the original graph:
-  #   red = TP (in both)
-  #   blue = FP (in original only)
-  edge_colors <- ifelse(original_edges_str %in% consensus_edges_str, "red", "blue")
+  # 3) Mark edges in the *original* graph as either TP (red) or FP (blue)
+  #    TP = also in consensus  |  FP = only in original
+  E(graph_original)$color <- ifelse(original_edges_str %in% consensus_edges_str, "red", "blue")
   
   # Count TPs and FPs
-  TP_count <- sum(edge_colors == "red")
-  FP_count <- sum(edge_colors == "blue")
+  TP_count <- sum(E(graph_original)$color == "red")
+  FP_count <- sum(E(graph_original)$color == "blue")
   
-  # Plot 1: Original graph (TP=red, FP=blue)
-  plot_1 <- ggraph(graph_original, layout = "fr") +
-    geom_edge_link(aes(color = edge_colors), width = 0.5) +
-    geom_node_point(color = "steelblue", size = 0.7) +
-    scale_color_manual(values = c("red" = "red", "blue" = "blue")) +
+  # 4) Remove isolated vertices (degree=0) from the *original* graph before plotting
+  graph_original_no_isolates <- delete_vertices(graph_original,
+                                                V(graph_original)[degree(graph_original) == 0])
+  
+  # 5) First plot: Original graph with edges colored red (TP) or blue (FP)
+  plot_1 <- ggraph(graph_original_no_isolates, layout="fr") +
+    # Use the stored edge color directly
+    geom_edge_link(aes(color = I(color)), width = 0.7) +
+    geom_node_point(color="steelblue", size = 2) +
     labs(title = paste("Ground Truth & Consensus\nTP:", TP_count, " FP:", FP_count)) +
     theme_minimal() +
     theme(
       plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-      legend.position = "none"
+      legend.position="none"
     )
   
-  # FN edges: in consensus only
+  # 6) Build the FN graph: edges that are in consensus only
   FN_edges_str <- setdiff(consensus_edges_str, original_edges_str)
   FN_count     <- length(FN_edges_str)
   
   if (FN_count > 0) {
-    # NO as.numeric() here!
-    FN_edges_matrix <- do.call(
-      rbind,
-      lapply(strsplit(FN_edges_str, "-"), function(x) x)
-    )
-    graph_fn <- graph_from_edgelist(FN_edges_matrix, directed = FALSE)
+    # Convert those "a-b" strings back to a two-column edge list
+    FN_edges_mat <- do.call(rbind, strsplit(FN_edges_str, "-"))
+    graph_fn     <- graph_from_edgelist(FN_edges_mat, directed=FALSE)
     
-    # Plot 2: FN edges in purple
-    plot_2 <- ggraph(graph_fn, layout = "fr") +
-      geom_edge_link(color = "purple", width = 0.5) +
-      geom_node_point(color = "steelblue", size = 0.7) +
+    # Remove isolated vertices from the FN subgraph
+    graph_fn_no_isolates <- delete_vertices(graph_fn, V(graph_fn)[degree(graph_fn) == 0])
+    
+    # Second plot: all FN edges in purple
+    plot_2 <- ggraph(graph_fn_no_isolates, layout="fr") +
+      geom_edge_link(color = "purple", width = 1) +
+      geom_node_point(color = "steelblue", size = 2) +
       labs(title = paste("False Negatives\nFN:", FN_count)) +
       theme_minimal() +
       theme(
-        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-        legend.position = "none"
+        plot.title = element_text(hjust=0.5, size=14, face="bold"),
+        legend.position="none"
       )
     
-    grid.arrange(plot_1, plot_2, nrow = 1)
+    # 7) Arrange both plots side-by-side
+    grid.arrange(plot_1, plot_2, nrow=1)
+    
   } else {
-    # Just show the first plot if no FN
+    # No FN edges
     grid.arrange(plot_1)
   }
 }
