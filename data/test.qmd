@@ -41,7 +41,7 @@ pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
 #adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
 
 biogrid_data <- read.table("/home/francescoc/Desktop/NodeVerse/data/biogrid_physical_s300.txt", sep = "\t")
-wadjm <- generate_adjacency(biogrid_data)
+wadjm <- generate_adjacency(list(biogrid_data))
 
 count_matrices <- readRDS("./../data/PBMC.top1000.RDS")
 dim(count_matrices[[1]])

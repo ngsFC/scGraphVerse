@@ -29,43 +29,47 @@
 #' }
 #' @export
 generate_adjacency <- function(df_list, ground.truth = NULL) {
-  # If no ground truth is provided, create one using all unique gene names from df_list
-  if (is.null(ground.truth)) {
-    # Get all unique gene names from the first two columns of all data frames
-    all_genes <- unique(unlist(lapply(df_list, function(df) {
-      unique(as.character(df[, 1:2]))
-    })))
-    
-    # Create a square matrix with rows and columns as all unique gene names
-    ground.truth <- matrix(0, nrow = length(all_genes), ncol = length(all_genes),
-                           dimnames = list(all_genes, all_genes))
-  }
-  
   adjacency_matrix_list <- list()
   
-  # Iterate through each data frame in df_list
+  # If ground.truth is not supplied, derive gene names from df_list
+  if (is.null(ground.truth)) {
+    # Extract gene names from the first two columns of all data frames
+    all_genes <- unique(unlist(lapply(df_list, function(data) {
+      unique(c(as.character(data[, 1]), as.character(data[, 2])))
+    })))
+    # Sort genes in alphabetical order
+    all_genes <- sort(all_genes)
+    
+    # Create a template matrix with rows and columns in alphabetical order
+    template_matrix <- matrix(0, nrow = length(all_genes), ncol = length(all_genes))
+    rownames(template_matrix) <- all_genes
+    colnames(template_matrix) <- all_genes
+  } else {
+    # Use the supplied ground.truth as the template
+    template_matrix <- ground.truth
+  }
+  
+  # Process each data frame in the list
   for (k in seq_along(df_list)) {
     data <- df_list[[k]]
+    # Create an empty adjacency matrix with the same dimensions and names as template_matrix
+    adjacency_matrix <- matrix(0, nrow = nrow(template_matrix), ncol = ncol(template_matrix))
+    rownames(adjacency_matrix) <- rownames(template_matrix)
+    colnames(adjacency_matrix) <- colnames(template_matrix)
     
-    # Initialize an adjacency matrix using the provided or computed ground truth matrix dimensions and names
-    adjacency_matrix <- matrix(0, nrow = nrow(ground.truth), ncol = ncol(ground.truth),
-                               dimnames = list(rownames(ground.truth), colnames(ground.truth)))
-    
-    # Fill in the matrix based on the edges (gene1, gene2, weight)
+    # Fill the matrix with weights from the current data frame
     for (i in 1:nrow(data)) {
       gene1 <- as.character(data[i, 1])
       gene2 <- as.character(data[i, 2])
       weight <- data[i, 3]
-      
       if (gene1 %in% rownames(adjacency_matrix) && gene2 %in% colnames(adjacency_matrix)) {
         adjacency_matrix[gene1, gene2] <- weight
       }
     }
-    
-    # Ensure the diagonal is zero
+    # Remove self-loops by setting diagonal to 0
     diag(adjacency_matrix) <- 0
     
-    # Store the result in the list
+    # Add the created adjacency matrix to the list
     adjacency_matrix_list[[k]] <- adjacency_matrix
   }
   
