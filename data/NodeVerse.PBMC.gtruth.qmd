@@ -167,21 +167,6 @@ boxplot(as.matrix(t(C[most_expressed, ])),
 )
 ```
 
-## Split data for donor_id
-
-```{r Splitting in k matrices}
-seurat_split <- SplitObject(
-  object = seurat_subset,
-  split.by = "donor_id"
-)
-
-#expression_matrices <- lapply(seurat_split, function(obj) {
-#  GetAssayData(obj, assay = "RNA", layer = "counts") # Use `layer` instead of `slot`
-#})
-
-#names(expression_matrices) <- names(seurat_split)
-```
-
 ## Adjacency matrix
 
 ```{r Generate Adjacency matrice}
@@ -190,11 +175,11 @@ pathgenes <- pathg(seurat_object = seurat_subset, cell_type = "CD4-positive help
 
 options(timeout = 2000)
 result <- stringdb_adjacency(
-   genes       = pathgenes,
-   species     = 9606,
-   required_score   = 700,
-   score_col   = "escore"
- )
+  genes          = pathgenes,
+  species        = 9606,
+  required_score = 900,  # stricter threshold
+  score_col      = "escore"   # experimental channel
+)
 
 wadjm <- result$weighted
 adjm <- result$binary
@@ -228,16 +213,13 @@ adjm %>%
 
 ```
 
+## Split data for donor_id
+
 ```{r format control Seurat data}
 genes_to_keep <- intersect(pathgenes, rownames(seurat_subset_filt))
+seurat_subset_filt <- subset(seurat_subset_filt, features = genes_to_keep)
 
-saveRDS(seurat_split, "seurat_split.rds")
-
-expression_matrices <- lapply(expression_matrices, as.matrix)
-expression_matrices <- lapply(expression_matrices, function(mat) mat[rownames(mat) %in% pathgenes, ])
-expression_matrices <- lapply(expression_matrices, t)
-
-saveRDS(expression_matrices, "PBMC.top1000.RDS")
+saveRDS(seurat_subset_filt, "PBMC.top1000.RDS")
 ```
 
 ## Create Ground Truth Network
