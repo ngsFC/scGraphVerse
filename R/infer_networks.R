@@ -21,7 +21,18 @@
 #' result <- infer_networks(count_matrices_list = list(matrix1, matrix2), method = "GENIE3")
 #' }
 #' @export
-infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (detectCores()-1)) {
+infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (detectCores() - 1)) {
+  # Check if the input is a list of Seurat objects
+  if (all(sapply(count_matrices_list, function(x) inherits(x, "Seurat")))) {
+    message("Detected Seurat objects. Extracting expression matrices...")
+    
+    count_matrices_list <- lapply(count_matrices_list, function(obj) {
+      GetAssayData(obj, assay = "RNA", layer = "data") # Extract expression data
+    })
+    
+    count_matrices_list <- lapply(count_matrices_list, as.matrix) # Convert to matrix format
+  }
+  
   # Validate method input
   if (!method %in% c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb")) {
     stop("Invalid method. Choose either 'GENIE3', 'GRNBoost2', 'ZILGM', 'PCzinb', or 'JRF'.")
@@ -114,7 +125,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
       }
       
       lambda_results[[z]] <- lamb
-      cat("Assigned lamb to lambda_results[[", z, "]] with", length(lamb), "matrices.\n")
+      message("Assigned lambda results for dataset ", z, " with ", length(lamb), " matrices.")
     }
     
     return(list(network_results = network_results, lambda_results = lambda_results))
@@ -122,4 +133,3 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     return(network_results)
   }
 }
-
