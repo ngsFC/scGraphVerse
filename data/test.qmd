@@ -141,6 +141,37 @@ ajm_compared <- compare_consensus(consesunet, adj)
 
 ```{r}
 query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "TP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FN")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FN PubMed query")
 ```
 
 ### Early integration
@@ -188,6 +219,43 @@ ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
 
 ```
 
+#### PubMed Query
+
+```{r}
+query <- edge_mining(sgenie3_early_adj, adj, query_edge_types = "TP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "TP PubMed query")
+
+query <- edge_mining(sgenie3_early_adj, adj, query_edge_types = "FP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FP PubMed query")
+
+query <- edge_mining(sgenie3_early_adj, adj, query_edge_types = "FN")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FN PubMed query")
+```
+
 ## GRNBoost2
 
 ### Late integration
@@ -200,13 +268,13 @@ time[["grnboost_late"]] <- system.time(
                                 nCores = 15)
 )
 
-saveRDS(grnboost_late, paste(ddir, "grnboost_late_pbmc1000.RDS", sep = "/"))
+#saveRDS(grnboost_late, paste(ddir, "grnboost_late_pbmc1000.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-grnboost_late_wadj <- generate_adjacency(grnboost_late, ground.truth = adjm)
+grnboost_late_wadj <- generate_adjacency(grnboost_late)
 sgrnboost_late_wadj <- symmetrize(grnboost_late_wadj, weight_function = "mean")
 #grnboost_late_auc <- plotROC(sgrnboost_late_wadj, adjm, plot_title = "ROC curve - grnboost Late Integration")
 
@@ -217,7 +285,6 @@ sgrnboost_late_wadj <- symmetrize(grnboost_late_wadj, weight_function = "mean")
 ```{r}
 sgrnboost_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      weighted_adjm_list = sgrnboost_late_wadj, 
-                                     ground.truth = adjm,
                                      n = 3,
                                      method = "GRNBoost2",
                                      nCores = 15)
@@ -249,7 +316,43 @@ ajm_compared <- compare_consensus(consesusm, adjm)
 ajm_compared <- compare_consensus(consesusu, adjm)
 ajm_compared <- compare_consensus(consesunet, adjm)
 
+```
 
+#### PubMed Query
+
+```{r}
+query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "TP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FN")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FN PubMed query")
 ```
 
 ### Early integration
@@ -262,13 +365,13 @@ time[["grnboost_early"]] <- system.time(
   grnboost_early <- infer_networks(early_matrix, method="GRNBoost2")
 )
 
-saveRDS(grnboost_early, paste(ddir, "grnboost_early_pbmc1000.RDS", sep = "/"))
+#saveRDS(grnboost_early, paste(ddir, "grnboost_early_pbmc1000.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-grnboost_early_wadj <- generate_adjacency(grnboost_early, ground.truth = adjm)
+grnboost_early_wadj <- generate_adjacency(grnboost_early)
 sgrnboost_early_wadj <- symmetrize(grnboost_early_wadj, weight_function = "mean")
 #grnboost_early_auc <- plotROC(sgrnboost_early_wadj, adjm, plot_title = "ROC curve - grnboost Early Integration")
 
@@ -279,7 +382,6 @@ sgrnboost_early_wadj <- symmetrize(grnboost_early_wadj, weight_function = "mean"
 ```{r}
 sgrnboost_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       weighted_adjm_list = sgrnboost_early_wadj, 
-                                      ground.truth = adjm,
                                       n = 2,
                                       method = "GRNBoost2",
                                       nCores = 15)
@@ -294,4 +396,41 @@ plots <- plotg(sgrnboost_early_adj)
 
 ```{r}
 ajm_compared <- compare_consensus(sgrnboost_early_adj[[1]], adjm)
+```
+
+#### PubMed Query
+
+```{r}
+query <- edge_mining(sgrnboost_early_adj, adj, query_edge_types = "TP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "TP PubMed query")
+
+query <- edge_mining(sgrnboost_early_adj, adj, query_edge_types = "FP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FP PubMed query")
+
+query <- edge_mining(sgrnboost_early_adj, adj, query_edge_types = "FN")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FN PubMed query")
 ```

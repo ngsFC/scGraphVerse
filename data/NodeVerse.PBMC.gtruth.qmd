@@ -29,6 +29,7 @@ knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data")
 library(biomaRt)
 library(Seurat)
 library(DT)
+library(tidyverse)
 
 library(NodeVerse)
 ```
@@ -53,7 +54,7 @@ biogrid_data <- biogrid_data %>%
   filter(abs(Score) > 300) %>%
   filter(org1 == "Homo sapiens" & org2 == "Homo sapiens")
 
-write.table(biogrid_data, "biogrid_physical_s300.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+write.table(biogrid_data, "biogrid_physical_s300-ALL-4.4.242.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 
 biogrid_data %>%
     datatable(extensions = 'Buttons',
@@ -153,7 +154,7 @@ seurat_subset_filt <- seurat_subset_filt[!grepl("MALAT1", rownames(seurat_subset
 seurat_subset_filt <- seurat_subset_filt[!grepl("^MT-", rownames(seurat_subset_filt)), ]
 
 # Filter Ribossomal gene (optional if that is a problem on your data)
-data.filt <- seurat_subset_filt[ ! grepl("^RP[SL]", rownames(seurat_subset_filt)), ]
+seurat_subset_filt <- seurat_subset_filt[ ! grepl("^RP[SL]", rownames(seurat_subset_filt)), ]
 
 dim(seurat_subset_filt)
 ```
