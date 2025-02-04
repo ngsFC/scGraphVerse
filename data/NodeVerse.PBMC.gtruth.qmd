@@ -144,6 +144,7 @@ dim(seurat_subset_filt)
 
 feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo")
 VlnPlot(seurat_subset_filt, group.by = "donor_id", features = feats, pt.size = 0.1, ncol = 3) + NoLegend()
+
 ```
 
 ```{r}
@@ -157,6 +158,13 @@ seurat_subset_filt <- seurat_subset_filt[!grepl("^MT-", rownames(seurat_subset_f
 seurat_subset_filt <- seurat_subset_filt[ ! grepl("^RP[SL]", rownames(seurat_subset_filt)), ]
 
 dim(seurat_subset_filt)
+C <- seurat_subset_filt@assays$RNA@counts
+C@x <- C@x / rep.int(colSums(C), diff(C@p)) * 100
+most_expressed <- order(Matrix::rowSums(C), decreasing = T)[20:1]
+boxplot(as.matrix(t(C[most_expressed, ])),
+    cex = 0.1, las = 1, xlab = "Percent counts per cell",
+    col = (scales::hue_pal())(20)[20:1], horizontal = TRUE
+)
 ```
 
 ## Split data for donor_id
@@ -167,12 +175,11 @@ seurat_split <- SplitObject(
   split.by = "donor_id"
 )
 
+#expression_matrices <- lapply(seurat_split, function(obj) {
+#  GetAssayData(obj, assay = "RNA", layer = "counts") # Use `layer` instead of `slot`
+#})
 
-expression_matrices <- lapply(seurat_split, function(obj) {
-  GetAssayData(obj, assay = "RNA", layer = "counts") # Use `layer` instead of `slot`
-})
-
-names(expression_matrices) <- names(seurat_split)
+#names(expression_matrices) <- names(seurat_split)
 ```
 
 ## Adjacency matrix
@@ -181,7 +188,14 @@ names(expression_matrices) <- names(seurat_split)
 
 pathgenes <- pathg(seurat_object = seurat_subset, cell_type = "CD4-positive helper T cell", top_n = 1000)
 
-result <- BioGRID_Adj(pathgenes, biogrid_data)
+options(timeout = 2000)
+result <- stringdb_adjacency(
+   genes       = pathgenes,
+   species     = 9606,
+   required_score   = 700,
+   score_col   = "escore"
+ )
+
 wadjm <- result$weighted
 adjm <- result$binary
 
@@ -215,6 +229,10 @@ adjm %>%
 ```
 
 ```{r format control Seurat data}
+genes_to_keep <- intersect(pathgenes, rownames(seurat_subset_filt))
+
+saveRDS(seurat_split, "seurat_split.rds")
+
 expression_matrices <- lapply(expression_matrices, as.matrix)
 expression_matrices <- lapply(expression_matrices, function(mat) mat[rownames(mat) %in% pathgenes, ])
 expression_matrices <- lapply(expression_matrices, t)
