@@ -31,6 +31,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     })
     
     count_matrices_list <- lapply(count_matrices_list, as.matrix) # Convert to matrix format
+    count_matrices_list <- lapply(count_matrices_list, t) # Convert to matrix format
   }
   
   # Validate method input
