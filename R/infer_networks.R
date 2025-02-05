@@ -21,9 +21,6 @@
 #' result <- infer_networks(count_matrices_list = list(matrix1, matrix2), method = "GENIE3")
 #' }
 #' @export
-library(Seurat)
-library(SingleCellExperiment)
-library(BiocParallel)
 
 infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (detectCores() - 1)) {
   # Detect if input is a list of Seurat objects and extract expression matrices
