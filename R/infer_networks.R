@@ -21,13 +21,29 @@
 #' result <- infer_networks(count_matrices_list = list(matrix1, matrix2), method = "GENIE3")
 #' }
 #' @export
+library(Seurat)
+library(SingleCellExperiment)
+library(BiocParallel)
+
 infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (detectCores() - 1)) {
-  # Check if the input is a list of Seurat objects
+  # Detect if input is a list of Seurat objects and extract expression matrices
   if (all(sapply(count_matrices_list, function(x) inherits(x, "Seurat")))) {
     message("Detected Seurat objects. Extracting expression matrices...")
     
     count_matrices_list <- lapply(count_matrices_list, function(obj) {
       GetAssayData(obj, assay = "RNA", layer = "data") # Extract expression data
+    })
+    
+    count_matrices_list <- lapply(count_matrices_list, as.matrix) # Convert to matrix format
+    count_matrices_list <- lapply(count_matrices_list, t) # Convert to matrix format
+  }
+  
+  # Detect if input is a list of SingleCellExperiment (SCE) objects and extract logcounts
+  if (all(sapply(count_matrices_list, function(x) inherits(x, "SingleCellExperiment")))) {
+    message("Detected SingleCellExperiment objects. Extracting logcounts matrices...")
+    
+    count_matrices_list <- lapply(count_matrices_list, function(sce) {
+      assay(sce, "logcounts") # Extract log-normalized counts
     })
     
     count_matrices_list <- lapply(count_matrices_list, as.matrix) # Convert to matrix format

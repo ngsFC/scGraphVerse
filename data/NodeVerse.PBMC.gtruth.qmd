@@ -29,6 +29,8 @@ knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data")
 library(biomaRt)
 library(DT)
 library(tidyverse)
+library(Seurat)
+library(STRINGdb)
 
 library(NodeVerse)
 ```

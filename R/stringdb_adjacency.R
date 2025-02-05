@@ -44,10 +44,6 @@ stringdb_adjacency <- function(
     stop("Package 'jsonlite' is required. Please install it.")
   }
   
-  library(STRINGdb)
-  library(httr)
-  library(jsonlite)
-  
   if (length(genes) == 0) {
     stop("Please provide at least one gene in 'genes'.")
   }
