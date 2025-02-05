@@ -27,7 +27,6 @@ execute:
 knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data")
 
 library(biomaRt)
-library(Seurat)
 library(DT)
 library(tidyverse)
 
@@ -37,33 +36,33 @@ library(NodeVerse)
 ## Load BioGRID Data
 
 ```{r Download and format BioGRID data}
-biogrid_data <- read.delim("/home/francescoc/Downloads/BIOGRID-ALL-4.4.241.tab3.txt", header = TRUE, stringsAsFactors = FALSE)
+#biogrid_data <- read.delim("/home/francescoc/Downloads/BIOGRID-ALL-4.4.241.tab3.txt", header = TRUE, stringsAsFactors = FALSE)
 
-biogrid_data <- biogrid_data[, c("Official.Symbol.Interactor.A", 
-                                 "Official.Symbol.Interactor.B", 
-                                 "Score",
-                                 "Experimental.System.Type",
-                                 "Organism.Name.Interactor.A",
-                                 "Organism.Name.Interactor.B")]
-names(biogrid_data) <- c("Interactor_A", "Interactor_B", "Score", "type", "org1", "org2")
+#biogrid_data <- biogrid_data[, c("Official.Symbol.Interactor.A", 
+#                                 "Official.Symbol.Interactor.B", 
+#                                 "Score",
+#                                 "Experimental.System.Type",
+#                                 "Organism.Name.Interactor.A",
+#                                 "Organism.Name.Interactor.B")]
+#names(biogrid_data) <- c("Interactor_A", "Interactor_B", "Score", "type", "org1", "org2")
 
-biogrid_data <- biogrid_data %>%
-  mutate(Score = as.numeric(Score)) %>%
-  filter(type == "physical") %>%       
-  filter(!is.na(Score)) %>%            
-  filter(abs(Score) > 300) %>%
-  filter(org1 == "Homo sapiens" & org2 == "Homo sapiens")
+#biogrid_data <- biogrid_data %>%
+#  mutate(Score = as.numeric(Score)) %>%
+#  filter(type == "physical") %>%       
+#  filter(!is.na(Score)) %>%            
+#  filter(abs(Score) > 300) %>%
+#  filter(org1 == "Homo sapiens" & org2 == "Homo sapiens")
 
-write.table(biogrid_data, "biogrid_physical_s300-ALL-4.4.242.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+#write.table(biogrid_data, "biogrid_physical_s300-ALL-4.4.242.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 
-biogrid_data %>%
-    datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "BioGRID data")
+#biogrid_data %>%
+#    datatable(extensions = 'Buttons',
+#            options = list(
+#              dom = 'Bfrtip',
+#              buttons = c('csv', 'excel'),
+#              scrollX = TRUE,
+#              pageLength = 10), 
+#            caption = "BioGRID data")
 
 ```
 
@@ -177,8 +176,8 @@ options(timeout = 2000)
 result <- stringdb_adjacency(
   genes          = pathgenes,
   species        = 9606,
-  required_score = 900,  # stricter threshold
-  score_col      = "escore"   # experimental channel
+  required_score = 900,
+  keep_all_genes = F
 )
 
 wadjm <- result$weighted

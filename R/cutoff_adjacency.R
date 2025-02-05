@@ -41,6 +41,18 @@
 #' @export
 cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GRNBoost2", weight_function = "mean", nCores = NULL) {
   
+  # Detect if count_matrices is a list of Seurat objects
+  if (all(sapply(count_matrices, function(x) inherits(x, "Seurat")))) {
+    message("Detected Seurat objects. Extracting expression matrices...")
+    
+    count_matrices <- lapply(count_matrices, function(obj) {
+      GetAssayData(obj, assay = "RNA", layer = "data") # Extract expression data
+    })
+    
+    count_matrices_list <- lapply(count_matrices, as.matrix) # Convert to matrix format
+    count_matrices_list <- lapply(count_matrices_list, t) # Convert to matrix format
+  }
+  
   # Function to shuffle rows of a matrix
   shuffle_rows <- function(matrix, seed_vector) {
     shuffled_matrix <- matrix
@@ -66,8 +78,8 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
   binary_adjm_list <- list()
   
   # Main loop through count matrices
-  for (mat_index in seq_along(count_matrices)) {
-    original_matrix <- count_matrices[[mat_index]]
+  for (mat_index in seq_along(count_matrices_list)) {
+    original_matrix <- count_matrices_list[[mat_index]]
     
     # Initialize a list for storing 95th percentile values for this specific matrix
     all_percentile_values <- list()
@@ -81,19 +93,13 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
       importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
       
       for (i in seq_along(importance_columns)) {
-        # Select the 'gene1', 'gene2', and the current 'importance' column
         df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
-        
-        # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
         names(df)[3] <- importance_columns[i]
-        
-        # Add the data frame to the output list
         jrf_list[[i]] <- df
       }
       
       # Generate adjacency matrices and calculate percentiles for each data frame in jrf_list
       for (k in seq_along(jrf_list)) {
-        # Note: ground.truth parameter has been removed.
         network_results_adjm <- generate_adjacency(list(jrf_list[[k]]))
         symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
         symmetric_network <- symmetric_network[[1]]
@@ -111,7 +117,6 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GR
       for (shuffled_matrix in shuffled_matrices_list) {
         network_results <- infer_networks(list(shuffled_matrix), method = method, nCores = nCores)
         
-        # Generate adjacency matrices without the ground.truth parameter
         network_results_adjm <- generate_adjacency(network_results)
         symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)
         symmetric_network <- symmetric_network[[1]]
