@@ -27,7 +27,7 @@
 #'   score_col      = "escore"
 #' )
 #' }
-stringdb_adjacency_test <- function(
+stringdb_adjacency <- function(
     genes,
     species              = 9606,
     required_score       = 400,
