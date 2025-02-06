@@ -28,7 +28,10 @@ library(RColorBrewer)
 library(DT)
 library(tidyverse)
 library(Seurat)
+library(STRINGdb)
+library(SingleCellExperiment)
 library(NodeVerse)
+
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 arboreto <- reticulate::import("arboreto.algo")
@@ -53,9 +56,11 @@ seurat_split <- SplitObject(
 ### Late integration
 
 ```{r}
+sc_split <- lapply(seurat_split, as.SingleCellExperiment)
+
 set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
-  genie3_late <- infer_networks(seurat_split, 
+  genie3_late <- infer_networks(sc_split, 
                                 method="GENIE3",
                                 nCores = 15)
 )
@@ -76,7 +81,7 @@ sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 #### Cutoff
 
 ```{r}
-sgenie3_late_adj <- cutoff_adjacency(count_matrices = seurat_split,
+sgenie3_late_adj <- cutoff_adjacency(count_matrices = sc_split,
                                      weighted_adjm_list = sgenie3_late_wadj, 
                                      n = 3,
                                      method = "GENIE3",
@@ -108,7 +113,7 @@ plotg(list(consesunet))
 #### Plot comparison
 
 ```{r}
-adj <- stringdb_adjacency_test(
+adj <- stringdb_adjacency(
   genes          = rownames(sgenie3_late_adj[[1]]),
   species        = 9606,
   required_score = 900,
@@ -117,7 +122,9 @@ adj <- stringdb_adjacency_test(
 
 adj <- adj$binary
 adj <- adj[rownames(consesusm),rownames(consesusm)]
-plotg(list(adj))
+adj <- symmetrize(list(adj), weight_function = "mean")
+
+plotg(adj)
 
 ajm_compared <- compare_consensus(consesusm, adj)
 ajm_compared <- compare_consensus(consesusu, adj)

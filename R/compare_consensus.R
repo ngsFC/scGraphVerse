@@ -62,28 +62,39 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   FP_edges_str <- setdiff(consensus_edges_str, original_edges_str)
   FP_count     <- length(FP_edges_str)
   
+  # Debugging: Check if FP_edges_str contains valid edges
+  print(FP_edges_str)  # Uncomment for debugging
+  
   if (FP_count > 0) {
-    # Convert those "a-b" strings back to a two-column edge list
-    FP_edges_mat <- do.call(rbind, strsplit(FP_edges_str, "-"))
-    graph_fp     <- graph_from_edgelist(FP_edges_mat, directed=FALSE)
+    FP_edges_list <- strsplit(FP_edges_str, "-")
     
-    # Remove isolated vertices from the FP subgraph
-    graph_fp_no_isolates <- delete_vertices(graph_fp, V(graph_fp)[degree(graph_fp) == 0])
+    # Ensure all entries have exactly two elements
+    FP_edges_list <- Filter(function(x) length(x) == 2, FP_edges_list)
     
-    # Second plot: all FP edges in purple
-    plot_2 <- ggraph(graph_fp_no_isolates, layout="fr") +
-      geom_edge_link(color = "purple", width = 1) +
-      geom_node_point(color = "steelblue", size = 2) +
-      labs(title = paste("False Positives\nFP:", FP_count)) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(hjust=0.5, size=14, face="bold"),
-        legend.position="none"
-      )
-    
-    # 7) Arrange both plots side-by-side
-    grid.arrange(plot_1, plot_2, nrow=1)
-    
+    if (length(FP_edges_list) > 0) {
+      FP_edges_mat <- do.call(rbind, FP_edges_list)
+      graph_fp     <- graph_from_edgelist(FP_edges_mat, directed=FALSE)
+      
+      # Remove isolated vertices from the FP subgraph
+      graph_fp_no_isolates <- delete_vertices(graph_fp, V(graph_fp)[degree(graph_fp) == 0])
+      
+      # Second plot: all FP edges in purple
+      plot_2 <- ggraph(graph_fp_no_isolates, layout="fr") +
+        geom_edge_link(color = "purple", width = 1) +
+        geom_node_point(color = "steelblue", size = 2) +
+        labs(title = paste("False Positives\nFP:", FP_count)) +
+        theme_minimal() +
+        theme(
+          plot.title = element_text(hjust=0.5, size=14, face="bold"),
+          legend.position="none"
+        )
+      
+      # 7) Arrange both plots side-by-side
+      grid.arrange(plot_1, plot_2, nrow=1)
+    } else {
+      # No valid FP edges
+      grid.arrange(plot_1)
+    }
   } else {
     # No FP edges
     grid.arrange(plot_1)
