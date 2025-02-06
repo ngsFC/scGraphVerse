@@ -56,11 +56,11 @@ seurat_split <- SplitObject(
 ### Late integration
 
 ```{r}
-sc_split <- lapply(seurat_split, as.SingleCellExperiment)
+#sc_split <- lapply(seurat_split, as.SingleCellExperiment)
 
 set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
-  genie3_late <- infer_networks(sc_split, 
+  genie3_late <- infer_networks(seurat_split, 
                                 method="GENIE3",
                                 nCores = 15)
 )
@@ -81,7 +81,7 @@ sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 #### Cutoff
 
 ```{r}
-sgenie3_late_adj <- cutoff_adjacency(count_matrices = sc_split,
+sgenie3_late_adj <- cutoff_adjacency(count_matrices = seurat_split,
                                      weighted_adjm_list = sgenie3_late_wadj, 
                                      n = 3,
                                      method = "GENIE3",
@@ -123,8 +123,9 @@ adj <- stringdb_adjacency(
 adj <- adj$binary
 adj <- adj[rownames(consesusm),rownames(consesusm)]
 adj <- symmetrize(list(adj), weight_function = "mean")
+adj <- adj[[1]]
 
-plotg(adj)
+plotg(list(adj))
 
 ajm_compared <- compare_consensus(consesusm, adj)
 ajm_compared <- compare_consensus(consesusu, adj)
@@ -172,7 +173,7 @@ query[[1]] %>%
 ### Early integration
 
 ```{r}
-early_matrix <- list(earlyj(count_matrices))
+early_matrix <- earlyj(seurat_split)
 
 set.seed(1234)
 time[["GENIE3_early_15Cores"]] <- system.time(
@@ -210,7 +211,21 @@ plots <- plotg(sgenie3_early_adj)
 #### Plot comparison
 
 ```{r}
-ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
+adj <- stringdb_adjacency(
+  genes          = rownames(sgenie3_early_adj[[1]]),
+  species        = 9606,
+  required_score = 900,
+  keep_all_genes = T
+)
+
+adj <- adj$binary
+adj <- adj[rownames(sgenie3_early_adj[[1]]),rownames(sgenie3_early_adj[[1]])]
+adj <- symmetrize(list(adj), weight_function = "mean")
+adj <- adj[[1]]
+
+plotg(list(adj))
+
+ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adj)
 
 ```
 
@@ -258,7 +273,7 @@ query[[1]] %>%
 ```{r}
 set.seed(1234)
 time[["grnboost_late"]] <- system.time(
-  grnboost_late <- infer_networks(count_matrices, 
+  grnboost_late <- infer_networks(seurat_split, 
                                 method="GRNBoost2",
                                 nCores = 15)
 )
@@ -278,7 +293,7 @@ sgrnboost_late_wadj <- symmetrize(grnboost_late_wadj, weight_function = "mean")
 #### Cutoff
 
 ```{r}
-sgrnboost_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
+sgrnboost_late_adj <- cutoff_adjacency(count_matrices = seurat_split,
                                      weighted_adjm_list = sgrnboost_late_wadj, 
                                      n = 3,
                                      method = "GRNBoost2",
@@ -307,9 +322,23 @@ consesunet <- create_consensus(adj_matrix_list = sgrnboost_late_adj, weighted_li
 #### Plot comparison
 
 ```{r}
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-ajm_compared <- compare_consensus(consesunet, adjm)
+adj <- stringdb_adjacency(
+  genes          = rownames(sgrnboost_late_adj[[1]]),
+  species        = 9606,
+  required_score = 900,
+  keep_all_genes = T
+)
+
+adj <- adj$binary
+adj <- adj[rownames(consesusm),rownames(consesusm)]
+adj <- symmetrize(list(adj), weight_function = "mean")
+adj <- adj[[1]]
+
+plotg(list(adj))
+
+ajm_compared <- compare_consensus(consesusm, adj)
+ajm_compared <- compare_consensus(consesusu, adj)
+ajm_compared <- compare_consensus(consesunet, adj)
 
 ```
 
@@ -353,7 +382,7 @@ query[[1]] %>%
 ### Early integration
 
 ```{r}
-early_matrix <- list(earlyj(count_matrices))
+early_matrix <- earlyj(seurat_split)
 
 set.seed(1234)
 time[["grnboost_early"]] <- system.time(
@@ -390,7 +419,21 @@ plots <- plotg(sgrnboost_early_adj)
 #### Plot comparison
 
 ```{r}
-ajm_compared <- compare_consensus(sgrnboost_early_adj[[1]], adjm)
+adj <- stringdb_adjacency(
+  genes          = rownames(sgrnboost_early_adj[[1]]),
+  species        = 9606,
+  required_score = 900,
+  keep_all_genes = T
+)
+
+adj <- adj$binary
+adj <- adj[rownames(sgrnboost_early_adj[[1]]),rownames(sgrnboost_early_adj[[1]])]
+adj <- symmetrize(list(adj), weight_function = "mean")
+adj <- adj[[1]]
+
+plotg(list(adj))
+
+ajm_compared <- compare_consensus(sgrnboost_early_adj[[1]], adj)
 ```
 
 #### PubMed Query

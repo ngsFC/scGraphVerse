@@ -51,7 +51,7 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   plot_1 <- ggraph(graph_original_no_isolates, layout="fr") +
     geom_edge_link(aes(color = I(color)), width = 0.7) +
     geom_node_point(color="steelblue", size = 2) +
-    labs(title = paste("Ground Truth\nTP:", TP_count, "FN:", FN_count)) +
+    #labs(title = paste("Ground Truth\nTP:", TP_count, "FN:", FN_count)) +
     theme_minimal() +
     theme(
       plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
@@ -82,7 +82,7 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
       plot_2 <- ggraph(graph_fp_no_isolates, layout="fr") +
         geom_edge_link(color = "purple", width = 1) +
         geom_node_point(color = "steelblue", size = 2) +
-        labs(title = paste("False Positives\nFP:", FP_count)) +
+        #labs(title = paste("False Positives\nFP:", FP_count)) +
         theme_minimal() +
         theme(
           plot.title = element_text(hjust=0.5, size=14, face="bold"),
