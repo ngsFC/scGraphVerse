@@ -10,6 +10,7 @@
 #' @param weight_function A string specifying the function to combine values at (i, j) and (j, i). 
 #'   The default is "mean". Other options include "max", or any other function that can be 
 #'   applied to a vector of two numeric values (e.g., "min").
+#' @param nCores Number of cores for parallel processing. Default is `BiocParallel::bpworkers(BiocParallel::bpparam())`.
 #' 
 #' @return A list of symmetrized matrices. Each matrix will have identical values at positions 
 #'   (i, j) and (j, i), computed using the specified weight function.
@@ -21,7 +22,7 @@
 #' the function will apply the `weight_function` to the two values.
 #'
 #' @examples
-#' \dontrun{
+#' 
 #' # Example list of matrices
 #' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2, ncol = 2)
 #' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2, ncol = 2)
@@ -29,42 +30,38 @@
 #' 
 #' # Symmetrize with "mean" function
 #' symmetrized_matrices <- symmetrize(matrix_list, weight_function = "mean")
-#' }
 #'
 #' @export
-symmetrize <- function(matrix_list, weight_function = "mean") {
+
+symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
+  if (!is.list(matrix_list) || !all(sapply(matrix_list, is.matrix))) {
+    stop("matrix_list must be a list of matrices")
+  }
   
-  # Helper function to process and symmetrize a single matrix
-  process_matrix <- function(mat, weight_function) {
+  weight_function <- match.fun(weight_function)  # Ensure valid function input
+  
+  # Parallel processing of matrix symmetrization
+  symmetrized_matrices <- BiocParallel::bplapply(matrix_list, function(mat) {
     p <- nrow(mat)
-    sym_mat <- mat  
+    sym_mat <- mat  # Copy structure
     
-    for (i in 1:(p - 1)) {
-      for (j in (i + 1):p) {
-        # Get values at (i, j) and (j, i)
+    for (i in seq_len(p - 1)) {
+      for (j in seq(i + 1, p)) {
         val_ij <- mat[i, j]
         val_ji <- mat[j, i]
         
-        # Check for zeros and apply logic
         if (val_ij == 0 || val_ji == 0) {
-          # Use the non-zero or the higher value if one is zero
-          symmetric_value <- max(val_ij, val_ji)
+          symmetric_value <- max(val_ij, val_ji)  # Use the non-zero value
         } else {
-          # Use the specified weight function if both are non-zero
-          symmetric_value <- match.fun(weight_function)(c(val_ij, val_ji))
+          symmetric_value <- weight_function(c(val_ij, val_ji))  # Apply function
         }
         
-        # Set both (i, j) and (j, i) to the symmetric value
         sym_mat[i, j] <- symmetric_value
         sym_mat[j, i] <- symmetric_value
       }
     }
-    
     return(sym_mat)
-  }
-  
-  # Apply the process_matrix function to each matrix in the list
-  symmetrized_matrices <- lapply(matrix_list, process_matrix, weight_function = weight_function)
+  }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   
   return(symmetrized_matrices)
 }

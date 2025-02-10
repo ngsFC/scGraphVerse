@@ -12,6 +12,7 @@
 #'   the NCBI servers. Default is 0.5.
 #' @param query_field Character. The PubMed search field to be used in the query (e.g., "Title/Abstract").
 #'   Default is "Title/Abstract".
+#' @param nCores The number of cores to use for parallel computation. Default is the number of available cores.
 #'
 #' @return A list of data frames, one for each predicted matrix. Each data frame contains:
 #'   \describe{
@@ -21,147 +22,87 @@
 #'     \item{PMIDs}{A comma-separated string of PubMed IDs associated with the hits (or \code{NA} if none).}
 #'   }
 #'
-#' @details
-#' The function identifies discrepant gene pairs where the predicted matrix indicates an interaction (1)
-#' but the ground truth does not (0). For each discrepant pair, a query is constructed and sent to PubMed
-#' using the \code{rentrez} package. The query first retrieves the count of hits and, if hits are found,
-#' a second query is made to retrieve all PubMed IDs. A delay is introduced between queries to comply with
-#' NCBI usage guidelines.
-#'
-#' @examples
-#' \dontrun{
-#' # Load predicted matrices and ground truth from CSV files (example):
-#' predicted1 <- as.matrix(read.csv("predicted_matrix1.csv", row.names = 1))
-#' predicted2 <- as.matrix(read.csv("predicted_matrix2.csv", row.names = 1))
-#' ground_truth <- as.matrix(read.csv("ground_truth.csv", row.names = 1))
-#'
-#' # Combine predicted matrices into a list
-#' predicted_list <- list(matrix1 = predicted1, matrix2 = predicted2)
-#'
-#' # Run the edge mining function
-#' result <- edge_mining(predicted_list, ground_truth, delay = 0.5, query_field = "Title/Abstract")
-#'
-#' # View the result for the first matrix
-#' print(result[[1]])
-#' }
-#'
-#' @import rentrez
+#' @import BiocParallel rentrez
 #' @export
 
+library(BiocParallel)
+library(rentrez)
+
 edge_mining <- function(predicted_list, ground_truth, delay = 0.5, query_field = "Title/Abstract", 
-                        query_edge_types = c("TP", "FP", "FN")) {
+                        query_edge_types = c("TP", "FP", "FN"),
+                        nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
   
-  # Check that the ground_truth matrix has gene names in its row and column names.
-  if (is.null(rownames(ground_truth)) || is.null(colnames(ground_truth))) {
-    stop("The ground_truth matrix must have row and column names representing gene names.")
+  if (!is.list(predicted_list) || !is.matrix(ground_truth)) {
+    stop("predicted_list must be a list of matrices and ground_truth must be a matrix")
   }
   
-  # Initialize a list to store the results for each predicted matrix.
-  results_list <- list()
-  
-  # Loop over each predicted matrix in the list.
-  for (i in seq_along(predicted_list)) {
-    
+  results_list <- BiocParallel::bplapply(seq_along(predicted_list), function(i) {
     predicted <- predicted_list[[i]]
     
-    # Check that the predicted matrix has gene names.
-    if (is.null(rownames(predicted)) || is.null(colnames(predicted))) {
+    if (!is.matrix(predicted) || is.null(rownames(predicted)) || is.null(colnames(predicted))) {
       stop(paste("Predicted matrix at index", i, "does not have proper row and column names."))
     }
     
-    # Identify all gene pairs present in either predicted or ground_truth,
-    # and restrict to the upper-triangle to avoid duplicate (symmetric) pairs.
     indices <- which(((predicted == 1) | (ground_truth == 1)) & upper.tri(predicted), arr.ind = TRUE)
-    
-    # If no gene pairs are found, store an empty data frame.
     if (nrow(indices) == 0) {
-      message("No gene pairs found for predicted matrix index ", i)
-      results_list[[i]] <- data.frame(gene1 = character(0),
-                                      gene2 = character(0),
-                                      edge_type = character(0),
-                                      pubmed_hits = integer(0),
-                                      PMIDs = character(0),
-                                      stringsAsFactors = FALSE)
-      next
+      return(data.frame(gene1 = character(0), gene2 = character(0), edge_type = character(0),
+                        pubmed_hits = integer(0), PMIDs = character(0), stringsAsFactors = FALSE))
     }
     
-    # Create a data frame of the gene pairs.
     gene_pairs <- data.frame(
       gene1 = rownames(predicted)[indices[, "row"]],
       gene2 = colnames(predicted)[indices[, "col"]],
       stringsAsFactors = FALSE
     )
     
-    # Determine the edge type (TP, FP, or FN) for each gene pair.
-    gene_pairs$edge_type <- NA_character_
-    for (k in seq_len(nrow(gene_pairs))) {
-      r <- indices[k, "row"]
-      c <- indices[k, "col"]
-      
-      if (predicted[r, c] == 1 && ground_truth[r, c] == 1) {
-        gene_pairs$edge_type[k] <- "TP"
-      } else if (predicted[r, c] == 1 && ground_truth[r, c] == 0) {
-        gene_pairs$edge_type[k] <- "FP"
-      } else if (predicted[r, c] == 0 && ground_truth[r, c] == 1) {
-        gene_pairs$edge_type[k] <- "FN"
-      }
-    }
+    gene_pairs$edge_type <- ifelse(predicted[indices] == 1 & ground_truth[indices] == 1, "TP",
+                             ifelse(predicted[indices] == 1 & ground_truth[indices] == 0, "FP",
+                             "FN"))
     
-    # Filter gene pairs based on the query_edge_types parameter.
     gene_pairs <- gene_pairs[gene_pairs$edge_type %in% query_edge_types, , drop = FALSE]
     
-    # Initialize columns for PubMed query results with the correct length.
-    gene_pairs$pubmed_hits <- rep(NA_integer_, nrow(gene_pairs))
-    gene_pairs$PMIDs <- rep(NA_character_, nrow(gene_pairs))
+    if (nrow(gene_pairs) == 0) return(gene_pairs)
     
-    # Loop over each gene pair and query PubMed.
-    for (j in seq_len(nrow(gene_pairs))) {
+    pubmed_results <- BiocParallel::bplapply(seq_len(nrow(gene_pairs)), function(j) {
       gene1 <- gene_pairs$gene1[j]
       gene2 <- gene_pairs$gene2[j]
-      
-      # Build the query string.
       query <- paste0(gene1, "[", query_field, "] AND ", gene2, "[", query_field, "]")
-      message("Matrix ", i, ": Querying PubMed for: ", query)
       
-      # Use tryCatch to safely query PubMed.
       result <- tryCatch({
-        # First, do a query to get the count.
         search_res <- entrez_search(db = "pubmed", term = query, retmax = 0)
         hit_count <- as.numeric(search_res$count)
         
-        # If hits are found, perform a second query to retrieve all PMIDs.
         if (hit_count > 0) {
           search_res <- entrez_search(db = "pubmed", term = query, retmax = hit_count)
         }
         search_res
       }, error = function(e) {
-        message("Error querying PubMed for gene pair: ", gene1, " and ", gene2, ". Error: ", e$message)
         return(NULL)
       })
       
-      # If the query was successful, store the hit count and PMIDs.
       if (!is.null(result)) {
-        gene_pairs$pubmed_hits[j] <- as.numeric(result$count)
-        if (length(result$ids) > 0) {
-          # Collapse PMIDs into a comma-separated string.
-          gene_pairs$PMIDs[j] <- paste(result$ids, collapse = ",")
-        } else {
-          gene_pairs$PMIDs[j] <- NA_character_
-        }
+        pubmed_hits <- as.numeric(result$count)
+        pmids <- if (length(result$ids) > 0) paste(result$ids, collapse = ",") else NA_character_
+      } else {
+        pubmed_hits <- NA_integer_
+        pmids <- NA_character_
       }
       
-      # Pause briefly between queries to be polite to the NCBI servers.
-      Sys.sleep(delay)
-    }
+      Sys.sleep(delay)  # Respect NCBI guidelines
+      return(data.frame(pubmed_hits, PMIDs = pmids))
+    }, BPPARAM = MulticoreParam(nCores))
     
-    # Save the results for this matrix.
-    results_list[[i]] <- gene_pairs
-  }
+    pubmed_results <- do.call(rbind, pubmed_results)
+    gene_pairs$pubmed_hits <- pubmed_results$pubmed_hits
+    gene_pairs$PMIDs <- pubmed_results$PMIDs
+    
+    return(gene_pairs)
+  }, BPPARAM = MulticoreParam(nCores))
   
-  # If the input list has names, assign them to the results list.
   if (!is.null(names(predicted_list))) {
     names(results_list) <- names(predicted_list)
   }
   
   return(results_list)
 }
+
