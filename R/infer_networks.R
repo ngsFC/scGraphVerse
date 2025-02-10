@@ -23,13 +23,12 @@
 #' @export
 
 infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (BiocParallel::bpworkers(BiocParallel::bpparam()) - 1)) {
-  library(BiocParallel)
   
   # Detect and extract expression data from Seurat objects
   if (all(sapply(count_matrices_list, function(x) inherits(x, "Seurat")))) {
     message("Detected Seurat objects. Extracting expression matrices...")
     count_matrices_list <- bplapply(count_matrices_list, function(obj) {
-      as.matrix(t(GetAssayData(obj, assay = "RNA", layer = "data")))
+      as.matrix(t(GetAssayData(obj, assay = "RNA", slot = "data")))
     }, BPPARAM = MulticoreParam(nCores))
   }
   
@@ -69,7 +68,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     count_matrix <- count_matrices_list[[j]]
     
     if (method == "GENIE3") {
-      return(getLinkList(GENIE3(t(count_matrix), nCores = nCores)))
+      return(GENIE3::getLinkList(GENIE3(t(count_matrix), nCores = nCores)))
     } else if (method == "GRNBoost2") {
       count_matrix_df <- as.data.frame(count_matrix)
       genes <- colnames(count_matrix_df)
