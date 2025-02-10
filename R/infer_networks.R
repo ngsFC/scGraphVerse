@@ -21,7 +21,6 @@
 #' result <- infer_networks(count_matrices_list = list(matrix1, matrix2), method = "GENIE3")
 #' }
 #' @export
-
 infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, nCores = (BiocParallel::bpworkers(BiocParallel::bpparam()) - 1)) {
   
   # Detect and extract expression data from Seurat objects
@@ -68,7 +67,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     count_matrix <- count_matrices_list[[j]]
     
     if (method == "GENIE3") {
-      return(GENIE3::getLinkList(GENIE3(t(count_matrix), nCores = nCores)))
+      return(getLinkList(GENIE3(t(count_matrix), nCores = nCores)))
     } else if (method == "GRNBoost2") {
       count_matrix_df <- as.data.frame(count_matrix)
       genes <- colnames(count_matrix_df)
