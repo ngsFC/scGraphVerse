@@ -26,17 +26,25 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
   # Detect and extract expression data from Seurat objects
   if (all(sapply(count_matrices_list, function(x) inherits(x, "Seurat")))) {
     message("Detected Seurat objects. Extracting expression matrices...")
-    count_matrices_list <- bplapply(count_matrices_list, function(obj) {
-      as.matrix(t(GetAssayData(obj, assay = "RNA", slot = "data")))
-    }, BPPARAM = MulticoreParam(nCores))
+    count_matrices_list <- BiocParallel::bplapply(count_matrices_list, function(obj) {
+      expr_mat <- Seurat::GetAssayData(obj, assay = "RNA", slot = "data")
+      if (!inherits(expr_mat, "matrix")) {
+        expr_mat <- as.matrix(expr_mat)  # Convert sparse or other formats to matrix
+      }
+      return(t(expr_mat))
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   }
   
   # Detect and extract logcounts from SingleCellExperiment objects
   if (all(sapply(count_matrices_list, function(x) inherits(x, "SingleCellExperiment")))) {
     message("Detected SingleCellExperiment objects. Extracting logcounts matrices...")
-    count_matrices_list <- bplapply(count_matrices_list, function(sce) {
-      as.matrix(t(assay(sce, "logcounts")))
-    }, BPPARAM = MulticoreParam(nCores))
+    count_matrices_list <- BiocParallel::bplapply(count_matrices_list, function(sce) {
+      expr_mat <- SummarizedExperiment::assay(sce, "logcounts")
+      if (!inherits(expr_mat, "matrix")) {
+        expr_mat <- as.matrix(expr_mat)
+      }
+      return(t(expr_mat))
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   }
   
   # Validate method input
@@ -49,43 +57,43 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
   
   # Apply JRF with normalization
   if (method == "JRF") {
-    count_matrices_list <- bplapply(count_matrices_list, function(x) {
+    count_matrices_list <- BiocParallel::bplapply(count_matrices_list, function(x) {
       (x - mean(x)) / sd(x)
-    }, BPPARAM = MulticoreParam(nCores))
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores))
     
-    netout <- JRF(X = count_matrices_list, 
-                  genes.name = rownames(count_matrices_list[[1]]), 
-                  ntree = 500, 
-                  mtry = round(sqrt(length(rownames(count_matrices_list[[1]])) - 1)))
+    netout <- JRF::JRF(X = count_matrices_list, 
+                       genes.name = rownames(count_matrices_list[[1]]), 
+                       ntree = 500, 
+                       mtry = round(sqrt(length(rownames(count_matrices_list[[1]])) - 1)))
     
     network_results[[1]] <- netout
     return(network_results)
   }
   
   # Parallel network inference for other methods
-  network_results <- bplapply(seq_along(count_matrices_list), function(j) {
+  network_results <- BiocParallel::bplapply(seq_along(count_matrices_list), function(j) {
     count_matrix <- count_matrices_list[[j]]
     
     if (method == "GENIE3") {
-      return(getLinkList(GENIE3(t(count_matrix), nCores = nCores)))
+      return(GENIE3::getLinkList(GENIE3::GENIE3(t(count_matrix), nCores = nCores)))
     } else if (method == "GRNBoost2") {
       count_matrix_df <- as.data.frame(count_matrix)
       genes <- colnames(count_matrix_df)
-      df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
-      return(arboreto$grnboost2(df_pandas, gene_names = genes))
+      df_pandas <- reticulate::pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
+      return(arboreto::grnboost2(df_pandas, gene_names = genes))
     } else if (method == "ZILGM") {
-      lambda_max <- find_lammax(as.matrix(count_matrix))
+      lambda_max <- zilgm::find_lammax(as.matrix(count_matrix))
       lambda_min <- 1e-4 * lambda_max
       lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-      nb2_fit <- zilgm(X = as.matrix(count_matrix), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
+      nb2_fit <- zilgm::zilgm(X = as.matrix(count_matrix), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
       return(nb2_fit$network[[nb2_fit$opt_index]])
     } else if (method == "PCzinb") {
-      netout <- PCzinb(as.matrix(count_matrix), method = "zinb1", maxcard = 2)
+      netout <- PCzinb::PCzinb(as.matrix(count_matrix), method = "zinb1", maxcard = 2)
       rownames(netout) <- rownames(adjm)
       colnames(netout) <- colnames(adjm)
       return(netout)
     }
-  }, BPPARAM = MulticoreParam(nCores))
+  }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   
   return(network_results)
 }

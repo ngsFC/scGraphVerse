@@ -31,7 +31,8 @@ library(Seurat)
 library(STRINGdb)
 library(SingleCellExperiment)
 library(NodeVerse)
-
+library(BiocParallel)
+library(GENIE3)
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 arboreto <- reticulate::import("arboreto.algo")
@@ -177,7 +178,7 @@ early_matrix <- earlyj(seurat_split)
 
 set.seed(1234)
 time[["GENIE3_early_15Cores"]] <- system.time(
-  genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
+  genie3_early <- infer_networks(list(early_matrix), method="GENIE3", nCores = 15)
 )
 
 #saveRDS(genie3_early, paste(ddir, "genie3_early_pbmc1000.RDS", sep = "/"))
@@ -195,7 +196,7 @@ sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
 #### Cutoff
 
 ```{r}
-sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
+sgenie3_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix),
                                       weighted_adjm_list = sgenie3_early_wadj, 
                                       n = 2,
                                       method = "GENIE3",
@@ -386,7 +387,7 @@ early_matrix <- earlyj(seurat_split)
 
 set.seed(1234)
 time[["grnboost_early"]] <- system.time(
-  grnboost_early <- infer_networks(early_matrix, method="GRNBoost2")
+  grnboost_early <- infer_networks(list(early_matrix), method="GRNBoost2")
 )
 
 #saveRDS(grnboost_early, paste(ddir, "grnboost_early_pbmc1000.RDS", sep = "/"))
@@ -404,7 +405,7 @@ sgrnboost_early_wadj <- symmetrize(grnboost_early_wadj, weight_function = "mean"
 #### Cutoff
 
 ```{r}
-sgrnboost_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
+sgrnboost_early_adj <- cutoff_adjacency(count_matrices = list(early_matrix),
                                       weighted_adjm_list = sgrnboost_early_wadj, 
                                       n = 2,
                                       method = "GRNBoost2",
