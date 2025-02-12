@@ -172,7 +172,7 @@ boxplot(as.matrix(t(C[most_expressed, ])),
 
 ```{r Generate Adjacency matrice}
 
-pathgenes <- pathg(seurat_object = seurat_subset, cell_type = "CD4-positive helper T cell", top_n = 1000)
+pathgenes <- pathg(seurat_object = seurat_subset_filt, cell_type = "CD4-positive helper T cell", top_n = 1000)
 
 options(timeout = 2000)
 result <- stringdb_adjacency(
@@ -187,6 +187,9 @@ adjm <- result$binary
 
 common_names <- intersect(rownames(adjm), colnames(adjm))
 adjm <- adjm[common_names, common_names, drop = FALSE]
+
+sorted_names <- sort(rownames(adjm))
+adjm <- adjm[sorted_names, sorted_names]
 
 print(dim(wadjm))
 print(dim(adjm))
@@ -272,7 +275,6 @@ count_matrices <- lapply(1:3, function(i) {
   return(count_matrix_df)
 })
 
-# Optionally save the results
 saveRDS(count_matrices, "./../analysis/sim_n500p677.RDS")
 
 count_matrices[[1]] %>%
@@ -283,5 +285,86 @@ count_matrices[[1]] %>%
               scrollX = TRUE,
               pageLength = 10), 
             caption = "Simulated Matrix")
+
+```
+
+```{r}
+#' Generate zero-inflated negative binomial data
+#'
+#' Simulate zero-inflated negative binomial (ZINB) data based on an adjacency matrix.
+#'
+#' # Parameters:
+#' # n: Integer. Number of samples.
+#' # p: Integer. Number of variables (nodes).
+#' # B: Matrix. Symmetric adjacency matrix (binary: 0/1), with row and column names as gene names.
+#' # mu_range: Numeric vector of length 2. Range for mu values (e.g., c(5, 15)).
+#' # mu_noise: Numeric. Mean of the noise component.
+#' # theta: Numeric. Dispersion parameter of the negative binomial part.
+#' # pi: Numeric. Probability of excess zeros (0 < pi < 1).
+#' # seed: Integer (optional). Random seed for reproducibility.
+#'
+#' @importFrom countreg rzinbinom
+#' @return A numeric matrix of dimension n x p, where row names correspond to gene names from B.
+zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, seed = NULL) {
+  
+  if (!is.numeric(n) || n <= 0 || floor(n) != n) stop("n must be a positive integer.")
+  if (!is.numeric(p) || p <= 0 || floor(p) != p) stop("p must be a positive integer.")
+  if (!is.matrix(B) || nrow(B) != ncol(B)) stop("B must be a square matrix.")
+  if (!all(B %in% c(0, 1))) stop("B must contain only 0s and 1s.")
+  if (!is.numeric(mu_range) || length(mu_range) != 2 || any(mu_range <= 0)) stop("mu_range must be a numeric vector of length 2 with positive values.")
+  if (!is.numeric(mu_noise) || mu_noise < 0) stop("mu_noise must be non-negative.")
+  if (!is.numeric(theta) || theta <= 0) stop("theta must be a positive number.")
+  if (!is.numeric(pi) || pi <= 0 || pi >= 1) stop("pi must be in the range (0,1).")
+  if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1 || floor(seed) != seed)) stop("seed must be a single integer.")
+  
+  if (!is.null(seed)) set.seed(seed)
+  gene_names <- rownames(B)
+  cellID <- paste("cell_", seq(1:n), sep = "")
+  
+  B <- ifelse(B > 0, 1, 0)
+  
+  # Generate mu as a random vector of length p from the given range
+  mu <- sample(seq(mu_range[1], mu_range[2]), p, replace = TRUE)
+  
+  A <- diag(1, nrow = p, ncol = p)
+  edges <- which(B == 1, arr.ind = TRUE)
+  edges <- edges[edges[, 1] < edges[, 2], ]  # Remdup
+  
+  for (i in seq_len(nrow(edges))) {
+    tmp <- numeric(p)
+    tmp[edges[i, ]] <- 1
+    A <- cbind(A, tmp)
+  }
+  
+  B[edges] <- sample(seq(mu_range[1], mu_range[2]), length(edges[, 1]), replace = TRUE)
+  B <- (B + t(B)) / 2  # symmetry
+  
+  sigma <- B  
+  nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
+  Y_mu <- c(mu, nonzero_sigma)  
+  
+  # Generate ZINB data
+  Y <- matrix(rzinbinom(length(Y_mu) * n, mu = rep(Y_mu, each = n), theta = theta, pi = pi), 
+              nrow = length(Y_mu), ncol = n)
+  
+  X <- A %*% Y
+  noise_matrix <- matrix(rzinbinom(n * p, mu = mu_noise, theta = 1, pi = pi), nrow = p, ncol = n)
+  X <- X + noise_matrix
+  
+  X <- t(X)
+  if (!is.null(gene_names)) colnames(X) <- gene_names
+  if (!is.null(cellID)) rownames(X) <- cellID
+  
+  return(X)
+}
+```
+
+```{r}
+library(distributions3)
+m1 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
+m2 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
+m3 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
+
+saveRDS(list(m1,m2,m3), "./../analysis/sim_n500p677.RDS")
 
 ```

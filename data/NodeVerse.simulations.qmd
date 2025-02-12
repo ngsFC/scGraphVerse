@@ -16,45 +16,30 @@ editor: visual
 ## Load Libraries and data
 
 ```{r}
-library(tidyverse)
-library(GENIE3)
-library(igraph)
-library(ggraph)
-library(pROC)
 library(RColorBrewer)
-library(scales)
-library(gridExtra)
-library(INetTool)
-library(learn2count)
-library(reticulate)
 library(DT)
+library(tidyverse)
+library(Seurat)
+library(STRINGdb)
+library(SingleCellExperiment)
+library(NodeVerse)
+library(BiocParallel)
+library(GENIE3)
 
-
-use_python("/usr/bin/python3", required = TRUE)
-arboreto <- import("arboreto.algo")
-pandas <- import("pandas")
-numpy <- import("numpy")
-
-source("./../R/earlyj.R")
-source("./../R/infer_networks.R")
-source("./../R/generate_adjacency.R")
-source("./../R/symmetrize.R")
-source("./../R/plotROC.R")
-source("./../R/cutoff_adjacency.R")
-source("./../R/pscores.R")
-source("./../R/plotg.R")
-source("./../R/create_consensus.R")
-source("./../R/compare_consensus.R")
+reticulate::use_python("/usr/bin/python3", required = TRUE)
+arboreto <- reticulate::import("arboreto.algo")
+pandas <- reticulate::import("pandas")
+numpy <- reticulate::import("numpy")
 
 time <- list()
 
-ddir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/data"
-pdir <- "/home/francescoc/Desktop/GRN_project/analysis/GENIE3/plots"
+ddir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/data"
+pdir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/plots"
 
 adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
+colnames(adjm) <- rownames(adjm)
 count_matrices <- readRDS("./../analysis/sim_n500p677.RDS")
 dim(count_matrices[[1]])
-
 
 ```
 
@@ -70,18 +55,15 @@ time[["GENIE3_late_15Cores"]] <- system.time(
                                 nCores = 15)
 )
 
-saveRDS(genie3_late, paste(ddir, "genie3_late_simp677.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-genie3_late_wadj <- generate_adjacency(genie3_late, ground.truth = adjm)
+genie3_late_wadj <- generate_adjacency(genie3_late)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 
-png(paste(pdir, "genie3_late_simp677_auc.png", sep = "/"), width = 2400, height = 1800, res = 300)
-genie3_late_auc <- plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration")
-dev.off()
+plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration", is_binary = F)
 ```
 
 #### Cutoff
@@ -89,20 +71,13 @@ dev.off()
 ```{r}
 sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      weighted_adjm_list = sgenie3_late_wadj, 
-                                     ground.truth = adjm,
                                      n = 3,
                                      method = "GENIE3",
                                      nCores = 15)
 
-png(paste(pdir, "genie3_late_simp677_scores.png", sep = "/"), width = 2400, height = 1800, res = 300)
-scores.genie3.late.all <- pscores(adjm, sgenie3_late_adj)
-dev.off()
+pscores(adjm, sgenie3_late_adj)
+plotg(sgenie3_late_adj)
 
-png(paste(pdir, "genie3_late_simp677_mplots.png", sep = "/"), width = 2400, height = 2400, res = 300)
-plots <- plotg(sgenie3_late_adj)
-dev.off()
-
-cbind(scores.genie3.late.all$Statistics, genie3_late_auc) %>% write.table(., paste(ddir, "genie3_late_simp677_perf.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
 ```
 
 #### Consensus
@@ -112,29 +87,17 @@ consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sgenie3_late_adj, weighted_list = sgenie3_late_wadj, method = "INet", threshold = 0.05, ncores = 15)
 
-png(paste(pdir, "genie3_late_simp677_vote_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
-scores.genie3.late <- pscores(adjm, list(consesusm))
-dev.off()
-png(paste(pdir, "genie3_late_simp677_union_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
-scoresu.genie3.late <- pscores(adjm, list(consesusu))
-dev.off()
-png(paste(pdir, "genie3_late_simp677_inet_score.png", sep = "/"), width = 2400, height = 2400, res = 300)
-scoresnet.genie3.late <- pscores(adjm, list(consesunet))
-dev.off()
+pscores(adjm, list(consesusm))
+pscores(adjm, list(consesusu))
+pscores(adjm, list(consesunet))
 ```
 
 #### Plot comparison
 
 ```{r}
-png(paste(pdir, "genie3_late_simp677_vote_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
-ajm_compared <- compare_consensus(consesusm, adjm)
-dev.off()
-png(paste(pdir, "genie3_late_simp677_union_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
-ajm_compared <- compare_consensus(consesusu, adjm)
-dev.off()
-png(paste(pdir, "genie3_late_simp677_inet_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
-ajm_compared <- compare_consensus(consesunet, adjm)
-dev.off()
+compare_consensus(consesusm, adjm)
+compare_consensus(consesusu, adjm)
+compare_consensus(consesunet, adjm)
 ```
 
 ### Early integration
@@ -147,18 +110,14 @@ time[["GENIE3_early_15Cores"]] <- system.time(
   genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
 
-saveRDS(genie3_early, paste(ddir, "genie3_early_simp677.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-genie3_early_wadj <- generate_adjacency(genie3_early, ground.truth = adjm)
+genie3_early_wadj <- generate_adjacency(genie3_early)
 sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
-
-png(paste(pdir, "genie3_early_simp677_auc.png", sep = "/"), width = 2400, height = 1800, res = 300)
-genie3_early_auc <- plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration")
-dev.off()
+plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration", is_binary = F)
 ```
 
 #### Cutoff
@@ -166,28 +125,18 @@ dev.off()
 ```{r}
 sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       weighted_adjm_list = sgenie3_early_wadj, 
-                                      ground.truth = adjm,
                                       n = 2,
                                       method = "GENIE3",
                                       nCores = 15)
 
-png(paste(pdir, "genie3_early_simp677_scores.png", sep = "/"), width = 2400, height = 1800, res = 300)
-scores.genie3.early <- pscores(adjm, sgenie3_early_adj)
-dev.off()
-
-png(paste(pdir, "genie3_early_simp677_mplots.png", sep = "/"), width = 2400, height = 2400, res = 300)
-plots <- plotg(sgenie3_early_adj)
-dev.off()
-
-cbind(scores.genie3.early$Statistics, genie3_early_auc) %>% write.table(., paste(ddir, "genie3_early_simp677_perf.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
+pscores(adjm, sgenie3_early_adj)
+plotg(sgenie3_early_adj)
 ```
 
 #### Plot comparison
 
 ```{r}
-png(paste(pdir, "genie3_early_simp677_plot.png", sep = "/"), width = 4000, height = 2400, res = 300)
-ajm_compared <- compare_consensus(sgenie3_early_adj[[1]], adjm)
-dev.off()
+compare_consensus(sgenie3_early_adj[[1]], adjm)
 ```
 
 ## GRNBoost2
@@ -202,18 +151,15 @@ time[["grnboost_late"]] <- system.time(
                                 nCores = 15)
 )
 
-saveRDS(grnboost_late, paste(ddir, "grnboost_late_simp677.RDS", sep = "/"))
 ```
 
 #### Symmetrize and ROC
 
 ```{r}
-grnboost_late_wadj <- generate_adjacency(grnboost_late, ground.truth = adjm)
+grnboost_late_wadj <- generate_adjacency(grnboost_late)
 sgrnboost_late_wadj <- symmetrize(grnboost_late_wadj, weight_function = "mean")
 
-png(paste(pdir, "grnboost_late_simp677_auc.png", sep = "/"), width = 2400, height = 1800, res = 300)
 grnboost_late_auc <- plotROC(sgrnboost_late_wadj, adjm, plot_title = "ROC curve - grnboost Late Integration")
-dev.off()
 ```
 
 #### Cutoff
@@ -221,20 +167,13 @@ dev.off()
 ```{r}
 sgrnboost_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      weighted_adjm_list = sgrnboost_late_wadj, 
-                                     ground.truth = adjm,
                                      n = 3,
                                      method = "GRNBoost2",
                                      nCores = 15)
 
-png(paste(pdir, "grnboost_late_simp677_scores.png", sep = "/"), width = 2400, height = 1800, res = 300)
 scores.grnboost.late.all <- pscores(adjm, sgrnboost_late_adj)
-dev.off()
-
-png(paste(pdir, "grnboost_late_simp677_mplots.png", sep = "/"), width = 2400, height = 2400, res = 300)
 plots <- plotg(sgrnboost_late_adj)
-dev.off()
 
-cbind(scores.grnboost.late.all$Statistics, grnboost_late_auc) %>% write.table(., paste(ddir, "grnboost_late_simp677_perf.txt", sep = "/"), sep = "\t", quote = F, col.names = T, row.names = F)
 ```
 
 #### Consensus
@@ -333,8 +272,6 @@ set.seed(1234)
 time[["ZILGM_late_15Cores"]] <- system.time(
   zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm, nCores = 15)
 )
-
-saveRDS(zilgm_late, "./../analysis/zilgm_late.RDS")
 
 est_graphs <- zilgm_late$network_results
 lambdas <- zilgm_late$lambda_results

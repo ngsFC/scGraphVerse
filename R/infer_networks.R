@@ -79,16 +79,16 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     } else if (method == "GRNBoost2") {
       count_matrix_df <- as.data.frame(count_matrix)
       genes <- colnames(count_matrix_df)
-      df_pandas <- reticulate::pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
-      return(arboreto::grnboost2(df_pandas, gene_names = genes))
+      df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
+      return(arboreto$grnboost2(df_pandas, gene_names = genes))
     } else if (method == "ZILGM") {
-      lambda_max <- zilgm::find_lammax(as.matrix(count_matrix))
+      lambda_max <- ZILGM::find_lammax(as.matrix(count_matrix))
       lambda_min <- 1e-4 * lambda_max
       lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-      nb2_fit <- zilgm::zilgm(X = as.matrix(count_matrix), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
+      nb2_fit <- ZILGM::zilgm(X = as.matrix(count_matrix), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
       return(nb2_fit$network[[nb2_fit$opt_index]])
     } else if (method == "PCzinb") {
-      netout <- PCzinb::PCzinb(as.matrix(count_matrix), method = "zinb1", maxcard = 2)
+      netout <- learn2count::PCzinb(as.matrix(count_matrix), method = "zinb1", maxcard = 2)
       rownames(netout) <- rownames(adjm)
       colnames(netout) <- colnames(adjm)
       return(netout)

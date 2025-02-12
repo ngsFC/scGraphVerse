@@ -23,7 +23,7 @@
 
 library(BiocParallel)
 
-cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GRNBoost2", 
+cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GENIE3", 
                              weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
   
   if (!is.list(count_matrices) || !is.list(weighted_adjm_list)) {

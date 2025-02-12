@@ -2,101 +2,112 @@
 #'
 #' This function modifies the row names of each matrix in a list by appending 
 #' the matrix index (e.g., "_m1", "_m2", ...) to the row names. It then combines 
-#' all the modified matrices into a single matrix using `rbind`.
+#' all the modified matrices into a single matrix using `rbind`. 
+#' If the input consists of Seurat or SingleCellExperiment objects, they are merged accordingly.
 #'
-#' @param matrix_list A list of matrices. Each matrix will have its row names modified.
-#' @return A combined matrix with modified row names.
+#' @param input_list A list of matrices, Seurat objects, or SingleCellExperiment objects.
+#' @return A combined matrix, Seurat object, or SingleCellExperiment object with modified cell names.
 #' @examples
 #' \dontrun{
 #' combined_matrix <- earlyj(list(matrix1, matrix2, matrix3))
 #' }
+#' @importFrom Seurat RenameCells merge Cells
+#' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom methods is
 #' @export
 earlyj <- function(input_list) {
-  # Ensure input is a list
+  # Ensure input is a non-empty list
   if (!is.list(input_list) || length(input_list) == 0) {
     stop("Input must be a non-empty list of matrices, Seurat objects, or SingleCellExperiment objects.")
   }
   
-  # Detect the type of input
-  first_element_type <- class(input_list[[1]])
-  valid_types <- c("matrix", "Seurat", "SingleCellExperiment")
+  # Detect object types and ensure all elements are of the same class
+  object_classes <- unique(sapply(input_list, function(x) class(x)[1]))  # Extract first class in case of multiple
+  first_element_type <- object_classes[1]
   
-  if (!first_element_type %in% valid_types) {
+  if (length(object_classes) > 1) {
+    stop("All elements in input_list must be of the same type.")
+  }
+  
+  valid_types <- c("matrix", "Seurat", "SingleCellExperiment")
+  if (!(first_element_type %in% valid_types)) {
     stop("All elements must be matrices, Seurat objects, or SingleCellExperiment objects.")
   }
   
-  # If input is a list of matrices, standardize them before combining
+  ### Handling Matrices ###
   if (first_element_type == "matrix") {
     standardized_matrices <- lapply(seq_along(input_list), function(i) {
       mat <- input_list[[i]]
       
-      # Check if cells are in columns (genes in rows), and transpose if needed
+      # Validate matrix structure
+      if (!is.matrix(mat) || nrow(mat) == 0 || ncol(mat) == 0) {
+        stop("Each matrix must be a non-empty numeric matrix.")
+      }
+      
+      # Ensure genes are in rows, cells in columns
       if (ncol(mat) > nrow(mat)) {
         mat <- t(mat)
       }
       
-      # Modify cell names (row names)
+      # Assign row names if missing
       if (is.null(rownames(mat))) {
         rownames(mat) <- paste0("cell", seq_len(nrow(mat)))
       }
-      rownames(mat) <- paste0(rownames(mat), "-m", i)
       
+      # Append unique suffix to row names
+      rownames(mat) <- paste0(rownames(mat), "-m", i)
       return(mat)
     })
     
-    # Combine matrices using rbind (since cells are in rows)
+    # Combine matrices using rbind
     combined_matrix <- do.call(rbind, standardized_matrices)
     return(combined_matrix)
   }
   
-  # If input is a list of Seurat objects, combine them
+  ### Handling Seurat Objects ###
   if (first_element_type == "Seurat") {
-    # Ensure all Seurat objects use the same feature (gene) set
-    all_features <- Reduce(intersect, lapply(input_list, rownames))
+    if (!requireNamespace("Seurat", quietly = TRUE)) {
+      stop("Seurat package is required but not installed.")
+    }
     
+    # Check that all Seurat objects share common features
+    all_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(all_features) == 0) {
       stop("Seurat objects do not share common features. Cannot merge.")
     }
     
     modified_seurat_list <- lapply(seq_along(input_list), function(i) {
       obj <- input_list[[i]]
-      
-      # Subset to common features to avoid errors
-      obj <- subset(obj, features = all_features)
-      
-      # Modify cell names
-      obj <- RenameCells(obj, new.names = paste0(Cells(obj), "-m", i))
-      
+      obj <- subset(obj, features = all_features)  # Standardize features
+      obj <- Seurat::RenameCells(obj, new.names = paste0(Seurat::Cells(obj), "-m", i))  # Rename cells
       return(obj)
     })
     
-    # Combine Seurat objects using merge
-    combined_seurat <- merge(modified_seurat_list[[1]], y = modified_seurat_list[-1])
+    # Merge Seurat objects
+    combined_seurat <- do.call(Seurat::merge, modified_seurat_list)
     return(combined_seurat)
   }
   
-  # If input is a list of SingleCellExperiment objects, combine them
+  ### Handling SingleCellExperiment Objects ###
   if (first_element_type == "SingleCellExperiment") {
-    # Ensure all SCE objects have the same features (genes)
-    all_features <- Reduce(intersect, lapply(input_list, rownames))
+    if (!requireNamespace("SingleCellExperiment", quietly = TRUE)) {
+      stop("SingleCellExperiment package is required but not installed.")
+    }
     
+    # Check for shared features
+    all_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(all_features) == 0) {
       stop("SingleCellExperiment objects do not share common features. Cannot merge.")
     }
     
     modified_sce_list <- lapply(seq_along(input_list), function(i) {
       obj <- input_list[[i]]
-      
-      # Subset to common features
-      obj <- obj[all_features, ]
-      
-      # Modify cell names
-      colnames(obj) <- paste0(colnames(obj), "-m", i)
-      
+      obj <- obj[all_features, ]  # Standardize features
+      colnames(obj) <- paste0(colnames(obj), "-m", i)  # Rename cells
       return(obj)
     })
     
-    # Combine SCE objects using cbind
+    # Merge SingleCellExperiment objects
     combined_sce <- do.call(cbind, modified_sce_list)
     return(combined_sce)
   }
