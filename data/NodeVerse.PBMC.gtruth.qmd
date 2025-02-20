@@ -172,7 +172,7 @@ boxplot(as.matrix(t(C[most_expressed, ])),
 
 ```{r Generate Adjacency matrice}
 
-pathgenes <- pathg(seurat_object = seurat_subset_filt, cell_type = "CD4-positive helper T cell", top_n = 1000)
+pathgenes <- pathg(seurat_object = seurat_subset_filt, cell_type = "CD4-positive helper T cell", top_n = 1200)
 
 options(timeout = 2000)
 result <- stringdb_adjacency(
@@ -323,7 +323,6 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, seed = NULL) {
   
   B <- ifelse(B > 0, 1, 0)
   
-  # Generate mu as a random vector of length p from the given range
   mu <- sample(seq(mu_range[1], mu_range[2]), p, replace = TRUE)
   
   A <- diag(1, nrow = p, ncol = p)
@@ -361,10 +360,145 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, seed = NULL) {
 
 ```{r}
 library(distributions3)
-m1 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
-m2 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
-m3 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(2,15), mu_noise = 1, theta = 1, pi = 0.2)
+m1 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(1,4), mu_noise = 1, theta = 1, pi = 0.2, seed = 123)
+m2 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(1,7), mu_noise = 3, theta = 0.7, pi = 0.2, seed = 3455)
+m3 <- zinb_simdata(ncell, nodes, adjm, mu_range = c(1,10), mu_noise = 5, theta = 0.5, pi = 0.2, seed = 6787)
 
 saveRDS(list(m1,m2,m3), "./../analysis/sim_n500p677.RDS")
+
+```
+
+```{r}
+#' Generate multiple zero-inflated negative binomial count matrices with cell-specific depth
+#'
+#' Simulates zero-inflated negative binomial (ZINB) data using an adjacency matrix,
+#' generating `kmat` different matrices with cell-specific sequencing depth.
+#'
+#' @param n Integer. Number of samples (cells).
+#' @param p Integer. Number of variables (genes).
+#' @param B Matrix. A symmetric adjacency matrix (binary: 0/1), with row and column names as gene names.
+#' @param mu_range List of numeric vectors. Each element is a numeric vector of length 2 specifying `mu` range per matrix.
+#' @param mu_noise Numeric vector of length `kmat`. Mean of the noise component for each matrix.
+#' @param theta Numeric vector of length `kmat`. Dispersion parameter of the negative binomial distribution for each matrix.
+#' @param pi Numeric vector of length `kmat`. Probability of excess zeros (0 < pi < 1) for each matrix.
+#' @param kmat Integer. Number of matrices to generate.
+#' @param depth_range Numeric vector of length 2. Range of total counts per cell (e.g., `c(500, 5000)`).
+#' @param seed Integer (optional). Random seed for reproducibility.
+#' 
+#' @return A list of `kmat` numeric matrices, each of dimension `n x p`, where row names correspond to gene names from `B`.
+#' @importFrom countreg rzinbinom
+#' @export
+zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = c(500, 5000), seed = NULL) {
+  
+  if (!is.null(seed)) set.seed(seed)
+  
+  stopifnot(is.numeric(n), n > 0, floor(n) == n)
+  stopifnot(is.numeric(p), p > 0, floor(p) == p)
+  stopifnot(is.matrix(B), nrow(B) == ncol(B))
+  stopifnot(all(B %in% c(0, 1)))
+  stopifnot(is.numeric(kmat), kmat > 0, floor(kmat) == kmat)
+  stopifnot(length(mu_range) == kmat, all(sapply(mu_range, function(x) length(x) == 2 && all(x > 0))))
+  stopifnot(length(mu_noise) == kmat, all(mu_noise >= 0))
+  stopifnot(length(theta) == kmat, all(theta > 0))
+  stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))
+  stopifnot(is.numeric(depth_range), length(depth_range) == 2, all(depth_range > 0))
+  if (!is.null(seed)) stopifnot(is.numeric(seed), length(seed) == 1, floor(seed) == seed)
+  
+  gene_names <- rownames(B)
+  cellID <- paste0("cell_", seq_len(n))
+  
+  B <- ifelse(B > 0, 1, 0)
+  
+  edges <- which(B == 1, arr.ind = TRUE)
+  edges <- edges[edges[, 1] < edges[, 2], ]  # Remove duplicate edges
+  
+  A <- diag(1, nrow = p, ncol = p)
+  for (i in seq_len(nrow(edges))) {
+    tmp <- rep(0, p)
+    tmp[edges[i, ]] <- 1
+    A <- cbind(A, tmp)
+  }
+  
+  B[edges] <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), length(edges[, 1]), replace = TRUE)
+  B <- (B + t(B)) / 2  # Ensure symmetry
+  
+  matrices <- vector("list", kmat)
+  
+  for (k in seq_len(kmat)) {
+    mu <- sample(seq(mu_range[[k]][1], mu_range[[k]][2]), p, replace = TRUE)
+    
+    sigma <- B  
+    nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
+    Y_mu <- c(mu, nonzero_sigma)  
+    
+    Y <- matrix(rzinbinom(length(Y_mu) * n, mu = rep(Y_mu, each = n), theta = theta[k], pi = pi[k]), 
+                nrow = length(Y_mu), ncol = n)
+    X <- A %*% Y
+    
+    noise_matrix <- matrix(rzinbinom(n * p, mu = mu_noise[k], theta = 1, pi = pi[k]), nrow = p, ncol = n)
+    X <- X + noise_matrix
+    
+    X <- t(X)
+    if (!is.null(gene_names)) colnames(X) <- gene_names
+    rownames(X) <- cellID
+    
+    cell_depths <- runif(n, min = depth_range[1], max = depth_range[2])
+    
+    X <- sweep(X, 1, rowSums(X), FUN = "/")  # Divide by row sum
+    X[is.na(X)] <- 0  # Handle zero rows
+    
+    X <- sweep(X, 1, cell_depths, FUN = "*")
+    X <- round(X)
+    
+    matrices[[k]] <- X
+  }
+  
+  return(matrices)
+}
+
+```
+
+Standard scRNA-seq (10x, Drop-seq, inDrop)
+
+```         
+depth_range = c(10,000, 50,000)
+Best for gene expression clustering, trajectory inference, and differential expression.
+```
+
+2️⃣ High-Depth (Smart-seq2, full-length methods)
+
+```         
+depth_range = c(50,000, 500,000)
+Ideal for capturing full-length transcripts, isoforms, and high-precision analysis.
+```
+
+3️⃣ Low-Depth (Large-scale experiments)
+
+```         
+depth_range = c(1,000, 10,000)
+Used for large datasets (e.g., single-nucleus RNA-seq, 10x v3 with many cells).
+```
+
+4️⃣ Ultra-Low (Pseudobulk, single-nucleus RNA-seq)
+
+```         
+depth_range = c(500, 5,000)
+Used when focusing on cell types rather than individual cell transcriptomes.
+```
+
+```{r}
+simat <- zinb_simdata(
+  n = ncell, 
+  p = nodes, 
+  B = adjm, 
+  mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
+  mu_noise = c(1, 3, 5),  
+  theta = c(1, 0.7, 0.5),  
+  pi = c(0.2, 0.2, 0.2),  
+  kmat = 3,
+  depth_range = c(3000, 5000)
+)
+
+saveRDS(simat, "./../analysis/sim_n500p677.RDS")
 
 ```
