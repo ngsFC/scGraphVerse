@@ -31,7 +31,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
       if (!inherits(expr_mat, "matrix")) {
         expr_mat <- as.matrix(expr_mat)  # Convert sparse or other formats to matrix
       }
-      return(t(expr_mat))
+      return(expr_mat)
     }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   }
   
@@ -43,7 +43,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
       if (!inherits(expr_mat, "matrix")) {
         expr_mat <- as.matrix(expr_mat)
       }
-      return(t(expr_mat))
+      return(expr_mat)
     }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   }
   
@@ -75,20 +75,20 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     count_matrix <- count_matrices_list[[j]]
     
     if (method == "GENIE3") {
-      return(GENIE3::getLinkList(GENIE3::GENIE3(t(count_matrix), nCores = nCores)))
+      return(GENIE3::getLinkList(GENIE3::GENIE3(count_matrix, nCores = nCores)))
     } else if (method == "GRNBoost2") {
       count_matrix_df <- as.data.frame(count_matrix)
       genes <- colnames(count_matrix_df)
       df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
       return(arboreto$grnboost2(df_pandas, gene_names = genes))
     } else if (method == "ZILGM") {
-      lambda_max <- ZILGM::find_lammax(as.matrix(count_matrix))
+      lambda_max <- ZILGM::find_lammax(t(as.matrix(count_matrix)))
       lambda_min <- 1e-4 * lambda_max
       lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-      nb2_fit <- ZILGM::zilgm(X = as.matrix(count_matrix), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
+      nb2_fit <- ZILGM::zilgm(X = t(as.matrix(count_matrix)), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
       return(nb2_fit$network[[nb2_fit$opt_index]])
     } else if (method == "PCzinb") {
-      netout <- learn2count::PCzinb(as.matrix(count_matrix), method = "zinb1", maxcard = 2)
+      netout <- learn2count::PCzinb(t(as.matrix(count_matrix)), method = "zinb1", maxcard = 2)
       rownames(netout) <- rownames(adjm)
       colnames(netout) <- colnames(adjm)
       return(netout)

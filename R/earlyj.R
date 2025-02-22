@@ -1,21 +1,27 @@
 #' Modify Row Names of Matrices and Combine Them
 #'
 #' This function modifies the row names of each matrix in a list by appending 
-#' the matrix index (e.g., "_m1", "_m2", ...) to the row names. It then combines 
+#' the matrix index (e.g., "-m1", "-m2", ...) to the row names. It then combines 
 #' all the modified matrices into a single matrix using `rbind`. 
 #' If the input consists of Seurat or SingleCellExperiment objects, they are merged accordingly.
 #'
 #' @param input_list A list of matrices, Seurat objects, or SingleCellExperiment objects.
+#' @param rowg Logical. If TRUE (default), the function assumes that genes are in the rows.
+#'   If FALSE, it assumes that genes are in the columns and transposes the matrices so that genes are on the rows.
 #' @return A combined matrix, Seurat object, or SingleCellExperiment object with modified cell names.
 #' @examples
 #' \dontrun{
+#' # When matrices already have genes on the rows (default):
 #' combined_matrix <- earlyj(list(matrix1, matrix2, matrix3))
+#'
+#' # When matrices have genes on the columns:
+#' combined_matrix <- earlyj(list(matrix1, matrix2, matrix3), rowg = FALSE)
 #' }
 #' @importFrom Seurat RenameCells merge Cells
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
 #' @export
-earlyj <- function(input_list) {
+earlyj <- function(input_list, rowg = TRUE) {
   # Ensure input is a non-empty list
   if (!is.list(input_list) || length(input_list) == 0) {
     stop("Input must be a non-empty list of matrices, Seurat objects, or SingleCellExperiment objects.")
@@ -44,8 +50,8 @@ earlyj <- function(input_list) {
         stop("Each matrix must be a non-empty numeric matrix.")
       }
       
-      # Ensure genes are in rows, cells in columns
-      if (ncol(mat) > nrow(mat)) {
+      # Transpose if needed: if rowg is FALSE, assume genes are in columns and transpose
+      if (!rowg) {
         mat <- t(mat)
       }
       

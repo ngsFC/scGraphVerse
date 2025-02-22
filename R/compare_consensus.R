@@ -62,9 +62,6 @@ compare_consensus <- function(consensus_matrix, original_matrix) {
   FP_edges_str <- setdiff(consensus_edges_str, original_edges_str)
   FP_count     <- length(FP_edges_str)
   
-  # Debugging: Check if FP_edges_str contains valid edges
-  print(FP_edges_str)  # Uncomment for debugging
-  
   if (FP_count > 0) {
     FP_edges_list <- strsplit(FP_edges_str, "-")
     
