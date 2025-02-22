@@ -1,17 +1,17 @@
-# NodeVerse: A Package for Network Inference
+# scGraphVerse: A Package for Network Inference
 
 ## Overview
-NodeVerse is an R package designed for inferring and analyzing gene regulatory networks (GRNs). The package provides tools for generating adjacency matrices, inferring networks using different methods, comparing inferred networks to ground truth, and visualizing network properties.
+scGraphVerse is an R package designed for inferring and analyzing gene regulatory networks (GRNs). The package provides tools for generating adjacency matrices, inferring networks using different methods, comparing inferred networks to ground truth, and visualizing network properties.
 
 ## Installation
-To install NodeVerse, you can use the following command:
+To install scGraphVerse, you can use the following command:
 
 ```r
 # Install from GitHub (if hosted there)
 if (!requireNamespace("devtools", quietly = TRUE)) {
     install.packages("devtools")
 }
-devtools::install_github("ngsFC/NodeVerse")
+devtools::install_github("ngsFC/scGraphVerse")
 ```
 
 ## Functions
