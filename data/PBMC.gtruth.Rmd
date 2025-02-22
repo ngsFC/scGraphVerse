@@ -1,5 +1,5 @@
 ---
-title: "NodeVerse PBMC Data and Ground Truth"
+title: "scGraphVerse PBMC Data and Ground Truth"
 author: "Francesco Cecere"
 date: "`r Sys.Date()`"
 output:
@@ -14,7 +14,7 @@ output:
 ---
 
 ```{r}
-knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/NodeVerse/data", 
+knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data", 
   warning = FALSE, 
   message = FALSE, 
   error = FALSE)
@@ -30,7 +30,7 @@ library(tidyverse)
 library(Seurat)
 library(STRINGdb)
 
-library(NodeVerse)
+library(scGraphVerse)
 ```
 
 ## Load Atlas Data
@@ -159,8 +159,8 @@ adjm <- adjm[sorted_names, sorted_names]
 print(dim(wadjm))
 print(dim(adjm))
 
-write.table(adjm, "./../analysis/adjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
-write.table(wadjm, "./../analysis/wadjm_p677.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+write.table(adjm, "./../analysis/adjm_top1200.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
+write.table(wadjm, "./../analysis/wadjm_top1200.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 
 wadjm %>%
     datatable(extensions = 'Buttons',
@@ -188,7 +188,7 @@ adjm %>%
 genes_to_keep <- intersect(pathgenes, rownames(seurat_subset_filt))
 seurat_subset_filt <- subset(seurat_subset_filt, features = genes_to_keep)
 
-saveRDS(seurat_subset_filt, "PBMC.top1000.RDS")
+saveRDS(seurat_subset_filt, "PBMC.top1200.RDS")
 ```
 
 ## Create Ground Truth Network
@@ -212,13 +212,13 @@ p1 <- ggraph::ggraph(gtruth, layout = "fr") +
 
 p1
 
-ggsave("./../analysis/gtruth_top1000_s300.png", p1, width = 8, height = 6, dpi = 300, bg = "white")
+ggsave("./../analysis/gtruth_top1200_s300.png", p1, width = 8, height = 6, dpi = 300, bg = "white")
 ```
 
 ## Simulate n500 p677 matrices
 
 ```{r Simulate k matrices with n cells (500) and p genes}
-ncell <- 500
+ncell <- 200
 nodes <- nrow(adjm)
 
 set.seed(1130)
@@ -240,7 +240,6 @@ count_matrices <- lapply(1:3, function(i) {
   return(count_matrix_df)
 })
 
-saveRDS(count_matrices, "./../analysis/sim_n500p677.RDS")
 
 count_matrices[[1]] %>%
     datatable(extensions = 'Buttons',
@@ -368,7 +367,7 @@ simat <- zinb_simdata(
   depth_range = c(3000, 5000)
 )
 
-saveRDS(simat, "./../analysis/sim_n500p677.RDS")
+saveRDS(simat, "./../analysis/sim_n200p500.RDS")
 
 simat[[1]] %>%
     datatable(extensions = 'Buttons',

@@ -22,7 +22,7 @@ library(tidyverse)
 library(Seurat)
 library(STRINGdb)
 library(SingleCellExperiment)
-library(NodeVerse)
+library(scGraphVerse)
 library(BiocParallel)
 library(GENIE3)
 
@@ -38,7 +38,7 @@ pdir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/plots"
 
 adjm <- as.matrix(read.table("./../analysis/adjm_p677.txt"))
 colnames(adjm) <- rownames(adjm)
-count_matrices <- readRDS("./../analysis/sim_n500p677.RDS")
+count_matrices <- readRDS("./../analysis/sim_n200p500.RDS")
 dim(count_matrices[[1]])
 
 ```
@@ -383,138 +383,6 @@ jrf_mat[[1]] %>%
                 pageLength = 10), 
               caption = "JRF output")
 
-```
-
-#### Their Permutation
-
-```{r}
-#jrf_matrices <- lapply(count_matrices, t)
-#jrf_matrices_norm <- lapply(jrf_matrices,function(x) {
-#  (x - mean(x)) / sd(x)
-#  })
-
-#genes <- rownames(jrf_matrices_norm[[1]])
-
-#set.seed(1234)
-#out.perm <- Run_permutation(jrf_matrices_norm,mtry=round(sqrt(length(genes)-1)),ntree=500, genes,5)
-
-#myJRF_network <- function(out.jrf, out.perm, TH) {
-  
-#  nclasses <- dim(out.perm)[3]
-#  M <- dim(out.perm)[2]
-#  out <- vector("list", nclasses)  
-
-#  for (net in 1:nclasses) { 
-#    j.np <- sort(out.jrf[, 2 + net], decreasing = TRUE)
-#    FDR <- matrix(0, dim(out.perm)[1], 1)
-    
-#    th <- NULL  
-#    for (s in 1:length(j.np)) { 
-#      FP <- sum(sum(out.perm[, , net] >= j.np[s])) / M
-#      FDR[s] <- FP / s
-      
-#      if (FDR[s] > TH) {
-#        th <- j.np[s]
-#        break
-#      }
-#    }
-    
-#    out[[net]] <- out.jrf[out.jrf[, 2 + net] > th, seq(1, 2)]
-#  }
-  
-#  return(out)
-#}
-
-#mynet <- myJRF_network(jrf_mat[[1]],out.perm,0.05)
-#mynet
-
-```
-
-```{r}
-#jrf_adj <- function(df_list, adjm) {
-  # Ensure the genes (row and column names) are in the adjacency matrix
-#  genes <- rownames(adjm)
-  
-  # Initialize a list to store adjacency matrices
-#  adjacency_matrices <- list()
-  
-  # Loop through each data frame in the list
-#  for (i in seq_along(df_list)) {
-#    df <- df_list[[i]]
-    
-    # Initialize a new adjacency matrix with zeros
-#    adj_matrix <- adjm * 0  # Reset to zero for each df
-    
-    # Update the adjacency matrix for the gene pairs
-#    for (j in seq_len(nrow(df))) {
-#      gene1 <- df$gene1[j]
-#      gene2 <- df$gene2[j]
-      
-      # Check if both genes are present in the adjacency matrix
-#      if (gene1 %in% genes && gene2 %in% genes) {
-#        idx1 <- which(genes == gene1)  # Find the row index for gene1
-#        idx2 <- which(genes == gene2)  # Find the column index for gene2
-        
-        # Update the adjacency matrix to set an edge
-#        adj_matrix[idx1, idx2] <- 1
-#        adj_matrix[idx2, idx1] <- 1  # Ensure symmetry
-#      } else {
-#        warning(paste("Gene pair not found in adjm:", gene1, "-", gene2))
-#      }
-#    }
-    
-    # Store the resulting adjacency matrix in the list
-#    adjacency_matrices[[i]] <- adj_matrix
-#  }
-  
-  # Return the list of adjacency matrices
-#  return(adjacency_matrices)
-#}
-
-
-#jrf_adj_mynet <- jrf_adj(mynet, adjm)
-
-```
-
-```{r}
-#jrf_auc_perm <- plotROC(jrf_adj_mynet, adjm, plot_title = "ROC curve - JRF perm out", is_binary = T)
-```
-
-```{r JRF perm scores}
-#scores.jrf.perm <- pscores(adjm, jrf_adj_mynet)
-
-#scores.jrf.perm$Statistics %>%
-#    datatable(extensions = 'Buttons',
-#              options = list(
-#                dom = 'Bfrtip',
-#                buttons = c('csv', 'excel'),
-#                scrollX = TRUE,
-#                pageLength = 10), 
-#              caption = "scores")
-```
-
-```{r JRF perm plotg}
-#plots <- plotg(jrf_adj_mynet)
-```
-
-```{r JRF consensus and score their perm}
-#consesusu <- create_consensus(jrf_adj_mynet, method="union")
-
-#scoresu.jrf.perm <- pscores(adjm, list(consesusu))
-
-#scoresu.jrf.perm$Statistics %>%
-#    datatable(extensions = 'Buttons',
-#              options = list(
-#                dom = 'Bfrtip',
-#                buttons = c('csv', 'excel'),
-#                scrollX = TRUE,
-#                pageLength = 10), 
-#              caption = "scores")
-
-```
-
-```{r JRF compare their perm, fig.width=8,fig.width=10}
-#ajm_compared <- compare_consensus(consesusu, adjm)
 ```
 
 #### Prepare the output
