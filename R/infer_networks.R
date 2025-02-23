@@ -77,9 +77,9 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     if (method == "GENIE3") {
       return(GENIE3::getLinkList(GENIE3::GENIE3(count_matrix, nCores = nCores)))
     } else if (method == "GRNBoost2") {
-      count_matrix_df <- as.data.frame(count_matrix)
-      genes <- rownames(count_matrix_df)
-      df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = colnames(count_matrix_df), index = genes)
+      count_matrix_df <- as.data.frame(t(count_matrix))
+      genes <- colnames(count_matrix_df)
+      df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
       return(arboreto$grnboost2(df_pandas, gene_names = genes))
     } else if (method == "ZILGM") {
       lambda_max <- ZILGM::find_lammax(t(as.matrix(count_matrix)))
