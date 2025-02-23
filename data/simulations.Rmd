@@ -41,6 +41,8 @@ colnames(adjm) <- rownames(adjm)
 count_matrices <- readRDS("./../analysis/sim_n200p500.RDS")
 dim(count_matrices[[1]])
 
+count_matrices <- lapply(count_matrices, t)
+
 ```
 
 ## GENIE3

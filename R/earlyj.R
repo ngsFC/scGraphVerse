@@ -1,17 +1,22 @@
-#' Modify Row Names of Matrices and Combine Them
+#' Modify Cell Names and Combine Datasets
 #'
-#' This function modifies the row names of each matrix in a list by appending 
-#' the matrix index (e.g., "-m1", "-m2", ...) to the row names. It then combines 
-#' all the modified matrices into a single matrix using `rbind`. 
-#' If the input consists of Seurat or SingleCellExperiment objects, they are merged accordingly.
+#' This function modifies the cell identifiers of each element in a list by appending 
+#' the matrix index (e.g., "-m1", "-m2", ...) to the cell names. For matrices, if 
+#' `rowg` is TRUE, it assumes that genes are in the rows (and cells are in the columns) 
+#' and attaches the suffix to the column names. If `rowg` is FALSE, it first transposes the 
+#' matrix so that genes become rows and cells become columns, then modifies the column names.
+#'
+#' For Seurat or SingleCellExperiment objects, the function standardizes features and renames 
+#' the cells similarly before merging them.
 #'
 #' @param input_list A list of matrices, Seurat objects, or SingleCellExperiment objects.
-#' @param rowg Logical. If TRUE (default), the function assumes that genes are in the rows.
-#'   If FALSE, it assumes that genes are in the columns and transposes the matrices so that genes are on the rows.
+#' @param rowg Logical. If TRUE (default), the function assumes that genes are in the rows 
+#' and cells are in the columns. If FALSE, it assumes that genes are in the columns and transposes 
+#' the matrices so that genes are on the rows.
 #' @return A combined matrix, Seurat object, or SingleCellExperiment object with modified cell names.
 #' @examples
 #' \dontrun{
-#' # When matrices already have genes on the rows (default):
+#' # When matrices have genes on the rows (default):
 #' combined_matrix <- earlyj(list(matrix1, matrix2, matrix3))
 #'
 #' # When matrices have genes on the columns:
@@ -28,7 +33,7 @@ earlyj <- function(input_list, rowg = TRUE) {
   }
   
   # Detect object types and ensure all elements are of the same class
-  object_classes <- unique(sapply(input_list, function(x) class(x)[1]))  # Extract first class in case of multiple
+  object_classes <- unique(sapply(input_list, function(x) class(x)[1]))
   first_element_type <- object_classes[1]
   
   if (length(object_classes) > 1) {
@@ -50,23 +55,24 @@ earlyj <- function(input_list, rowg = TRUE) {
         stop("Each matrix must be a non-empty numeric matrix.")
       }
       
-      # Transpose if needed: if rowg is FALSE, assume genes are in columns and transpose
+      # If rowg is FALSE, assume genes are in columns and transpose so that genes become rows
       if (!rowg) {
         mat <- t(mat)
       }
       
-      # Assign row names if missing
-      if (is.null(rownames(mat))) {
-        rownames(mat) <- paste0("cell", seq_len(nrow(mat)))
+      # Now, genes are in rows and cells are in columns.
+      # Check if colnames (cell identifiers) exist; if not, assign default names.
+      if (is.null(colnames(mat))) {
+        colnames(mat) <- paste0("cell", seq_len(ncol(mat)))
       }
       
-      # Append unique suffix to row names
-      rownames(mat) <- paste0(rownames(mat), "-m", i)
+      # Append a unique suffix to each cell identifier
+      colnames(mat) <- paste0(colnames(mat), "-m", i)
       return(mat)
     })
     
-    # Combine matrices using rbind
-    combined_matrix <- do.call(rbind, standardized_matrices)
+    # Combine matrices column-wise (cells as columns, genes as rows)
+    combined_matrix <- do.call(cbind, standardized_matrices)
     return(combined_matrix)
   }
   
@@ -76,7 +82,7 @@ earlyj <- function(input_list, rowg = TRUE) {
       stop("Seurat package is required but not installed.")
     }
     
-    # Check that all Seurat objects share common features
+    # Determine common features across all Seurat objects
     all_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(all_features) == 0) {
       stop("Seurat objects do not share common features. Cannot merge.")
@@ -100,7 +106,7 @@ earlyj <- function(input_list, rowg = TRUE) {
       stop("SingleCellExperiment package is required but not installed.")
     }
     
-    # Check for shared features
+    # Determine common features across all SingleCellExperiment objects
     all_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(all_features) == 0) {
       stop("SingleCellExperiment objects do not share common features. Cannot merge.")
@@ -113,7 +119,7 @@ earlyj <- function(input_list, rowg = TRUE) {
       return(obj)
     })
     
-    # Merge SingleCellExperiment objects
+    # Combine SingleCellExperiment objects column-wise
     combined_sce <- do.call(cbind, modified_sce_list)
     return(combined_sce)
   }
