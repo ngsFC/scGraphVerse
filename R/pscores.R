@@ -1,40 +1,3 @@
-#' Calculate performance metrics for predicted adjacency matrices against ground truth
-#'
-#' This function computes a variety of performance metrics (such as precision, recall, F1 score, 
-#' accuracy, true positive rate, false positive rate) for a list of predicted adjacency matrices 
-#' by comparing them with a provided ground truth matrix. The function calculates metrics 
-#' for the upper triangular part of the adjacency matrices, excluding the diagonal.
-#' It then creates a bar plot comparing the performance of each predicted matrix.
-#'
-#' @param ground_truth A square matrix representing the ground truth adjacency matrix. The diagonal 
-#'        elements will be set to zero.
-#' @param predicted_list A list of square matrices representing predicted adjacency matrices that 
-#'        will be compared to the ground truth.
-#'
-#' @return A list containing:
-#'   - `Statistics`: A data frame with the performance metrics (TP, TN, FP, FN, TPR, FPR, Precision, 
-#'      F1, Accuracy) for each matrix in the `predicted_list`.
-#'   - A bar plot displaying the comparison of metrics (TPR, FPR, F1, Precision, Accuracy) 
-#'      across all matrices.
-#' 
-#' @details 
-#' This function computes the following performance metrics:
-#'   - **True Positive Rate (TPR)**: The proportion of actual positive edges that were correctly 
-#'     predicted (also known as recall).
-#'   - **False Positive Rate (FPR)**: The proportion of actual negative edges that were incorrectly 
-#'     predicted as positive.
-#'   - **Precision**: The proportion of predicted positive edges that were actually positive.
-#'   - **F1 Score**: The harmonic mean of Precision and TPR.
-#'   - **Accuracy**: The proportion of correct predictions (TP + TN) to all predictions (TP + TN + FP + FN).
-#' 
-#' The function also excludes diagonal elements from both the ground truth and predicted matrices,
-#' and operates only on the upper triangular part of the adjacency matrices (which represents the 
-#' directed edges).
-#'
-#' @importFrom ggplot2 ggplot aes geom_bar geom_text position_dodge labs theme_minimal
-#' @importFrom tidyr pivot_longer
-#' 
-#' @export
 pscores <- function(ground_truth, predicted_list) {
   
   # Ensure ground truth is a matrix and zero out the diagonal
@@ -45,7 +8,7 @@ pscores <- function(ground_truth, predicted_list) {
   all_matrices <- c(list(ground_truth), predicted_list)
   num_matrices <- length(all_matrices)
   
-  # Create a dataframe to store additional statistics
+  # Create a dataframe to store statistics (remove Accuracy, add MCC)
   stats_df <- data.frame(
     Matrix = c("Ground Truth", paste("Matrix", seq_along(predicted_list))),
     Edges = integer(num_matrices),
@@ -58,77 +21,90 @@ pscores <- function(ground_truth, predicted_list) {
     FPR = numeric(num_matrices),
     Precision = numeric(num_matrices),
     F1 = numeric(num_matrices),
-    Accuracy = numeric(num_matrices),
+    MCC = numeric(num_matrices),
     stringsAsFactors = FALSE
   )
   
-  # Function to get the upper triangular part of a matrix (excluding diagonal)
+  # Helper function: get upper triangular (excluding diagonal)
   get_upper_tri <- function(mat) {
-    mat[upper.tri(mat)]  # Extracts the upper triangular elements
+    mat[upper.tri(mat)]
   }
   
-  # Binary version of the ground truth upper triangle
+  # Binarize the ground truth upper triangle (edge = 1)
   ground_truth_upper <- ifelse(get_upper_tri(ground_truth) > 0, 1, 0)
   
-  # Calculate statistics for each predicted matrix
+  # Loop over each matrix (including ground truth)
   for (i in 1:num_matrices) {
     matrix_i <- as.matrix(all_matrices[[i]])
     upper_i <- get_upper_tri(matrix_i)
     binary_i <- ifelse(upper_i > 0, 1, 0)
     
-    # Calculate the number of edges (non-zero values) and nodes (size of the matrix)
-    stats_df$Edges[i] <- sum(binary_i)  # Count non-zero values in the upper triangle
-    stats_df$Nodes[i] <- nrow(matrix_i)  # Number of nodes is the number of rows (or cols)
+    # Count edges and nodes
+    stats_df$Edges[i] <- sum(binary_i)
+    stats_df$Nodes[i] <- nrow(matrix_i)
     
-    # Calculate TP, TN, FP, FN
+    # Compute confusion matrix components
     TP <- sum(binary_i == 1 & ground_truth_upper == 1)
     TN <- sum(binary_i == 0 & ground_truth_upper == 0)
     FP <- sum(binary_i == 1 & ground_truth_upper == 0)
     FN <- sum(binary_i == 0 & ground_truth_upper == 1)
     
-    # Store the counts
     stats_df$TP[i] <- TP
     stats_df$TN[i] <- TN
     stats_df$FP[i] <- FP
     stats_df$FN[i] <- FN
     
-    # Calculate metrics
-    TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)  # True Positive Rate (Recall)
-    FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)  # False Positive Rate
-    Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)  # Precision
-    F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)  # F1 Score
-    Accuracy <- ifelse((TP + TN + FP + FN) > 0, (TP + TN) / (TP + TN + FP + FN), 0)  # Accuracy
+    # Calculate performance metrics
+    TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)           # Recall
+    FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
+    Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
+    F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
     
-    # Store the metrics
+    # Compute MCC (Matthews Correlation Coefficient)
+    denominator <- sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+    MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
+    
     stats_df$TPR[i] <- TPR
     stats_df$FPR[i] <- FPR
     stats_df$Precision[i] <- Precision
     stats_df$F1[i] <- F1
-    stats_df$Accuracy[i] <- Accuracy
+    stats_df$MCC[i] <- MCC
   }
   
-  # Remove ground truth from stats_df for plotting
-  stats_df_filtered <- stats_df[-1, ]  # Exclude the first row (Ground Truth)
+  # Remove the ground truth row for plotting purposes
+  stats_df_filtered <- stats_df[-1, ]
   
-  # Reorder the columns in the desired metric order
-  ordered_metrics <- c("TPR", "FPR", "F1", "Precision", "Accuracy")
+  # Prepare data for the radar plot: select the desired metrics
+  ordered_metrics <- c("TPR", "FPR", "F1", "Precision", "MCC")
+  radar_data <- stats_df_filtered[, ordered_metrics]
+  rownames(radar_data) <- stats_df_filtered$Matrix
   
-  long_stats_df <- stats_df_filtered %>%
-    tidyr::pivot_longer(cols = all_of(ordered_metrics), names_to = "Metric", values_to = "Value")
+  # fmsb requires the first two rows to be max and min values.
+  # Here we set max for TPR, FPR, F1, Precision to 1 and MCC to 1;
+  # for the minimum, we use 0 (or -1 for MCC)
+  max_values <- c(TPR = 1, FPR = 1, F1 = 1, Precision = 1, MCC = 1)
+  min_values <- c(TPR = 0, FPR = 0, F1 = 0, Precision = 0, MCC = -1)
+  radar_data <- rbind(max_values, min_values, radar_data)
   
-  # Reorder the 'Metric' factor levels to ensure the desired order
-  long_stats_df$Metric <- factor(long_stats_df$Metric, levels = ordered_metrics)
+  # Plot the radar chart using the fmsb package
+  library(fmsb)
+  # Generate colors for the predicted matrices
+  num_pred <- nrow(radar_data) - 2
+  colors_border <- rainbow(num_pred)
   
-  # Plot the metrics comparison across matrices
-  plot <- ggplot(long_stats_df, aes(x = Matrix, y = Value, fill = Metric)) +
-    geom_bar(stat = "identity", position = "dodge") +
-    geom_text(aes(label = round(Value, 2)), position = position_dodge(width = 0.9), vjust = -0.5) +
-    labs(title = "Metrics Comparison Across Matrices", x = "Matrix Index", y = "Value") +
-    theme_minimal()
+  radarchart(radar_data, axistype = 1,
+             # Customize polygon appearance
+             pcol = colors_border, pfcol = scales::alpha(colors_border, 0.3), plwd = 2,
+             # Customize grid appearance
+             cglcol = "grey", cglty = 1, axislabcol = "grey",
+             # Adjust axis labels (accounting for MCC range)
+             caxislabels = seq(-1, 1, 0.5),
+             cglwd = 0.8,
+             title = "Radar Plot of Performance Metrics")
   
-  print(plot)
+  legend("topright", legend = rownames(radar_data[-c(1,2),]), bty = "n",
+         pch = 20, col = colors_border, text.col = "black", cex = 0.8)
   
-  # Return the statistics data frame (filtered for plotting)
+  # Return the statistics data frame for the predicted matrices
   list(Statistics = stats_df_filtered)
 }
-
