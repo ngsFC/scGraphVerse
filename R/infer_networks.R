@@ -70,6 +70,29 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
     return(network_results)
   }
   
+  # Special handling for ZILGM to avoid nested parallelization issues
+  if (method == "ZILGM") {
+    network_results <- lapply(count_matrices_list, function(count_matrix) {
+      lambda_max <- ZILGM::find_lammax(t(as.matrix(count_matrix)))
+      lambda_min <- 1e-4 * lambda_max
+      lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+      
+      nb2_fit <- ZILGM::zilgm(
+        X = t(as.matrix(count_matrix)), 
+        lambda = lambs, 
+        family = "NBII", 
+        update_type = "IRLS", 
+        do_boot = TRUE, 
+        boot_num = 10, 
+        sym = "OR",
+        nCores = 1  # Disable parallelization inside zilgm
+      )
+      
+      return(nb2_fit$network[[nb2_fit$opt_index]])
+    })
+    return(network_results)
+  }
+  
   # Parallel network inference for other methods
   network_results <- BiocParallel::bplapply(seq_along(count_matrices_list), function(j) {
     count_matrix <- count_matrices_list[[j]]
@@ -81,12 +104,6 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
       genes <- colnames(count_matrix_df)
       df_pandas <- pandas$DataFrame(data = as.matrix(count_matrix_df), columns = genes, index = rownames(count_matrix_df))
       return(arboreto$grnboost2(df_pandas, gene_names = genes))
-    } else if (method == "ZILGM") {
-      lambda_max <- ZILGM::find_lammax(t(as.matrix(count_matrix)))
-      lambda_min <- 1e-4 * lambda_max
-      lambs <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
-      nb2_fit <- ZILGM::zilgm(X = t(as.matrix(count_matrix)), lambda = lambs, family = "NBII", update_type = "IRLS", do_boot = TRUE, boot_num = 10, sym = "OR", nCores = nCores)
-      return(nb2_fit$network[[nb2_fit$opt_index]])
     } else if (method == "PCzinb") {
       netout <- learn2count::PCzinb(t(as.matrix(count_matrix)), method = "zinb1", maxcard = 2)
       rownames(netout) <- rownames(adjm)

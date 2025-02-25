@@ -249,7 +249,9 @@ ajm_compared <- compare_consensus(sgrnboost_early_adj[[1]], adjm)
 ```{r}
 set.seed(1234)
 time[["ZILGM_late_15Cores"]] <- system.time(
-  zilgm_late <- infer_networks(count_matrices_list = count_matrices, method = "ZILGM", adjm = adjm, nCores = 15)
+  zilgm_late <- infer_networks(count_matrices_list = count_matrices, 
+                               method = "ZILGM", 
+                               nCores = 15)
 )
 
 est_graphs <- zilgm_late$network_results
@@ -374,7 +376,7 @@ ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 set.seed(1234)
 time[["JRF"]] <- system.time(
-  jrf_mat <- infer_networks(count_matrices, method="JRF")
+  jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
 )
  
 jrf_mat[[1]] %>%
@@ -440,7 +442,6 @@ sjrf_wadj[[1]] %>%
 ```{r JRF cutoff late}
 sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  weighted_adjm_list = sjrf_wadj, 
-                 ground.truth = adjm,
                  n = 3,
                  method = "JRF")
 
