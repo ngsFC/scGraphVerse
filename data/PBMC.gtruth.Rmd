@@ -254,7 +254,6 @@ count_matrices[[1]] %>%
 
 
 ```{r}
-library(distributions3)
 #' Generate multiple zero-inflated negative binomial count matrices with cell-specific depth
 #'
 #' Simulates zero-inflated negative binomial (ZINB) data using an adjacency matrix,
@@ -288,7 +287,6 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   stopifnot(length(theta) == kmat, all(theta > 0))
   stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))
   
-  # Validate depth_range only if it's not NA
   if (!is.na(depth_range[1])) {
     stopifnot(is.numeric(depth_range), length(depth_range) == 2, all(depth_range > 0), depth_range[1] < depth_range[2])
   }
@@ -299,7 +297,7 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   B <- ifelse(B > 0, 1, 0)
   
   edges <- which(B == 1, arr.ind = TRUE)
-  edges <- edges[edges[, 1] < edges[, 2], ]  # Remove duplicate edges
+  edges <- edges[edges[, 1] < edges[, 2], ] 
   
   A <- diag(1, nrow = p, ncol = p)
   for (i in seq_len(nrow(edges))) {
@@ -309,12 +307,12 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   }
   
   B[edges] <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), length(edges[, 1]), replace = TRUE)
-  B <- (B | t(B)) * 1  # Ensure symmetry while keeping it binary
+  B <- (B | t(B)) * 1 
   
   matrices <- vector("list", kmat)
   
   for (k in seq_len(kmat)) {
-    mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])  # More efficient sampling
+    mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
     
     sigma <- B  
     nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
@@ -331,15 +329,15 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
     if (!is.null(gene_names)) colnames(X) <- gene_names
     rownames(X) <- cellID
     
-    # Apply sequencing depth scaling if depth_range is provided
+    # Deep coverage range da aggiungere
     if (!is.na(depth_range[1])) {
       cell_depths <- runif(n, min = depth_range[1], max = depth_range[2])
       
       row_sums <- rowSums(X)
-      row_sums[row_sums == 0] <- 1  # Prevent division by zero
+      row_sums[row_sums == 0] <- 1
       
       X <- sweep(X, 1, row_sums, FUN = "/")
-      X[is.na(X)] <- 0  # Handle zero rows
+      X[is.na(X)] <- 0
       
       X <- sweep(X, 1, cell_depths, FUN = "*")
       X <- round(X)
@@ -355,6 +353,7 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
 ```
 
 ```{r}
+library(distributions3)
 simat <- zinb_simdata(
   n = ncell, 
   p = nodes, 

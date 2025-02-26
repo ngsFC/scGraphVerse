@@ -13,6 +13,10 @@ output:
     toc: yes
 ---
 
+```{r}
+knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",message=FALSE, warning=FALSE)
+```
+
 ## Load Libraries and data
 
 ```{r}
@@ -35,13 +39,38 @@ time <- list()
 
 ddir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/data"
 pdir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/plots"
+```
 
+
+## Adjacency and Count matrices
+
+```{r}
 adjm <- as.matrix(read.table("./../analysis/adjm_top1200.txt"))
 colnames(adjm) <- rownames(adjm)
+
+as.data.frame(adjm) %>%
+  datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "Ground Truth")
+
 count_matrices <- readRDS("./../analysis/sim_n200p500.RDS")
 dim(count_matrices[[1]])
 
 count_matrices <- lapply(count_matrices, t)
+
+as.data.frame(count_matrices[[1]]) %>%
+  slice_head(n=10) %>%
+  datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "Simulated Count matrix")
 
 ```
 
@@ -57,6 +86,15 @@ time[["GENIE3_late_15Cores"]] <- system.time(
                                 nCores = 15)
 )
 
+genie3_late[[1]] %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 output")
 ```
 
 #### Symmetrize and ROC
@@ -65,7 +103,20 @@ time[["GENIE3_late_15Cores"]] <- system.time(
 genie3_late_wadj <- generate_adjacency(genie3_late)
 sgenie3_late_wadj <- symmetrize(genie3_late_wadj, weight_function = "mean")
 
-plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration", is_binary = F)
+as.data.frame(sgenie3_late_wadj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 symmetric weighted adjacency")
+```
+
+
+```{r}
+genie3_late_auc <- plotROC(sgenie3_late_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration", is_binary = F)
 ```
 
 #### Cutoff
@@ -77,9 +128,34 @@ sgenie3_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      method = "GENIE3",
                                      nCores = 15)
 
-pscores(adjm, sgenie3_late_adj)
-plotg(sgenie3_late_adj)
+as.data.frame(sgenie3_late_adj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 symmetric adjacency")
+```
 
+
+```{r}
+scores.genie3.late.all <- pscores(adjm, sgenie3_late_adj)
+scores.genie3.late.all$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores late")
+
+```
+
+
+```{r, fig.width=10,fig.width=15}
+plotg(sgenie3_late_adj)
 ```
 
 #### Consensus
@@ -88,18 +164,49 @@ plotg(sgenie3_late_adj)
 consesusm <- create_consensus(sgenie3_late_adj, method="vote")
 consesusu <- create_consensus(sgenie3_late_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sgenie3_late_adj, weighted_list = sgenie3_late_wadj, method = "INet", threshold = 0.05, ncores = 15)
+```
 
-pscores(adjm, list(consesusm))
-pscores(adjm, list(consesusu))
-pscores(adjm, list(consesunet))
+
+```{r}
+scores.genie3.late <- pscores(adjm, list(consesusm))
+scoresu.genie3.late <- pscores(adjm, list(consesusu))
+scoresnet.genie3.late <- pscores(adjm, list(consesunet))
+
+scores.genie3.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores vote")
+
+scoresu.genie3.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores union")
+
+scoresnet.genie3.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores INet")
+
 ```
 
 #### Plot comparison
 
-```{r}
-compare_consensus(consesusm, adjm)
-compare_consensus(consesusu, adjm)
-compare_consensus(consesunet, adjm)
+```{r, fig.width=8,fig.width=10}
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
 ### Early integration
@@ -113,6 +220,16 @@ time[["GENIE3_early_15Cores"]] <- system.time(
   genie3_early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
 
+as.data.frame(genie3_early[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 early output")
+
 ```
 
 #### Symmetrize and ROC
@@ -120,7 +237,21 @@ time[["GENIE3_early_15Cores"]] <- system.time(
 ```{r}
 genie3_early_wadj <- generate_adjacency(genie3_early)
 sgenie3_early_wadj <- symmetrize(genie3_early_wadj, weight_function = "mean")
-plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration", is_binary = F)
+
+as.data.frame(sgenie3_early_wadj[[1]]) %>%
+  slice_head(n=30) %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 early symmetric weighted adjacency")
+```
+
+
+```{r}
+genie3_early_auc <- plotROC(sgenie3_early_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration", is_binary = F)
 ```
 
 #### Cutoff
@@ -132,14 +263,40 @@ sgenie3_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       method = "GENIE3",
                                       nCores = 15)
 
-pscores(adjm, sgenie3_early_adj)
+as.data.frame(sgenie3_early_adj[[1]]) %>%
+  slice_head(n=30) %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GENIE3 early symmetric adjacency")
+```
+
+
+```{r}
+scores.genie3.early <- pscores(adjm, sgenie3_early_adj)
+
+scores.genie3.early$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores early")
+```
+
+
+```{r, fig.width=10,fig.width=15}
 plotg(sgenie3_early_adj)
 ```
 
 #### Plot comparison
 
-```{r}
-compare_consensus(sgenie3_early_adj[[1]], adjm)
+```{r, fig.width=8,fig.width=10}
+compare_consensus(consensus_matrix = sgenie3_early_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
 ## GRNBoost2
@@ -154,6 +311,16 @@ time[["grnboost_late"]] <- system.time(
                                 nCores = 15)
 )
 
+as.data.frame(grnboost_late[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 late output")
+
 ```
 
 #### Symmetrize and ROC
@@ -162,22 +329,59 @@ time[["grnboost_late"]] <- system.time(
 grnboost_late_wadj <- generate_adjacency(grnboost_late)
 sgrnboost_late_wadj <- symmetrize(grnboost_late_wadj, weight_function = "mean")
 
+as.data.frame(sgrnboost_late_wadj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 symmetric weighted adjacency")
+```
+
+
+```{r}
 grnboost_late_auc <- plotROC(sgrnboost_late_wadj, adjm, plot_title = "ROC curve - grnboost Late Integration")
 ```
 
 #### Cutoff
 
 ```{r}
-
 sgrnboost_late_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                      weighted_adjm_list = sgrnboost_late_wadj, 
                                      n = 3,
                                      method = "GRNBoost2",
                                      nCores = 15)
 
-scores.grnboost.late.all <- pscores(adjm, sgrnboost_late_adj)
-plots <- plotg(sgrnboost_late_adj)
+as.data.frame(sgrnboost_late_adj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 symmetric adjacency")
+```
 
+
+```{r}
+scores.grnboost.late.all <- pscores(adjm, sgrnboost_late_adj)
+scores.grnboost.late.all$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores late")
+
+```
+
+
+```{r, fig.width=10,fig.width=15}
+plotg(sgrnboost_late_adj)
 ```
 
 #### Consensus
@@ -186,19 +390,49 @@ plots <- plotg(sgrnboost_late_adj)
 consesusm <- create_consensus(sgrnboost_late_adj, method="vote")
 consesusu <- create_consensus(sgrnboost_late_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sgrnboost_late_adj, weighted_list = sgrnboost_late_wadj, method = "INet", threshold = 0.05)
+```
 
+
+```{r}
 scores.grnboost.late <- pscores(adjm, list(consesusm))
 scoresu.grnboost.late <- pscores(adjm, list(consesusu))
 scoresnet.grnboost.late <- pscores(adjm, list(consesunet))
+
+scores.grnboost.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores vote")
+
+scoresu.grnboost.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores union")
+
+scoresnet.grnboost.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores INet")
 
 ```
 
 #### Plot comparison
 
-```{r}
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-ajm_compared <- compare_consensus(consesunet, adjm)
+```{r, fig.width=8,fig.width=10}
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
 ### Early integration
@@ -211,6 +445,16 @@ time[["grnboost_early"]] <- system.time(
   grnboost_early <- infer_networks(early_matrix, method="GRNBoost2")
 )
 
+as.data.frame(grnboost_early[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 early output")
+
 ```
 
 #### Symmetrize and ROC
@@ -219,7 +463,21 @@ time[["grnboost_early"]] <- system.time(
 grnboost_early_wadj <- generate_adjacency(grnboost_early)
 sgrnboost_early_wadj <- symmetrize(grnboost_early_wadj, weight_function = "mean")
 
-plotROC(sgrnboost_early_wadj, adjm, plot_title = "ROC curve - grnboost Early Integration")
+as.data.frame(sgrnboost_early_wadj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 symmetric weighted adjacency")
+
+```
+
+
+```{r}
+grnboost_early_auc <- plotROC(sgrnboost_early_wadj, adjm, plot_title = "ROC curve - grnboost Early Integration")
 ```
 
 #### Cutoff
@@ -230,142 +488,42 @@ sgrnboost_early_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                       n = 2,
                                       method = "GRNBoost2",
                                       nCores = 15)
+as.data.frame(sgrnboost_early_adj[[1]]) %>%
+  slice_head(n=30) %>% 
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "GRNBoost2 symmetric adjacency")
+```
 
+
+```{r}
 scores.grnboost.early <- pscores(adjm, sgrnboost_early_adj)
+
+scores.grnboost.early$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "scores early")
+```
+
+
+```{r, fig.width=10,fig.width=15}
 plots <- plotg(sgrnboost_early_adj)
-
 ```
 
 #### Plot comparison
 
-```{r}
-ajm_compared <- compare_consensus(sgrnboost_early_adj[[1]], adjm)
+```{r, fig.width=8,fig.width=10}
+compare_consensus(consensus_matrix = sgrnboost_early_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
-## ZILGM
-
-### Late integration
-
-```{r}
-set.seed(1234)
-time[["ZILGM_late_15Cores"]] <- system.time(
-  zilgm_late <- infer_networks(count_matrices_list = count_matrices, 
-                               method = "ZILGM", 
-                               nCores = 15)
-)
-
-est_graphs <- zilgm_late$network_results
-lambdas <- zilgm_late$lambda_results
-
-```
-
-#### Symmetrize and ROC
-
-```{r}
-plotROC(lambdas[[1]], adjm, plot_title = "Lambda ROC Matrix1", is_binary = F)
-plotROC(lambdas[[2]], adjm, plot_title = "Lambda ROC Matrix2", is_binary = F)
-plotROC(lambdas[[3]], adjm, plot_title = "Lambda ROC Matrix3", is_binary = F)
-```
-
-#### Consensus
-
-```{r}
-consensus_matrices <- vector("list", 50)
-
-for (i in 1:50) {
-  ranklambda <- list(lambdas[[1]][[i]], lambdas[[2]][[i]], lambdas[[3]][[i]])
-  consensus_matrices[[i]] <- create_consensus(ranklambda, method="vote")
-}
-
-zilgm_late_auc <- plotROC(consensus_matrices, adjm, plot_title = "ROC voting lambda", is_binary = T)
-
-```
-
-#### Plot comparison
-
-```{r ZILGM scores late}
-scores.zilgm.late.all <- pscores(adjm, est_graphs)
-
-scores.zilgm.late.all$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-```
-
-```{r ZILGM scores consensus}
-consesusm <- create_consensus(est_graphs, method="vote")
-consesusu <- create_consensus(est_graphs, method="union")
-
-scores.zilgm.late <- pscores(adjm, list(consesusm))
-scoresu.zilgm.late <- pscores(adjm, list(consesusu))
-
-scores.zilgm.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-scoresu.zilgm.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-```
-
-```{r ZILGM compare late, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-```
-
-### Early integration
-
-```{r ZILGM early}
-set.seed(1234)
-
-time[["ZILGM_early_15Cores"]] <- system.time(
-  zilgm_late <- infer_networks(count_matrices_list = early_matrix, method = "ZILGM", adjm = adjm, nCores = 15)
-)
-
-saveRDS(zilgm_late, "./../analysis/zilgm_early.RDS")
-
-est_graphs <- zilgm_late$network_results
-lambdas <- zilgm_late$lambda_results
-```
-
-#### Symmetrize and ROC
-
-```{r}
-zilgm_early_auc <- plotROC(lambdas[[1]], adjm, plot_title = "ROC ZILGM early", is_binary = T)
-```
-
-#### Plot comparison
-
-```{r ZIGLM score early}
-scores.zilgm.early <- pscores(adjm, est_graphs)
-
-scores.zilgm.early$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-
-```
-
-```{r ZILGM compare early, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(est_graphs[[1]], adjm)
-```
 
 ## Joint Integration
 
@@ -379,7 +537,8 @@ time[["JRF"]] <- system.time(
   jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
 )
  
-jrf_mat[[1]] %>%
+as.data.frame(jrf_mat[[1]]) %>%
+  slice_head(n=30) %>% 
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -410,7 +569,8 @@ for (i in seq_along(importance_columns)) {
 
 saveRDS(jrf_list, "./../analysis/jrf.RDS")
 
-jrf_list[[1]] %>%
+as.data.frame(jrf_list[[1]]) %>%
+  slice_head(n=30) %>% 
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -427,7 +587,8 @@ jrf_wadj <- generate_adjacency(jrf_list)
 sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
 jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = F)
 
-sjrf_wadj[[1]] %>%
+as.data.frame(sjrf_wadj[[1]]) %>%
+  slice_head(n=30) %>% 
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -445,7 +606,8 @@ sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
                  n = 3,
                  method = "JRF")
 
-sjrf_adj[[1]] %>%
+as.data.frame(sjrf_adj[[1]]) %>%
+  slice_head(n=30) %>% 
     datatable(extensions = 'Buttons',
               options = list(
                 dom = 'Bfrtip',
@@ -471,7 +633,7 @@ scores.jrf.all$Statistics %>%
               caption = "scores")
 ```
 
-```{r JRF plotg late}
+```{r JRF plotg late, fig.width=10,fig.width=15}
 plots <- plotg(sjrf_adj)
 ```
 
@@ -479,7 +641,10 @@ plots <- plotg(sjrf_adj)
 consesusm <- create_consensus(sjrf_adj, method="vote")
 consesusu <- create_consensus(sjrf_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sjrf_adj, weighted_list = sjrf_wadj, method = "INet", threshold = 0.1, ncores = 15)
+```
 
+
+```{r JRF consensus and score late}
 scores.jrf <- pscores(adjm, list(consesusm))
 scoresu.jrf <- pscores(adjm, list(consesusu))
 scoresnet.jrf <- pscores(adjm, list(consesunet))
@@ -514,7 +679,137 @@ scoresnet.jrf$Statistics %>%
 ```
 
 ```{r JRF compare late, fig.width=8,fig.width=10}
-ajm_compared <- compare_consensus(consesusm, adjm)
-ajm_compared <- compare_consensus(consesusu, adjm)
-ajm_compared <- compare_consensus(consesunet, adjm)
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
+```
+
+# Method Comparison
+
+```{r, fig.height=10, fig.width=5}
+
+time_data <- data.frame(
+  Method = names(time),
+  Time_in_Seconds = sapply(time, function(x) {
+    if ("elapsed" %in% names(x)) x["elapsed"] else NA
+  })
+)
+
+time_data$Time_in_Minutes <- as.numeric(time_data$Time_in_Seconds) / 60
+time_data$Time_in_Hours <- as.numeric(time_data$Time_in_Seconds) / 3600
+
+time_data <- time_data[order(time_data$Time_in_Hours), ]
+time_data$Method <- factor(time_data$Method, levels = time_data$Method)
+
+time_data <- time_data %>%
+  mutate(Method_Group = case_when(
+    grepl("GENIE3", Method) ~ "GENIE3",
+    grepl("GRNBoost2", Method) ~ "GRNBoost2",
+    #grepl("ZILGM", Method) ~ "ZILGM",
+    grepl("JRF", Method) ~ "JRF"#,
+    #grepl("PCzinb", Method) ~ "PCzinb"
+  ))
+
+method_colors <- c("GENIE3" = "darkblue",
+                   "GRNBoost2" = "darkgreen",
+                   #"ZILGM" = "orange",
+                   "JRF" = "red"#,
+                   #"PCzinb" = "purple"
+                   )
+
+time_plot <- ggplot(time_data, aes(x = Method, y = Time_in_Hours, fill = Method_Group)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f min", Time_in_Minutes)), vjust = -0.5) +
+  labs(title = "Execution Time for Each Method", y = "Time (Hours)", x = NULL) +
+  scale_fill_manual(values = method_colors) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
+
+print(time_plot) 
+
+```
+
+
+```{r, fig.height=7, fig.width=5}
+library(patchwork)
+mplot <- list()
+
+for (k in c("TPR", "FPR", "Precision", "F1", "MCC")) {
+  mplot[[k]] <- data.frame(
+    GENIE3_late = scores.genie3.late$Statistics[[k]],
+    GENIE3_early = scores.genie3.early$Statistics[[k]],
+    GRNBoost2_late = scores.grnboost.late$Statistics[[k]],
+    GRNBoost2_early = scores.grnboost.early$Statistics[[k]],
+    #ZILGM_late = scores.zilgm.late$Statistics[[k]],
+    #ZILGM_early = scores.zilgm.early$Statistics[[k]],
+    #PCzinb_late = scores.pc.late$Statistics[[k]],
+    #PCzinb_early = scores.pc.early$Statistics[[k]],
+    JRF = scores.jrf$Statistics[[k]]
+  )
+}
+
+mplot[["AUC"]] <- data.frame(
+    GENIE3_late = mean(genie3_late_auc$AUC),
+    GENIE3_early = genie3_early_auc$AUC,
+    GRNBoost2_late = mean(grnboost_late_auc$AUC),
+    GRNBoost2_early = grnboost_early_auc$AUC,
+    #ZILGM_late = zilgm_late_auc$AUC,
+    #ZILGM_early = zilgm_early_auc$AUC,
+    JRF = jrf_auc_mine$AUC
+)
+
+plot_data <- bind_rows(lapply(names(mplot), function(metric) {
+  data.frame(
+    Metric = metric,
+    Method = names(mplot[[metric]]),
+    Value = as.numeric(mplot[[metric]][1, ])
+  )
+}))
+
+plot_data <- plot_data %>%
+  mutate(Method_Group = case_when(
+    grepl("GENIE3", Method) ~ "GENIE3",
+    grepl("GRNBoost2", Method) ~ "GRNBoost2",
+    #grepl("ZILGM", Method) ~ "ZILGM",
+    grepl("JRF", Method) ~ "JRF"
+  )) %>%
+  mutate(Method = factor(Method, levels = c(
+    "GENIE3_early", "GENIE3_late", 
+    "GRNBoost2_early", "GRNBoost2_late", 
+    #"ZILGM_early", "ZILGM_late",
+    #"PCzinb_early", "PCzinb_late", 
+    "JRF"  # Ensure JRF is last
+  )))
+
+plots <- lapply(unique(plot_data$Metric), function(metric) {
+  show_x_text <- metric %in% c("Accuracy", "AUC")
+  
+  ggplot(plot_data %>% filter(Metric == metric), aes(x = Method, y = Value, fill = Method_Group)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+    labs(title = metric, y = "Value", x = NULL) +
+    scale_y_continuous(limits = c(0, 1)) +  
+    scale_fill_manual(values = method_colors) +
+    theme_minimal() +
+    theme(
+      axis.text.x = if (show_x_text) element_text(angle = 45, hjust = 1) else element_blank(),
+      axis.title.x = element_blank(),
+      legend.position = "none"  
+    )
+})
+
+final_plot <- (plots[[1]] | plots[[2]]) /
+              (plots[[3]] | plots[[4]]) /
+              (plots[[5]] | plots[[6]]) +
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "bottom")
+
+print(final_plot)
+```
+
+
+```{r}
+sessionInfo()
 ```
