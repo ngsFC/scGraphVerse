@@ -72,17 +72,20 @@ seurat_subset[["RNA"]] <- assay
 
 ## Filtering step
 
-```{r}
+```{r, fig.width=5, fig.height=7}
 seurat_subset <- PercentageFeatureSet(seurat_subset, "^MT-", col.name = "percent_mito")
 # Ribosomal
 seurat_subset <- PercentageFeatureSet(seurat_subset, "^RP[SL]", col.name = "percent_ribo")
 
 feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo")
-VlnPlot(seurat_subset, group.by = "donor_id", split.by = "donor_id", features = feats, pt.size = 0.1, ncol = 3)
-FeatureScatter(seurat_subset, "nCount_RNA", "nFeature_RNA", group.by = "donor_id", pt.size = .5)
+VlnPlot(seurat_subset, group.by = "donor_id", split.by = "donor_id", features = feats, pt.size = 0.1, ncol = 2)
 ```
 
 ```{r}
+FeatureScatter(seurat_subset, "nCount_RNA", "nFeature_RNA", group.by = "donor_id", pt.size = .5)
+```
+
+```{r, fig.width=5, fig.height=7}
 selected_c <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
 selected_f <- rownames(seurat_subset)[Matrix::rowSums(seurat_subset) > 3]
 
@@ -99,7 +102,7 @@ boxplot(as.matrix(t(C[most_expressed, ])),
 )
 ```
 
-```{r}
+```{r, fig.width=7, fig.height=7}
 selected_mito <- WhichCells(seurat_subset_filt, expression = percent_mito < 20)
 selected_ribo <- WhichCells(seurat_subset_filt, expression = percent_ribo > 5)
 
@@ -109,11 +112,11 @@ seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_ribo)
 dim(seurat_subset_filt)
 
 feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo")
-VlnPlot(seurat_subset_filt, group.by = "donor_id", features = feats, pt.size = 0.1, ncol = 3) + NoLegend()
+VlnPlot(seurat_subset_filt, group.by = "donor_id", features = feats, pt.size = 0.1, ncol = 2) + NoLegend()
 
 ```
 
-```{r}
+```{r, fig.width=5, fig.height=7}
 # Filter MALAT1
 seurat_subset_filt <- seurat_subset_filt[!grepl("MALAT1", rownames(seurat_subset_filt)), ]
 
@@ -133,7 +136,7 @@ boxplot(as.matrix(t(C[most_expressed, ])),
 )
 ```
 
-## Adjacency matrix
+## Adjacency matrix top1200
 
 ```{r Generate Adjacency matrice}
 
@@ -189,6 +192,11 @@ genes_to_keep <- intersect(pathgenes, rownames(seurat_subset_filt))
 seurat_subset_filt <- subset(seurat_subset_filt, features = genes_to_keep)
 
 saveRDS(seurat_subset_filt, "PBMC.top1200.RDS")
+
+ncells <- as.matrix(seurat_subset_filt@assays$RNA@counts)
+ncells <- ncells[rownames(adjm),]
+
+mean(colSums(ncells))
 ```
 
 ## Create Ground Truth Network
@@ -363,7 +371,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c(3000, 5000)
+  depth_range = c((3*nodes)-500, (3*nodes)+500)
 )
 
 saveRDS(simat, "./../analysis/sim_n200p500.RDS")

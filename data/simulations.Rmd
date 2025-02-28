@@ -41,7 +41,6 @@ ddir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/data"
 pdir <- "/home/francescoc/Desktop/NodeVerse/analysis/GENIE3/plots"
 ```
 
-
 ## Adjacency and Count matrices
 
 ```{r}
@@ -168,9 +167,7 @@ consesunet <- create_consensus(adj_matrix_list = sgenie3_late_adj, weighted_list
 
 
 ```{r}
-scores.genie3.late <- pscores(adjm, list(consesusm))
-scoresu.genie3.late <- pscores(adjm, list(consesusu))
-scoresnet.genie3.late <- pscores(adjm, list(consesunet))
+scores.genie3.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
 
 scores.genie3.late$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -179,31 +176,13 @@ scores.genie3.late$Statistics %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "scores vote")
-
-scoresu.genie3.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores union")
-
-scoresnet.genie3.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores INet")
+              caption = "scores vote-union-iNet")
 
 ```
 
 #### Plot comparison
 
-```{r, fig.width=8,fig.width=10}
+```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
@@ -295,7 +274,7 @@ plotg(sgenie3_early_adj)
 
 #### Plot comparison
 
-```{r, fig.width=8,fig.width=10}
+```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = sgenie3_early_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
@@ -394,9 +373,7 @@ consesunet <- create_consensus(adj_matrix_list = sgrnboost_late_adj, weighted_li
 
 
 ```{r}
-scores.grnboost.late <- pscores(adjm, list(consesusm))
-scoresu.grnboost.late <- pscores(adjm, list(consesusu))
-scoresnet.grnboost.late <- pscores(adjm, list(consesunet))
+scores.grnboost.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
 
 scores.grnboost.late$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -405,31 +382,13 @@ scores.grnboost.late$Statistics %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "scores vote")
-
-scoresu.grnboost.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores union")
-
-scoresnet.grnboost.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores INet")
+              caption = "scores vote-union-iNet")
 
 ```
 
 #### Plot comparison
 
-```{r, fig.width=8,fig.width=10}
+```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
@@ -515,12 +474,12 @@ scores.grnboost.early$Statistics %>%
 
 
 ```{r, fig.width=10,fig.width=15}
-plots <- plotg(sgrnboost_early_adj)
+plotg(sgrnboost_early_adj)
 ```
 
 #### Plot comparison
 
-```{r, fig.width=8,fig.width=10}
+```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = sgrnboost_early_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
@@ -634,7 +593,7 @@ scores.jrf.all$Statistics %>%
 ```
 
 ```{r JRF plotg late, fig.width=10,fig.width=15}
-plots <- plotg(sjrf_adj)
+plotg(sjrf_adj)
 ```
 
 ```{r JRF consensus and score late}
@@ -644,10 +603,8 @@ consesunet <- create_consensus(adj_matrix_list = sjrf_adj, weighted_list = sjrf_
 ```
 
 
-```{r JRF consensus and score late}
-scores.jrf <- pscores(adjm, list(consesusm))
-scoresu.jrf <- pscores(adjm, list(consesusu))
-scoresnet.jrf <- pscores(adjm, list(consesunet))
+```{r}
+scores.jrf <- pscores(adjm, list(consesusm, consesusu, consesunet))
 
 scores.jrf$Statistics %>%
     datatable(extensions = 'Buttons',
@@ -656,37 +613,18 @@ scores.jrf$Statistics %>%
                 buttons = c('csv', 'excel'),
                 scrollX = TRUE,
                 pageLength = 10), 
-              caption = "scores vote")
-
-scoresu.jrf$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores union")
-
-scoresnet.jrf$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores INet")
-
+              caption = "scores vote-union-iNet")
 ```
 
-```{r JRF compare late, fig.width=8,fig.width=10}
+```{r JRF compare late, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
-# Method Comparison
+## Method Comparison
 
-```{r, fig.height=10, fig.width=5}
+```{r, fig.height=7, fig.width=5}
 
 time_data <- data.frame(
   Method = names(time),
@@ -739,15 +677,15 @@ mplot <- list()
 
 for (k in c("TPR", "FPR", "Precision", "F1", "MCC")) {
   mplot[[k]] <- data.frame(
-    GENIE3_late = scores.genie3.late$Statistics[[k]],
+    GENIE3_late = scores.genie3.late$Statistics[[k]][[1]],
     GENIE3_early = scores.genie3.early$Statistics[[k]],
-    GRNBoost2_late = scores.grnboost.late$Statistics[[k]],
+    GRNBoost2_late = scores.grnboost.late$Statistics[[k]][[1]],
     GRNBoost2_early = scores.grnboost.early$Statistics[[k]],
     #ZILGM_late = scores.zilgm.late$Statistics[[k]],
     #ZILGM_early = scores.zilgm.early$Statistics[[k]],
     #PCzinb_late = scores.pc.late$Statistics[[k]],
     #PCzinb_early = scores.pc.early$Statistics[[k]],
-    JRF = scores.jrf$Statistics[[k]]
+    JRF = scores.jrf$Statistics[[k]][[1]]
   )
 }
 

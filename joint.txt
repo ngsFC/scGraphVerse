@@ -1,0 +1,139 @@
+## Joint Integration
+
+### Joint Random Forest
+
+```{r JRF inference}
+#https://cran.r-project.org/src/contrib/Archive/JRF/
+#install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
+set.seed(1234)
+time[["JRF"]] <- system.time(
+  jrf_mat <- infer_networks(seurat_split, method="JRF", nCores = 15)
+)
+ 
+jrf_mat[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF output")
+
+```
+
+#### Prepare the output
+
+```{r}
+jrf_list <- list()
+
+importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
+
+for (i in seq_along(importance_columns)) {
+# Select the 'gene1', 'gene2', and the current 'importance' column
+  df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
+  
+  # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
+  names(df)[3] <- importance_columns[i]
+  
+  # Add the data frame to the output list
+  jrf_list[[i]] <- df
+}
+
+saveRDS(jrf_list, "./../analysis/jrf.RDS")
+
+jrf_list[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF output")
+```
+
+#### symmetrize Output and ROC
+
+```{r JRF symmetrizeROC late}
+jrf_wadj <- generate_adjacency(jrf_list)
+sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
+
+sjrf_wadj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF symmetrize output")
+```
+
+#### Generate Adjacency and Apply Cutoff
+
+```{r JRF cutoff late}
+sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                 weighted_adjm_list = sjrf_wadj, 
+                 n = 3,
+                 method = "JRF")
+
+sjrf_adj[[1]] %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10), 
+              caption = "JRF adjacency")
+
+```
+
+
+```{r JRF consensus and score late}
+consesusm <- create_consensus(sjrf_adj, method="vote")
+consesusu <- create_consensus(sjrf_adj, method="union")
+consesunet <- create_consensus(adj_matrix_list = sjrf_adj, weighted_list = sjrf_wadj, method = "INet", threshold = 0.1, ncores = 15)
+```
+
+```{r JRF compare late, fig.width=8,fig.width=10}
+compare_consensus(consensus_matrix = consesusm, false_plot = T)
+compare_consensus(consensus_matrix = consesusu, false_plot = T)
+compare_consensus(consensus_matrix = consesunet, false_plot = T)
+```
+
+#### PubMed Query
+
+```{r}
+query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "TP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FP")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FP PubMed query")
+
+query <- edge_mining(list(consesusm), adj, query_edge_types = "FN")
+
+query[[1]] %>%
+    datatable(extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = c('csv', 'excel'),
+              scrollX = TRUE,
+              pageLength = 10), 
+            caption = "FN PubMed query")
+```
+
+
