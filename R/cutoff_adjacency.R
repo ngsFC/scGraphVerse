@@ -71,7 +71,7 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GE
       network_results_adjm <- generate_adjacency(network_results)
       symmetric_network <- symmetrize(network_results_adjm, weight_function = weight_function)[[1]]
       ordered_weights <- sort(symmetric_network[upper.tri(symmetric_network)], decreasing = TRUE)
-      quantile(ordered_weights, 0.95)
+      quantile(ordered_weights, 0.99)
     }, BPPARAM = MulticoreParam(nCores)))
     
     mean_percentile <- mean(percentile_values)
