@@ -188,6 +188,7 @@ compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_p
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
+
 ### Early integration
 
 ```{r}
