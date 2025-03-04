@@ -190,6 +190,7 @@ adjm %>%
 ```{r format control Seurat data}
 genes_to_keep <- intersect(pathgenes, rownames(seurat_subset_filt))
 seurat_subset_filt <- subset(seurat_subset_filt, features = genes_to_keep)
+seurat_subset_filt@assays$RNA@counts <- as.matrix(seurat_subset_filt@assays$RNA@counts)
 
 saveRDS(seurat_subset_filt, "PBMC.top1200.RDS")
 

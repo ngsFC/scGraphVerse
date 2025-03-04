@@ -27,7 +27,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
   if (all(sapply(count_matrices_list, function(x) inherits(x, "Seurat")))) {
     message("Detected Seurat objects. Extracting expression matrices...")
     count_matrices_list <- lapply(count_matrices_list, function(obj) {
-      expr_mat <- Seurat::GetAssayData(obj, assay = "RNA", slot = "data")
+      expr_mat <- Seurat::GetAssayData(obj, assay = "RNA", slot = "counts")
       if (!inherits(expr_mat, "matrix")) {
         expr_mat <- as.matrix(expr_mat)  # Convert sparse or other formats to matrix
       }
@@ -39,7 +39,7 @@ infer_networks <- function(count_matrices_list, method = "GENIE3", adjm = NULL, 
   if (all(sapply(count_matrices_list, function(x) inherits(x, "SingleCellExperiment")))) {
     message("Detected SingleCellExperiment objects. Extracting logcounts matrices...")
     count_matrices_list <- lapply(count_matrices_list, function(sce) {
-      expr_mat <- SummarizedExperiment::assay(sce, "logcounts")
+      expr_mat <- SummarizedExperiment::assay(sce, "counts")
       if (!inherits(expr_mat, "matrix")) {
         expr_mat <- as.matrix(expr_mat)
       }

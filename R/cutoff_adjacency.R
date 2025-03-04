@@ -33,9 +33,9 @@ cutoff_adjacency <- function(count_matrices, weighted_adjm_list, n, method = "GE
   # Detect Seurat objects and extract expression matrices
   count_matrices <- BiocParallel::bplapply(count_matrices, function(obj) {
     if (inherits(obj, "Seurat")) {
-      return(as.matrix(t(GetAssayData(obj, assay = "RNA", slot = "data"))))
+      return(as.matrix(t(GetAssayData(obj, assay = "RNA", slot = "counts"))))
     } else if (inherits(obj, "SingleCellExperiment")) {
-      return(as.matrix(t(assay(obj, "logcounts"))))
+      return(as.matrix(t(assay(obj, "counts"))))
     } else {
       return(as.matrix(obj))
     }

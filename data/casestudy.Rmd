@@ -46,9 +46,6 @@ seurat_split <- SplitObject(
   split.by = "donor_id"
 )
 
-seurat_split <- list("NP18"=as.matrix(seurat_split[[1]]@assays$RNA@data),
-                     "AN8"=as.matrix(seurat_split[[2]]@assays$RNA@data),
-                     "AN6"=as.matrix(seurat_split[[3]]@assays$RNA@data))
 ```
 
 ## GENIE3
