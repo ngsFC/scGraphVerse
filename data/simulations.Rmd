@@ -188,6 +188,19 @@ compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_p
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
+#### Community detection
+
+```{r, fig.width=10, fig.height=10}
+adj_comm <- community_path(adjm)
+comm_consesusm <- community_path(consesusm)
+comm_consesusu <- community_path(consesusu)
+comm_consesunet <- community_path(consesunet)
+
+community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet))
+
+```
+
+
 
 ### Early integration
 
@@ -277,6 +290,12 @@ plotg(sgenie3_early_adj)
 
 ```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = sgenie3_early_adj[[1]], reference_matrix = adjm, false_plot = F)
+```
+
+```{r, fig.width=10, fig.height=10}
+comm_consesusm <- community_path(sgenie3_early_adj[[1]])
+
+community_similarity(adj_comm,list(comm_consesusm))
 ```
 
 ## GRNBoost2
@@ -395,6 +414,18 @@ compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_p
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
+
+#### Community detection
+
+```{r, fig.width=10, fig.height=10}
+comm_consesusm <- community_path(consesusm)
+comm_consesusu <- community_path(consesusu)
+comm_consesunet <- community_path(consesunet)
+
+community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet))
+
+```
+
 ### Early integration
 
 ```{r}
@@ -484,6 +515,15 @@ plotg(sgrnboost_early_adj)
 compare_consensus(consensus_matrix = sgrnboost_early_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
+
+#### Community detection
+
+```{r, fig.width=10, fig.height=10}
+comm_consesusm <- community_path(sgrnboost_early_adj[[1]])
+
+community_similarity(adj_comm,list(comm_consesusm))
+
+```
 
 ## Joint Integration
 
@@ -621,6 +661,18 @@ scores.jrf$Statistics %>%
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
+```
+
+
+#### Community detection
+
+```{r, fig.width=10, fig.height=10}
+comm_consesusm <- community_path(consesusm)
+comm_consesusu <- community_path(consesusu)
+comm_consesunet <- community_path(consesunet)
+
+community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet))
+
 ```
 
 ## Method Comparison

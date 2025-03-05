@@ -72,7 +72,7 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   # Select only the five performance metrics
   metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
   radar_data <- stats_df_filtered %>%
-    select(Predicted_Matrix, all_of(metrics))
+    dplyr::select(Predicted_Matrix, all_of(metrics))
   
   # Ensure fixed axis limits (0 to 1)
   max_vals <- rep(1, length(metrics))  # Max values set to 1
