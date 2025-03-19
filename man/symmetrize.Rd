@@ -4,7 +4,11 @@
 \alias{symmetrize}
 \title{Symmetrize a List of Matrices}
 \usage{
-symmetrize(matrix_list, weight_function = "mean")
+symmetrize(
+  matrix_list,
+  weight_function = "mean",
+  nCores = BiocParallel::bpworkers(BiocParallel::bpparam())
+)
 }
 \arguments{
 \item{matrix_list}{A list of matrices to be symmetrized. Each matrix should be square
@@ -13,6 +17,8 @@ and contain numeric values.}
 \item{weight_function}{A string specifying the function to combine values at (i, j) and (j, i).
 The default is "mean". Other options include "max", or any other function that can be
 applied to a vector of two numeric values (e.g., "min").}
+
+\item{nCores}{Number of cores for parallel processing. Default is \code{BiocParallel::bpworkers(BiocParallel::bpparam())}.}
 }
 \value{
 A list of symmetrized matrices. Each matrix will have identical values at positions
@@ -31,7 +37,7 @@ and applies the chosen \code{weight_function} to symmetrize the matrix. If one o
 the function will apply the \code{weight_function} to the two values.
 }
 \examples{
-\dontrun{
+
 # Example list of matrices
 mat1 <- matrix(c(0, 2, 3, 4), nrow = 2, ncol = 2)
 mat2 <- matrix(c(0, 5, 6, 0), nrow = 2, ncol = 2)
@@ -39,6 +45,5 @@ matrix_list <- list(mat1, mat2)
 
 # Symmetrize with "mean" function
 symmetrized_matrices <- symmetrize(matrix_list, weight_function = "mean")
-}
 
 }

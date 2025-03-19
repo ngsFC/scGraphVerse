@@ -2,32 +2,46 @@
 % Please edit documentation in R/compare_consensus.R
 \name{compare_consensus}
 \alias{compare_consensus}
-\title{Compare Consensus and Original Graphs}
+\title{Compare Consensus and Original Graphs (or STRINGdb Network)}
 \usage{
-compare_consensus(consensus_matrix, original_matrix)
+compare_consensus(
+  consensus_matrix,
+  reference_matrix = NULL,
+  false_plot = FALSE
+)
 }
 \arguments{
 \item{consensus_matrix}{A binary adjacency matrix representing the consensus graph.}
 
-\item{original_matrix}{A binary adjacency matrix representing the original or ground truth graph.}
+\item{reference_matrix}{(Optional) A binary adjacency matrix as a reference (ground truth). If \code{NULL}, STRINGdb is used.}
+
+\item{false_plot}{Logical; if TRUE, plot False Positives (FP) (default = FALSE).}
 }
 \value{
-This function does not return any values. It generates two plots:
-- The first for True Positives (red) and False Positives (blue).
-- The second for False Negatives (purple).
+A ggplot object (or a combined plot if \code{false_plot = TRUE}).
 }
 \description{
-This function compares a consensus adjacency matrix with an original adjacency matrix, visualizing edges as:
+This function compares a consensus adjacency matrix with either:
 \itemize{
-\item True Positives (TP): edges that are 1 in both (red).
-\item False Positives (FP): edges that are 1 in the original but 0 in the consensus (blue).
-\item False Negatives (FN): edges that are 0 in the original but 1 in the consensus (purple).
+\item A provided reference adjacency matrix.
+\item A STRINGdb-derived adjacency matrix if no reference is provided.
 }
 }
 \details{
-It generates two plots:
-\enumerate{
-\item A plot of the original (ground truth) graph with TP edges in red and FP edges in blue.
-\item A plot showing only the FN edges (purple).
+It generates plots visualizing edges:
+\itemize{
+\item \strong{True Positives (TP or CE)}: Edges that are 1 in both.
+\item \strong{False Negatives (FN or ME)}: Edges that are 1 in the reference but 0 in the consensus.
+\item \strong{False Positives (FP or EE)} (optional): Edges that are 1 in the consensus but 0 in the reference.
 }
+}
+\examples{
+set.seed(42)
+original <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
+consensus <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
+diag(original) <- diag(consensus) <- 0
+compare_consensus(consensus, reference_matrix = original, false_plot = TRUE)
+
+# Using STRINGdb
+compare_consensus(consensus)
 }

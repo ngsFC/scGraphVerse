@@ -4,7 +4,10 @@
 \alias{generate_adjacency}
 \title{Generate Adjacency Matrices from a List of Data Frames}
 \usage{
-generate_adjacency(df_list, ground.truth)
+generate_adjacency(
+  df_list,
+  nCores = BiocParallel::bpworkers(BiocParallel::bpparam())
+)
 }
 \arguments{
 \item{df_list}{A list of data frames, each containing three columns:
@@ -13,9 +16,6 @@ generate_adjacency(df_list, ground.truth)
 \item Second column: Gene2 (character)
 \item Third column: Weight (numeric)
 }}
-
-\item{ground.truth}{An adjacency matrix (or data frame) with the ground truth
-values, used for the dimensions and gene names of the resulting adjacency matrices.}
 }
 \value{
 A list of adjacency matrices, one for each data frame in \code{df_list}.
@@ -24,9 +24,7 @@ A list of adjacency matrices, one for each data frame in \code{df_list}.
 This function generates adjacency matrices based on the information provided in
 a list of data frames. Each data frame is expected to have three columns:
 the first and second columns represent gene pairs, and the third column represents
-the weight of the interaction between the genes. The adjacency matrices are constructed
-based on these gene pairs and weights, matching the row and column names of the
-provided \code{ground.truth} adjacency matrix.
+the weight of the interaction between the genes.
 }
 \details{
 The function creates an adjacency matrix for each data frame in \code{df_list} by placing
@@ -34,11 +32,10 @@ the interaction weights in the correct positions based on the gene pairings. The
 diagonal of the resulting matrices is set to zero to ensure no self-interactions are included.
 }
 \examples{
-\dontrun{
+
 # Example data frame
 df1 <- data.frame(Gene1 = c("GeneA", "GeneB"), Gene2 = c("GeneB", "GeneC"), Weight = c(0.5, 0.8))
 df_list <- list(df1)
-ground_truth <- matrix(0, nrow = 3, ncol = 3, dimnames = list(c("GeneA", "GeneB", "GeneC"), c("GeneA", "GeneB", "GeneC")))
-adjacency_matrices <- generate_adjacency(df_list, ground_truth)
-}
+adjacency_matrices <- generate_adjacency(df_list)
+
 }

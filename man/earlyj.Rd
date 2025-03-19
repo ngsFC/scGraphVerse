@@ -2,23 +2,37 @@
 % Please edit documentation in R/earlyj.R
 \name{earlyj}
 \alias{earlyj}
-\title{Modify Row Names of Matrices and Combine Them}
+\title{Modify Cell Names and Combine Datasets}
 \usage{
-earlyj(matrix_list)
+earlyj(input_list, rowg = TRUE)
 }
 \arguments{
-\item{matrix_list}{A list of matrices. Each matrix will have its row names modified.}
+\item{input_list}{A list of matrices, Seurat objects, or SingleCellExperiment objects.}
+
+\item{rowg}{Logical. If TRUE (default), the function assumes that genes are in the rows
+and cells are in the columns. If FALSE, it assumes that genes are in the columns and transposes
+the matrices so that genes are on the rows.}
 }
 \value{
-A combined matrix with modified row names.
+A combined matrix, Seurat object, or SingleCellExperiment object with modified cell names.
 }
 \description{
-This function modifies the row names of each matrix in a list by appending
-the matrix index (e.g., "_m1", "_m2", ...) to the row names. It then combines
-all the modified matrices into a single matrix using \code{rbind}.
+This function modifies the cell identifiers of each element in a list by appending
+the matrix index (e.g., "-m1", "-m2", ...) to the cell names. For matrices, if
+\code{rowg} is TRUE, it assumes that genes are in the rows (and cells are in the columns)
+and attaches the suffix to the column names. If \code{rowg} is FALSE, it first transposes the
+matrix so that genes become rows and cells become columns, then modifies the column names.
+}
+\details{
+For Seurat or SingleCellExperiment objects, the function standardizes features and renames
+the cells similarly before merging them.
 }
 \examples{
 \dontrun{
+# When matrices have genes on the rows (default):
 combined_matrix <- earlyj(list(matrix1, matrix2, matrix3))
+
+# When matrices have genes on the columns:
+combined_matrix <- earlyj(list(matrix1, matrix2, matrix3), rowg = FALSE)
 }
 }
