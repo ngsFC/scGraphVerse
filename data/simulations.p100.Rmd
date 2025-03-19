@@ -17,7 +17,7 @@ output:
 knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",message=FALSE, warning=FALSE)
 ```
 
-## Load Libraries and data
+# Load Libraries and data
 
 ```{r}
 library(RColorBrewer)
@@ -37,15 +37,15 @@ numpy <- reticulate::import("numpy")
 
 time <- list()
 
-ddir <- "/home/francescoc/Desktop/scGraphVerse/data/"
-pdir <- "/home/francescoc/Desktop/scGraphVerse/data/plots/"
+ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
+pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 
 ```
 
-## Adjacency and Count matrices
+# Adjacency and Count matrices
 
 ```{r}
-adjm <- as.matrix(read.table("./../analysis/adjm_top200.txt"))
+adjm <- as.matrix(read.table("./../analysis/simulation/adjacency/adjm_top200_p100.txt"))
 colnames(adjm) <- rownames(adjm)
 
 as.data.frame(adjm) %>%
@@ -57,7 +57,7 @@ as.data.frame(adjm) %>%
               pageLength = 10), 
             caption = "Ground Truth")
 
-count_matrices <- readRDS("./../analysis/sim_n200p100.RDS")
+count_matrices <- readRDS("./../analysis/simulation/simdata/sim_n100p100.RDS")
 dim(count_matrices[[1]])
 
 count_matrices <- lapply(count_matrices, t)
@@ -75,9 +75,9 @@ as.data.frame(count_matrices[[1]]) %>%
 ```
 
 
-## GENIE3
+# GENIE3
 
-### Late integration
+## Late integration
 
 ```{r}
 set.seed(1234)
@@ -98,7 +98,7 @@ late[[1]] %>%
               caption = "GENIE3 output")
 ```
 
-#### Symmetrize and ROC
+### Symmetrize and ROC
 
 ```{r}
 late_wadj <- generate_adjacency(late)
@@ -120,7 +120,7 @@ as.data.frame(slate_wadj[[1]]) %>%
 late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration", is_binary = F)
 ```
 
-#### Cutoff
+### Cutoff
 
 ```{r}
 slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
@@ -159,7 +159,7 @@ scores.late.all$Statistics %>%
 plotg(slate_adj)
 ```
 
-#### Consensus
+### Consensus
 
 ```{r}
 consesusm <- create_consensus(slate_adj, method="vote")
@@ -180,10 +180,10 @@ scores.late$Statistics %>%
                 pageLength = 10), 
               caption = "scores vote-union-iNet")
 
-keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]))
+keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm))
 ```
 
-#### Plot comparison
+### Plot comparison
 
 ```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
@@ -191,7 +191,7 @@ compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_p
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
 ```
 
-#### Community detection
+### Community detection
 
 ```{r, fig.width=5, fig.height=5}
 adj_comm <- community_path(adjm)
@@ -205,7 +205,7 @@ community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesun
 
 
 
-### Early integration
+## Early integration
 
 ```{r}
 count_matrices <- lapply(count_matrices, as.matrix)
@@ -228,7 +228,7 @@ as.data.frame(early[[1]]) %>%
 
 ```
 
-#### Symmetrize and ROC
+### Symmetrize and ROC
 
 ```{r}
 early_wadj <- generate_adjacency(early)
@@ -250,7 +250,7 @@ as.data.frame(searly_wadj[[1]]) %>%
 early_auc <- plotROC(searly_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration", is_binary = F)
 ```
 
-#### Cutoff
+### Cutoff
 
 ```{r}
 searly_adj <- cutoff_adjacency(count_matrices = early_matrix,
@@ -283,7 +283,7 @@ scores.early$Statistics %>%
                 pageLength = 10), 
               caption = "scores early")
 
-keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]])) %>%
+keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
 ```
@@ -293,7 +293,7 @@ keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Me
 plotg(searly_adj)
 ```
 
-#### Plot comparison
+### Plot comparison
 
 ```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = searly_adj[[1]], reference_matrix = adjm, false_plot = F)
@@ -305,9 +305,9 @@ comm_consesusm <- community_path(searly_adj[[1]])
 community_similarity(adj_comm,list(comm_consesusm))
 ```
 
-## GRNBoost2
+# GRNBoost2
 
-### Late integration
+## Late integration
 
 ```{r}
 set.seed(1234)
@@ -329,7 +329,7 @@ as.data.frame(late[[1]]) %>%
 
 ```
 
-#### Symmetrize and ROC
+### Symmetrize and ROC
 
 ```{r}
 late_wadj <- generate_adjacency(late)
@@ -351,7 +351,7 @@ as.data.frame(slate_wadj[[1]]) %>%
 late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - grnboost Late Integration")
 ```
 
-#### Cutoff
+### Cutoff
 
 ```{r}
 slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
@@ -390,7 +390,7 @@ scores.late.all$Statistics %>%
 plotg(slate_adj)
 ```
 
-#### Consensus
+### Consensus
 
 ```{r}
 consesusm <- create_consensus(slate_adj, method="vote")
@@ -411,12 +411,12 @@ scores.late$Statistics %>%
                 pageLength = 10), 
               caption = "scores vote-union-iNet")
 
-keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]])) %>%
+keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
 ```
 
-#### Plot comparison
+### Plot comparison
 
 ```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
@@ -425,7 +425,7 @@ compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_
 ```
 
 
-#### Community detection
+### Community detection
 
 ```{r, fig.width=5, fig.height=5}
 comm_consesusm <- community_path(consesusm)
@@ -436,7 +436,7 @@ community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesun
 
 ```
 
-### Early integration
+## Early integration
 
 ```{r}
 early_matrix <- list(earlyj(count_matrices))
@@ -458,7 +458,7 @@ as.data.frame(early[[1]]) %>%
 
 ```
 
-#### Symmetrize and ROC
+### Symmetrize and ROC
 
 ```{r}
 early_wadj <- generate_adjacency(early)
@@ -481,7 +481,7 @@ as.data.frame(early_wadj[[1]]) %>%
 early_auc <- plotROC(searly_wadj, adjm, plot_title = "ROC curve - grnboost Early Integration")
 ```
 
-#### Cutoff
+### Cutoff
 
 ```{r}
 searly_adj <- cutoff_adjacency(count_matrices = early_matrix,
@@ -513,7 +513,7 @@ scores.early$Statistics %>%
                 pageLength = 10), 
               caption = "scores early")
 
-keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]])) %>%
+keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
 ```
@@ -523,14 +523,14 @@ keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Me
 plotg(searly_adj)
 ```
 
-#### Plot comparison
+### Plot comparison
 
 ```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = searly_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
 
-#### Community detection
+### Community detection
 
 ```{r, fig.width=5, fig.height=5}
 comm_consesusm <- community_path(searly_adj[[1]])
@@ -539,9 +539,9 @@ community_similarity(adj_comm,list(comm_consesusm))
 
 ```
 
-## Joint Integration
+# Joint Integration
 
-### Joint Random Forest
+## Joint Random Forest
 
 ```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
@@ -563,7 +563,7 @@ as.data.frame(jrf_mat[[1]]) %>%
 
 ```
 
-#### Prepare the output
+### Prepare the output
 
 ```{r}
 jrf_list <- list()
@@ -594,7 +594,7 @@ as.data.frame(jrf_list[[1]]) %>%
               caption = "JRF output")
 ```
 
-#### symmetrize Output and ROC
+### symmetrize Output and ROC
 
 ```{r JRF symmetrizeROC late}
 jrf_wadj <- generate_adjacency(jrf_list)
@@ -612,7 +612,7 @@ as.data.frame(sjrf_wadj[[1]]) %>%
               caption = "JRF symmetrize output")
 ```
 
-#### Generate Adjacency and Apply Cutoff
+### Generate Adjacency and Apply Cutoff
 
 ```{r JRF cutoff late}
 sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
@@ -632,7 +632,7 @@ as.data.frame(sjrf_adj[[1]]) %>%
 
 ```
 
-#### Comparison with the Ground Truth
+### Comparison with the Ground Truth
 
 ```{r JRF metrics late}
 scores.jrf.all <- pscores(adjm, sjrf_adj)
@@ -646,7 +646,7 @@ scores.jrf.all$Statistics %>%
                 pageLength = 10), 
               caption = "scores")
 
-keepscores <- scores.jrf.all$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]])) %>%
+keepscores <- scores.jrf.all$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
 ```
@@ -683,7 +683,7 @@ compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_
 ```
 
 
-#### Community detection
+### Community detection
 
 ```{r, fig.width=5, fig.height=5}
 comm_consesusm <- community_path(consesusm)
@@ -695,31 +695,49 @@ community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesun
 ```
 
 
-## Method Comparison
+# Method Comparison
 
 ```{r}
-write.table(keepscores, paste(ddir, "met3.txt", sep = ""), quote = F, col.names = T, row.names = F, sep = "\t")
-
 time_data <- data.frame(
   Method = names(time),
-  Time_in_Seconds = sapply(time, function(x) {
-    if ("elapsed" %in% names(x)) x["elapsed"] else NA
-  })
-)
+  Time_in_Seconds = sapply(time, function(x) if ("elapsed" %in% names(x)) x["elapsed"] else NA)
+) %>%
+  mutate(
+    Time_in_Minutes = Time_in_Seconds / 60,
+    Time_in_Hours = Time_in_Seconds / 3600,
+    Ratio = nrow(adjm) / ncol(count_matrices[[1]]),
+    p = nrow(adjm)
+  ) %>%
+  arrange(Time_in_Hours) %>%
+  mutate(Method = factor(Method, levels = Method)) %>%
+  separate(Method, into = c("Method", "Predicted_Matrix", "Cores"), sep = "_", fill = "right") %>%
+  mutate(
+    Predicted_Matrix = ifelse(Method == "JRF", "joint", Predicted_Matrix),
+    Cores = case_when(
+      Method %in% c("JRF", "GRNBoost2") ~ "15Cores",
+      TRUE ~ Cores
+    )
+  )
 
-time_data$Time_in_Minutes <- as.numeric(time_data$Time_in_Seconds) / 60
-time_data$Time_in_Hours <- as.numeric(time_data$Time_in_Seconds) / 3600
+df2 <- keepscores %>%
+  mutate(
+    Predicted_Matrix_Mapped = case_when(
+      Method == "JRF" ~ "joint",
+      Predicted_Matrix == "early" ~ "early",
+      Predicted_Matrix %in% c("vote", "union", "inet") ~ "late",
+      TRUE ~ Predicted_Matrix
+    )
+  )
 
-time_data <- time_data[order(time_data$Time_in_Hours), ]
-time_data$Method <- factor(time_data$Method, levels = time_data$Method)
+df1_unique <- time_data %>%
+  dplyr::select(Method, Predicted_Matrix, Time_in_Seconds, Time_in_Minutes, Time_in_Hours) %>%
+  distinct()
 
-time_data <- time_data %>% mutate(Ratio = nrow(adjm)/ncol(count_matrices[[1]]))
-# Splitting the Method column into separate columns
-time_data <- time_data %>%
-  separate(Method, into = c("Method_Base", "Integration_Step", "Cores"), sep = "_", fill = "right") %>%
-  mutate(Integration_Step = ifelse(Method_Base == "JRF", "joint", Integration_Step))
+df2 <- df2 %>%
+  left_join(df1_unique, by = c("Method", "Predicted_Matrix_Mapped" = "Predicted_Matrix")) %>%
+  dplyr::select(-Predicted_Matrix_Mapped)
 
-write.table(time_data, paste(ddir, "time3.txt", sep = ""), quote = F, col.names = T, row.names = T)
+write.table(df2, file.path(ddir, "met_n100_p100.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
 
 ```
 
