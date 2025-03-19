@@ -20,15 +20,15 @@ knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",me
 # Load Libraries and data
 
 ```{r}
-library(RColorBrewer)
+#library(RColorBrewer)
 library(DT)
 library(tidyverse)
-library(Seurat)
-library(STRINGdb)
-library(SingleCellExperiment)
+#library(Seurat)
+#library(STRINGdb)
+#library(SingleCellExperiment)
 library(scGraphVerse)
-library(BiocParallel)
-library(GENIE3)
+#library(BiocParallel)
+#library(GENIE3)
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 arboreto <- reticulate::import("arboreto.algo")
@@ -83,9 +83,12 @@ as.data.frame(count_matrices[[1]]) %>%
 set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
   late <- infer_networks(count_matrices, 
-                                method="GENIE3",
-                                nCores = 15)
-)
+                         method="GENIE3",
+                         nCores = 15)
+  )
+
+check <- GENIE3::getLinkList(GENIE3::GENIE3(count_matrices[[1]], nCores = 15))
+
 
 late[[1]] %>%
   slice_head(n=30) %>% 
