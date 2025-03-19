@@ -15,7 +15,7 @@
 #'
 #' @return A ggplot object (or a combined plot if `false_plot = TRUE`).
 #'
-#' @importFrom igraph V graph_from_adjacency_matrix as_edgelist graph_from_edgelist delete_vertices
+#' @importFrom igraph degree V graph_from_adjacency_matrix as_edgelist graph_from_edgelist delete_vertices
 #' @importFrom ggraph ggraph geom_edge_link geom_node_point
 #' @importFrom patchwork wrap_plots
 #' @importFrom Matrix Matrix
