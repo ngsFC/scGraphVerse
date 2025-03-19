@@ -34,7 +34,8 @@
 #' @import ggplot2
 #' @importFrom pROC roc
 #' @importFrom scales hue_pal
-#' 
+#' @importFrom dplyr bind_rows
+#'
 #' @export
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
   
