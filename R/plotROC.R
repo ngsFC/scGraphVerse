@@ -96,7 +96,7 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
       auc_value <- round(roc_obj$auc, 2)
       
       # Store AUC values in a data frame
-      auc_values <- bind_rows(auc_values, data.frame(Matrix = paste("Weighted Matrix", i), AUC = auc_value))
+      auc_values <- dplyr::bind_rows(auc_values, data.frame(Matrix = paste("Weighted Matrix", i), AUC = auc_value))
       
       # Prepare data for plotting the ROC curve
       roc_df <- data.frame(
@@ -105,7 +105,7 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
         Matrix = paste("Weighted Matrix", i, "(AUC=", auc_value, ")", sep = "")
       )
       
-      roc_data <- bind_rows(roc_data, roc_df)
+      roc_data <- dplyr::bind_rows(roc_data, roc_df)
     }
   }
   
