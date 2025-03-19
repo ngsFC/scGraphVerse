@@ -1,3 +1,21 @@
+#' Performance Scores for Predicted Matrices
+#' 
+#' This function evaluates the performance of predicted adjacency matrices against a ground truth matrix.
+#' It computes various classification metrics such as True Positive Rate (TPR), False Positive Rate (FPR),
+#' Precision, F1-score, and Matthews Correlation Coefficient (MCC). Additionally, it visualizes the results
+#' using a radar chart.
+#'
+#' @param ground_truth A square adjacency matrix representing the ground truth network.
+#' @param predicted_list A list of square adjacency matrices to be evaluated against the ground truth.
+#' @param zero_diag Logical; if TRUE, sets the diagonal of the ground truth matrix to zero.
+#' 
+#' @return A list containing a data frame with computed statistics for each predicted matrix.
+#' 
+#' @importFrom dplyr select
+#' @importFrom tidyr all_of
+#' @importFrom fmsb radarchart
+#' 
+#' @export
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   
   requireNamespace("dplyr", quietly = TRUE)

@@ -27,8 +27,9 @@ library(tidyverse)
 #library(STRINGdb)
 #library(SingleCellExperiment)
 library(scGraphVerse)
-#library(BiocParallel)
+library(BiocParallel)
 #library(GENIE3)
+library(fmsb)
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 arboreto <- reticulate::import("arboreto.algo")
@@ -86,9 +87,6 @@ time[["GENIE3_late_15Cores"]] <- system.time(
                          method="GENIE3",
                          nCores = 15)
   )
-
-check <- GENIE3::getLinkList(GENIE3::GENIE3(count_matrices[[1]], nCores = 15))
-
 
 late[[1]] %>%
   slice_head(n=30) %>% 
