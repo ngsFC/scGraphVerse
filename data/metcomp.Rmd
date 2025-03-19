@@ -1,0 +1,138 @@
+---
+title: "Simulations Inferred network and Performances Comparison"
+author: "Francesco Cecere"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    theme: cerulean
+    df_print: paged
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r}
+knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",message=FALSE, warning=FALSE)
+```
+
+```{r}
+library(dplyr)
+library(purrr)
+library(patchwork)
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r}
+met_files <- c("met1.txt", "met2.txt", "met3.txt")
+time_files <- c("time1.txt", "time2.txt", "time3.txt")
+
+read_and_fulljoin <- function(files) {
+  df_list <- lapply(files, read.table, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+  full_joined_df <- reduce(df_list, full_join)  
+  return(full_joined_df)
+}
+
+met_data <- read_and_fulljoin(met_files)
+
+read_and_fulljoin <- function(files) {
+  df_list <- lapply(files, read.table, header = TRUE, sep = " ", stringsAsFactors = FALSE)
+  full_joined_df <- reduce(df_list, full_join)  
+  return(full_joined_df)
+}
+
+time_data <- read_and_fulljoin(time_files)
+
+```
+
+
+```{r}
+# Convert Ratio to character
+met_data <- met_data %>%
+  mutate(Ratio = as.character(Ratio))
+
+# Reshape the data from wide to long format for easy plotting
+met_long <- met_data %>%
+  pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC"), 
+               names_to = "Metric", values_to = "Value")
+
+plot_base <- ggplot(met_long, aes(x = Ratio, y = Value, 
+                                  color = Method, 
+                                  shape = Predicted_Matrix,  # Use shape instead of linetype
+                                  group = interaction(Method, Predicted_Matrix))) +
+  geom_line(size = 0.5) +  # Thicker lines for better visibility
+  geom_point(size = 2) +   # Larger points to distinguish better
+  labs(x = "Ratio", y = "Metric Value", color = "Method", shape = "Predicted Matrix") +
+  theme_minimal() +
+  ylim(0,1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")  # Move legend to bottom for better visibility
+
+# Facet by Metric for better organization
+plot_final <- plot_base + facet_wrap(~Metric, scales = "free")
+
+# Print final plot
+print(plot_final)
+```
+
+```{r}
+library(ggridges)
+
+ggplot(met_long, aes(x = Value, y = Metric, fill = Method)) +
+  geom_density_ridges(alpha = 0.7) +  
+  facet_wrap(~Predicted_Matrix) +  # Separate by prediction type
+  scale_fill_manual(values = c("red", "blue", "green")) +  # Custom colors
+  labs(x = "Metric Value", y = "Metric", fill = "Method") +
+  theme_minimal()
+```
+
+
+```{r}
+plot_base <- ggplot(met_long, aes(x = Ratio, y = Value, 
+                                  color = Method, 
+                                  shape = Predicted_Matrix,
+                                  linetype = Method,  # Different line types for methods
+                                  group = interaction(Method, Predicted_Matrix))) +
+  geom_line(size = 0.7) +  # Thicker lines for visibility
+  geom_point(size = 3) +   # Larger points for better distinction
+  labs(x = "Ratio", y = "Metric Value", color = "Method", 
+       shape = "Predicted Matrix", linetype = "Method") +
+  theme_minimal() +
+  ylim(0,1) +
+  scale_color_brewer(palette = "Dark2") +  # Better color contrast
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        legend.spacing.x = unit(0.8, 'cm'),  # Increase spacing between legend items
+        legend.title = element_text(face = "bold"),
+        legend.key.width = unit(1.2, 'cm')) +  # Widen legend keys for clarity
+  guides(color = guide_legend(title.position = "top"),
+         shape = guide_legend(title.position = "top"),
+         linetype = guide_legend(title.position = "top"))
+
+# Facet by Metric with better layout
+plot_final <- plot_base + facet_wrap(~Metric, scales = "fixed", nrow = 2)
+
+# Print final plot
+print(plot_final)
+```
+
+```{r}
+ggplot(time_data, aes(x = Ratio, y = Time_in_Minutes, 
+                      color = Method_Base, 
+                      linetype = Integration_Step, 
+                      shape = Integration_Step)) +
+  geom_line() +         # Add lines
+  geom_point(size = 3, alpha=0.5) + # Add points
+  theme_minimal() +      # Clean theme
+  labs(x = "Ratio", y = "Time (Minutes)", 
+       title = "Execution Time vs Ratio") +
+  scale_color_manual(values = c("GENIE3" = "green", 
+                                "GRNBoost2" = "orange", 
+                                "JRF" = "purple")) + 
+  theme(legend.position = "bottom")
+
+```
+
