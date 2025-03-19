@@ -64,7 +64,7 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
       TPR <- tp / (tp + fn)  # Sensitivity
       FPR <- fp / (fp + tn)  # 1 - Specificity
       
-      binary_points <- bind_rows(binary_points, data.frame(
+      binary_points <- dplyr::bind_rows(binary_points, data.frame(
         FPR = FPR,
         TPR = TPR
       ))
