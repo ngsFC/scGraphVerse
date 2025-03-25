@@ -1,48 +1,35 @@
-#' Plot Multiple Graphs from Adjacency Matrices
+#' Visualize Graphs from Adjacency Matrices
 #'
-#' This function generates and visualizes graphs from a list of adjacency matrices.
-#' Each adjacency matrix is converted into an `igraph` object and plotted using the
-#' `ggraph` package with a force-directed layout. The generated plots are then 
-#' arranged in a grid for easy comparison. 
+#' This function generates and arranges multiple graph visualizations from a list 
+#' of adjacency matrices. Each matrix is converted to an undirected \pkg{igraph} object 
+#' and plotted using a force-directed layout via the \pkg{ggraph} package.
 #'
-#' @param adj_matrix_list A list of adjacency matrices, where each matrix represents
-#'   an undirected graph. The function assumes that the matrices are symmetric and
-#'   have zeros on the diagonal (no self-loops).
-#' 
-#' @details
-#' Each adjacency matrix in `adj_matrix_list` is processed individually, converting it
-#' into an `igraph` object. The graphs are then visualized using the `ggraph` package, which
-#' employs a force-directed layout for graph visualization. The title of each plot displays the
-#' graph index and basic graph statistics (number of nodes and edges). All individual graphs are
-#' arranged into a grid layout, with the number of columns dynamically determined by the square root
-#' of the total number of graphs.
+#' @param adj_matrix_list A list of square, symmetric adjacency matrices with zeros 
+#'   on the diagonal (no self-loops). Each matrix represents an undirected graph.
 #'
-#' @note
-#' This function requires the following packages:
-#'   - `igraph`
-#'   - `ggraph`
-#'   - `gridExtra`
+#' @details 
+#' Each adjacency matrix is validated and converted into an \code{igraph} object. 
+#' Disconnected nodes (degree zero) are removed to reduce clutter in visualization. 
+#' Graphs are visualized using a force-directed layout with \pkg{ggraph}, and the 
+#' resulting plots are arranged into a grid using \pkg{gridExtra}.
 #'
-#' If any of these packages are not installed, the function will stop and display an error message.
+#' The title of each subplot indicates the graph index, number of nodes, and number of edges.
 #'
-#' @return A combined plot grid of all graphs generated from the adjacency matrices.
-#' Each graph is visualized with nodes and edges, and the title includes the graph's index,
-#' number of nodes, and number of edges.
+#' @note 
+#' This function requires the following packages: \pkg{igraph}, \pkg{ggraph}, and \pkg{gridExtra}. 
+#' If any of these are not installed, the function will return an informative error.
+#'
+#' @return A grid of plots displaying all valid graphs in the input list.
 #'
 #' @examples
-#' # Example adjacency matrices (binary, undirected)
-#' adj_matrix_1 <- matrix(c(0, 1, 0, 1, 1, 0), nrow = 3, byrow = TRUE)
-#' adj_matrix_2 <- matrix(c(0, 1, 1, 1, 0, 0), nrow = 3, byrow = TRUE)
+#' adj1 <- matrix(c(0,1,0,1,0,1,0,1,0), nrow = 3)
+#' adj2 <- matrix(c(0,1,1,1,0,0,1,0,0), nrow = 3)
+#' plotg(list(adj1, adj2))
 #'
-#' # Create a list of adjacency matrices
-#' adj_matrices <- list(adj_matrix_1, adj_matrix_2)
-#'
-#' # Call the plotg function to visualize the graphs
-#' plotg(adj_matrices)
-#'
-#' @importFrom igraph graph_from_adjacency_matrix as_edgelist
+#' @importFrom igraph graph_from_adjacency_matrix delete_vertices V degree vcount ecount
 #' @importFrom ggraph ggraph geom_edge_link geom_node_point
 #' @importFrom gridExtra grid.arrange
+#' @importFrom ggplot2 labs theme_minimal theme element_text
 #'
 #' @export
 

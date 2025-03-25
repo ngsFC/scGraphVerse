@@ -243,6 +243,20 @@ simat <- zinb_simdata(
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n100p500.RDS")
 
 simat <- zinb_simdata(
+  n = 100, 
+  p = nodes, 
+  B = adjm, 
+  mu_range = list(c(1, 4), c(1, 7), c(1, 10), c(1, 12), c(1,15)),
+  mu_noise = c(1, 3, 5, 7, 9),  
+  theta = c(1, 0.7, 0.5, 0.3, 0.2),  
+  pi = c(0.2, 0.2, 0.2, 0.2, 0.2),  
+  kmat = 5,
+  depth_range = c((3*nodes)-500, (3*nodes)+500)
+)
+
+saveRDS(simat, "./../analysis/simulation/simdata/sim_n100p500k5.RDS")
+
+simat <- zinb_simdata(
   n = 500, 
   p = nodes, 
   B = adjm, 
@@ -255,6 +269,9 @@ simat <- zinb_simdata(
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n500p500.RDS")
+
+
+
 
 ```
 

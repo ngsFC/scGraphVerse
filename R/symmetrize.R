@@ -1,36 +1,38 @@
-#' Symmetrize a List of Matrices
+#' Symmetrize a List of Square Matrices
 #'
-#' This function takes a list of matrices and symmetrizes each matrix by ensuring that 
-#' for each pair of off-diagonal elements (i, j) and (j, i), their values are the same. 
-#' The function allows you to specify how to combine the values at (i, j) and (j, i) 
-#' using a weight function, such as the "mean" or "max" of the two values.
+#' This function symmetrizes each square matrix in a list by ensuring that the values at 
+#' positions \eqn{(i, j)} and \eqn{(j, i)} are identical. The symmetry is enforced by combining 
+#' the two values using a specified function, such as the mean or maximum.
 #'
-#' @param matrix_list A list of matrices to be symmetrized. Each matrix should be square 
-#'   and contain numeric values.
-#' @param weight_function A string specifying the function to combine values at (i, j) and (j, i). 
-#'   The default is "mean". Other options include "max", or any other function that can be 
-#'   applied to a vector of two numeric values (e.g., "min").
-#' @param nCores Number of cores for parallel processing. Default is `BiocParallel::bpworkers(BiocParallel::bpparam())`.
-#' 
-#' @return A list of symmetrized matrices. Each matrix will have identical values at positions 
-#'   (i, j) and (j, i), computed using the specified weight function.
+#' @param matrix_list A list of square numeric matrices to be symmetrized.
+#' @param weight_function Character or function. A function (or name of a function) 
+#'   used to combine \eqn{(i, j)} and \eqn{(j, i)} values. Common options include 
+#'   \code{"mean"}, \code{"max"}, \code{"min"}, or a custom function.
+#' @param nCores Integer. Number of CPU cores to use for parallel processing. 
+#'   Defaults to the number of available workers from \pkg{BiocParallel}.
 #'
-#' @details 
-#' For each matrix in the input list, the function processes every pair of off-diagonal elements 
-#' and applies the chosen `weight_function` to symmetrize the matrix. If one of the values at 
-#' (i, j) or (j, i) is zero, the function will use the non-zero value. If both are non-zero, 
-#' the function will apply the `weight_function` to the two values.
+#' @return A list of symmetric matrices, where each output matrix satisfies 
+#'   \eqn{A[i,j] = A[j,i]} for all \eqn{i ≠ j}.
+#'
+#' @details
+#' For each off-diagonal pair of entries \eqn{(i, j)} and \eqn{(j, i)} in the matrix, 
+#' the function:
+#' \itemize{
+#'   \item Uses the non-zero value if one of the two is zero.
+#'   \item Applies the specified \code{weight_function} if both values are non-zero.
+#' }
+#' The diagonal values are not modified.
+#'
+#' Parallel execution is handled via \pkg{BiocParallel} for improved scalability.
 #'
 #' @examples
-#' 
-#' # Example list of matrices
-#' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2, ncol = 2)
-#' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2, ncol = 2)
+#' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
+#' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
 #' matrix_list <- list(mat1, mat2)
 #' 
-#' # Symmetrize with "mean" function
-#' symmetrized_matrices <- symmetrize(matrix_list, weight_function = "mean")
+#' sym_list <- symmetrize(matrix_list, weight_function = "mean")
 #'
+#' @importFrom BiocParallel bplapply bpworkers bpparam MulticoreParam
 #' @export
 
 symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {

@@ -1,105 +1,113 @@
-#' Performance Scores for Predicted Matrices
-#' 
-#' This function evaluates the performance of predicted adjacency matrices against a ground truth matrix.
-#' It computes various classification metrics such as True Positive Rate (TPR), False Positive Rate (FPR),
-#' Precision, F1-score, and Matthews Correlation Coefficient (MCC). Additionally, it visualizes the results
-#' using a radar chart.
+#' Compute Performance Scores for Predicted Adjacency Matrices
 #'
-#' @param ground_truth A square adjacency matrix representing the ground truth network.
-#' @param predicted_list A list of square adjacency matrices to be evaluated against the ground truth.
-#' @param zero_diag Logical; if TRUE, sets the diagonal of the ground truth matrix to zero.
-#' 
-#' @return A list containing a data frame with computed statistics for each predicted matrix.
-#' 
+#' This function evaluates predicted adjacency matrices against a ground truth matrix 
+#' by computing classification metrics including True Positive Rate (TPR), False Positive Rate (FPR),
+#' Precision, F1-score, and Matthews Correlation Coefficient (MCC). A radar plot (spider chart) is 
+#' generated to visually compare the performance of each matrix.
+#'
+#' @param ground_truth A square binary adjacency matrix representing the ground truth network. 
+#'   Values must be 0 or 1. The upper triangle is used for evaluation.
+#' @param predicted_list A list of square adjacency matrices to evaluate. Each matrix must have 
+#'   the same dimensions and row/column names as \code{ground_truth}.
+#' @param zero_diag Logical. If \code{TRUE}, sets the diagonal of the ground truth to zero before evaluation. 
+#'   This removes self-loops from consideration. Default is \code{TRUE}.
+#'
+#' @return A list with the following component:
+#' \describe{
+#'   \item{Statistics}{A data frame of evaluation metrics (TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC) 
+#'                     for each predicted matrix.}
+#' }
+#'
+#' @details
+#' For each predicted matrix, the function computes confusion matrix statistics using the 
+#' upper triangle of the matrices. These are then used to calculate performance metrics. 
+#' A radar chart is plotted to summarize the key evaluation scores visually.
+#'
+#' @examples
+#' \dontrun{
+#' ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+#' diag(ground_truth) <- 0
+#' pred1 <- ground_truth
+#' pred2 <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+#' pscores(ground_truth, list(pred1, pred2))
+#' }
+#'
+#' @importFrom fmsb radarchart
 #' @importFrom dplyr select
 #' @importFrom tidyr all_of
-#' @importFrom fmsb radarchart
-#' 
 #' @export
+
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
-  
-  requireNamespace("dplyr", quietly = TRUE)
-  requireNamespace("tidyr", quietly = TRUE)
-  requireNamespace("fmsb", quietly = TRUE)  # fmsb for radar plot
-  
-  ground_truth <- as.matrix(ground_truth)
-  
-  if (zero_diag) diag(ground_truth) <- 0  
-  
-  all_matrices <- c(list(ground_truth), predicted_list)
-  num_matrices <- length(all_matrices)
-  
-  stats_df <- data.frame(
-    Predicted_Matrix = c("Ground Truth", paste("Matrix", seq_along(predicted_list))),
-    TP = integer(num_matrices),
-    TN = integer(num_matrices),
-    FP = integer(num_matrices),
-    FN = integer(num_matrices),
-    TPR = numeric(num_matrices),
-    FPR = numeric(num_matrices),
-    Precision = numeric(num_matrices),
-    F1 = numeric(num_matrices),
-    MCC = numeric(num_matrices),
-    stringsAsFactors = FALSE
-  )
-  
-  get_upper_tri <- function(mat) {
-    mat[upper.tri(mat)]
+  # Input checks
+  if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
+    stop("`ground_truth` must be a square matrix.")
   }
-  
-  ground_truth_upper <- as.numeric(get_upper_tri(ground_truth) > 0)
-  
-  stats_df[-1, ] <- do.call(rbind, lapply(seq_along(predicted_list), function(i) {
-    matrix_i <- as.matrix(predicted_list[[i]])
-    binary_i <- as.numeric(get_upper_tri(matrix_i) > 0)
-    
-    TP <- sum(binary_i == 1 & ground_truth_upper == 1)
-    TN <- sum(binary_i == 0 & ground_truth_upper == 0)
-    FP <- sum(binary_i == 1 & ground_truth_upper == 0)
-    FN <- sum(binary_i == 0 & ground_truth_upper == 1)
-    
+
+  if (!all(ground_truth %in% c(0, 1))) {
+    stop("`ground_truth` must contain only binary values (0/1).")
+  }
+
+  if (!is.list(predicted_list) || !all(sapply(predicted_list, is.matrix))) {
+    stop("`predicted_list` must be a list of matrices.")
+  }
+
+  # Zero the diagonal if specified
+  ground_truth <- as.matrix(ground_truth)
+  if (zero_diag) diag(ground_truth) <- 0
+
+  # Extract upper triangle values for ground truth
+  get_upper_tri <- function(mat) mat[upper.tri(mat)]
+  ground_truth_upper <- get_upper_tri(ground_truth)
+
+  # Initialize stats
+  metrics <- c("TP", "TN", "FP", "FN", "TPR", "FPR", "Precision", "F1", "MCC")
+  stat_rows <- lapply(seq_along(predicted_list), function(i) {
+    pred <- predicted_list[[i]]
+    if (!all(dim(pred) == dim(ground_truth))) {
+      stop(sprintf("Predicted matrix %d has mismatched dimensions.", i))
+    }
+    pred_upper <- as.numeric(get_upper_tri(pred) > 0)
+    gt_upper <- ground_truth_upper
+
+    TP <- sum(pred_upper == 1 & gt_upper == 1)
+    TN <- sum(pred_upper == 0 & gt_upper == 0)
+    FP <- sum(pred_upper == 1 & gt_upper == 0)
+    FN <- sum(pred_upper == 0 & gt_upper == 1)
+
     TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)
     FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
     Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
     F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
-    
-    denominator <- sqrt(as.numeric(TP + FP) * as.numeric(TP + FN) *
-                          as.numeric(TN + FP) * as.numeric(TN + FN))
-    MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
-    
-    c(Predicted_Matrix = paste("Matrix", i), TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
-  }))
-  
-  stats_df[, 2:ncol(stats_df)] <- lapply(stats_df[, 2:ncol(stats_df)], as.numeric)
-  stats_df_filtered <- stats_df[-1, ]
-  
-  metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
-  radar_data <- stats_df_filtered %>%
-    dplyr::select(Predicted_Matrix, all_of(metrics))
-  
-  max_vals <- rep(1, length(metrics))  # Max values set to 1
-  min_vals <- rep(0, length(metrics))  # Min values set to 0
-  
-  radar_data_scaled <- rbind(max_vals, min_vals, radar_data[, -1])
-  
-  num_matrices <- nrow(stats_df_filtered)
-  colors <- rainbow(num_matrices)  # Generates distinct colors for any number of matrices
-  
+    MCC <- ifelse((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN) > 0,
+                  (TP * TN - FP * FN) / sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)), 0)
+
+    data.frame(Predicted_Matrix = paste("Matrix", i),
+               TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
+  })
+
+  stats_df <- do.call(rbind, stat_rows)
+
+  # Radar chart
+  radar_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
+  radar_data <- stats_df %>%
+    dplyr::select(Predicted_Matrix, dplyr::all_of(radar_metrics))
+
+  radar_scaled <- rbind(rep(1, length(radar_metrics)), rep(0, length(radar_metrics)), radar_data[,-1])
+  colors <- rainbow(nrow(stats_df))
+
   par(mar = c(2, 2, 2, 2))
-  radarchart(
-    radar_data_scaled, 
-    axistype = 2, 
+  fmsb::radarchart(
+    radar_scaled,
+    axistype = 2,
     pcol = colors,
-    pfcol = NA, 
-    plwd = 2, 
-    plty = 1, 
-    #title = "Pentagon Spider Chart of Performance Metrics",
-    cglcol = "grey", cglty = 1, axislabcol = "black",
+    plty = 1,
+    plwd = 2,
+    cglcol = "grey",
     caxislabels = seq(0, 1, 0.2),
-    vlcex = 1.1 
+    vlcex = 1.1
   )
-  
   legend("topright", legend = radar_data$Predicted_Matrix, col = colors, lty = 1, lwd = 2)
-  
-  return(list(Statistics = stats_df_filtered))
+
+  return(list(Statistics = stats_df))
 }
+

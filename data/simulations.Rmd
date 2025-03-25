@@ -20,15 +20,16 @@ knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",me
 # Load Libraries and data
 
 ```{r}
-library(RColorBrewer)
+#library(RColorBrewer)
 library(DT)
 library(tidyverse)
-library(Seurat)
-library(STRINGdb)
-library(SingleCellExperiment)
+#library(Seurat)
+#library(STRINGdb)
+#library(SingleCellExperiment)
 library(scGraphVerse)
-library(BiocParallel)
-library(GENIE3)
+#library(BiocParallel)
+#library(GENIE3)
+#library(fmsb)
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 arboreto <- reticulate::import("arboreto.algo")
@@ -83,9 +84,9 @@ as.data.frame(count_matrices[[1]]) %>%
 set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
   late <- infer_networks(count_matrices, 
-                                method="GENIE3",
-                                nCores = 15)
-)
+                         method="GENIE3",
+                         nCores = 15)
+  )
 
 late[[1]] %>%
   slice_head(n=30) %>% 
@@ -646,8 +647,6 @@ scores.jrf.all$Statistics %>%
                 pageLength = 10), 
               caption = "scores")
 
-keepscores <- scores.jrf.all$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
-  full_join(keepscores)
 
 ```
 
@@ -673,6 +672,9 @@ scores.jrf$Statistics %>%
                 scrollX = TRUE,
                 pageLength = 10), 
               caption = "scores vote-union-iNet")
+
+keepscores <- scores.jrf$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
+  full_join(keepscores)
 
 ```
 

@@ -58,7 +58,7 @@ as.data.frame(adjm) %>%
               pageLength = 10), 
             caption = "Ground Truth")
 
-count_matrices <- readRDS("./../analysis/simulation/simdata/sim_n100p200.RDS")
+count_matrices <- readRDS("./../analysis/simulation/simdata/sim_n500p200.RDS")
 dim(count_matrices[[1]])
 
 count_matrices <- lapply(count_matrices, t)
@@ -739,7 +739,7 @@ df2 <- df2 %>%
   left_join(df1_unique, by = c("Method", "Predicted_Matrix_Mapped" = "Predicted_Matrix")) %>%
   dplyr::select(-Predicted_Matrix_Mapped)
 
-write.table(df2, file.path(ddir, "met_n100_p200.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
+write.table(df2, file.path(ddir, "met_n500_p200.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
 
 ```
 

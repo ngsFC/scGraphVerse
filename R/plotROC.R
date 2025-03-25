@@ -1,42 +1,47 @@
-#' Plot ROC Curve for a List of Matrices
+#' Plot ROC Curves for Inferred Networks
 #'
-#' This function takes a list of matrices and their corresponding ground truth 
-#' to calculate and plot the Receiver Operating Characteristic (ROC) curve for 
-#' each matrix. The function supports both binary and weighted matrices. If the 
-#' matrices are binary, the function computes the True Positive Rate (TPR) and 
-#' False Positive Rate (FPR) for each matrix. If the matrices are weighted, 
-#' the function computes the ROC curve using the predicted values from the weighted matrices.
+#' This function computes and plots Receiver Operating Characteristic (ROC) curves 
+#' for a list of predicted adjacency matrices against a binary ground truth network. 
+#' It supports both binary (0/1) and weighted prediction matrices.
 #'
-#' @param matrices_list A list of matrices. Each matrix is either binary or weighted. 
-#'   For binary matrices, values are assumed to be either 0 or 1.
-#' @param ground_truth A square matrix representing the ground truth. It contains binary values 
-#'   where the upper triangle represents the interactions (1) or lack of interactions (0).
-#' @param plot_title A string to be used as the title for the ROC curve plot.
-#' @param is_binary A boolean indicating whether the matrices in the list are binary. 
-#'   Default is FALSE, indicating that the matrices are weighted.
-#' 
-#' @return A data frame containing the AUC values for each matrix in the list.
-#' 
+#' @param matrices_list A list of square matrices representing predicted interactions. 
+#'   Each matrix must have the same dimensions and row/column names as `ground_truth`. 
+#'   Entries may be binary (0/1) or continuous weights.
+#' @param ground_truth A square binary matrix indicating true interactions (1) 
+#'   in the upper triangle. Must have the same dimensions and names as each matrix in `matrices_list`.
+#' @param plot_title Character. Title of the ROC plot.
+#' @param is_binary Logical. If `TRUE`, matrices are treated as binary predictions. 
+#'   Defaults to `FALSE` for weighted prediction matrices.
+#'
+#' @return A data frame containing the Area Under the Curve (AUC) for each matrix.
+#'
 #' @details 
-#' The function computes the ROC curve for each matrix, calculates the AUC value, 
-#' and plots the ROC curves. For binary matrices, the AUC is calculated based on the 
-#' True Positive Rate (TPR) and False Positive Rate (FPR). For weighted matrices, 
-#' the AUC is computed using the continuous predicted values. The function supports 
-#' multiple matrices in the input list and generates a dynamic plot for comparison.
+#' For binary matrices, the ROC curve is computed using a single TPR/FPR point per matrix. 
+#' For weighted matrices, the full ROC curve is calculated using the continuous prediction scores. 
+#' The resulting plot includes one ROC curve per matrix, with AUC values shown in the legend.
+#'
+#' Diagonal elements are ignored in all comparisons. The function assumes symmetry is not required.
 #'
 #' @examples
 #' \dontrun{
-#' # Example of plotting the ROC curve for a list of weighted matrices
-#' plotROC(matrices_list = list(mat1, mat2), ground_truth = truth_matrix, 
-#'         plot_title = "ROC Curve for Weighted Matrices", is_binary = FALSE)
+#' mat1 <- matrix(runif(100), nrow = 10)
+#' mat2 <- matrix(runif(100), nrow = 10)
+#' ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
+#' diag(ground_truth) <- 0
+#' ground_truth[lower.tri(ground_truth)] <- 0
+#'
+#' plotROC(matrices_list = list(mat1, mat2), 
+#'         ground_truth = ground_truth,
+#'         plot_title = "ROC for Network Inference", 
+#'         is_binary = FALSE)
 #' }
-#' 
+#'
 #' @import ggplot2
 #' @importFrom pROC roc
 #' @importFrom scales hue_pal
-#' @importFrom dplyr bind_rows
-#'
+#' @importFrom dplyr bind_rows arrange
 #' @export
+
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
   
   # Convert the ground truth matrix to a vector of values for the upper triangle

@@ -647,8 +647,6 @@ scores.jrf.all$Statistics %>%
                 pageLength = 10), 
               caption = "scores")
 
-keepscores <- scores.jrf.all$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
-  full_join(keepscores)
 
 ```
 
@@ -675,6 +673,9 @@ scores.jrf$Statistics %>%
                 pageLength = 10), 
               caption = "scores vote-union-iNet")
 
+keepscores <- scores.jrf$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
+  full_join(keepscores)
+i
 ```
 
 ```{r JRF compare late, fig.width=8,fig.width=8}
