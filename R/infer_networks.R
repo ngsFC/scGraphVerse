@@ -7,7 +7,7 @@
 #' @param method Character. One of: "GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb".
 #' @param adjm Optional adjacency matrix (used only for PCzinb row/col naming).
 #' @param nCores Number of CPU cores to use for parallel computation.
-#' @param grnboost_modules Python modules list returned by `init_grnboost2()`, required for GRNBoost2.
+#' @param grnboost_modules Python modules list returned by `init_py()`, required for GRNBoost2.
 #'
 #' @return A list of inferred networks (format varies by method).
 #'
@@ -44,7 +44,7 @@ infer_networks <- function(count_matrices_list,
 
   if (method == "GRNBoost2") {
     if (is.null(grnboost_modules)) {
-      stop("For method 'GRNBoost2', please provide Python modules via `init_grnboost2()`.")
+      stop("For method 'GRNBoost2', please provide Python modules via `init_py()`.")
     }
 
     return(BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
