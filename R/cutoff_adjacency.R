@@ -18,6 +18,8 @@
 #'   matrices. Common choices include \code{"mean"}, \code{"max"}, etc. Passed to \code{symmetrize()}.
 #' @param nCores Integer. Number of processor cores to use for parallel computation. 
 #'   Default is determined from the available BiocParallel workers.
+#' @param grnboost_modules Optional argument passed only when \code{method = "GRNBoost2"}.
+#'   Should be a list of gene modules used for GRNBoost2 inference. Default is \code{NULL}.
 #'
 #' @return A list of binary adjacency matrices (same dimension as \code{weighted_adjm_list}), 
 #'   with edges set to 1 if their weight exceeds the estimated cutoff, and 0 otherwise.
@@ -39,7 +41,8 @@ cutoff_adjacency <- function(count_matrices,
                              n, 
                              method = "GENIE3", 
                              weight_function = "mean", 
-                             nCores = BiocParallel::bpworkers(BiocParallel::bpparam()) - 1) {
+                             nCores = BiocParallel::bpworkers(BiocParallel::bpparam()) - 1,
+                             grnboost_modules = NULL) {
   
   if (!is.list(count_matrices) || !is.list(weighted_adjm_list)) {
     stop("`count_matrices` and `weighted_adjm_list` must be lists.")
@@ -89,7 +92,11 @@ cutoff_adjacency <- function(count_matrices,
 
     # Infer networks from shuffled data
     percentile_values <- unlist(BiocParallel::bplapply(shuffled_list, function(shuf_mat) {
-      inferred <- infer_networks(list(shuf_mat), method = method, nCores = 1)
+      if (method == "GRNBoost2") {
+        inferred <- infer_networks(list(shuf_mat), method = method, nCores = 1, grnboost_modules = grnboost_modules)
+      } else {
+        inferred <- infer_networks(list(shuf_mat), method = method, nCores = 1)
+      }
       adjm <- generate_adjacency(inferred)
       symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
       weights <- symm[upper.tri(symm)]
