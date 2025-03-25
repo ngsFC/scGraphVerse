@@ -5,7 +5,7 @@
 #'
 #' @param count_matrices_list A list of expression matrices (genes × cells) or Seurat / SingleCellExperiment objects.
 #' @param method Character. One of: "GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb".
-#' @param adjm Optional adjacency matrix (used only for PCzinb row/col naming).
+#' @param adjm Optional adjacency matrix (used only for ZILGM and PCzinb row/col naming).
 #' @param nCores Number of CPU cores to use for parallel computation.
 #' @param grnboost_modules Python modules list returned by `init_py()`, required for GRNBoost2.
 #'
@@ -18,7 +18,7 @@ infer_networks <- function(count_matrices_list,
                            adjm = NULL,
                            nCores = BiocParallel::bpworkers(BiocParallel::bpparam()) - 1,
                            grnboost_modules = NULL) {
-  
+
   method <- match.arg(method, choices = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
 
   # Normalize all inputs to matrices
@@ -34,7 +34,7 @@ infer_networks <- function(count_matrices_list,
     }
   })
 
-  # --- GRN inference by method ---
+  # --- GENIE3 ---
   if (method == "GENIE3") {
     return(BiocParallel::bplapply(count_matrices_list, function(mat) {
       adj <- GENIE3::GENIE3(mat, nCores = nCores)
@@ -42,6 +42,7 @@ infer_networks <- function(count_matrices_list,
     }, BPPARAM = BiocParallel::MulticoreParam(nCores)))
   }
 
+  # --- GRNBoost2 ---
   if (method == "GRNBoost2") {
     if (is.null(grnboost_modules)) {
       stop("For method 'GRNBoost2', please provide Python modules via `init_py()`.")
@@ -60,17 +61,61 @@ infer_networks <- function(count_matrices_list,
     }, BPPARAM = BiocParallel::MulticoreParam(nCores)))
   }
 
+  # --- ZILGM ---
   if (method == "ZILGM") {
-    return(lapply(count_matrices_list, function(mat) {
+    zilgm_fits <- BiocParallel::bplapply(count_matrices_list, function(mat) {
       lambda_max <- ZILGM::find_lammax(t(mat))
       lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
-      fit <- ZILGM::zilgm(X = t(mat), lambda = lambda_seq,
-                          family = "NBII", update_type = "IRLS", do_boot = TRUE,
-                          boot_num = 10, sym = "OR", nCores = nCores)
-      fit$network[[fit$opt_index]]
-    }))
+      fit <- ZILGM::zilgm(
+        X = t(mat),
+        lambda = lambda_seq,
+        family = "NBII",
+        update_type = "IRLS",
+        do_boot = TRUE,
+        boot_num = 10,
+        sym = "OR",
+        nCores = nCores
+      )
+      fit
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores))
+
+    network_results <- lapply(zilgm_fits, function(fit) {
+      mat <- fit$network[[fit$opt_index]]
+      if (!is.null(adjm)) {
+        rownames(mat) <- rownames(adjm)
+        colnames(mat) <- colnames(adjm)
+      }
+      mat
+    })
+
+    lambda_results <- lapply(zilgm_fits, function(fit) {
+      nets <- lapply(fit$network, as.matrix)
+      names(nets) <- fit$lambda
+      if (!is.null(adjm)) {
+        for (i in seq_along(nets)) {
+          rownames(nets[[i]]) <- rownames(adjm)
+          colnames(nets[[i]]) <- colnames(adjm)
+        }
+      }
+      nets
+    })
+
+    return(list(network_results = network_results, lambda_results = lambda_results))
   }
 
+  # --- PCzinb ---
+  if (method == "PCzinb") {
+    return(BiocParallel::bplapply(count_matrices_list, function(mat) {
+      net <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
+      if (!is.null(adjm)) {
+        rownames(net) <- rownames(adjm)
+        colnames(net) <- colnames(adjm)
+      }
+      net
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores)))
+  }
+
+  # --- JRF (joint inference across all matrices) ---
   if (method == "JRF") {
     norm_list <- BiocParallel::bplapply(count_matrices_list, function(x) {
       (x - mean(x)) / sd(x)
@@ -83,17 +128,6 @@ infer_networks <- function(count_matrices_list,
       mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     )
     return(list(rf))
-  }
-
-  if (method == "PCzinb") {
-    return(lapply(count_matrices_list, function(mat) {
-      net <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
-      if (!is.null(adjm)) {
-        rownames(net) <- rownames(adjm)
-        colnames(net) <- colnames(adjm)
-      }
-      net
-    }))
   }
 }
 
