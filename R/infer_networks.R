@@ -105,7 +105,7 @@ infer_networks <- function(count_matrices_list,
       nets
     })
 
-    return(list(network_results = network_results, lambda_results = lambda_results))
+    return(list(network_results = lapply(network_results, as.matrix), lambda_results = lambda_results))
   }
 
   # --- PCzinb ---

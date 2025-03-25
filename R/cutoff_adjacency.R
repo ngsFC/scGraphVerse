@@ -39,7 +39,7 @@ cutoff_adjacency <- function(count_matrices,
                              n, 
                              method = "GENIE3", 
                              weight_function = "mean", 
-                             BPPARAM = BiocParallel::bpparam()) {
+                             nCores = BiocParallel::bpworkers(BiocParallel::bpparam()) - 1) {
   
   if (!is.list(count_matrices) || !is.list(weighted_adjm_list)) {
     stop("`count_matrices` and `weighted_adjm_list` must be lists.")
@@ -60,7 +60,7 @@ cutoff_adjacency <- function(count_matrices,
     } else {
       return(as.matrix(obj))
     }
-  }, BPPARAM = BPPARAM)
+  }, BPPARAM = BiocParallel::MulticoreParam(nCores))
 
   # Function to shuffle matrix rows with a seed vector
   shuffle_rows <- function(matrix, seed_vector) {
@@ -77,7 +77,7 @@ cutoff_adjacency <- function(count_matrices,
     BiocParallel::bplapply(seq_len(n), function(i) {
       seed_vector <- sample(base_seed + i + seq_len(nrow(original_matrix)))
       shuffle_rows(original_matrix, seed_vector)
-    }, BPPARAM = BPPARAM)
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   }
 
   # Main logic: for each count matrix
@@ -94,13 +94,13 @@ cutoff_adjacency <- function(count_matrices,
       symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
       weights <- symm[upper.tri(symm)]
       quantile(sort(weights, decreasing = TRUE), 0.99, names = FALSE)
-    }, BPPARAM = BPPARAM))
+    }, BPPARAM = BiocParallel::MulticoreParam(nCores)))
 
     # Apply average cutoff
     avg_cutoff <- mean(percentile_values)
     binary_mat <- ifelse(weighted_adjm_list[[idx]] > avg_cutoff, 1, 0)
     return(binary_mat)
-  }, BPPARAM = BPPARAM)
+  }, BPPARAM = BiocParallel::MulticoreParam(nCores))
 
   return(binary_adjm_list)
 }
