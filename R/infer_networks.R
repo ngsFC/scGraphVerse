@@ -5,7 +5,7 @@
 #'
 #' @param count_matrices_list A list of expression matrices (genes × cells) or Seurat / SingleCellExperiment objects.
 #' @param method Character. One of: "GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb".
-#' @param adjm Optional adjacency matrix (used only for ZILGM and PCzinb row/col naming).
+#' @param adjm Optional adjacency matrix (used to rename output matrices).
 #' @param nCores Number of CPU cores to use for parallel computation.
 #' @param grnboost_modules Python modules list returned by `init_py()`, required for GRNBoost2.
 #'
@@ -64,6 +64,7 @@ infer_networks <- function(count_matrices_list,
   # --- ZILGM ---
   if (method == "ZILGM") {
     zilgm_fits <- BiocParallel::bplapply(count_matrices_list, function(mat) {
+      gene_names <- rownames(mat)  # Save before transpose
       lambda_max <- ZILGM::find_lammax(t(mat))
       lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
       fit <- ZILGM::zilgm(
@@ -76,11 +77,13 @@ infer_networks <- function(count_matrices_list,
         sym = "OR",
         nCores = nCores
       )
-      fit
+      list(fit = fit, genes = gene_names)
     }, BPPARAM = BiocParallel::MulticoreParam(nCores))
 
-    network_results <- lapply(zilgm_fits, function(fit) {
-      mat <- fit$network[[fit$opt_index]]
+    network_results <- lapply(zilgm_fits, function(result) {
+      mat <- result$fit$network[[result$fit$opt_index]]
+      rownames(mat) <- result$genes
+      colnames(mat) <- result$genes
       if (!is.null(adjm)) {
         rownames(mat) <- rownames(adjm)
         colnames(mat) <- colnames(adjm)
@@ -88,11 +91,13 @@ infer_networks <- function(count_matrices_list,
       mat
     })
 
-    lambda_results <- lapply(zilgm_fits, function(fit) {
-      nets <- lapply(fit$network, as.matrix)
-      names(nets) <- fit$lambda
-      if (!is.null(adjm)) {
-        for (i in seq_along(nets)) {
+    lambda_results <- lapply(zilgm_fits, function(result) {
+      nets <- lapply(result$fit$network, as.matrix)
+      names(nets) <- result$fit$lambda
+      for (i in seq_along(nets)) {
+        rownames(nets[[i]]) <- result$genes
+        colnames(nets[[i]]) <- result$genes
+        if (!is.null(adjm)) {
           rownames(nets[[i]]) <- rownames(adjm)
           colnames(nets[[i]]) <- colnames(adjm)
         }
