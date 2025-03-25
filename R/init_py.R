@@ -9,7 +9,7 @@
 #' @return A list containing Python modules: `arboreto`, `pandas`, and `numpy`.
 #'
 #' @export
-init_grnboost2 <- function(python_path = "/usr/bin/python3", required = TRUE) {
+init_py <- function(python_path = "/usr/bin/python3", required = TRUE) {
   reticulate::use_python(python_path, required = required)
 
   modules <- list(
