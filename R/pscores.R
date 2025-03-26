@@ -78,8 +78,9 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
     FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
     Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
     F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
-    MCC <- ifelse((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN) > 0,
-                  (TP * TN - FP * FN) / sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)), 0)
+    denominator <- sqrt(as.numeric(TP + FP) * as.numeric(TP + FN) *
+                          as.numeric(TN + FP) * as.numeric(TN + FN))
+    MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
 
     data.frame(Predicted_Matrix = paste("Matrix", i),
                TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
