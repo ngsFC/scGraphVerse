@@ -1,40 +1,12 @@
----
-title: "Simulations Inferred network and Performances"
-author: "Francesco Cecere"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    code_folding: hide
-    theme: cerulean
-    df_print: paged
-    toc: yes
-    toc_float: yes
-  pdf_document:
-    toc: yes
----
+setwd("/home/francescoc/Desktop/scGraphVerse/data/")
+ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
+pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 
-```{r}
-knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",message=FALSE, warning=FALSE)
-```
+run_single_simulation <- function(run_id = 1, seed_base = 1234) {
+  set.seed(seed_base + run_id)
 
-# Load Libraries and data
-
-```{r}
-#library(RColorBrewer)
-library(DT)
 library(tidyverse)
-#library(Seurat)
-#library(STRINGdb)
-#library(SingleCellExperiment)
 library(scGraphVerse)
-#library(BiocParallel)
-#library(GENIE3)
-#library(fmsb)
-
-#reticulate::use_python("/usr/bin/python3", required = TRUE)
-#arboreto <- reticulate::import("arboreto.algo")
-#pandas <- reticulate::import("pandas")
-#numpy <- reticulate::import("numpy")
 modules <- init_py(python_path ="/usr/bin/python3", required = TRUE )
 
 time <- list()
@@ -42,160 +14,58 @@ time <- list()
 ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
 pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 
-```
-
 # Adjacency and Count matrices
 
-```{r}
 adjm <- as.matrix(read.table("./../analysis/simulation/adjacency/adjm_top200_p100.txt"))
 colnames(adjm) <- rownames(adjm)
 
-as.data.frame(adjm) %>%
-  datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "Ground Truth")
-
 count_matrices <- readRDS("./../analysis/simulation/simdata/sim_n100p100.RDS")
-dim(count_matrices[[1]])
-
 count_matrices <- lapply(count_matrices, t)
 
-as.data.frame(count_matrices[[1]]) %>%
-  slice_head(n=10) %>%
-  datatable(extensions = 'Buttons',
-            options = list(
-              dom = 'Bfrtip',
-              buttons = c('csv', 'excel'),
-              scrollX = TRUE,
-              pageLength = 10), 
-            caption = "Simulated Count matrix")
-
-```
-
-
 # GENIE3
-
 ## Late integration
 
-```{r}
 set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GENIE3",
                          nCores = 15)
-  )
-
-late[[1]] %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 output")
-```
+)
 
 ### Symmetrize and ROC
 
-```{r}
 late_wadj <- generate_adjacency(late)
 slate_wadj <- symmetrize(late_wadj, weight_function = "mean")
-
-as.data.frame(slate_wadj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 symmetric weighted adjacency")
-```
-
-
-```{r}
 late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - GENIE3 Late Integration", is_binary = F)
-```
 
 ### Cutoff
 
-```{r}
 slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                                     weighted_adjm_list = slate_wadj, 
-                                     n = 3,
-                                     method = "GENIE3",
-                                     nCores = 15)
+                              weighted_adjm_list = slate_wadj, 
+                              n = 3,
+                              method = "GENIE3",
+                              nCores = 15)
 
-as.data.frame(slate_adj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 symmetric adjacency")
-```
-
-
-```{r}
 scores.late.all <- pscores(adjm, slate_adj)
-scores.late.all$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores late")
-
-```
-
-
-```{r, fig.width=10,fig.width=15}
 plotg(slate_adj)
-```
 
 ### Consensus
 
-```{r}
 consesusm <- create_consensus(slate_adj, method="vote")
 consesusu <- create_consensus(slate_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = slate_adj, weighted_list = slate_wadj, method = "INet", threshold = 0.05, ncores = 15)
-```
 
-
-```{r}
 scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
 
-scores.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores vote-union-iNet")
-
 keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm))
-```
 
 ### Plot comparison
 
-```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
-```
 
 ### Community detection
-
-```{r, fig.width=15, fig.height=5}
 
 adj_comm <- community_path(adjm)
 comm_consesusm <- community_path(consesusm)
@@ -206,17 +76,11 @@ topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, c
 
 keepscores <- topscore$topology_similarity %>% rownames_to_column("Predicted_Matrix") %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
-
 keepscores <- topscore$community_metrics %>% rownames_to_column("Predicted_Matrix") %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
-```
-
-
-
 ## Early integration
 
-```{r}
 count_matrices <- lapply(count_matrices, as.matrix)
 early_matrix <- list(earlyj(count_matrices, rowg = T))
 
@@ -225,92 +89,33 @@ time[["GENIE3_early_15Cores"]] <- system.time(
   early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
 
-as.data.frame(early[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 early output")
-
-```
-
 ### Symmetrize and ROC
 
-```{r}
 early_wadj <- generate_adjacency(early)
 searly_wadj <- symmetrize(early_wadj, weight_function = "mean")
 
-as.data.frame(searly_wadj[[1]]) %>%
-  slice_head(n=30) %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 early symmetric weighted adjacency")
-```
-
-
-```{r}
 early_auc <- plotROC(searly_wadj, adjm, plot_title = "ROC curve - GENIE3 Early Integration", is_binary = F)
-```
 
 ### Cutoff
 
-```{r}
 searly_adj <- cutoff_adjacency(count_matrices = early_matrix,
-                                      weighted_adjm_list = searly_wadj, 
-                                      n = 2,
-                                      method = "GENIE3",
-                                      nCores = 15)
+                               weighted_adjm_list = searly_wadj, 
+                               n = 2,
+                               method = "GENIE3",
+                               nCores = 15)
 
-as.data.frame(searly_adj[[1]]) %>%
-  slice_head(n=30) %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GENIE3 early symmetric adjacency")
-```
-
-
-```{r}
 scores.early <- pscores(adjm, searly_adj)
-
-scores.early$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores early")
 
 keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GENIE3"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
-```
-
-
-```{r, fig.width=10,fig.width=15}
 plotg(searly_adj)
-```
 
 ### Plot comparison
 
-```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = searly_adj[[1]], reference_matrix = adjm, false_plot = F)
-```
 
 ### Community detection
-
-```{r, fig.width=15, fig.height=5}
 
 comm_consesusm <- community_path(searly_adj[[1]])
 topscore <- community_similarity(adj_comm,list(comm_consesusm))
@@ -329,133 +134,53 @@ keepscores$Communities[early_row_index]  <- topology_metrics$Communities
 keepscores$Density[early_row_index]      <- topology_metrics$Density
 keepscores$Transitivity[early_row_index] <- topology_metrics$Transitivity
 
-```
-
 # GRNBoost2
-
 ## Late integration
-
-```{r}
 set.seed(1234)
 time[["GRNBoost2_late"]] <- system.time(
   late <- infer_networks(count_matrices, 
-                                method="GRNBoost2",
-                                nCores = 15,
-                                grnboost_modules = modules)
+                         method="GRNBoost2",
+                         nCores = 15,
+                         grnboost_modules = modules)
 )
-
-as.data.frame(late[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 late output")
-
-```
 
 ### Symmetrize and ROC
 
-```{r}
 late_wadj <- generate_adjacency(late)
 slate_wadj <- symmetrize(late_wadj, weight_function = "mean")
 
-as.data.frame(slate_wadj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 symmetric weighted adjacency")
-```
-
-
-```{r}
 late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - grnboost Late Integration")
-```
 
 ### Cutoff
 
-```{r}
 slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                                     weighted_adjm_list = slate_wadj, 
-                                     n = 3,
-                                     method = "GRNBoost2",
-                                     nCores = 15,
-                                     grnboost_modules = modules)
+                              weighted_adjm_list = slate_wadj, 
+                              n = 3,
+                              method = "GRNBoost2",
+                              nCores = 15,
+                              grnboost_modules = modules)
 
-as.data.frame(slate_adj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 symmetric adjacency")
-```
-
-
-```{r}
 scores.late.all <- pscores(adjm, slate_adj)
-scores.late.all$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores late")
 
-```
-
-
-```{r, fig.width=10,fig.width=15}
 plotg(slate_adj)
-```
 
 ### Consensus
 
-```{r}
 consesusm <- create_consensus(slate_adj, method="vote")
 consesusu <- create_consensus(slate_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = slate_adj, weighted_list = slate_wadj, method = "INet", threshold = 0.05)
-```
-
-
-```{r}
 scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
-
-scores.late$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores vote-union-iNet")
 
 keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
-```
-
 ### Plot comparison
 
-```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
-```
-
 
 ### Community detection
-
-```{r, fig.width=15, fig.height=5}
 
 adj_comm <- community_path(adjm)
 comm_consesusm <- community_path(consesusm)
@@ -477,7 +202,6 @@ keepscores <- keepscores %>%
   ) %>%
   dplyr::select(-ends_with("_check"))
 
-
 check  <- topscore$community_metrics %>% rownames_to_column("Predicted_Matrix") %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm))
 
 # Join check to keepscores by Predicted_Matrix and Method (to be safe)
@@ -490,11 +214,8 @@ keepscores <- keepscores %>%
   ) %>%
   dplyr::select(-ends_with("_check"))
 
-```
-
 ## Early integration
 
-```{r}
 early_matrix <- list(earlyj(count_matrices))
 
 set.seed(1234)
@@ -505,96 +226,35 @@ time[["GRNBoost2_early"]] <- system.time(
                           nCores = 15)
 )
 
-as.data.frame(early[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 early output")
-
-```
-
 ### Symmetrize and ROC
 
-```{r}
 early_wadj <- generate_adjacency(early)
 searly_wadj <- symmetrize(early_wadj, weight_function = "mean")
 
-as.data.frame(early_wadj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 symmetric weighted adjacency")
-
-```
-
-
-```{r}
 early_auc <- plotROC(searly_wadj, adjm, plot_title = "ROC curve - grnboost Early Integration")
-```
 
 ### Cutoff
 
-```{r}
 searly_adj <- cutoff_adjacency(count_matrices = early_matrix,
-                                      weighted_adjm_list = searly_wadj, 
-                                      n = 2,
-                                      method = "GRNBoost2",
-                                      nCores = 15,
-                                     grnboost_modules = modules
-                            )
+                               weighted_adjm_list = searly_wadj, 
+                               n = 2,
+                               method = "GRNBoost2",
+                               nCores = 15,
+                               grnboost_modules = modules
+)
 
-as.data.frame(searly_adj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "GRNBoost2 symmetric adjacency")
-```
-
-
-```{r}
 scores.early <- pscores(adjm, searly_adj)
-
-scores.early$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores early")
 
 keepscores <- scores.early$Statistics %>% mutate(Predicted_Matrix=c("early"), Method=c("GRNBoost2"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
-```
-
-
-```{r, fig.width=10,fig.width=15}
 plotg(searly_adj)
-```
 
 ### Plot comparison
 
-```{r, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = searly_adj[[1]], reference_matrix = adjm, false_plot = F)
-```
-
 
 ### Community detection
-
-```{r, fig.width=15, fig.height=5}
 
 comm_consesusm <- community_path(searly_adj[[1]])
 topscore <- community_similarity(adj_comm,list(comm_consesusm))
@@ -613,42 +273,25 @@ keepscores$Communities[early_row_index]  <- topology_metrics$Communities
 keepscores$Density[early_row_index]      <- topology_metrics$Density
 keepscores$Transitivity[early_row_index] <- topology_metrics$Transitivity
 
-
-```
-
 # Joint Integration
 
 ## Joint Random Forest
 
-```{r JRF inference}
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
 set.seed(1234)
 time[["JRF_15Cores"]] <- system.time(
   jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
 )
- 
-as.data.frame(jrf_mat[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "JRF output")
-
-```
 
 ### Prepare the output
 
-```{r}
 jrf_list <- list()
 
 importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
 
 for (i in seq_along(importance_columns)) {
-# Select the 'gene1', 'gene2', and the current 'importance' column
+  # Select the 'gene1', 'gene2', and the current 'importance' column
   df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
   
   # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
@@ -658,110 +301,39 @@ for (i in seq_along(importance_columns)) {
   jrf_list[[i]] <- df
 }
 
-as.data.frame(jrf_list[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "JRF output")
-```
-
 ### symmetrize Output and ROC
 
-```{r JRF symmetrizeROC late}
 jrf_wadj <- generate_adjacency(jrf_list)
 sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
 jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = F)
 
-as.data.frame(sjrf_wadj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "JRF symmetrize output")
-```
-
 ### Generate Adjacency and Apply Cutoff
 
-```{r JRF cutoff late}
 sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                 weighted_adjm_list = sjrf_wadj, 
-                 n = 3,
-                 method = "JRF")
-
-as.data.frame(sjrf_adj[[1]]) %>%
-  slice_head(n=30) %>% 
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "JRF adjacency")
-
-```
+                             weighted_adjm_list = sjrf_wadj, 
+                             n = 3,
+                             method = "JRF")
 
 ### Comparison with the Ground Truth
 
-```{r JRF metrics late}
 scores.jrf.all <- pscores(adjm, sjrf_adj)
-
-scores.jrf.all$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores")
-
-
-```
-
-```{r JRF plotg late, fig.width=10,fig.width=15}
 plotg(sjrf_adj)
-```
 
-```{r JRF consensus and score late}
 consesusm <- create_consensus(sjrf_adj, method="vote")
 consesusu <- create_consensus(sjrf_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = sjrf_adj, weighted_list = sjrf_wadj, method = "INet", threshold = 0.1, ncores = 15)
-```
 
-
-```{r}
 scores.jrf <- pscores(adjm, list(consesusm, consesusu, consesunet))
-
-scores.jrf$Statistics %>%
-    datatable(extensions = 'Buttons',
-              options = list(
-                dom = 'Bfrtip',
-                buttons = c('csv', 'excel'),
-                scrollX = TRUE,
-                pageLength = 10), 
-              caption = "scores vote-union-iNet")
 
 keepscores <- scores.jrf$Statistics %>% mutate(Predicted_Matrix=c("vote", "union", "inet"), Method=c("JRF"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm)) %>%
   full_join(keepscores)
 
-```
-
-```{r JRF compare late, fig.width=8,fig.width=8}
 compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
 compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
-```
-
 
 ### Community detection
 
-```{r, fig.width=5, fig.height=5}
 comm_consesusm <- community_path(consesusm)
 comm_consesusu <- community_path(consesusu)
 comm_consesunet <- community_path(consesunet)
@@ -796,12 +368,8 @@ keepscores <- keepscores %>%
   ) %>%
   dplyr::select(-ends_with("_check"))
 
-```
-
-
 # Method Comparison
 
-```{r}
 time_data <- data.frame(
   Method = names(time),
   Time_in_Seconds = sapply(time, function(x) if ("elapsed" %in% names(x)) x["elapsed"] else NA)
@@ -841,11 +409,17 @@ df2 <- df2 %>%
   left_join(df1_unique, by = c("Method", "Predicted_Matrix_Mapped" = "Predicted_Matrix")) %>%
   dplyr::select(-Predicted_Matrix_Mapped)
 
-write.table(df2, file.path(ddir, "met_n100_p100.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
+return(df2)
+}
 
-```
+all_runs <- lapply(1:10, function(i) run_single_simulation(run_id = i))
+all_df <- bind_rows(all_runs, .id = "Run")
+
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+
+write.table(summary_df, file = file.path(ddir, "simp100_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 
-```{r}
-sessionInfo()
-```
+

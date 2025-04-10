@@ -27,7 +27,9 @@ library(ggplot2)
 
 
 ```{r}
-met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p100.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p200.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p500.txt")
+met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp100_10runs.txt",
+               "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp200_10runs.txt",
+               "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp500_10runs.txt")
 
 read_and_fulljoin <- function(files) {
   df_list <- lapply(files, read.table, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -41,14 +43,15 @@ met_data <- read_and_fulljoin(met_files)
 
 ```{r}
 met_late <- met_data %>%
-  mutate(Ratio = as.character(Ratio),
-         p = as.character(p)) %>%
-  filter(Predicted_Matrix %in% c("vote", "union", "inet"))
+  mutate(Ratio = as.character(Ratio_mean),
+         p = as.character(p_mean)) %>%
+  filter(Predicted_Matrix %in% c("vote", "union", "inet")) %>%
+  filter(Method != "JRF")
 
 met_late_long <- met_late %>%
-  pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes"), 
+  pivot_longer(cols = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean"), 
                names_to = "Metric", values_to = "Value") %>%
-  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "F1", "Precision", "MCC", "Time_in_Minutes")),
+  mutate(Metric = factor(Metric, levels = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean")),
          p = factor(p, levels = c("82", "217", "554")))
 
 plot_base <- ggplot(met_late_long, aes(x = p, y = Value, 
@@ -57,10 +60,10 @@ plot_base <- ggplot(met_late_long, aes(x = p, y = Value,
                                        group = interaction(Method, Predicted_Matrix))) +
   geom_line(size = 0.4, alpha=0.7) +  # Slightly increase line size and adjust transparency
   geom_point(size = 2, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
   theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  ggtitle("n=100") +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  ggtitle("n=100 k=3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -70,32 +73,12 @@ print(plot_final)
 
 ggsave("./../analysis/simulation/plot/late_dots_n100.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
 
-plot_base <- ggplot(met_late_long, aes(x = p, y = Value, 
-                                       color = Method, 
-                                       linetype = Predicted_Matrix,  # Change to linetype
-                                       group = interaction(Method, Predicted_Matrix))) +
-  geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
-  geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
-  theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  scale_linetype_manual("Late Strategy", values = c("vote"="solid", "union"="dashed", "inet"="dotted")) +
-  ggtitle("n=100") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
-
-plot_final <- plot_base + facet_wrap(~Metric, scales = "free", ncol = 3)
-
-print(plot_final)
-ggsave("./../analysis/simulation/plot/late_line_n100.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
-
 ```
 
 ```{r}
 met_comp <- met_data %>%
-  mutate(Ratio = as.character(Ratio),
-         p = as.character(p)) %>%
+  mutate(Ratio = as.character(Ratio_mean),
+         p = as.character(p_mean)) %>%
   filter(!Predicted_Matrix %in% c("inet", "union")) %>%
   mutate(
     Predicted_Matrix = ifelse(Predicted_Matrix == "vote", "late", Predicted_Matrix),
@@ -103,9 +86,9 @@ met_comp <- met_data %>%
   )
 
 met_comp_long <- met_comp %>%
-  pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes"), 
+  pivot_longer(cols = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean"), 
                names_to = "Metric", values_to = "Value") %>%
-  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "F1", "Precision", "MCC", "Time_in_Minutes")),
+  mutate(Metric = factor(Metric, levels = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean")),
          p = factor(p, levels = c("82", "217", "554")))
 
 plot_base <- ggplot(met_comp_long, aes(x = p, y = Value, 
@@ -114,11 +97,11 @@ plot_base <- ggplot(met_comp_long, aes(x = p, y = Value,
                                        group = interaction(Method, Predicted_Matrix))) +
   geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
   geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
   theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  scale_linetype_manual("Late Strategy", values = c("late"="solid", "early"="dashed", "joint"="dotted")) +  # Custom line types
-  ggtitle("n=100") +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  scale_linetype_manual("Integration", values = c("late"="dashed", "early"="dotted", "joint"="solid")) +  # Custom line types
+  ggtitle("n=100 k=3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -130,10 +113,39 @@ ggsave("./../analysis/simulation/plot/metrics_comp.png", plot_final, width = 8, 
 ```
 
 
+```{r}
+met_comp_long <- met_comp %>%
+  pivot_longer(cols = c("Modularity_mean", "Density_mean", "Transitivity_mean", "VI_mean", "NMI_mean", "ARI_mean"), 
+               names_to = "Metric", values_to = "Value") %>%
+  mutate(Metric = factor(Metric, levels = c("Modularity_mean", "Density_mean", "Transitivity_mean", "VI_mean", "NMI_mean", "ARI_mean")),
+         p = factor(p, levels = c("82", "217", "554")))
+
+plot_base <- ggplot(met_comp_long, aes(x = p, y = Value, 
+                                       color = Method, 
+                                       linetype = Predicted_Matrix,  # Change to linetype
+                                       group = interaction(Method, Predicted_Matrix))) +
+  geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
+  geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
+  theme_minimal() +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  scale_linetype_manual("Integration", values = c("late"="dashed", "early"="dotted", "joint"="solid")) +  # Custom line types
+  ggtitle("n=100 k=3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+plot_final <- plot_base + facet_wrap(~Metric, scales = "free", ncol = 3)
+
+print(plot_final)
+ggsave("./../analysis/simulation/plot/metrics_graph_comp.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
+
+```
 
 
 ```{r}
-met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n500_p100.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n500_p200.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n500_p500.txt")
+met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp100n500_10runs.txt",
+               "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp200n500_10runs.txt",
+               "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp500n500_10runs.txt")
 
 read_and_fulljoin <- function(files) {
   df_list <- lapply(files, read.table, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -147,14 +159,15 @@ met_data <- read_and_fulljoin(met_files)
 
 ```{r}
 met_late <- met_data %>%
-  mutate(Ratio = as.character(Ratio),
-         p = as.character(p)) %>%
-  filter(Predicted_Matrix %in% c("vote", "union", "inet"))
+  mutate(Ratio = as.character(Ratio_mean),
+         p = as.character(p_mean)) %>%
+  filter(Predicted_Matrix %in% c("vote", "union", "inet")) %>%
+  filter(Method != "JRF")
 
 met_late_long <- met_late %>%
-  pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes"), 
+  pivot_longer(cols = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean"), 
                names_to = "Metric", values_to = "Value") %>%
-  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "F1", "Precision", "MCC", "Time_in_Minutes")),
+  mutate(Metric = factor(Metric, levels = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean")),
          p = factor(p, levels = c("82", "217", "554")))
 
 plot_base <- ggplot(met_late_long, aes(x = p, y = Value, 
@@ -163,10 +176,10 @@ plot_base <- ggplot(met_late_long, aes(x = p, y = Value,
                                        group = interaction(Method, Predicted_Matrix))) +
   geom_line(size = 0.4, alpha=0.7) +  # Slightly increase line size and adjust transparency
   geom_point(size = 2, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
   theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  ggtitle("n=500") +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  ggtitle("n=500 k=3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -176,32 +189,12 @@ print(plot_final)
 
 ggsave("./../analysis/simulation/plot/late_dots_n500.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
 
-plot_base <- ggplot(met_late_long, aes(x = p, y = Value, 
-                                       color = Method, 
-                                       linetype = Predicted_Matrix,  # Change to linetype
-                                       group = interaction(Method, Predicted_Matrix))) +
-  geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
-  geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
-  theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  scale_linetype_manual("Late Strategy", values = c("vote"="solid", "union"="dashed", "inet"="dotted")) +
-  ggtitle("n=500") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
-
-plot_final <- plot_base + facet_wrap(~Metric, scales = "free", ncol = 3)
-
-print(plot_final)
-ggsave("./../analysis/simulation/plot/late_line_n500.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
-
 ```
 
 ```{r}
 met_comp <- met_data %>%
-  mutate(Ratio = as.character(Ratio),
-         p = as.character(p)) %>%
+  mutate(Ratio = as.character(Ratio_mean),
+         p = as.character(p_mean)) %>%
   filter(!Predicted_Matrix %in% c("inet", "union")) %>%
   mutate(
     Predicted_Matrix = ifelse(Predicted_Matrix == "vote", "late", Predicted_Matrix),
@@ -209,9 +202,9 @@ met_comp <- met_data %>%
   )
 
 met_comp_long <- met_comp %>%
-  pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes"), 
+  pivot_longer(cols = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean"), 
                names_to = "Metric", values_to = "Value") %>%
-  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "F1", "Precision", "MCC", "Time_in_Minutes")),
+  mutate(Metric = factor(Metric, levels = c("TPR_mean", "FPR_mean", "Precision_mean", "F1_mean", "MCC_mean", "Time_in_Minutes_mean")),
          p = factor(p, levels = c("82", "217", "554")))
 
 plot_base <- ggplot(met_comp_long, aes(x = p, y = Value, 
@@ -220,11 +213,11 @@ plot_base <- ggplot(met_comp_long, aes(x = p, y = Value,
                                        group = interaction(Method, Predicted_Matrix))) +
   geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
   geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
-  labs(x = "N.Genes", y = "Value", color = "Method", shape = "Late Strategy") +
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
   theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  scale_linetype_manual("Late Strategy", values = c("late"="solid", "early"="dashed", "joint"="dotted")) +  # Custom line types
-  ggtitle("n=500") +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  scale_linetype_manual("Integration", values = c("late"="dashed", "early"="dotted", "joint"="solid")) +  # Custom line types
+  ggtitle("n=500 k=3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -234,6 +227,41 @@ print(plot_final)
 ggsave("./../analysis/simulation/plot/metrics_comp_n500.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
 
 ```
+
+
+```{r}
+met_comp_long <- met_comp %>%
+  pivot_longer(cols = c("Modularity_mean", "Density_mean", "Transitivity_mean", "VI_mean", "NMI_mean", "ARI_mean"), 
+               names_to = "Metric", values_to = "Value") %>%
+  mutate(Metric = factor(Metric, levels = c("Modularity_mean", "Density_mean", "Transitivity_mean", "VI_mean", "NMI_mean", "ARI_mean")),
+         p = factor(p, levels = c("82", "217", "554")))
+
+plot_base <- ggplot(met_comp_long, aes(x = p, y = Value, 
+                                       color = Method, 
+                                       linetype = Predicted_Matrix,  # Change to linetype
+                                       group = interaction(Method, Predicted_Matrix))) +
+  geom_line(size = 0.7, alpha=0.8) +  # Increase line size for better visibility
+  geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
+  labs(x = "Number of Genes (p)", y = "Performance", color = "Method", shape = "Late Strategy") +
+  theme_minimal() +
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  scale_linetype_manual("Integration", values = c("late"="dashed", "early"="dotted", "joint"="solid")) +  # Custom line types
+  ggtitle("n=500 k=3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+plot_final <- plot_base + facet_wrap(~Metric, scales = "free", ncol = 3)
+
+print(plot_final)
+ggsave("./../analysis/simulation/plot/metrics_graph_comp_n500.png", plot_final, width = 8, height = 5, dpi = 300, bg = "white")
+
+```
+
+
+
+
+
+
 
 ```{r}
 met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p500_k1.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p500_k2.txt", "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/met_n100_p500_k3.txt",
@@ -254,7 +282,7 @@ met_comp <- met_data %>%
 met_comp_long <- met_comp %>%
   pivot_longer(cols = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes"), 
                names_to = "Metric", values_to = "Value") %>%
-  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "F1", "Precision", "MCC", "Time_in_Minutes")),
+  mutate(Metric = factor(Metric, levels = c("TPR", "FPR", "Precision", "F1", "MCC", "Time_in_Minutes")),
          p = factor(p, levels = c("82", "217", "554")),
          k = factor(k, levels = c("1", "2", "3", "4", "5")))
 
@@ -266,8 +294,8 @@ plot_base <- ggplot(met_comp_long, aes(x = k, y = Value,
   geom_point(size = 1, alpha=0.8) +    # Increase point size for better visibility
   labs(x = "k matrices", y = "Value", color = "Method", shape = "Late Strategy") +
   theme_minimal() +
-  scale_color_manual("Methods", values = c("GENIE3"="darkblue", "GRNBoost2"="forestgreen", "JRF"="purple")) +
-  scale_linetype_manual("Integration", values = c("late"="solid", "early"="dashed", "joint"="dotted")) +  # Custom line types
+  scale_color_manual("Methods", values = c("GENIE3"="purple4", "GRNBoost2"="forestgreen", "JRF"="darkorange")) +
+  scale_linetype_manual("Integration", values = c("late"="dashed", "early"="dotted", "joint"="solid")) +  # Custom line types
   ggtitle("n=100 p=500") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",

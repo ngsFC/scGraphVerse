@@ -530,7 +530,6 @@ plotg(searly_adj)
 compare_consensus(consensus_matrix = searly_adj[[1]], reference_matrix = adjm, false_plot = F)
 ```
 
-
 ### Community detection
 
 ```{r, fig.width=5, fig.height=5}
@@ -538,6 +537,136 @@ comm_consesusm <- community_path(searly_adj[[1]])
 
 community_similarity(adj_comm,list(comm_consesusm))
 
+```
+
+# ZILGM
+
+## Late integration
+
+```{r}
+set.seed(1234)
+time[["ZILGM_late_15Cores"]] <- system.time(
+  late <- infer_networks(count_matrices,
+                         method="ZILGM",
+                         nCores = 15)
+  )
+
+est_graphs <- late$network_results
+lambdas <- late$lambda_results
+
+est_graphs <- lapply(est_graphs, as.matrix)
+```
+
+```{r}
+#### Symmetrize and ROC
+plotROC(lambdas[[1]], adjm, plot_title = "Lambda ROC Matrix1", is_binary = F)
+plotROC(lambdas[[2]], adjm, plot_title = "Lambda ROC Matrix2", is_binary = F)
+plotROC(lambdas[[3]], adjm, plot_title = "Lambda ROC Matrix3", is_binary = F)
+```
+### Consensus
+
+```{r}
+consensus_matrices <- vector("list", 50)
+
+for (i in 1:50) {
+  ranklambda <- list(lambdas[[1]][[i]], lambdas[[2]][[i]], lambdas[[3]][[i]])
+  consensus_matrices[[i]] <- create_consensus(ranklambda, method="vote")
+}
+
+plotROC(consensus_matrices, adjm, plot_title = "ROC voting lambda", is_binary = T)
+```
+### Plot comparison
+
+
+```{r ZILGM scores late}
+scores.zilgm.late.all <- pscores(adjm, est_graphs)
+
+scores.zilgm.late.all$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10),
+              caption = "scores")
+```
+
+```{r}
+plotg(est_graphs)
+```
+
+
+```{r ZILGM scores consensus}
+consesusm <- create_consensus(est_graphs, method="vote")
+consesusu <- create_consensus(est_graphs, method="union")
+```
+
+
+```{r ZILGM scores consensus}
+scores.late <- pscores(adjm, list(consesusm,consesusu))
+
+scores.late$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10),
+              caption = "scores")
+keepscores <- scores.late$Statistics %>% mutate(Predicted_Matrix=c("vote", "union"), Method=c("ZILGM"), Ratio=nrow(adjm)/ncol(count_matrices[[1]]), p=nrow(adjm))
+```
+
+```{r ZILGM compare late, fig.width=8,fig.width=10}
+compare_consensus(consesusm, adjm)
+compare_consensus(consesusu, adjm)
+```
+
+## Early integration
+
+```{r ZILGM early}
+early_matrix <- list(earlyj(count_matrices))
+set.seed(1234)
+time[["ZILGM_early_15Cores"]] <- system.time(
+  late <- infer_networks(count_matrices_list = early_matrix,
+                         method = "ZILGM",
+                         adjm = adjm,
+                         nCores = 15)
+)
+
+est_graphs <- late$network_results
+lambdas <- late$lambda_results
+est_graphs <- lapply(est_graphs, as.matrix)
+```
+
+## Symmetrize and ROC
+
+```{r}
+zilgm_early_auc <- plotROC(lambdas[[1]], adjm, plot_title = "ROC ZILGM early", is_binary = T)
+```
+
+#### Plot comparison
+
+```{r ZIGLM score early}
+scores.zilgm.early <- pscores(adjm, est_graphs)
+
+scores.zilgm.early$Statistics %>%
+    datatable(extensions = 'Buttons',
+              options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel'),
+                scrollX = TRUE,
+                pageLength = 10),
+              caption = "scores")
+
+```
+
+```{r}
+plotg(est_graphs)
+```
+
+
+```{r ZILGM compare early, fig.width=8,fig.width=10}
+compare_consensus(est_graphs[[1]], adjm)
 ```
 
 # Joint Integration
