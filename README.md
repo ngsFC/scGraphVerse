@@ -1,4 +1,8 @@
 # scGraphVerse <img src="https://img.shields.io/badge/R-Bioconductor-blue.svg" align="right" height="30"/>
+               
+<div align="center">
+  <img src="logo.png" alt="Logo" width="200"/>
+</div>
 
 **scGraphVerse** is an R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA-seq data. It integrates multiple GRN inference methods, customizable thresholding strategies, performance metrics, and consensus network construction — all designed with flexibility, scalability, and visualization in mind.
 
