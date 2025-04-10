@@ -19,7 +19,7 @@
 ---
 
 <div align="center">
-  <img src="gabstract.png" alt="Logo" width="500"/>
+  <img src="gabstract.png" alt="Logo" width="700"/>
 </div>
 
 ## 🧬 Installation
