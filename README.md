@@ -18,6 +18,10 @@
 
 ---
 
+<div align="center">
+  <img src="gabstract.png" alt="Logo" width="500"/>
+</div>
+
 ## 🧬 Installation
 
 This package is not yet on CRAN or Bioconductor. You can install the development version directly from GitHub:
