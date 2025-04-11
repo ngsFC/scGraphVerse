@@ -141,7 +141,7 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
   p <- p + scale_color_manual(values=colors)
   
   # Print the plot
-  print(p)
+  #print(p)
   
   return(auc_values)
 }

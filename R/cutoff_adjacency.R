@@ -93,9 +93,9 @@ cutoff_adjacency <- function(count_matrices,
     # Infer networks from shuffled data
     percentile_values <- unlist(BiocParallel::bplapply(shuffled_list, function(shuf_mat) {
       if (method == "GRNBoost2") {
-        inferred <- infer_networks(list(shuf_mat), method = method, nCores = 1, grnboost_modules = grnboost_modules)
+        inferred <- infer_networks(list(shuf_mat), method = method, nCores = nCores, grnboost_modules = grnboost_modules)
       } else {
-        inferred <- infer_networks(list(shuf_mat), method = method, nCores = 1)
+        inferred <- infer_networks(list(shuf_mat), method = method, nCores = nCores)
       }
       adjm <- generate_adjacency(inferred)
       symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
