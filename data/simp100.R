@@ -7,7 +7,7 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
 
 library(tidyverse)
 library(scGraphVerse)
-modules <- init_py(python_path ="/usr/bin/python3", required = TRUE )
+modules <- init_py(python_path ="/usr/bin/python3", required = TRUE , py_seed = 1234)
 
 time <- list()
 
@@ -25,7 +25,6 @@ count_matrices <- lapply(count_matrices, t)
 # GENIE3
 ## Late integration
 
-set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GENIE3",
@@ -84,7 +83,6 @@ keepscores <- topscore$community_metrics %>% rownames_to_column("Predicted_Matri
 count_matrices <- lapply(count_matrices, as.matrix)
 early_matrix <- list(earlyj(count_matrices, rowg = T))
 
-set.seed(1234)
 time[["GENIE3_early_15Cores"]] <- system.time(
   early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
 )
@@ -136,7 +134,6 @@ keepscores$Transitivity[early_row_index] <- topology_metrics$Transitivity
 
 # GRNBoost2
 ## Late integration
-set.seed(1234)
 time[["GRNBoost2_late"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GRNBoost2",
@@ -218,7 +215,6 @@ keepscores <- keepscores %>%
 
 early_matrix <- list(earlyj(count_matrices))
 
-set.seed(1234)
 time[["GRNBoost2_early"]] <- system.time(
   early <- infer_networks(early_matrix, 
                           method="GRNBoost2", 
@@ -279,7 +275,6 @@ keepscores$Transitivity[early_row_index] <- topology_metrics$Transitivity
 
 #https://cran.r-project.org/src/contrib/Archive/JRF/
 #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
-set.seed(1234)
 time[["JRF_15Cores"]] <- system.time(
   jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
 )

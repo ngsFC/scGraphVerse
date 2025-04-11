@@ -25,7 +25,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   # GENIE3
   ## Late integration
   
-  set.seed(1234)
   time[["GENIE3_late_15Cores"]] <- system.time(
     late <- infer_networks(count_matrices, 
                            method="GENIE3",
@@ -136,7 +135,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   
   # GRNBoost2
   ## Late integration
-  set.seed(1234)
   time[["GRNBoost2_late"]] <- system.time(
     late <- infer_networks(count_matrices, 
                            method="GRNBoost2",
@@ -218,7 +216,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   
   early_matrix <- list(earlyj(count_matrices))
   
-  set.seed(1234)
   time[["GRNBoost2_early"]] <- system.time(
     early <- infer_networks(early_matrix, 
                             method="GRNBoost2", 
@@ -279,7 +276,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   
   #https://cran.r-project.org/src/contrib/Archive/JRF/
   #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
-  set.seed(1234)
   time[["JRF_15Cores"]] <- system.time(
     jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
   )

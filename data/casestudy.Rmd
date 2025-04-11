@@ -22,19 +22,11 @@ knitr::opts_knit$set(root.dir = "/home/francescoc/Desktop/scGraphVerse/data/",me
 ```{r}
 library(RColorBrewer)
 library(DT)
+library(scGraphVerse)
 library(tidyverse)
 library(Seurat)
-library(STRINGdb)
-library(SingleCellExperiment)
-library(scGraphVerse)
-library(BiocParallel)
-library(GENIE3)
-library(patchwork)
-reticulate::use_python("/usr/bin/python3", required = TRUE)
-arboreto <- reticulate::import("arboreto.algo")
-pandas <- reticulate::import("pandas")
-numpy <- reticulate::import("numpy")
-
+modules <- init_py(python_path ="/usr/bin/python3", required = TRUE )
+  
 time <- list()
 
 seurat_subset_filt <- readRDS("./../data/PBMC.top1200.RDS")

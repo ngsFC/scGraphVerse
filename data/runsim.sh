@@ -1,63 +1,22 @@
 #!/bin/bash
 
-
-
-# List of Rmd files to process
-
-FILES=(
-
-  "simulations.Rmd"
-
-  "simulations.p100.Rmd"
-
-  "simulations.p100.n500.Rmd"
-
-  "simulations.p200.Rmd"
-
-  "simulations.p200.n500.Rmd"
-
-  "simulations.p500.n500.Rmd"
-
+# List of R scripts
+scripts=(
+  "simp100n500.R"
+  "simp100.R"
+  "simp200n500.R"
+  "simp200.R"
+  "simp500n500.R"
+  "simp500.R"
 )
 
-
-
-for file in "${FILES[@]}"; do
-
-  echo "Processing $file ..."
-
-  
-
-  # Get the R script filename
-
-  Rfile="${file%.Rmd}.R"
-
-
-
-  # Extract R code from the Rmd file
-
-  Rscript -e "knitr::purl('$file', output = '$Rfile')"
-
-
-
-  # Run the extracted R script
-
-  echo "Running $Rfile ..."
-
-  Rscript "$Rfile"
-
-
-
-  # Remove the generated R script
-
-  rm -f "$Rfile"
-
-  
-
-  echo "Cleaned up $Rfile"
-
-  echo "------------------------"
-
+# Loop through and run each script
+for script in "${scripts[@]}"; do
+  echo "Running $script..."
+  Rscript "$script"
+  echo "$script completed."
+  echo "-----------------------------"
 done
 
+echo "All scripts have been executed."
 
