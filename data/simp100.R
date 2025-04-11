@@ -7,7 +7,7 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
 
 library(tidyverse)
 library(scGraphVerse)
-modules <- init_py(python_path ="/usr/bin/python3", required = TRUE , py_seed = 1234)
+modules <- init_py(python_path ="/usr/bin/python3", required = TRUE)
 
 time <- list()
 
