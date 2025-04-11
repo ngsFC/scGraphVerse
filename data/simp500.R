@@ -3,7 +3,6 @@ ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
 pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 
 run_single_simulation <- function(run_id = 1, seed_base = 1234) {
-  set.seed(seed_base + run_id)
   
   library(tidyverse)
   library(scGraphVerse)
@@ -28,7 +27,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   time[["GENIE3_late_15Cores"]] <- system.time(
     late <- infer_networks(count_matrices, 
                            method="GENIE3",
-                           nCores = 15)
+                           nCores = 15,
+                           seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -84,7 +84,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   early_matrix <- list(earlyj(count_matrices, rowg = T))
   
   time[["GENIE3_early_15Cores"]] <- system.time(
-    early <- infer_networks(early_matrix, method="GENIE3", nCores = 15)
+    early <- infer_networks(early_matrix, method="GENIE3", nCores = 15,
+                           seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -138,7 +139,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
     late <- infer_networks(count_matrices, 
                            method="GRNBoost2",
                            nCores = 15,
-                           grnboost_modules = modules)
+                           grnboost_modules = modules,
+                           seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -219,7 +221,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
     early <- infer_networks(early_matrix, 
                             method="GRNBoost2", 
                             grnboost_modules = modules, 
-                            nCores = 15)
+                            nCores = 15,
+                           seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -276,7 +279,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   #https://cran.r-project.org/src/contrib/Archive/JRF/
   #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
   time[["JRF_15Cores"]] <- system.time(
-    jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15)
+    jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15,
+                           seed=seed_base+run_id)
   )
   
   ### Prepare the output
