@@ -139,7 +139,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   time[["GRNBoost2_late"]] <- system.time(
     late <- infer_networks(count_matrices, 
                            method="GRNBoost2",
-                           nCores = 15,
                            grnboost_modules = modules,
                            seed=seed_base+run_id)
   )
@@ -157,7 +156,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                 weighted_adjm_list = slate_wadj, 
                                 n = 3,
                                 method = "GRNBoost2",
-                                nCores = 15,
                                 grnboost_modules = modules)
   
   scores.late.all <- pscores(adjm, slate_adj)
@@ -222,8 +220,7 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
     early <- infer_networks(early_matrix, 
                             method="GRNBoost2", 
                             grnboost_modules = modules, 
-                            nCores = 15,
-                           seed=seed_base+run_id)
+                            seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -239,7 +236,6 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                  weighted_adjm_list = searly_wadj, 
                                  n = 2,
                                  method = "GRNBoost2",
-                                 nCores = 15,
                                  grnboost_modules = modules
   )
   

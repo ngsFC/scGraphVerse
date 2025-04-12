@@ -1,8 +1,7 @@
 setwd("/home/francescoc/Desktop/scGraphVerse/data/")
 ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
 pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
-seed_base <- 1234
-run_id <- 1 
+
 run_single_simulation <- function(run_id = 1, seed_base = 1234) {
 
 library(tidyverse)
@@ -139,9 +138,8 @@ keepscores$Transitivity[early_row_index] <- topology_metrics$Transitivity
 time[["GRNBoost2_late"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GRNBoost2",
-                         nCores = 15,
                          grnboost_modules = modules,
-                           seed=seed_base+run_id)
+                         seed=seed_base+run_id)
 )
 
 ### Symmetrize and ROC
@@ -153,12 +151,11 @@ late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - grnboost Late In
 
 ### Cutoff
 
-slate_adj <- cutoff_adjacency(count_matrices = list(count_matrices[[2]]),
-                              weighted_adjm_list = list(slate_wadj[[2]]), 
+slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                              weighted_adjm_list = slate_wadj, 
                               n = 3,
                               method = "GRNBoost2",
-                              grnboost_modules = modules,
-                              debug = T)
+                              grnboost_modules = modules)
 
 scores.late.all <- pscores(adjm, slate_adj)
 
@@ -166,7 +163,7 @@ plotg(slate_adj)
 
 ### Consensus
 
-consesusm <- create_consensus(slate_adj, method="vote")
+consesusm <- create_consensus(slate_adj, method="votst the ")
 consesusu <- create_consensus(slate_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = slate_adj, weighted_list = slate_wadj, method = "INet", threshold = 0.05)
 scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
@@ -221,8 +218,7 @@ early_matrix <- list(earlyj(count_matrices))
 time[["GRNBoost2_early"]] <- system.time(
   early <- infer_networks(early_matrix, 
                           method="GRNBoost2", 
-                          grnboost_modules = modules, 
-                          nCores = 15,
+                          grnboost_modules = modules,
                            seed=seed_base+run_id)
 )
 
@@ -239,7 +235,6 @@ searly_adj <- cutoff_adjacency(count_matrices = early_matrix,
                                weighted_adjm_list = searly_wadj, 
                                n = 2,
                                method = "GRNBoost2",
-                               nCores = 15,
                                grnboost_modules = modules
 )
 
