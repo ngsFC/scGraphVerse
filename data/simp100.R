@@ -163,7 +163,7 @@ plotg(slate_adj)
 
 ### Consensus
 
-consesusm <- create_consensus(slate_adj, method="votst the ")
+consesusm <- create_consensus(slate_adj, method="vote")
 consesusu <- create_consensus(slate_adj, method="union")
 consesunet <- create_consensus(adj_matrix_list = slate_adj, weighted_list = slate_wadj, method = "INet", threshold = 0.05)
 scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
@@ -219,7 +219,7 @@ time[["GRNBoost2_early"]] <- system.time(
   early <- infer_networks(early_matrix, 
                           method="GRNBoost2", 
                           grnboost_modules = modules,
-                           seed=seed_base+run_id)
+                          seed=seed_base+run_id)
 )
 
 ### Symmetrize and ROC
