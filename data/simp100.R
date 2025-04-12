@@ -1,7 +1,8 @@
 setwd("/home/francescoc/Desktop/scGraphVerse/data/")
 ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
 pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
-
+seed_base <- 1234
+run_id <- 1 
 run_single_simulation <- function(run_id = 1, seed_base = 1234) {
 
 library(tidyverse)
@@ -152,12 +153,12 @@ late_auc <- plotROC(slate_wadj, adjm, plot_title = "ROC curve - grnboost Late In
 
 ### Cutoff
 
-slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
-                              weighted_adjm_list = slate_wadj, 
+slate_adj <- cutoff_adjacency(count_matrices = list(count_matrices[[2]]),
+                              weighted_adjm_list = list(slate_wadj[[2]]), 
                               n = 3,
                               method = "GRNBoost2",
-                              nCores = 15,
-                              grnboost_modules = modules)
+                              grnboost_modules = modules,
+                              debug = T)
 
 scores.late.all <- pscores(adjm, slate_adj)
 
