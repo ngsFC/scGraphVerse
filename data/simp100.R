@@ -407,7 +407,7 @@ df2 <- df2 %>%
 return(df2)
 }
 
-all_runs <- lapply(1:10, function(i) run_single_simulation(run_id = i))
+all_runs <- lapply(1:2, function(i) run_single_simulation(run_id = i))
 all_df <- bind_rows(all_runs, .id = "Run")
 
 summary_df <- all_df %>%
