@@ -54,17 +54,36 @@ infer_networks <- function(count_matrices_list,
     
     return(lapply(seq_along(count_matrices_list), function(i) {
       if (!is.null(seed)) set.seed(seed)
+      
       mat <- count_matrices_list[[i]]
-      df <- as.data.frame(t(mat))
+      df <- as.data.frame(t(mat))  # genes = cols, cells = rows
       genes <- colnames(df)
+      rownames(df) <- make.unique(rownames(df))  # ensure unique cell names
+      
+      # Create Pandas DataFrame
       df_pandas <- grnboost_modules$pandas$DataFrame(
         data = as.matrix(df),
-        columns = genes,
-        index = rownames(df)
+        columns = genes
       )
-      grnboost_modules$arboreto$grnboost2(df_pandas, gene_names = genes)
+      
+      # Run GRNBoost2
+      result_py <- grnboost_modules$arboreto$grnboost2(
+        expression_data = df_pandas,
+        gene_names = genes
+      )
+      
+      # Let reticulate handle the conversion automatically
+      result_r <- reticulate::py_to_r(result_py)
+      
+      # Clean up any rownames warnings by removing them explicitly
+      if (is.data.frame(result_r)) {
+        rownames(result_r) <- NULL
+      }
+      
+      return(result_r)
     }))
   }
+  
   
   # --- ZILGM ---
   if (method == "ZILGM") {
