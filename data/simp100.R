@@ -43,7 +43,8 @@ slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
                               weighted_adjm_list = slate_wadj, 
                               n = 3,
                               method = "GENIE3",
-                              nCores = 15)
+                              nCores = 15,
+                              debug=T)
 
 scores.late.all <- pscores(adjm, slate_adj)
 plotg(slate_adj)
@@ -407,7 +408,7 @@ df2 <- df2 %>%
 return(df2)
 }
 
-all_runs <- lapply(1:2, function(i) run_single_simulation(run_id = i))
+all_runs <- lapply(1:10, function(i) run_single_simulation(run_id = i))
 all_df <- bind_rows(all_runs, .id = "Run")
 
 summary_df <- all_df %>%
