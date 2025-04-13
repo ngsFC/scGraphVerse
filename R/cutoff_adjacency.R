@@ -36,11 +36,11 @@ cutoff_adjacency <- function(count_matrices,
   
   count_matrices <- lapply(count_matrices, function(obj) {
     if (inherits(obj, "Seurat")) {
-      return(as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts")))
+      as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts"))
     } else if (inherits(obj, "SingleCellExperiment")) {
-      return(as.matrix(SummarizedExperiment::assay(obj, "counts")))
+      as.matrix(SummarizedExperiment::assay(obj, "counts"))
     } else {
-      return(as.matrix(obj))
+      as.matrix(obj)
     }
   })
   
@@ -89,20 +89,20 @@ cutoff_adjacency <- function(count_matrices,
       
       adjm <- generate_adjacency(inferred)
       symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
-      quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
+      q_value <- quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
       
-      # Adding delay and garbage collection to handle GRNBoost2 Dask port conflicts
       if (method == "GRNBoost2") {
-        Sys.sleep(5)
+        Sys.sleep(2)
         gc()
       }
+      
+      q_value
     })
     
     avg_cutoff <- mean(unlist(percentile_values))
     if (debug) message(sprintf("[Method: %s] Matrix %d → Cutoff = %.5f", method, idx, avg_cutoff))
     
-    binary_mat <- ifelse(weighted_adjm_list[[idx]] > avg_cutoff, 1, 0)
-    binary_mat
+    ifelse(weighted_adjm_list[[idx]] > avg_cutoff, 1, 0)
   })
   
   return(binary_adjm_list)
