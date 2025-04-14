@@ -16,165 +16,90 @@
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",
                            adjm = NULL,
-                           nCores = BiocParallel::bpworkers(BiocParallel::bpparam()) - 1,
+                           total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                            grnboost_modules = NULL,
-                           seed = NULL) {
+                           seed = 123) {
   
-  method <- match.arg(method, choices = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
+  method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
   
-  if (!is.null(seed)) set.seed(seed)  # for GENIE3, GRNBoost2, ZILGM
+  # Define outer and inner cores based on method
+  n_matrices <- length(count_matrices_list)
+  if (method == "GRNBoost2") {
+    param_outer <- BiocParallel::SerialParam()
+    nCores_inner <- total_cores
+  } else {
+    nCores_outer <- min(total_cores, n_matrices)
+    nCores_inner <- max(floor(total_cores / nCores_outer), 1)
+    param_outer <- BiocParallel::MulticoreParam(workers = nCores_outer, RNGseed = seed)
+  }
   
-  # Normalize input matrices
   count_matrices_list <- lapply(count_matrices_list, function(obj) {
     if (inherits(obj, "Seurat")) {
-      expr <- Seurat::GetAssayData(obj, assay = "RNA", slot = "counts")
-      as.matrix(expr)
+      as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts"))
     } else if (inherits(obj, "SingleCellExperiment")) {
-      expr <- SummarizedExperiment::assay(obj, "counts")
-      as.matrix(expr)
+      as.matrix(SummarizedExperiment::assay(obj, "counts"))
     } else {
       as.matrix(obj)
     }
   })
   
-  # --- GENIE3 ---
-  if (method == "GENIE3") {
-    return(lapply(count_matrices_list, function(mat) {
-      if (!is.null(seed)) set.seed(seed)
-      adj <- GENIE3::GENIE3(mat, nCores = nCores)
-      GENIE3::getLinkList(adj)
-    }))
-  }
-  
-  # --- GRNBoost2 ---
-  if (method == "GRNBoost2") {
-    if (is.null(grnboost_modules)) {
-      stop("For method 'GRNBoost2', please provide Python modules via `init_py()`.")
-    }
+  BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
+    mat <- count_matrices_list[[i]]
+    task_seed <- as.integer(round(seed * 100 + i))
+    set.seed(task_seed)
     
-    return(lapply(seq_along(count_matrices_list), function(i) {
-      if (!is.null(seed)) set.seed(seed)
+    if (method == "GENIE3") {
+      adj <- GENIE3::GENIE3(mat, nCores = nCores_inner)
+      GENIE3::getLinkList(adj)
       
-      mat <- count_matrices_list[[i]]
-      df <- as.data.frame(t(mat))  # genes = cols, cells = rows
+    } else if (method == "GRNBoost2") {
+      if (is.null(grnboost_modules)) stop("Provide grnboost_modules for GRNBoost2.")
+      grnboost_modules$numpy$random$seed(as.integer(task_seed))
+      
+      df <- as.data.frame(t(mat))
       genes <- colnames(df)
-      rownames(df) <- make.unique(rownames(df))  # ensure unique cell names
+      rownames(df) <- make.unique(rownames(df))
       
-      # Create Pandas DataFrame
       df_pandas <- grnboost_modules$pandas$DataFrame(
         data = as.matrix(df),
-        columns = genes
+        columns = genes,
+        index = rownames(df)
       )
       
-      # Run GRNBoost2
       result_py <- grnboost_modules$arboreto$grnboost2(
         expression_data = df_pandas,
         gene_names = genes
       )
       
-      # Let reticulate handle the conversion automatically
       result_r <- reticulate::py_to_r(result_py)
-      
-      # Clean up any rownames warnings by removing them explicitly
       if (is.data.frame(result_r)) {
         rownames(result_r) <- NULL
       }
-      
-      return(result_r)
-    }))
-  }
-  
-  
-  # --- ZILGM ---
-  if (method == "ZILGM") {
-    zilgm_fits <- lapply(count_matrices_list, function(mat) {
-      if (!is.null(seed)) set.seed(seed)
-      gene_names <- rownames(mat)
+      result_r
+    } else if (method == "ZILGM") {
       lambda_max <- ZILGM::find_lammax(t(mat))
       lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
-      fit <- ZILGM::zilgm(
-        X = t(mat),
-        lambda = lambda_seq,
-        family = "NBII",
-        update_type = "IRLS",
-        do_boot = TRUE,
-        boot_num = 10,
-        sym = "OR",
-        nCores = nCores
-      )
-      list(fit = fit, genes = gene_names)
-    })
-    
-    network_results <- lapply(zilgm_fits, function(result) {
-      mat <- result$fit$network[[result$fit$opt_index]]
-      rownames(mat) <- result$genes
-      colnames(mat) <- result$genes
-      if (!is.null(adjm)) {
-        rownames(mat) <- rownames(adjm)
-        colnames(mat) <- colnames(adjm)
-      }
-      mat
-    })
-    
-    lambda_results <- lapply(zilgm_fits, function(result) {
-      nets <- lapply(result$fit$network, as.matrix)
-      names(nets) <- result$fit$lambda
-      for (i in seq_along(nets)) {
-        rownames(nets[[i]]) <- result$genes
-        colnames(nets[[i]]) <- result$genes
-        if (!is.null(adjm)) {
-          rownames(nets[[i]]) <- rownames(adjm)
-          colnames(nets[[i]]) <- colnames(adjm)
-        }
-      }
-      nets
-    })
-    
-    return(list(
-      network_results = lapply(network_results, as.matrix),
-      lambda_results = lambda_results
-    ))
-  }
-  
-  # --- PCzinb ---
-  if (method == "PCzinb") {
-    pc_param <- if (!is.null(seed)) {
-      BiocParallel::MulticoreParam(workers = nCores, RNGseed = seed)
-    } else {
-      BiocParallel::MulticoreParam(workers = nCores)
+      fit <- ZILGM::zilgm(X = t(mat), lambda = lambda_seq, family = "NBII",
+                          update_type = "IRLS", do_boot = TRUE, boot_num = 10,
+                          sym = "OR", nCores = nCores_inner)
+      adj <- fit$network[[fit$opt_index]]
+      dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
+      adj
+      
+    } else if (method == "PCzinb") {
+      param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = task_seed)
+      adj <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
+      dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
+      adj
+      
+    } else if (method == "JRF") {
+      param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = task_seed)
+      norm_mat <- t(scale(t(mat)))
+      rf <- JRF::JRF(X = list(norm_mat),
+                     genes.name = rownames(norm_mat),
+                     ntree = 500,
+                     mtry = round(sqrt(nrow(norm_mat) - 1)))
+      rf
     }
-    
-    return(BiocParallel::bplapply(count_matrices_list, function(mat) {
-      net <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
-      if (!is.null(adjm)) {
-        rownames(net) <- rownames(adjm)
-        colnames(net) <- colnames(adjm)
-      }
-      net
-    }, BPPARAM = pc_param))
-  }
-  
-  # --- JRF ---
-  if (method == "JRF") {
-    jrf_param <- if (!is.null(seed)) {
-      BiocParallel::MulticoreParam(workers = nCores, RNGseed = seed)
-    } else {
-      BiocParallel::MulticoreParam(workers = nCores)
-    }
-    
-    norm_list <- BiocParallel::bplapply(count_matrices_list, function(x) {
-      t(scale(t(x)))
-    }, BPPARAM = jrf_param)
-    
-    rf <- JRF::JRF(
-      X = norm_list,
-      genes.name = rownames(norm_list[[1]]),
-      ntree = 500,
-      mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
-    )
-    
-    return(list(rf))
-  }
+  }, BPPARAM = param_outer)
 }
-
-

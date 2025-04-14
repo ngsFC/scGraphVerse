@@ -27,7 +27,7 @@ count_matrices <- lapply(count_matrices, t)
 time[["GENIE3_late_15Cores"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GENIE3",
-                         nCores = 15,
+                         total_cores = 15,
                          seed=seed_base+run_id)
 )
 
@@ -43,7 +43,7 @@ slate_adj <- cutoff_adjacency(count_matrices = count_matrices,
                               weighted_adjm_list = slate_wadj, 
                               n = 3,
                               method = "GENIE3",
-                              nCores = 15,
+                              total_cores = 15,
                               debug=T)
 
 scores.late.all <- pscores(adjm, slate_adj)
@@ -140,6 +140,7 @@ time[["GRNBoost2_late"]] <- system.time(
   late <- infer_networks(count_matrices, 
                          method="GRNBoost2",
                          grnboost_modules = modules,
+                         total_cores = 15, 
                          seed=seed_base+run_id)
 )
 
