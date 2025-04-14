@@ -1,12 +1,11 @@
-setwd("/home/francescoc/Desktop/scGraphVerse/data/")
-ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
-pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
-
-run_single_simulation <- function(run_id = 1, seed_base = 1234) {
+run_single_simulation <- function(run_id = 1, 
+                                  seed_base = 1234, 
+                                  adjm_file = NULL,
+                                  count_matrices_file = NULL) {
   
   library(tidyverse)
   library(scGraphVerse)
-  modules <- init_py(python_path ="/usr/bin/python3", required = TRUE )
+  modules <- init_py(python_path ="/usr/bin/python3", required = TRUE)
   
   time <- list()
   
@@ -15,10 +14,10 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   
   # Adjacency and Count matrices
   
-  adjm <- as.matrix(read.table("./../analysis/simulation/adjacency/adjm_top500_p200.txt"))
+  adjm <- as.matrix(read.table(adjm_file))
   colnames(adjm) <- rownames(adjm)
   
-  count_matrices <- readRDS("./../analysis/simulation/simdata/sim_n500p200.RDS")
+  count_matrices <- readRDS(count_matrices_file)
   count_matrices <- lapply(count_matrices, t)
   
   # GENIE3
@@ -27,8 +26,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   time[["GENIE3_late_15Cores"]] <- system.time(
     late <- infer_networks(count_matrices, 
                            method="GENIE3",
-                           nCores = 15,
-                           seed=seed_base+run_id)
+                           total_cores = 15,
+                           seed=seed_base*run_id)
   )
   
   ### Symmetrize and ROC
@@ -43,7 +42,9 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                 weighted_adjm_list = slate_wadj, 
                                 n = 3,
                                 method = "GENIE3",
-                                nCores = 15)
+                                total_cores = 15,
+                                debug=T,
+                                seed = seed_base*run_id)
   
   scores.late.all <- pscores(adjm, slate_adj)
   plotg(slate_adj)
@@ -84,8 +85,10 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   early_matrix <- list(earlyj(count_matrices, rowg = T))
   
   time[["GENIE3_early_15Cores"]] <- system.time(
-    early <- infer_networks(early_matrix, method="GENIE3", nCores = 15,
-                           seed=seed_base+run_id)
+    early <- infer_networks(early_matrix, 
+                            method="GENIE3", 
+                            total_cores = 15,
+                            seed=seed_base+run_id)
   )
   
   ### Symmetrize and ROC
@@ -101,7 +104,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                  weighted_adjm_list = searly_wadj, 
                                  n = 2,
                                  method = "GENIE3",
-                                 nCores = 15)
+                                 total_cores = 15,
+                                 seed = seed_base*run_id)
   
   scores.early <- pscores(adjm, searly_adj)
   
@@ -139,6 +143,7 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
     late <- infer_networks(count_matrices, 
                            method="GRNBoost2",
                            grnboost_modules = modules,
+                           total_cores = 15, 
                            seed=seed_base+run_id)
   )
   
@@ -155,7 +160,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                 weighted_adjm_list = slate_wadj, 
                                 n = 3,
                                 method = "GRNBoost2",
-                                grnboost_modules = modules)
+                                grnboost_modules = modules,
+                                seed = seed_base*run_id)
   
   scores.late.all <- pscores(adjm, slate_adj)
   
@@ -218,7 +224,7 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   time[["GRNBoost2_early"]] <- system.time(
     early <- infer_networks(early_matrix, 
                             method="GRNBoost2", 
-                            grnboost_modules = modules, 
+                            grnboost_modules = modules,
                             seed=seed_base+run_id)
   )
   
@@ -235,7 +241,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
                                  weighted_adjm_list = searly_wadj, 
                                  n = 2,
                                  method = "GRNBoost2",
-                                 grnboost_modules = modules
+                                 grnboost_modules = modules,
+                                 seed = seed_base*run_id
   )
   
   scores.early <- pscores(adjm, searly_adj)
@@ -275,30 +282,32 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   #https://cran.r-project.org/src/contrib/Archive/JRF/
   #install.packages("/home/francescoc/Downloads/JRF_0.1-4.tar.gz", repos = NULL, type = "source")
   time[["JRF_15Cores"]] <- system.time(
-    jrf_mat <- infer_networks(count_matrices, method="JRF", nCores = 15,
-                           seed=seed_base+run_id)
+    jrf_mat <- infer_networks(count_matrices, 
+                              method="JRF", 
+                              total_cores = 15,
+                              seed=seed_base+run_id)
   )
   
   ### Prepare the output
   
-  jrf_list <- list()
+  #jrf_list <- list()
   
-  importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
+  #importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
   
-  for (i in seq_along(importance_columns)) {
-    # Select the 'gene1', 'gene2', and the current 'importance' column
-    df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
-    
-    # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
-    names(df)[3] <- importance_columns[i]
-    
-    # Add the data frame to the output list
-    jrf_list[[i]] <- df
-  }
+  #for (i in seq_along(importance_columns)) {
+  # Select the 'gene1', 'gene2', and the current 'importance' column
+  #  df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
+  
+  # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
+  #  names(df)[3] <- importance_columns[i]
+  
+  # Add the data frame to the output list
+  #  jrf_list[[i]] <- df
+  #}
   
   ### symmetrize Output and ROC
   
-  jrf_wadj <- generate_adjacency(jrf_list)
+  jrf_wadj <- generate_adjacency(jrf_mat)
   sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
   jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = F)
   
@@ -307,7 +316,8 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
                                weighted_adjm_list = sjrf_wadj, 
                                n = 3,
-                               method = "JRF")
+                               method = "JRF",
+                               seed = seed_base*run_id)
   
   ### Comparison with the Ground Truth
   
@@ -407,14 +417,76 @@ run_single_simulation <- function(run_id = 1, seed_base = 1234) {
   return(df2)
 }
 
-all_runs <- lapply(1:10, function(i) run_single_simulation(run_id = i))
+# Matrix p100n100
+all_runs <- lapply(1:2, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top200_p100.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p100.RDS"))
 all_df <- bind_rows(all_runs, .id = "Run")
 
 summary_df <- all_df %>%
   group_by(Method, Predicted_Matrix) %>%
   summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+write.table(summary_df, file = file.path(ddir, "simp100_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
+# Matrix p200n100
+
+all_runs <- lapply(1:1, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p200.RDS"))
+all_df <- bind_rows(all_runs, .id = "Run")
+
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+write.table(summary_df, file = file.path(ddir, "simp200_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+# Matrix p500n100
+
+all_runs <- lapply(1:1, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top1200_p500.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p500.RDS"))
+all_df <- bind_rows(all_runs, .id = "Run")
+
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+write.table(summary_df, file = file.path(ddir, "simp500_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+
+
+
+# Matrix p100n500
+
+all_runs <- lapply(1:1, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top200_p100.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p100.RDS"))
+all_df <- bind_rows(all_runs, .id = "Run")
+
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+write.table(summary_df, file = file.path(ddir, "simp100n500_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+# Matrix p200n500
+
+all_runs <- lapply(1:1, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p200.RDS"))
+all_df <- bind_rows(all_runs, .id = "Run")
+
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
 write.table(summary_df, file = file.path(ddir, "simp200n500_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
+# Matrix p500n500
 
+all_runs <- lapply(1:1, function(i) run_single_simulation(run_id = i, 
+                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top1200_p500.txt", 
+                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p500.RDS"))
+all_df <- bind_rows(all_runs, .id = "Run")
 
+summary_df <- all_df %>%
+  group_by(Method, Predicted_Matrix) %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
+write.table(summary_df, file = file.path(ddir, "simp500n500_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
