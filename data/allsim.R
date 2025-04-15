@@ -417,8 +417,10 @@ run_single_simulation <- function(run_id = 1,
   return(df2)
 }
 
+library(BiocParallel)
 ddir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/"
 pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
+
 # Matrix p100n100
 
 all_runs <- list()
@@ -429,7 +431,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top200_p100.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p100.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 
@@ -450,7 +452,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p200.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 all_df <- bind_rows(all_runs, .id = "Run")
@@ -473,7 +475,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p200.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 
@@ -497,7 +499,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top200_p100.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p100.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 all_df <- bind_rows(all_runs, .id = "Run")
@@ -517,7 +519,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p200.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 all_df <- bind_rows(all_runs, .id = "Run")
@@ -537,7 +539,7 @@ for (i in 1:10) {
     adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top1200_p500.txt",
     count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n500p500.RDS"
   )
-  BiocParallel::bpstopall()
+    BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
 }
 
