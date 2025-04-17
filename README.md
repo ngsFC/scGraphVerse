@@ -62,3 +62,7 @@ We applied scGraphVerse to benchmark network inference methods across simulated 
 ### Supplemetary info
 
 ---
+
+Progetto "National Centre for HPC, Big Data and Quantum Computing" founded by European Union - Next Generation EU - CN00000013 - CUP B93C22000620006
+
+---
