@@ -424,7 +424,7 @@ pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 # Matrix p100n100
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -440,12 +440,12 @@ all_df <- bind_rows(all_runs, .id = "Run")
 summary_df <- all_df %>%
   group_by(Method, Predicted_Matrix) %>%
   summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
-write.table(summary_df, file = file.path(ddir, "simp100_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(summary_df, file = file.path(ddir, "simp100_10runs_check.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 # Matrix p200n100
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -464,16 +464,13 @@ write.table(summary_df, file = file.path(ddir, "simp200_10runs.txt"), sep = "\t"
 
 # Matrix p500n100
 
-all_runs <- lapply(1:10, function(i) run_single_simulation(run_id = i, 
-                                                          adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top1200_p500.txt", 
-                                                          count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p500.RDS"))
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
-    adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top500_p200.txt",
-    count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p200.RDS"
+    adjm_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/adjacency/adjm_top1200_p500.txt",
+    count_matrices_file = "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/simdata/sim_n100p500.RDS"
   )
     BiocParallel::bpstop(BiocParallel::bpparam())
   Sys.sleep(5)  # short pause between runs to let ports free up
@@ -492,7 +489,7 @@ write.table(summary_df, file = file.path(ddir, "simp500_10runs.txt"), sep = "\t"
 # Matrix p100n500
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -512,7 +509,7 @@ write.table(summary_df, file = file.path(ddir, "simp100n500_10runs.txt"), sep = 
 # Matrix p200n500
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -532,7 +529,7 @@ write.table(summary_df, file = file.path(ddir, "simp200n500_10runs.txt"), sep = 
 # Matrix p500n500
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:5) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,

@@ -333,6 +333,8 @@ ggsave("./../analysis/simulation/plot/gtruth_top500_p200.png", p1, width = 8, he
 
 ```{r}
 nodes <- nrow(adjm)
+b      <- 3
+sigma  <- 0.2
 
 simat <- zinb_simdata(
   n = 100, 
@@ -343,9 +345,10 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-200, (3*nodes)+200)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
+  depth_range <- c(p, p * sqrt(n))
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n100p200.RDS")
 
 simat <- zinb_simdata(
@@ -357,7 +360,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-300, (3*nodes)+300)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n500p200.RDS")
@@ -434,7 +437,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-100, (3*nodes)+100)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n100p100.RDS")
@@ -448,7 +451,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-100, (3*nodes)+100)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n500p100.RDS")
@@ -523,7 +526,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-700, (3*nodes)+700)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n100p700.RDS")
@@ -537,7 +540,7 @@ simat <- zinb_simdata(
   theta = c(1, 0.7, 0.5),  
   pi = c(0.2, 0.2, 0.2),  
   kmat = 3,
-  depth_range = c((3*nodes)-700, (3*nodes)+700)
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
 )
 
 saveRDS(simat, "./../analysis/simulation/simdata/sim_n500p700.RDS")

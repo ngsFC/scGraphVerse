@@ -27,7 +27,7 @@ library(ggplot2)
 
 
 ```{r}
-met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp100_10runs.txt",
+met_files <- c("/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp100_10runs_check.txt",
                "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp200_10runs.txt",
                "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/results/simp500_10runs.txt")
 

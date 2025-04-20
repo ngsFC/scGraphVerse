@@ -94,7 +94,13 @@ infer_networks <- function(count_matrices_list,
       
     } else if (method == "JRF") {
       param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = task_seed)
+      #norm_mat <- (mat - mean(mat)) / sd(mat)
+      #mat <- log(mat+1)
       norm_mat <- t(scale(t(mat)))
+      #library(edgeR)
+      #dge   <- DGEList(counts=mat)
+      #dge   <- calcNormFactors(dge, method="TMM")
+      #norm_mat <- cpm(dge, log=TRUE, prior.count=1)
       rf <- JRF::JRF(X = list(norm_mat),
                      genes.name = rownames(norm_mat),
                      ntree = 500,
