@@ -1,4 +1,4 @@
-# scGraphVerse <img src="https://img.shields.io/badge/R-Bioconductor-blue.svg" align="right" height="30"/>
+# scGraphVerse
                
 <div align="center">
   <img src="logo.png" alt="Logo" width="200"/>
@@ -10,11 +10,11 @@
 
 ## ✨ Features
 
-- 🔍 Inference of GRNs from count matrices using methods like **GENIE3**, **GRNBoost2**, and **JRF**.
-- 🎯 Thresholding of weighted networks using shuffled matrix null models.
-- 🧠 Consensus network generation via voting, union, or the **INet** framework.
-- 📊 Performance evaluation with ROC curves, classification metrics, and radar plots.
-- 🧩 Network visualization with force-directed layouts and `ggraph`.
+- 🔍 Inference of GRNs from count matrices using methods like **GENIE3**, **GRNBoost2**, **ZILGM**, **PCzimb** and **JRF**.
+- 🎯 Thresholding of weighted networks using shuffled matrix null models `cutoff_adjacency`.
+- 🧠 Consensus network generation via `voting`, `union`, or the `INet` framework.
+- 📊 Performance evaluation with ROC curves, classification metrics and topological measures.
+- 🧩 Network visualization with `ggraph`.
 
 ---
 
@@ -53,7 +53,7 @@ scGraphVerse supports a modular workflow where users can input single or multipl
 Taking common metrics such as TPR, FPR, Precision and others it can evaluate the performance assessment of the methods. scGraphVerse also facilitates downstream analysis such as community detection, pathway analysis and text mining approach to study gene-gene interaction in PubMed. Visualization modules provide publication-ready plots for network structure, ROC curves, and community similarity. All functions are compatible with standard Bioconductor data structures, ensuring interoperability with existing workflows.
 
 ### Results
-We applied scGraphVerse to benchmark network inference methods across simulated and real single-cell datasets. In simulation, we evaluated performance across varying levels of experiments (1 to 5 matrices), repeated runs (n = 10), and level of integration (late, early and joint integration) using GENIE3, GRNBoost2, and JRF. Using simulated scRNA-seq data we revealed that joint integration often improves robustness and performance. Community detection across inferred networks showed consistent modular structures and supported the recovery of known regulatory modules. The package’s consensus functions enhanced the stability of inferred interactions across multiple runs and methods. Visualization tools allowed intuitive inspection of network topology and evaluation metrics, aiding interpretation and reproducibility. scGraphVerse provides a flexible, comprehensive toolkit for network-centric analysis of scRNA-seq data and enables scalable benchmarking and comparative studies across algorithms and datasets.
+We applied scGraphVerse to benchmark network inference methods across simulated and real single-cell datasets. In simulation, we evaluated performance across varying numbers of experiments (1 to 5 matrices), repeated runs (n = 10), and integration strategies (late, early, and joint) using GENIE3, GRNBoost2, and JRF. Using synthetic scRNA-seq data (n = 100 cells, k = 3 matrices), we observed that early integration with GENIE3 achieved the highest true positive rate (TPR ≈ 0.43) and F1-score (F1 ≈ 0.50) at smaller gene sets (p = 82), while late integration with GRNBoost2 maintained a low false positive rate (FPR ≈ 0.000–0.001) and high precision (Precision ≈ 0.92). However, JRF consistently balanced these trade-offs, achieving F1-scores around 0.30–0.33, MCC values near 0.30–0.40, and precision up to 0.90, with nearly zero FPR across all gene sizes. While JRF’s runtime increased with gene count (0.5 to 10 minutes), it provided strong accuracy and generalization, particularly for moderate-sized gene sets.
 
 ### References
 
