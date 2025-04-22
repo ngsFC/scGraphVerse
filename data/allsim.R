@@ -407,7 +407,7 @@ pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 # Matrix p100n100
 
 all_runs <- list()
-for (i in 1:2) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -423,7 +423,7 @@ all_df <- bind_rows(all_runs, .id = "Run")
 summary_df <- all_df %>%
   group_by(Method, Predicted_Matrix) %>%
   summarise(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}"), .groups = "drop")
-write.table(summary_df, file = file.path(ddir, "simp100_10runs_check.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(summary_df, file = file.path(ddir, "simp100_10runs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 # Matrix p200n100
 
