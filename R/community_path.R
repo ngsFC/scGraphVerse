@@ -10,6 +10,16 @@
 #' @param verbose Logical; if TRUE, show progress messages (default: TRUE).
 #'
 #' @return A list containing community assignments, enrichment results, and the graph object.
+#' @importFrom igraph graph_from_adjacency_matrix V degree induced_subgraph vcount ecount
+#' @importFrom robin membershipCommunities robinCompare robinAUC
+#' @importFrom AnnotationDbi mapIds
+#' @importFrom org.Hs.eg.db org.Hs.eg.db
+#' @importFrom clusterProfiler enrichKEGG
+#' @importFrom ReactomePA enrichPathway
+#' @importFrom ggraph ggraph geom_edge_link geom_node_point
+#' @importFrom ggplot2 aes scale_color_manual labs theme_minimal theme element_text
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom grDevices colorRampPalette
 #' @export
 community_path <- function(adj_matrix,
                            methods = "louvain",
@@ -17,15 +27,9 @@ community_path <- function(adj_matrix,
                            genes_path = 5,
                            plot = TRUE,
                            verbose = TRUE) {
-  required_pkgs <- c("robin", "igraph", "ggraph", "ggplot2", "RColorBrewer", 
-                     "clusterProfiler", "org.Hs.eg.db", "ReactomePA")
-  missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
-  if (length(missing_pkgs) > 0) {
-    stop("Missing packages: ", paste(missing_pkgs, collapse = ", "))
-  }
   
   if (!is.matrix(adj_matrix) || nrow(adj_matrix) != ncol(adj_matrix)) {
-    stop("Input adjacency matrix must be square.")
+    stop("Input adjacency matrix must be a square matrix.")
   }
   if (is.null(rownames(adj_matrix))) {
     stop("Adjacency matrix must have row names (gene names).")
@@ -46,7 +50,7 @@ community_path <- function(adj_matrix,
     }, error = function(e) stop("robinCompare failed: ", conditionMessage(e)))
     
     auc <- robin::robinAUC(res)
-    if (!is.numeric(auc) || length(auc) != 2) stop("Unexpected AUC result.")
+    if (!is.numeric(auc) || length(auc) != 2) stop("Unexpected AUC result from robinCompare.")
     
     if (auc[1] < auc[2]) {
       best_method <- methods[1]
@@ -61,8 +65,13 @@ community_path <- function(adj_matrix,
   
   igraph::V(graph)$community <- as.factor(best_communities)
   
+  # Remove isolated nodes for plotting
+  non_isolated_nodes <- igraph::degree(graph) > 0
+  
   if (plot) {
-    num_communities <- length(unique(igraph::V(graph)$community))
+    plot_graph <- igraph::induced_subgraph(graph, vids = igraph::V(graph)[non_isolated_nodes])
+    num_communities <- length(unique(igraph::V(plot_graph)$community))
+    
     colors <- if (num_communities <= 12) {
       RColorBrewer::brewer.pal(num_communities, "Set3")
     } else {
@@ -70,9 +79,9 @@ community_path <- function(adj_matrix,
     }
     
     plot_title <- paste0("Community Structure (", best_method, ")\nNodes: ",
-                         igraph::vcount(graph), " Edges: ", igraph::ecount(graph))
+                         igraph::vcount(plot_graph), " Edges: ", igraph::ecount(plot_graph))
     
-    g <- ggraph::ggraph(graph, layout = "fr") + 
+    g <- ggraph::ggraph(plot_graph, layout = "fr") +
       ggraph::geom_edge_link(color = "gray", width = 0.5) +
       ggraph::geom_node_point(ggplot2::aes(color = community), size = 3) +
       ggplot2::scale_color_manual(values = colors) +
@@ -88,14 +97,20 @@ community_path <- function(adj_matrix,
   if (verbose) message("Running pathway enrichment...")
   
   pathway_results <- list()
+  non_isolated_genes <- igraph::V(graph)$name[non_isolated_nodes]
+  
   for (comm in unique(igraph::V(graph)$community)) {
-    genes <- igraph::V(graph)$name[igraph::V(graph)$community == comm]
+    genes <- intersect(
+      igraph::V(graph)$name[igraph::V(graph)$community == comm],
+      non_isolated_genes
+    )
+    
     if (length(genes) < genes_path) {
       pathway_results[[as.character(comm)]] <- NULL
       next
     }
     
-    entrez <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db,
+    entrez <- AnnotationDbi::mapIds(org.Hs.eg.db,
                                     keys = genes,
                                     column = "ENTREZID",
                                     keytype = "SYMBOL",
@@ -126,7 +141,6 @@ community_path <- function(adj_matrix,
   return(list(
     communities = list(best_method = best_method, membership = best_communities),
     pathways = pathway_results,
-    graph = graph  # essential for downstream topology metrics
+    graph = graph
   ))
 }
-

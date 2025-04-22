@@ -288,23 +288,6 @@ run_single_simulation <- function(run_id = 1,
                               seed=seed_base+run_id)
   )
   
-  ### Prepare the output
-  
-  #jrf_list <- list()
-  
-  #importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
-  
-  #for (i in seq_along(importance_columns)) {
-  # Select the 'gene1', 'gene2', and the current 'importance' column
-  #  df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
-  
-  # Rename the importance column to its original name (e.g., importance1, importance2, etc.)
-  #  names(df)[3] <- importance_columns[i]
-  
-  # Add the data frame to the output list
-  #  jrf_list[[i]] <- df
-  #}
-  
   ### symmetrize Output and ROC
   
   jrf_wadj <- generate_adjacency(jrf_mat)
@@ -424,7 +407,7 @@ pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 # Matrix p100n100
 
 all_runs <- list()
-for (i in 1:10) {
+for (i in 1:2) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,

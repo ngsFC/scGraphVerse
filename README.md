@@ -57,6 +57,14 @@ We applied scGraphVerse to benchmark network inference methods across simulated 
 
 ### References
 
+GENIE3: Huynh-Thu et al., 2010. Inferring regulatory networks from expression data using tree-based methods. Bioinformatics.
+
+GRNBoost2: Moerman et al., 2019. GRNBoost2 and Arboreto: Efficient and scalable inference of gene regulatory networks. Bioinformatics.
+
+ZILGM: Zhang et al., 2021. A zero-inflated log-normal model for single-cell gene expression networks. Bioinformatics.
+
+JRF: Shu et al., 2016. Joint estimation of multiple dependent Gaussian graphical models with applications to mouse genomics. Journal of Machine Learning Research.
+
 ### Abstract URL
 
 ### Supplemetary info

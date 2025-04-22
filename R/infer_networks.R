@@ -18,12 +18,24 @@ infer_networks <- function(count_matrices_list,
     }
   })
   
-  # JRF: joint modeling outside the loop
+  # For other methods: run in parallel for each matrix
+  n_matrices <- length(count_matrices_list)
+  nCores_outer <- min(total_cores, n_matrices)
+  nCores_inner <- max(floor(total_cores / nCores_outer), 1)
+  param_outer <- if (method == "GRNBoost2") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers = nCores_outer, RNGseed = seed)
+  
   if (method == "JRF") {
     norm_list <- lapply(count_matrices_list, function(mat) {
       t(scale(t(mat)))
     })
     
+    # BiocParallel-compliant parallel cluster
+    param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = seed)
+    clust <- parallel::makeCluster(nCores_inner)
+    on.exit(parallel::stopCluster(clust), add = TRUE)
+    doParallel::registerDoParallel(clust)
+    
+    # Run JRF joint network inference
     rf <- JRF::JRF(
       X = norm_list,
       genes.name = rownames(norm_list[[1]]),
@@ -31,7 +43,7 @@ infer_networks <- function(count_matrices_list,
       mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     )
     
-    # Split JRF output into a list of data frames by 'importance' columns
+    # Split the result into a list of edge lists
     jrf_mat <- list(rf)
     importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
     
@@ -44,12 +56,6 @@ infer_networks <- function(count_matrices_list,
     
     return(jrf_list)
   }
-  
-  # For other methods: run in parallel for each matrix
-  n_matrices <- length(count_matrices_list)
-  nCores_outer <- min(total_cores, n_matrices)
-  nCores_inner <- max(floor(total_cores / nCores_outer), 1)
-  param_outer <- if (method == "GRNBoost2") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers = nCores_outer, RNGseed = seed)
   
   BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
     mat <- count_matrices_list[[i]]
