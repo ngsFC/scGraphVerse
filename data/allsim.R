@@ -424,7 +424,7 @@ pdir <- "/home/francescoc/Desktop/scGraphVerse/analysis/simulation/plot/"
 # Matrix p100n100
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -445,7 +445,7 @@ write.table(summary_df, file = file.path(ddir, "simp100_10runs_check.txt"), sep 
 # Matrix p200n100
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -465,7 +465,7 @@ write.table(summary_df, file = file.path(ddir, "simp200_10runs.txt"), sep = "\t"
 # Matrix p500n100
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -489,7 +489,7 @@ write.table(summary_df, file = file.path(ddir, "simp500_10runs.txt"), sep = "\t"
 # Matrix p100n500
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -509,7 +509,7 @@ write.table(summary_df, file = file.path(ddir, "simp100n500_10runs.txt"), sep = 
 # Matrix p200n500
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,
@@ -529,7 +529,7 @@ write.table(summary_df, file = file.path(ddir, "simp200n500_10runs.txt"), sep = 
 # Matrix p500n500
 
 all_runs <- list()
-for (i in 1:5) {
+for (i in 1:10) {
   cat("Running simulation", i, "\n")
   all_runs[[i]] <- run_single_simulation(
     run_id = i,

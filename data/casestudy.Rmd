@@ -51,7 +51,7 @@ set.seed(1234)
 time[["GENIE3_late_15Cores"]] <- system.time(
   genie3_late <- infer_networks(seurat_split, 
                                 method="GENIE3",
-                                nCores = 15)
+                                total_cores = 15)
 )
 
 genie3_late[[1]] %>%
@@ -90,7 +90,7 @@ sgenie3_late_adj <- cutoff_adjacency(count_matrices = seurat_split,
                                      weighted_adjm_list = sgenie3_late_wadj, 
                                      n = 3,
                                      method = "GENIE3",
-                                     nCores = 15)
+                                     total_cores = 15)
 
 as.data.frame(sgenie3_late_adj[[1]]) %>%
   slice_head(n=30) %>% 
@@ -181,6 +181,11 @@ query[[1]] %>%
               scrollX = TRUE,
               pageLength = 10), 
             caption = "FN PubMed query")
+```
+```{r}
+comm_consesusm <- community_path(consesusm)
+comm_consesusu <- community_path(consesusu)
+comm_consesunet <- community_path(consesunet)
 ```
 
 ### Early integration
