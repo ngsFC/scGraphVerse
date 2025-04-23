@@ -12,7 +12,6 @@ Imports:
     BiocParallel (>= 1.30.0),
     ggplot2,
     rentrez,
-    INetTool,
     Matrix,
     STRINGdb,
     Seurat,
@@ -28,4 +27,9 @@ Imports:
     patchwork,
     scales,
     tidyr
-
+Remotes:
+    github::ValeriaPolicastro/INet-Tool
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown
