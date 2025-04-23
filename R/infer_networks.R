@@ -18,7 +18,6 @@ infer_networks <- function(count_matrices_list,
     }
   })
   
-  # For other methods: run in parallel for each matrix
   n_matrices <- length(count_matrices_list)
   nCores_outer <- min(total_cores, n_matrices)
   nCores_inner <- max(floor(total_cores / nCores_outer), 1)
@@ -29,7 +28,6 @@ infer_networks <- function(count_matrices_list,
       t(scale(t(mat)))
     })
     
-    # BiocParallel-compliant parallel cluster
     param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = seed)
     clust <- parallel::makeCluster(nCores_inner)
     on.exit(parallel::stopCluster(clust), add = TRUE)
