@@ -38,7 +38,6 @@
 #' @export
 
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
-  # Input checks
   if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
     stop("`ground_truth` must be a square matrix.")
   }
@@ -51,7 +50,6 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
     stop("`predicted_list` must be a list of matrices.")
   }
 
-  # Zero the diagonal if specified
   ground_truth <- as.matrix(ground_truth)
   if (zero_diag) diag(ground_truth) <- 0
 
@@ -59,7 +57,6 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   get_upper_tri <- function(mat) mat[upper.tri(mat)]
   ground_truth_upper <- get_upper_tri(ground_truth)
 
-  # Initialize stats
   metrics <- c("TP", "TN", "FP", "FN", "TPR", "FPR", "Precision", "F1", "MCC")
   stat_rows <- lapply(seq_along(predicted_list), function(i) {
     pred <- predicted_list[[i]]

@@ -41,7 +41,6 @@ community_similarity <- function(control_output, predicted_list) {
     
     community_metrics[[paste0("Predicted_", i)]] <- c(VI = vi, NMI = nmi, ARI = ari)
     
-    # --- Scaled topological similarity metrics ---
     if (is.null(pred_graph) || !igraph::is_igraph(pred_graph)) {
       warning("Prediction ", i, " has no valid graph. Skipping topology comparison.")
       topology_similarity[[paste0("Predicted_", i)]] <- rep(NA, 4)
@@ -69,12 +68,10 @@ community_similarity <- function(control_output, predicted_list) {
   topo_df <- as.data.frame(do.call(rbind, topology_similarity))
   colnames(topo_df) <- c("Modularity", "Communities", "Density", "Transitivity")
   
-  # === Radar chart for community similarity (no Split-Join) ===
   max_val <- ceiling(max(comm_df, na.rm = TRUE))
   axis_steps <- pretty(c(0, max_val), n = 5)  # Clean numeric scale
   radar_comm <- rbind(rep(max_val, ncol(comm_df)), rep(0, ncol(comm_df)), comm_df)
   
-  # === Radar chart for topological similarity (scaled 0–1) ===
   radar_topo <- rbind(rep(1, ncol(topo_df)), rep(0, ncol(topo_df)), topo_df)
   
   colors <- grDevices::rainbow(nrow(comm_df))

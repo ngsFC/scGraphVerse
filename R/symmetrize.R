@@ -40,12 +40,11 @@ symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParal
     stop("matrix_list must be a list of matrices")
   }
   
-  weight_function <- match.fun(weight_function)  # Ensure valid function input
+  weight_function <- match.fun(weight_function) 
   
-  # Parallel processing of matrix symmetrization
   symmetrized_matrices <- BiocParallel::bplapply(matrix_list, function(mat) {
     p <- nrow(mat)
-    sym_mat <- mat  # Copy structure
+    sym_mat <- mat
     
     for (i in seq_len(p - 1)) {
       for (j in seq(i + 1, p)) {
@@ -53,9 +52,9 @@ symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParal
         val_ji <- mat[j, i]
         
         if (val_ij == 0 || val_ji == 0) {
-          symmetric_value <- max(val_ij, val_ji)  # Use the non-zero value
+          symmetric_value <- max(val_ij, val_ji)
         } else {
-          symmetric_value <- weight_function(c(val_ij, val_ji))  # Apply function
+          symmetric_value <- weight_function(c(val_ij, val_ji))
         }
         
         sym_mat[i, j] <- symmetric_value

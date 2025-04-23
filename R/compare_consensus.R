@@ -34,12 +34,10 @@
 
 compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_plot = FALSE) {
   
-  # Validate consensus_matrix
   if (!is.matrix(consensus_matrix)) {
     stop("consensus_matrix must be a binary adjacency matrix.")
   }
   
-  # If reference_matrix is NULL, use STRINGdb to get adjacency matrix
   use_STRINGdb <- is.null(reference_matrix)
   
   if (use_STRINGdb) {
@@ -57,10 +55,9 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
     adj <- adj[rownames(consensus_matrix), rownames(consensus_matrix)]
     adj <- symmetrize(list(adj), weight_function = "mean")[[1]]
     
-    reference_matrix <- adj  # Use STRINGdb adjacency as reference
+    reference_matrix <- adj
   }
   
-  # Validate reference_matrix
   if (!is.matrix(reference_matrix)) {
     stop("reference_matrix must be a binary adjacency matrix.")
   }
@@ -73,7 +70,6 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
   graph_reference <- igraph::graph_from_adjacency_matrix(reference_matrix, mode = "undirected", diag = FALSE)
   graph_consensus <- igraph::graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
   
-  # Extract edges as sorted strings
   edge_to_string <- function(edge_list) {
     apply(edge_list, 1, function(x) paste(sort(x), collapse = "-"))
   }
@@ -81,7 +77,6 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
   reference_edges_str <- edge_to_string(as_edgelist(graph_reference))
   consensus_edges_str <- edge_to_string(as_edgelist(graph_consensus))
   
-  # Adjust labels based on data source
   if (use_STRINGdb) {
     TP_label <- "CE (Confirmed Edges)"
     FN_label <- "ME (Missing Edges)"
@@ -123,10 +118,8 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
         FP_edges_mat <- do.call(rbind, FP_edges_list)
         graph_fp <- igraph::graph_from_edgelist(FP_edges_mat, directed = FALSE)
         
-        # Remove isolated nodes
         graph_fp_no_isolates <- delete_vertices(graph_fp, V(graph_fp)[degree(graph_fp) == 0])
         
-        # Plot FP edges
         plot_fp <- ggraph(graph_fp_no_isolates, layout = "fr") +
           geom_edge_link(color = "purple", width = 1) +
           geom_node_point(color = "steelblue", size = 2) +
@@ -134,7 +127,6 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
           theme_minimal() +
           theme(legend.position = "none")
         
-        # Combine plots
         return(wrap_plots(plot_tp_fn, plot_fp, nrow = 1))
       }
     }

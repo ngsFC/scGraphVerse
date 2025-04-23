@@ -34,7 +34,6 @@
 #' @export
 
 plotg <- function(adj_matrix_list) {
-  # Load required packages
   if (!requireNamespace("igraph", quietly = TRUE)) {
     stop("The 'igraph' package is required but not installed.")
   }
@@ -45,7 +44,6 @@ plotg <- function(adj_matrix_list) {
     stop("The 'gridExtra' package is required but not installed.")
   }
   
-  # Validate input
   if (!is.list(adj_matrix_list)) {
     stop("Input must be a list of adjacency matrices.")
   }
@@ -55,7 +53,6 @@ plotg <- function(adj_matrix_list) {
   for (i in seq_along(adj_matrix_list)) {
     adj_matrix <- adj_matrix_list[[i]]
     
-    # Validate matrix
     if (!is.matrix(adj_matrix) || nrow(adj_matrix) != ncol(adj_matrix)) {
       warning(paste("Skipping graph", i, ": Adjacency matrix must be square."))
       next
@@ -66,22 +63,17 @@ plotg <- function(adj_matrix_list) {
       next
     }
     
-    # Convert adjacency matrix to igraph object
     g <- igraph::graph_from_adjacency_matrix(adj_matrix, mode = "undirected", weighted = NULL, diag = FALSE)
     
     # Remove disconnected nodes (degree 0)
     g <- igraph::delete_vertices(g, igraph::V(g)[igraph::degree(g) == 0])
     
-    # Ensure the graph has edges before plotting
     if (igraph::vcount(g) == 0 || igraph::ecount(g) == 0) {
       warning(paste("Skipping graph", i, ": No edges remaining after removing disconnected nodes."))
       next
     }
     
-    # Graph title
     plot_title <- paste("Graph", i, "\nNodes:", igraph::vcount(g), "Edges:", igraph::ecount(g))
-    
-    # Create the plot
     p <- ggraph::ggraph(g, layout = "fr") + 
       ggraph::geom_edge_link(color = "gray", width = 0.5) +  
       ggraph::geom_node_point(color = "steelblue", size = 3) +  
@@ -99,7 +91,6 @@ plotg <- function(adj_matrix_list) {
     stop("No valid graphs were generated.")
   }
   
-  # Combine all plots into a grid
   final_plot <- gridExtra::grid.arrange(grobs = plot_list, ncol = ceiling(sqrt(length(plot_list))))
   
   return(final_plot)

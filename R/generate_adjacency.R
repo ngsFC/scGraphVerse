@@ -50,7 +50,7 @@ generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocPar
   
   # Process each data frame in parallel
   adjacency_matrix_list <- BiocParallel::bplapply(df_list, function(data) {
-    adjacency_matrix <- template_matrix  # Copy template structure
+    adjacency_matrix <- template_matrix 
     
     for (i in seq_len(nrow(data))) {
       gene1 <- as.character(data[i, 1])
@@ -62,7 +62,7 @@ generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocPar
       }
     }
     
-    diag(adjacency_matrix) <- 0  # Remove self-loops
+    diag(adjacency_matrix) <- 0 
     return(adjacency_matrix)
   }, BPPARAM = BiocParallel::MulticoreParam(nCores))
   
