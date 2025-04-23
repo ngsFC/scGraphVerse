@@ -12,7 +12,7 @@ Imports:
     BiocParallel (>= 1.30.0),
     ggplot2,
     rentrez,
-    INet-Tool,
+    INetTool,
     Matrix,
     STRINGdb,
     Seurat,
