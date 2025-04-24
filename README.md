@@ -64,7 +64,8 @@ install.packages(
 
 ##📚 Citation
 If you use scGraphVerse, please cite the original GRN inference methods it implements:
-1.      Huynh-Thu VA, Irrthum A, Wehenkel L, Geurts P. Inferring Regulatory Networks from Expression Data Using Tree-Based Methods. PLOS ONE. 2010 Sep 28;5(9):e12776.
+
+1.	Huynh-Thu VA, Irrthum A, Wehenkel L, Geurts P. Inferring Regulatory Networks from Expression Data Using Tree-Based Methods. PLOS ONE. 2010 Sep 28;5(9):e12776.
 2.	Moerman T, Aibar Santos S, Bravo González-Blas C, Simm J, Moreau Y, Aerts J, et al. GRNBoost2 and Arboreto: efficient and scalable inference of gene regulatory networks. Bioinformatics. 2019 Jun 15;35(12):2159–61.
 3.	Park B, Choi H, Park C. Negative binomial graphical model with excess zeros. Stat Anal Data Min ASA Data Sci J. 2021;14(5):449–65.
 4.	Nguyen TKH, Berge K van den, Chiogna M, Risso D. Structure learning for zero-inflated counts with an application to single-cell RNA sequencing data. Ann Appl Stat. 2023 Sep;17(3):2555–73.
@@ -72,8 +73,10 @@ If you use scGraphVerse, please cite the original GRN inference methods it imple
 
 ---
 ##🏛 Funding
+
 This work is supported by the project:
 National Centre for HPC, Big Data and Quantum Computing Funded by European Union – Next Generation EU – CN00000013 CUP: B93C22000620006
+
 ---
 
 
