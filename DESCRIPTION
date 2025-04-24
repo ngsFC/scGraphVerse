@@ -37,7 +37,8 @@ Imports:
     pROC,
     patchwork,
     scales,
-    tidyr
+    tidyr,
+    GENIE3
 Suggests:
     testthat,
     knitr,
