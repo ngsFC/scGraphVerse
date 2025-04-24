@@ -1,13 +1,24 @@
 Package: scGraphVerse
 Title: scGraphVerse: A Gene Regulatory Network Analysis Package
 Version: 0.1.0
-Author: Francesco Cecere [aut, cre]
-Maintainer: Francesco Cecere <francesco.cecerengs@gmail.com>
-Description: A package for analyzing gene regulatory networks.
+Authors@R: 
+    person("Francesco", "Cecere", 
+           email = "francesco.cecerengs@gmail.com", 
+           role = c("aut", "cre"))
+Description: A package for inferring, comparing, and visualizing gene regulatory networks 
+    from single-cell RNA sequencing data. It integrates multiple methods (GENIE3, 
+    GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
+    building across methods or datasets, and provides tools for evaluating regulatory 
+    structure and community similarity.
 License: MIT
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+biocViews: GeneRegulation, NetworkInference, SingleCell, RNASeq, Visualization, Software
+URL: https://github.com/francesco-cecere/scGraphVerse
+BugReports: https://github.com/francesco-cecere/scGraphVerse/issues
+Depends: 
+    R (>= 4.3.0)
 Imports:
     BiocParallel (>= 1.30.0),
     ggplot2,
@@ -27,9 +38,8 @@ Imports:
     patchwork,
     scales,
     tidyr
-Remotes:
-    github::ValeriaPolicastro/INet-Tool
 Suggests:
     testthat,
     knitr,
     rmarkdown
+
