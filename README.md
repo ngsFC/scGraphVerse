@@ -62,7 +62,7 @@ install.packages(
 )
 ```
 
-##📚 Citation
+## 📚 Citation
 If you use scGraphVerse, please cite the original GRN inference methods it implements:
 
 1.	Huynh-Thu VA, Irrthum A, Wehenkel L, Geurts P. Inferring Regulatory Networks from Expression Data Using Tree-Based Methods. PLOS ONE. 2010 Sep 28;5(9):e12776.
@@ -72,7 +72,7 @@ If you use scGraphVerse, please cite the original GRN inference methods it imple
 5.	Petralia F, Song WM, Tu Z, Wang P. New Method for Joint Network Analysis Reveals Common and Different Coexpression Patterns among Genes and Proteins in Breast Cancer. J Proteome Res. 2016 Mar 4;15(3):743–54.
 
 ---
-##🏛 Funding
+## 🏛 Funding
 
 This work is supported by the project:
 National Centre for HPC, Big Data and Quantum Computing Funded by European Union – Next Generation EU – CN00000013 CUP: B93C22000620006
