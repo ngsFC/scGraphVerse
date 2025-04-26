@@ -43,7 +43,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' set.seed(42)
 #' # Simulate two small expression matrices
 #' mat1 <- matrix(rpois(100, 5), nrow = 10)
@@ -61,7 +60,6 @@
 #'
 #' # Inspect first network
 #' networks[[1]]
-#' }
 
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",

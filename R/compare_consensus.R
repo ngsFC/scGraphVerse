@@ -53,9 +53,6 @@
 #' # Compare consensus network to original network
 #' compare_consensus(consensus, reference_matrix = original, false_plot = TRUE)
 #'
-#' # Compare consensus network against STRINGdb
-#' compare_consensus(consensus)
-#' }
 
 compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_plot = FALSE) {
   

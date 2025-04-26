@@ -41,7 +41,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Create a simple adjacency matrix
 #' B <- matrix(0, nrow = 5, ncol = 5)
 #' rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
@@ -62,7 +61,6 @@
 #'
 #' # View one simulated matrix
 #' print(zinb_matrices[[1]])
-#' }
 
 zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = NA, seed = NULL) {
   

@@ -28,7 +28,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' mat1 <- matrix(runif(100), nrow = 10)
 #' mat2 <- matrix(runif(100), nrow = 10)
 #' ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
@@ -39,7 +38,6 @@
 #'         ground_truth = ground_truth,
 #'         plot_title = "ROC for Network Inference",
 #'         is_binary = FALSE)
-#' }
 
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
   

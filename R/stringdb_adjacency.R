@@ -36,7 +36,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Define a large set of genes
 #' large_gene_set <- c("TP53", "BRCA1", "MYC", "EGFR", "PTEN")
 #'
@@ -52,7 +51,6 @@
 #'
 #' # Access the binary adjacency matrix
 #' binary_mat <- adjacency_list$binary
-#' }
 
 stringdb_adjacency <- function(
     genes,

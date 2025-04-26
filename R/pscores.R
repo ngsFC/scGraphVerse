@@ -33,7 +33,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Simulate ground truth and predictions
 #' ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
 #' diag(ground_truth) <- 0
@@ -43,7 +42,6 @@
 #' # Compute scores and generate radar plot
 #' result <- pscores(ground_truth, list(pred1, pred2))
 #' result$Statistics
-#' }
 
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
