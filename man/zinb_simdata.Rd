@@ -66,7 +66,6 @@ The function is particularly useful for benchmarking single-cell RNA-seq network
 methods where dropout events and network structure are relevant.
 }
 \examples{
-\dontrun{
 # Create a simple adjacency matrix
 B <- matrix(0, nrow = 5, ncol = 5)
 rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
@@ -87,5 +86,4 @@ zinb_matrices <- zinb_simdata(
 
 # View one simulated matrix
 print(zinb_matrices[[1]])
-}
 }

@@ -40,7 +40,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' set.seed(42)
 #'
 #' # Simulate small example matrices

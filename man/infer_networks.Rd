@@ -56,7 +56,6 @@ The methods are based on:
 }
 }
 \examples{
-\dontrun{
 set.seed(42)
 # Simulate two small expression matrices
 mat1 <- matrix(rpois(100, 5), nrow = 10)
@@ -74,5 +73,4 @@ networks <- infer_networks(
 
 # Inspect first network
 networks[[1]]
-}
 }

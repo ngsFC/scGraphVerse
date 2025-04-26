@@ -46,21 +46,3 @@ Isolated nodes (degree zero) are removed before plotting to improve clarity.
 \note{
 Requires the \pkg{igraph}, \pkg{ggraph}, \pkg{patchwork}, \pkg{Matrix}, and \pkg{STRINGdb} packages.
 }
-\examples{
-\dontrun{
-set.seed(42)
-
-# Simulate small example matrices
-original <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
-consensus <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
-diag(original) <- diag(consensus) <- 0
-rownames(original) <- colnames(original) <- paste0("Gene", 1:5)
-rownames(consensus) <- colnames(consensus) <- paste0("Gene", 1:5)
-
-# Compare consensus network to original network
-compare_consensus(consensus, reference_matrix = original, false_plot = TRUE)
-
-# Compare consensus network against STRINGdb
-compare_consensus(consensus)
-}
-}

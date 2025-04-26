@@ -27,7 +27,6 @@ and \code{SingleCellExperiment} objects, only features (genes) common across all
 before merging. The cell names are suffixed with "-m1", "-m2", etc., according to their original list position.
 }
 \examples{
-\dontrun{
 # Example with matrices where genes are rows (default behavior)
 mat1 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
 mat2 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
@@ -42,10 +41,4 @@ mat4 <- t(mat2)
 
 combined_matrix2 <- earlyj(list(mat3, mat4), rowg = FALSE)
 
-# Example with Seurat objects (requires Seurat installed)
-# combined_seurat <- earlyj(list(seurat_obj1, seurat_obj2))
-
-# Example with SingleCellExperiment objects (requires SingleCellExperiment installed)
-# combined_sce <- earlyj(list(sce_obj1, sce_obj2))
-}
 }

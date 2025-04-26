@@ -49,7 +49,6 @@ Genes that could not be mapped to STRING are optionally retained as rows/columns
 Requires the following packages: \pkg{STRINGdb}, \pkg{httr}, and \pkg{jsonlite}.
 }
 \examples{
-\dontrun{
 # Define a large set of genes
 large_gene_set <- c("TP53", "BRCA1", "MYC", "EGFR", "PTEN")
 
@@ -65,5 +64,4 @@ weighted_mat <- adjacency_list$weighted
 
 # Access the binary adjacency matrix
 binary_mat <- adjacency_list$binary
-}
 }

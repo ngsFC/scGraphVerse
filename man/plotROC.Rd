@@ -33,7 +33,6 @@ For weighted matrices, a full ROC curve is calculated based on continuous predic
 Diagonal entries are ignored. Symmetry between rows and columns is not enforced.
 }
 \examples{
-\dontrun{
 mat1 <- matrix(runif(100), nrow = 10)
 mat2 <- matrix(runif(100), nrow = 10)
 ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
@@ -44,5 +43,4 @@ plotROC(matrices_list = list(mat1, mat2),
         ground_truth = ground_truth,
         plot_title = "ROC for Network Inference",
         is_binary = FALSE)
-}
 }

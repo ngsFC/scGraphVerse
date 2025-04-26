@@ -38,7 +38,6 @@ A radar plot is automatically generated summarizing the key scores across matric
 Requires the \pkg{fmsb}, \pkg{dplyr}, and \pkg{tidyr} packages.
 }
 \examples{
-\dontrun{
 # Simulate ground truth and predictions
 ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
 diag(ground_truth) <- 0
@@ -48,5 +47,4 @@ pred2 <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
 # Compute scores and generate radar plot
 result <- pscores(ground_truth, list(pred1, pred2))
 result$Statistics
-}
 }
