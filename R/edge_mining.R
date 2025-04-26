@@ -41,10 +41,7 @@
 edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "Title/Abstract", 
                         query_edge_types = c("TP", "FP", "FN"), max_retries = 10,
                         BPPARAM = BiocParallel::bpparam()) {
-  
-  library(BiocParallel)
-  library(rentrez)
-  
+ 
   if (!is.list(predicted_list) || !is.matrix(ground_truth)) {
     stop("predicted_list must be a list of matrices and ground_truth must be a matrix")
   }

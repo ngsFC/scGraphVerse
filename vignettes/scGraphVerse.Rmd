@@ -89,7 +89,7 @@ result <- stringdb_adjacency(
   genes          = pathgenes,
   species        = 9606,
   required_score = 900,
-  keep_all_genes = F
+  keep_all_genes = FALSE
 )
 
 wadjm <- result$weighted
@@ -151,7 +151,7 @@ late <- infer_networks(count_matrices,
                            total_cores = 15,
                            seed=1234)
 
-early_matrix <- list(earlyj(count_matrices, rowg = T))
+early_matrix <- list(earlyj(count_matrices, rowg = TRUE))
 early <- infer_networks(early_matrix, 
                            method="GENIE3",
                            total_cores = 15,
@@ -167,7 +167,7 @@ joint <- infer_networks(count_matrices,
 ```{r}
 jrf_wadj <- generate_adjacency(joint)
 sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
-jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = F)
+jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = FALSE)
 ```
 
 ```{r}
@@ -190,9 +190,9 @@ scores.jrf <- pscores(adjm, list(consesusm, consesusu, consesunet))
 ```
 
 ```{r}
-compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
-compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
-compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = FALSE)
+compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = FALSE)
+compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = FALSE)
 ```
 
 ```{r}
@@ -207,7 +207,10 @@ topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, c
 
 
 ```{r}
-query <- edge_mining(list(consesusm), adjm, query_edge_types = "FN")
+query <- edge_mining(list(consesusm), adjm, query_edge_types = "TP")
+```
 
+```{r}
+sessionInfo()
 ```
 

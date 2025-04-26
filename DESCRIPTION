@@ -4,7 +4,8 @@ Version: 0.1.0
 Authors@R: 
     person("Francesco", "Cecere", 
            email = "francesco.cecerengs@gmail.com", 
-           role = c("aut", "cre"))
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-0329-0870"))
 Description: A package for inferring, comparing, and visualizing gene regulatory networks 
     from single-cell RNA sequencing data. It integrates multiple methods (GENIE3, 
     GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
@@ -38,10 +39,10 @@ Imports:
     patchwork,
     scales,
     tidyr,
-    GENIE3,
-    rentrez
+    GENIE3
 Suggests:
     testthat,
     knitr,
     rmarkdown
+VignetteBuilder: knitr
 
