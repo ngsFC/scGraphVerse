@@ -1,39 +1,41 @@
 #' Symmetrize a List of Square Matrices
 #'
-#' This function symmetrizes each square matrix in a list by ensuring that the values at 
-#' positions \eqn{(i, j)} and \eqn{(j, i)} are identical. The symmetry is enforced by combining 
-#' the two values using a specified function, such as the mean or maximum.
+#' Symmetrizes each square matrix in a list by ensuring that entries \eqn{(i,j)} and \eqn{(j,i)}
+#' are identical, based on a specified combination function.
 #'
-#' @param matrix_list A list of square numeric matrices to be symmetrized.
-#' @param weight_function Character or function. A function (or name of a function) 
-#'   used to combine \eqn{(i, j)} and \eqn{(j, i)} values. Common options include 
-#'   \code{"mean"}, \code{"max"}, \code{"min"}, or a custom function.
-#' @param nCores Integer. Number of CPU cores to use for parallel processing. 
-#'   Defaults to the number of available workers from \pkg{BiocParallel}.
+#' @param matrix_list A list of square numeric matrices to symmetrize.
+#' @param weight_function Character string or function. Method to combine \eqn{(i,j)} and \eqn{(j,i)} entries.
+#'   Options include \code{"mean"}, \code{"max"}, \code{"min"}, or a user-defined function.
+#' @param nCores Integer. Number of CPU cores to use for parallel processing.
+#'   Defaults to the number of available workers in the current \pkg{BiocParallel} backend.
 #'
-#' @return A list of symmetric matrices, where each output matrix satisfies 
-#'   \eqn{A[i,j] = A[j,i]} for all \eqn{i ≠ j}.
+#' @return
+#' A list of symmetric matrices, where for each matrix \eqn{A[i,j] = A[j,i]} for all \eqn{i ≠ j}.
 #'
 #' @details
-#' For each off-diagonal pair of entries \eqn{(i, j)} and \eqn{(j, i)} in the matrix, 
-#' the function:
+#' For each pair of off-diagonal elements \eqn{(i,j)} and \eqn{(j,i)}:
 #' \itemize{
-#'   \item Uses the non-zero value if one of the two is zero.
-#'   \item Applies the specified \code{weight_function} if both values are non-zero.
+#'   \item If one value is zero, the non-zero value is used.
+#'   \item If both values are non-zero, they are combined using the specified \code{weight_function}.
 #' }
-#' The diagonal values are not modified.
+#' Diagonal entries are preserved as-is and not modified.
 #'
-#' Parallel execution is handled via \pkg{BiocParallel} for improved scalability.
-#'
-#' @examples
-#' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
-#' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
-#' matrix_list <- list(mat1, mat2)
-#' 
-#' sym_list <- symmetrize(matrix_list, weight_function = "mean")
+#' Parallelization is managed via \pkg{BiocParallel} for improved performance.
 #'
 #' @importFrom BiocParallel bplapply bpworkers bpparam MulticoreParam
 #' @export
+#'
+#' @examples
+#' # Create two small asymmetric matrices
+#' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
+#' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
+#' matrix_list <- list(mat1, mat2)
+#'
+#' # Symmetrize using the mean function
+#' sym_list <- symmetrize(matrix_list, weight_function = "mean")
+#'
+#' # View the first symmetrized matrix
+#' sym_list[[1]]
 
 symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
   if (!is.list(matrix_list) || !all(sapply(matrix_list, is.matrix))) {

@@ -1,26 +1,31 @@
 #' Plot ROC Curves for Inferred Networks
 #'
-#' This function computes and plots Receiver Operating Characteristic (ROC) curves 
-#' for a list of predicted adjacency matrices against a binary ground truth network. 
-#' It supports both binary (0/1) and weighted prediction matrices.
+#' Computes and visualizes Receiver Operating Characteristic (ROC) curves
+#' for a list of predicted adjacency matrices compared against a binary ground truth network.
 #'
-#' @param matrices_list A list of square matrices representing predicted interactions. 
-#'   Each matrix must have the same dimensions and row/column names as `ground_truth`. 
+#' @param matrices_list A list of square matrices representing predicted interactions.
+#'   Each matrix must have the same dimensions and row/column names as \code{ground_truth}.
 #'   Entries may be binary (0/1) or continuous weights.
-#' @param ground_truth A square binary matrix indicating true interactions (1) 
-#'   in the upper triangle. Must have the same dimensions and names as each matrix in `matrices_list`.
-#' @param plot_title Character. Title of the ROC plot.
-#' @param is_binary Logical. If `TRUE`, matrices are treated as binary predictions. 
-#'   Defaults to `FALSE` for weighted prediction matrices.
+#' @param ground_truth A square binary matrix indicating true interactions (1) in the upper triangle.
+#'   Must match the dimensions and names of each matrix in \code{matrices_list}.
+#' @param plot_title Character string. Title for the ROC plot.
+#' @param is_binary Logical. If \code{TRUE}, matrices are treated as binary predictions.
+#'   Default is \code{FALSE}, for weighted predictions.
 #'
-#' @return A data frame containing the Area Under the Curve (AUC) for each matrix.
+#' @return
+#' A data frame containing the Area Under the Curve (AUC) for each matrix.
+#' The ROC plot is displayed automatically.
 #'
-#' @details 
-#' For binary matrices, the ROC curve is computed using a single TPR/FPR point per matrix. 
-#' For weighted matrices, the full ROC curve is calculated using the continuous prediction scores. 
-#' The resulting plot includes one ROC curve per matrix, with AUC values shown in the legend.
+#' @details
+#' For binary matrices, a single TPR/FPR point is computed per matrix.
+#' For weighted matrices, a full ROC curve is calculated based on continuous prediction scores.
+#' Diagonal entries are ignored. Symmetry between rows and columns is not enforced.
 #'
-#' Diagonal elements are ignored in all comparisons. The function assumes symmetry is not required.
+#' @import ggplot2
+#' @importFrom pROC roc
+#' @importFrom scales hue_pal
+#' @importFrom dplyr bind_rows arrange
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -30,17 +35,11 @@
 #' diag(ground_truth) <- 0
 #' ground_truth[lower.tri(ground_truth)] <- 0
 #'
-#' plotROC(matrices_list = list(mat1, mat2), 
+#' plotROC(matrices_list = list(mat1, mat2),
 #'         ground_truth = ground_truth,
-#'         plot_title = "ROC for Network Inference", 
+#'         plot_title = "ROC for Network Inference",
 #'         is_binary = FALSE)
 #' }
-#'
-#' @import ggplot2
-#' @importFrom pROC roc
-#' @importFrom scales hue_pal
-#' @importFrom dplyr bind_rows arrange
-#' @export
 
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
   

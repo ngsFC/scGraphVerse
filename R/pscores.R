@@ -1,41 +1,49 @@
 #' Compute Performance Scores for Predicted Adjacency Matrices
 #'
-#' This function evaluates predicted adjacency matrices against a ground truth matrix 
-#' by computing classification metrics including True Positive Rate (TPR), False Positive Rate (FPR),
-#' Precision, F1-score, and Matthews Correlation Coefficient (MCC). A radar plot (spider chart) is 
-#' generated to visually compare the performance of each matrix.
+#' Computes classification metrics by comparing predicted adjacency matrices
+#' to a ground truth binary network. Visualizes the performance scores using a radar (spider) plot.
 #'
-#' @param ground_truth A square binary adjacency matrix representing the ground truth network. 
-#'   Values must be 0 or 1. The upper triangle is used for evaluation.
-#' @param predicted_list A list of square adjacency matrices to evaluate. Each matrix must have 
-#'   the same dimensions and row/column names as \code{ground_truth}.
-#' @param zero_diag Logical. If \code{TRUE}, sets the diagonal of the ground truth to zero before evaluation. 
-#'   This removes self-loops from consideration. Default is \code{TRUE}.
+#' @param ground_truth A square binary adjacency matrix representing the ground truth network.
+#'   Values must be 0 or 1. Only the upper triangle is used for evaluation.
+#' @param predicted_list A list of predicted adjacency matrices to evaluate.
+#'   Each must have the same dimensions and row/column names as \code{ground_truth}.
+#' @param zero_diag Logical. If \code{TRUE} (default), sets the diagonal of \code{ground_truth} to zero
+#'   before evaluation, removing self-loops.
 #'
-#' @return A list with the following component:
-#' \describe{
-#'   \item{Statistics}{A data frame of evaluation metrics (TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC) 
-#'                     for each predicted matrix.}
+#' @return
+#' A list with one element:
+#' \itemize{
+#'   \item \code{Statistics}: A data frame containing evaluation metrics (TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
+#'   for each predicted matrix.
 #' }
 #'
 #' @details
-#' For each predicted matrix, the function computes confusion matrix statistics using the 
-#' upper triangle of the matrices. These are then used to calculate performance metrics. 
-#' A radar chart is plotted to summarize the key evaluation scores visually.
+#' For each predicted matrix, the confusion matrix is computed using the upper triangle
+#' (non-self edges). Metrics including True Positive Rate (TPR), False Positive Rate (FPR),
+#' Precision, F1-score, and Matthews Correlation Coefficient (MCC) are calculated.
+#' 
+#' A radar plot is automatically generated summarizing the key scores across matrices.
 #'
-#' @examples
-#' \dontrun{
-#' ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
-#' diag(ground_truth) <- 0
-#' pred1 <- ground_truth
-#' pred2 <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
-#' pscores(ground_truth, list(pred1, pred2))
-#' }
+#' @note
+#' Requires the \pkg{fmsb}, \pkg{dplyr}, and \pkg{tidyr} packages.
 #'
 #' @importFrom fmsb radarchart
 #' @importFrom dplyr select
 #' @importFrom tidyr all_of
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Simulate ground truth and predictions
+#' ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+#' diag(ground_truth) <- 0
+#' pred1 <- ground_truth
+#' pred2 <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+#'
+#' # Compute scores and generate radar plot
+#' result <- pscores(ground_truth, list(pred1, pred2))
+#' result$Statistics
+#' }
 
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {

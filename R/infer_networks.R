@@ -1,3 +1,68 @@
+#' Infer Gene Regulatory Networks from Expression Matrices
+#'
+#' Infers weighted gene regulatory networks from one or more expression matrices
+#' using different inference methods: \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
+#'
+#' @param count_matrices_list A list of expression matrices (genes × cells) or 
+#'   \linkS4class{Seurat} or \linkS4class{SingleCellExperiment} objects.
+#' @param method Character string. Inference method to use. One of:
+#'   \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
+#' @param adjm Optional. Reference adjacency matrix for matching dimensions when using \code{"ZILGM"} or \code{"PCzinb"}.
+#' @param total_cores Integer. Total number of CPU cores for parallelization. 
+#'   Defaults to the number of workers in the current \pkg{BiocParallel} backend.
+#' @param grnboost_modules Python modules required for \code{GRNBoost2} (created via \pkg{reticulate}).
+#' @param seed Integer. Random seed for reproducibility. Default is \code{123}.
+#'
+#' @return
+#' \itemize{
+#'   \item For \code{"JRF"}, a list of data frames with inferred edge lists for each dataset.
+#'   \item For other methods, a list of inferred network objects (link lists or adjacency matrices).
+#' }
+#'
+#' @details
+#' Each expression matrix is preprocessed automatically depending on its object type (\code{Seurat}, 
+#' \code{SingleCellExperiment}, or plain matrix).
+#'
+#' Parallelization across matrices is handled with \pkg{BiocParallel}. For \code{GENIE3} and \code{JRF},
+#' nested parallelism is used: outer jobs distribute matrices and inner jobs distribute tree-based computations.
+#'
+#' The methods are based on:
+#' \itemize{
+#'   \item \strong{GENIE3}: Random Forest based inference (Huynh-Thu et al., 2010).
+#'   \item \strong{GRNBoost2}: Gradient boosting trees using arboreto (Moerman et al., 2019).
+#'   \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq (Zhang et al., 2021).
+#'   \item \strong{JRF}: Joint Random Forests across multiple conditions (Petralia et al., 2015).
+#'   \item \strong{PCzinb}: Pairwise correlation under ZINB models (Li et al., 2020).
+#' }
+#'
+#' @importFrom BiocParallel bplapply MulticoreParam SerialParam bpworkers bpparam
+#' @importFrom Seurat GetAssayData
+#' @importFrom SummarizedExperiment assay
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(42)
+#' # Simulate two small expression matrices
+#' mat1 <- matrix(rpois(100, 5), nrow = 10)
+#' mat2 <- matrix(rpois(100, 5), nrow = 10)
+#' rownames(mat1) <- paste0("Gene", 1:10)
+#' rownames(mat2) <- paste0("Gene", 1:10)
+#'
+#' # Infer networks using GENIE3
+#' networks <- infer_networks(
+#'   count_matrices_list = list(mat1, mat2),
+#'   method = "GENIE3",
+#'   total_cores = 2,
+#'   seed = 123
+#' )
+#'
+#' # Inspect first network
+#' networks[[1]]
+#' }
+
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",
                            adjm = NULL,

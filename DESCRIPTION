@@ -38,7 +38,8 @@ Imports:
     patchwork,
     scales,
     tidyr,
-    GENIE3
+    GENIE3,
+    rentrez
 Suggests:
     testthat,
     knitr,

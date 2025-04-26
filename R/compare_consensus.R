@@ -1,19 +1,27 @@
-#' Compare Consensus and Original Graphs (or STRINGdb Network)
+#' Compare Consensus and Reference Graphs or STRINGdb Networks
 #'
-#' This function compares a consensus adjacency matrix with either:
-#' - A provided reference adjacency matrix.
-#' - A STRINGdb-derived adjacency matrix if no reference is provided.
+#' Compares a consensus adjacency matrix to a reference adjacency matrix or, if not provided,
+#' to a STRINGdb-derived adjacency matrix. Visualizes True Positives (TP), False Negatives (FN),
+#' and optionally False Positives (FP) edges.
 #'
-#' It generates plots visualizing edges:
-#' - **True Positives (TP or CE)**: Edges that are 1 in both.
-#' - **False Negatives (FN or ME)**: Edges that are 1 in the reference but 0 in the consensus.
-#' - **False Positives (FP or EE)** (optional): Edges that are 1 in the consensus but 0 in the reference.
+#' @param consensus_matrix A binary square adjacency matrix representing the consensus network.
+#'   Row and column names should correspond to gene symbols.
+#' @param reference_matrix Optional. A binary square adjacency matrix representing the reference network
+#'   (ground truth). If \code{NULL}, a high-confidence STRINGdb network (human, score > 900) is used as reference.
+#' @param false_plot Logical. If \code{TRUE}, an additional plot of False Positives (FP) is generated. Default is \code{FALSE}.
 #'
-#' @param consensus_matrix A binary adjacency matrix representing the consensus graph.
-#' @param reference_matrix (Optional) A binary adjacency matrix as a reference (ground truth). If `NULL`, STRINGdb is used.
-#' @param false_plot Logical; if TRUE, plot False Positives (FP) (default = FALSE).
+#' @return A \code{ggplot} object visualizing the comparison, or a combined plot if \code{false_plot = TRUE}.
 #'
-#' @return A ggplot object (or a combined plot if `false_plot = TRUE`).
+#' @details
+#' If no \code{reference_matrix} is provided, a STRINGdb-based network is automatically generated
+#' using gene symbols from the consensus matrix. The comparison highlights:
+#' \itemize{
+#'   \item Confirmed Edges (TP or CE): Present in both consensus and reference.
+#'   \item Missing Edges (FN or ME): Present in reference but missing from consensus.
+#'   \item Extra Edges (FP or EE): Present in consensus but absent from reference (only if \code{false_plot = TRUE}).
+#' }
+#'
+#' Isolated nodes (nodes without any edges) are removed from the plots for clarity.
 #'
 #' @importFrom igraph degree V graph_from_adjacency_matrix as_edgelist graph_from_edgelist delete_vertices
 #' @importFrom ggraph ggraph geom_edge_link geom_node_point
@@ -24,12 +32,17 @@
 #'
 #' @examples
 #' set.seed(42)
+#' # Simulate small example matrices
 #' original <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
 #' consensus <- matrix(sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)), 5, 5)
 #' diag(original) <- diag(consensus) <- 0
+#' rownames(original) <- colnames(original) <- paste0("Gene", 1:5)
+#' rownames(consensus) <- colnames(consensus) <- paste0("Gene", 1:5)
+#'
+#' # Compare consensus vs original
 #' compare_consensus(consensus, reference_matrix = original, false_plot = TRUE)
 #'
-#' # Using STRINGdb
+#' # Compare consensus against STRINGdb network
 #' compare_consensus(consensus)
 
 compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_plot = FALSE) {

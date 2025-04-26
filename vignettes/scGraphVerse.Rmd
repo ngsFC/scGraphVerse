@@ -1,0 +1,213 @@
+---
+title: "Getting Started with scGraphVerse"
+author: "Francesco Cecere"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Getting Started with scGraphVerse}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(scGraphVerse)
+library(Seurat)
+library(tidyverse)
+```
+
+## Introduction
+
+*scGraphVerse* provides tools to infer, evaluate, and visualize gene regulatory networks (GRNs) from single-cell RNA-seq data. This vignette demonstrates a simple example starting from data simulation.
+
+## Simulate Single-Cell Data
+
+We downloaded a true biological network from cellxgene atlas as ground truth.
+We then simulate a small count matrix to represent single-cell RNA-seq expression data
+
+```{r}
+options(timeout = 600)
+
+# PBMC Dataset: Local and systemic responses to SARS-CoV-2 infection in children and adults
+seurat_url <- "https://datasets.cellxgene.cziscience.com/89619149-162f-4839-8e97-24735924417c.rds"
+
+seurat_object <- download_Atlas(seurat_url)
+
+seurat_subset <- subset(
+  x = seurat_object,
+  subset = disease == "normal" & cell_type == "CD4-positive helper T cell" & donor_id %in% c("AN6", "AN9", "NP18")
+)
+```
+
+
+```{r}
+meta_features <- seurat_subset[["RNA"]]@meta.features
+stopifnot(all(rownames(meta_features) == rownames(seurat_subset[["RNA"]]@data)))
+
+new_rownames <- meta_features$name
+new_rownames <- seurat_subset@assays$RNA@meta.features$name
+
+assay <- seurat_subset[["RNA"]] # Access the RNA assay
+rownames(assay@counts) <- new_rownames
+rownames(assay@data) <- new_rownames
+rownames(assay@meta.features) <- new_rownames
+
+seurat_subset[["RNA"]] <- assay
+
+selected_c <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
+selected_f <- rownames(seurat_subset)[Matrix::rowSums(seurat_subset) > 3]
+
+seurat_subset_filt <- subset(seurat_subset, features = selected_f, cells = selected_c)
+
+seurat_subset_filt <- PercentageFeatureSet(seurat_subset_filt, "^MT-", col.name = "percent_mito")
+seurat_subset_filt <- PercentageFeatureSet(seurat_subset_filt, "^RP[SL]", col.name = "percent_ribo")
+
+selected_mito <- WhichCells(seurat_subset_filt, expression = percent_mito < 20)
+selected_ribo <- WhichCells(seurat_subset_filt, expression = percent_ribo > 5)
+
+seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_mito)
+seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_ribo)
+
+# Filter MALAT1
+seurat_subset_filt <- seurat_subset_filt[!grepl("MALAT1", rownames(seurat_subset_filt)), ]
+
+# Filter Mitocondrial
+seurat_subset_filt <- seurat_subset_filt[!grepl("^MT-", rownames(seurat_subset_filt)), ]
+
+# Filter Ribossomal gene (optional if that is a problem on your data)
+seurat_subset_filt <- seurat_subset_filt[ ! grepl("^RP[SL]", rownames(seurat_subset_filt)), ]
+```
+
+
+```{r}
+pathgenes <- selgene(seurat_object = seurat_subset_filt, cell_type = "CD4-positive helper T cell", top_n = 500)
+
+options(timeout = 2000)
+result <- stringdb_adjacency(
+  genes          = pathgenes,
+  species        = 9606,
+  required_score = 900,
+  keep_all_genes = F
+)
+
+wadjm <- result$weighted
+adjm <- result$binary
+
+common_names <- intersect(rownames(adjm), colnames(adjm))
+adjm <- adjm[common_names, common_names, drop = FALSE]
+
+sorted_names <- sort(rownames(adjm))
+adjm <- adjm[sorted_names, sorted_names]
+
+```
+
+
+```{r plot Ground truth}
+gtruth <- igraph::graph_from_adjacency_matrix(adjm, mode = "undirected", diag = FALSE)
+
+num_nodes <- igraph::vcount(gtruth)
+num_edges <- igraph::ecount(gtruth)
+
+set.seed(1234)
+
+p1 <- ggraph::ggraph(gtruth, layout = "fr") + 
+  ggraph::geom_edge_link(color = "gray", width = 0.5) +  
+  ggraph::geom_node_point(color = "steelblue", size = 0.7) +  
+  labs(title = paste("Ground Truth\nNodes:", igraph::vcount(gtruth), "Edges:", igraph::ecount(gtruth))) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  )
+
+p1
+```
+
+```{r}
+nodes <- nrow(adjm)
+b      <- 3
+sigma  <- 0.2
+
+count_matrices <- zinb_simdata(
+  n = 50, 
+  p = nodes, 
+  B = adjm, 
+  mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
+  mu_noise = c(1, 3, 5),  
+  theta = c(1, 0.7, 0.5),  
+  pi = c(0.2, 0.2, 0.2),  
+  kmat = 3,
+  depth_range = c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
+)
+
+count_matrices <- lapply(count_matrices, t)
+```
+
+
+```{r}
+late <- infer_networks(count_matrices, 
+                           method="GENIE3",
+                           total_cores = 15,
+                           seed=1234)
+
+early_matrix <- list(earlyj(count_matrices, rowg = T))
+early <- infer_networks(early_matrix, 
+                           method="GENIE3",
+                           total_cores = 15,
+                           seed=1234)
+
+joint <- infer_networks(count_matrices, 
+                              method="JRF", 
+                              total_cores = 15,
+                              seed=1234)
+```
+
+
+```{r}
+jrf_wadj <- generate_adjacency(joint)
+sjrf_wadj <- symmetrize(jrf_wadj, weight_function = "mean")
+jrf_auc_mine <- plotROC(sjrf_wadj, adjm, plot_title = "ROC curve - JRF Late Integration", is_binary = F)
+```
+
+```{r}
+sjrf_adj <- cutoff_adjacency(count_matrices = count_matrices,
+                               weighted_adjm_list = sjrf_wadj, 
+                               n = 3,
+                               method = "JRF",
+                               seed = 1234)
+```
+
+```{r}
+scores.jrf.all <- pscores(adjm, sjrf_adj)
+plotg(sjrf_adj)
+  
+consesusm <- create_consensus(sjrf_adj, method="vote")
+consesusu <- create_consensus(sjrf_adj, method="union")
+consesunet <- create_consensus(adj_matrix_list = sjrf_adj, weighted_list = sjrf_wadj, method = "INet", threshold = 0.1, ncores = 15)
+  
+scores.jrf <- pscores(adjm, list(consesusm, consesusu, consesunet))
+```
+
+```{r}
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesusu, reference_matrix = adjm, false_plot = F)
+compare_consensus(consensus_matrix = consesunet, reference_matrix = adjm, false_plot = F)
+```
+
+```{r}
+comm_consesusm <- community_path(consesusm)
+comm_consesusu <- community_path(consesusu)
+comm_consesunet <- community_path(consesunet)
+  
+adj_comm <- community_path(adjm)
+topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet))
+ 
+```
+
+
+```{r}
+query <- edge_mining(list(consesusm), adjm, query_edge_types = "FN")
+
+```
+

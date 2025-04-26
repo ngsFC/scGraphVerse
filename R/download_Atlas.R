@@ -1,14 +1,26 @@
 #' Download and Load an RDS File from a URL
 #'
-#' This function downloads an RDS file from a given URL and reads it into R.
+#' Downloads an RDS file from a specified URL and reads its contents into R.
 #'
-#' @param file_url A character string specifying the URL of the RDS file.
-#' @return The contents of the RDS file as an R object.
+#' @param file_url A character string specifying the URL of the RDS file to download.
+#'
+#' @return
+#' An R object loaded from the downloaded RDS file.
+#'
+#' @details
+#' This function uses \pkg{httr} to perform the file download. The RDS file is read directly
+#' from the raw connection without saving it to disk. An internet connection is required.
+#'
+#' If the download fails (e.g., invalid URL, server error), an informative error message is returned.
+#'
+#' @importFrom httr GET status_code content
+#' @export
+#'
 #' @examples
 #' \dontrun{
-#' data <- download_Atlas("https://example.com/data.rds")
+#' # Example: Load an RDS file from a public URL
+#' atlas_data <- download_Atlas("https://example.com/mydata.rds")
 #' }
-#' @export
 download_Atlas <- function(file_url) {
   if (!requireNamespace("httr", quietly = TRUE)) {
     stop("The 'httr' package is required but not installed.")

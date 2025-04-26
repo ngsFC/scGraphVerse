@@ -1,15 +1,30 @@
-#' Community Detection and Pathway Enrichment
+#' Community Detection and Pathway Enrichment Analysis
 #'
-#' Detects communities in a gene network using one or two methods and performs pathway enrichment.
+#' Detects gene communities within an adjacency network using one or two community detection methods,
+#' and performs pathway enrichment analysis for detected communities.
 #'
-#' @param adj_matrix Square adjacency matrix with gene names as row/col names.
-#' @param methods A character vector: either 1 method (just apply it) or 2 methods (compare and choose best). Default = "louvain".
-#' @param pathway_db "KEGG" or "Reactome" (default: "KEGG").
-#' @param genes_path Minimum community size for enrichment (default: 5).
-#' @param plot Logical; if TRUE, plot the community structure (default: TRUE).
-#' @param verbose Logical; if TRUE, show progress messages (default: TRUE).
+#' @param adj_matrix A square adjacency matrix. Row and column names must correspond to gene symbols.
+#' @param methods A character vector specifying one or two community detection methods supported by \pkg{robin}.
+#'   If two methods are provided, their performance will be compared and the best one selected. Default is \code{"louvain"}.
+#' @param pathway_db A character string specifying the pathway database to use: either \code{"KEGG"} or \code{"Reactome"}. Default is \code{"KEGG"}.
+#' @param genes_path Integer. Minimum number of genes per community to perform pathway enrichment. Default is \code{5}.
+#' @param plot Logical. If \code{TRUE}, a plot of the detected communities is generated. Default is \code{TRUE}.
+#' @param verbose Logical. If \code{TRUE}, displays progress messages during the computation. Default is \code{TRUE}.
 #'
-#' @return A list containing community assignments, enrichment results, and the graph object.
+#' @return A list with three elements:
+#' \itemize{
+#'   \item \code{communities}: A list containing the best method used and community membership for each gene.
+#'   \item \code{pathways}: A list of pathway enrichment results per community (only for communities meeting the size threshold).
+#'   \item \code{graph}: The igraph object containing the network and community annotations.
+#' }
+#'
+#' @details
+#' If two methods are provided, the function internally uses \code{robinCompare} and selects the method
+#' achieving the higher AUC based on internal metrics. Pathway enrichment is performed via \pkg{clusterProfiler}
+#' for KEGG and via \pkg{ReactomePA} for Reactome pathways.
+#'
+#' Communities smaller than \code{genes_path} are excluded from enrichment analysis.
+#'
 #' @importFrom igraph graph_from_adjacency_matrix V degree induced_subgraph vcount ecount
 #' @importFrom robin membershipCommunities robinCompare robinAUC
 #' @importFrom AnnotationDbi mapIds
@@ -21,6 +36,30 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices colorRampPalette
 #' @export
+#'
+#' @examples
+#' set.seed(123)
+#' # Simulate a small random adjacency matrix
+#' genes <- paste0("Gene", 1:30)
+#' mat <- matrix(runif(900, min = 0, max = 1), nrow = 30)
+#' mat[mat < 0.8] <- 0  # Sparsify
+#' diag(mat) <- 0
+#' rownames(mat) <- colnames(mat) <- genes
+#'
+#' # Run community detection and enrichment (using KEGG, single method)
+#' result <- community_path(
+#'   adj_matrix = mat,
+#'   methods = "louvain",
+#'   pathway_db = "KEGG",
+#'   genes_path = 5,
+#'   plot = FALSE,
+#'   verbose = FALSE
+#' )
+#'
+#' # Inspect results
+#' head(result$communities$membership)
+#' names(result$pathways)
+
 community_path <- function(adj_matrix,
                            methods = "louvain",
                            pathway_db = "KEGG",

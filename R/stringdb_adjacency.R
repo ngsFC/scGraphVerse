@@ -1,32 +1,59 @@
-#' Build adjacency matrices (weighted & binary) for physical interactions from STRING using POST
+#' Build Adjacency Matrices for Physical Interactions from STRING (POST API)
 #'
+#' Constructs weighted and binary adjacency matrices for physical protein-protein interactions
+#' using a POST request to the STRING database API. 
+#'
+#' @param genes A character vector of gene symbols or identifiers (e.g., \code{c("TP53", "BRCA1", ...)}).
+#' @param species Integer. NCBI taxonomy ID of the species. Default is \code{9606} (human).
+#' @param required_score Integer between 0 and 1000. Minimum confidence score for interactions. Default is \code{400}.
+#' @param keep_all_genes Logical. If \code{TRUE} (default), includes all input genes in the final matrix even if unmapped.
+#' @param verbose Logical. If \code{TRUE}, displays progress messages. Default is \code{TRUE}.
+#'
+#' @return
+#' A list containing:
+#' \itemize{
+#'   \item \code{weighted}: A square numeric adjacency matrix with interaction scores as weights.
+#'   \item \code{binary}: A corresponding binary (0/1) adjacency matrix.
+#' }
+#'
+#' @details
 #' This function:
-#' 1) Uses the STRING API with a POST request (network_type=physical).
-#' 2) Accepts a large set of genes without triggering "URI Too Large" (414) errors.
-#' 3) Allows choosing which score column (e.g., "score", "escore", etc.) to use as weights.
-#' 4) Returns both a weighted adjacency matrix (numerical) and a binary adjacency matrix (0/1).
-#' 5) Renames row/column names from internal STRING IDs to the "preferredName" in the returned data.
+#' \enumerate{
+#'   \item Maps the input genes to STRING internal IDs.
+#'   \item Uses a POST request to retrieve physical protein-protein interactions from STRING.
+#'   \item Builds a weighted adjacency matrix using the STRING combined score.
+#'   \item Builds a binary adjacency matrix indicating the presence or absence of interactions.
+#' }
 #'
-#' @param genes A character vector of gene symbols/identifiers (e.g. c("TP53", "BRCA1", ...)).
-#' @param species NCBI taxon ID. Default is 9606 (human).
-#' @param required_score Minimum confidence (0–1000). Default 400.
-#' @param score_col Name of the column to use as edge weights. 
-#'        Commonly "score" (combined) or "escore" (experimental).
-#' @param remove_missing_score Drop rows where the score is missing/"-"? Default TRUE.
-#' @param verbose If TRUE, prints messages. Default TRUE.
+#' Genes that could not be mapped to STRING are optionally retained as rows/columns of zeros if \code{keep_all_genes = TRUE}.
 #'
-#' @return A list with two matrices: \code{$weighted} (numeric) and \code{$binary} (0/1).
+#' @note
+#' Requires the following packages: \pkg{STRINGdb}, \pkg{httr}, and \pkg{jsonlite}.
+#'
+#' @importFrom STRINGdb STRINGdb
+#' @importFrom httr POST content
+#' @importFrom jsonlite fromJSON
+#' @export
 #'
 #' @examples
 #' \dontrun{
-#' large_gene_set <- c("TP53","BRCA1", "MYC", ...) # possibly hundreds/thousands of genes
+#' # Define a large set of genes
+#' large_gene_set <- c("TP53", "BRCA1", "MYC", "EGFR", "PTEN")
+#'
+#' # Retrieve adjacency matrices from STRING
 #' adjacency_list <- stringdb_adjacency(
-#'   genes          = large_gene_set,
-#'   species        = 9606,
-#'   required_score = 700,
-#'   score_col      = "escore"
+#'   genes = large_gene_set,
+#'   species = 9606,
+#'   required_score = 700
 #' )
+#'
+#' # Access the weighted adjacency matrix
+#' weighted_mat <- adjacency_list$weighted
+#'
+#' # Access the binary adjacency matrix
+#' binary_mat <- adjacency_list$binary
 #' }
+
 stringdb_adjacency <- function(
     genes,
     species              = 9606,
