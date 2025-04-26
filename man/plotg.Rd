@@ -2,53 +2,40 @@
 % Please edit documentation in R/plotg.R
 \name{plotg}
 \alias{plotg}
-\title{Plot Multiple Graphs from Adjacency Matrices}
+\title{Visualize Graphs from Adjacency Matrices}
 \usage{
 plotg(adj_matrix_list)
 }
 \arguments{
-\item{adj_matrix_list}{A list of adjacency matrices, where each matrix represents
-an undirected graph. The function assumes that the matrices are symmetric and
-have zeros on the diagonal (no self-loops).}
+\item{adj_matrix_list}{A list of square, symmetric adjacency matrices
+with zeros on the diagonal (no self-loops). Each matrix represents an undirected graph.}
 }
 \value{
-A combined plot grid of all graphs generated from the adjacency matrices.
-Each graph is visualized with nodes and edges, and the title includes the graph's index,
-number of nodes, and number of edges.
+A grid of plots displaying all valid graphs in the input list.
 }
 \description{
-This function generates and visualizes graphs from a list of adjacency matrices.
-Each adjacency matrix is converted into an \code{igraph} object and plotted using the
-\code{ggraph} package with a force-directed layout. The generated plots are then
-arranged in a grid for easy comparison.
+Generates and arranges multiple graph visualizations from a list
+of adjacency matrices. Each matrix is converted into an undirected
+\pkg{igraph} object and visualized using a force-directed layout via \pkg{ggraph}.
 }
 \details{
-Each adjacency matrix in \code{adj_matrix_list} is processed individually, converting it
-into an \code{igraph} object. The graphs are then visualized using the \code{ggraph} package, which
-employs a force-directed layout for graph visualization. The title of each plot displays the
-graph index and basic graph statistics (number of nodes and edges). All individual graphs are
-arranged into a grid layout, with the number of columns dynamically determined by the square root
-of the total number of graphs.
+Each adjacency matrix is validated to ensure it is square and symmetric.
+Disconnected nodes (degree zero) are removed prior to visualization.
+Graphs are visualized with a force-directed layout using \pkg{ggraph},
+and multiple plots are arranged into a grid with \pkg{gridExtra}.
+
+Each subplot title includes the graph index, number of nodes, and number of edges.
 }
 \note{
-This function requires the following packages:
-\itemize{
-\item \code{igraph}
-\item \code{ggraph}
-\item \code{gridExtra}
-}
-
-If any of these packages are not installed, the function will stop and display an error message.
+This function requires the following packages to be installed:
+\pkg{igraph}, \pkg{ggraph}, and \pkg{gridExtra}.
+If any are missing, an informative error will be thrown.
 }
 \examples{
-# Example adjacency matrices (binary, undirected)
-adj_matrix_1 <- matrix(c(0, 1, 0, 1, 1, 0), nrow = 3, byrow = TRUE)
-adj_matrix_2 <- matrix(c(0, 1, 1, 1, 0, 0), nrow = 3, byrow = TRUE)
+# Create two simple adjacency matrices
+adj1 <- matrix(c(0,1,0,1,0,1,0,1,0), nrow = 3)
+adj2 <- matrix(c(0,1,1,1,0,0,1,0,0), nrow = 3)
 
-# Create a list of adjacency matrices
-adj_matrices <- list(adj_matrix_1, adj_matrix_2)
-
-# Call the plotg function to visualize the graphs
-plotg(adj_matrices)
-
+# Visualize the graphs
+plotg(list(adj1, adj2))
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/zinb_simdata.R
 \name{zinb_simdata}
 \alias{zinb_simdata}
-\title{Simulate Multiple Zero-Inflated Negative Binomial (ZINB) Count Matrices with Cell-Specific Depth}
+\title{Simulate Zero-Inflated Negative Binomial (ZINB) Count Matrices with Sequencing Depth}
 \usage{
 zinb_simdata(
   n,
@@ -18,78 +18,74 @@ zinb_simdata(
 )
 }
 \arguments{
-\item{n}{Integer. The number of samples (cells) in each simulated matrix.}
+\item{n}{Integer. Number of cells (samples) in each simulated matrix.}
 
-\item{p}{Integer. The number of variables (genes) in each matrix.}
+\item{p}{Integer. Number of genes (features) in each simulated matrix.}
 
-\item{B}{Matrix. A \strong{symmetric binary adjacency matrix} (\code{0/1}), where rows and columns correspond
-to gene names. The adjacency matrix defines gene-gene connectivity, influencing expression levels.}
+\item{B}{A symmetric binary adjacency matrix (0/1) defining gene-gene connectivity.
+Row and column names correspond to gene names.}
 
-\item{mu_range}{List of numeric vectors. Each element is a numeric vector of length 2, specifying
-the range of mean expression (\code{mu}) values per matrix. The function draws gene-specific means from
-a uniform distribution within these ranges.}
+\item{mu_range}{List of numeric vectors (length 2 each). Range of gene expression means
+for each simulated matrix.}
 
-\item{mu_noise}{Numeric vector of length \code{kmat}. Mean of the background noise component for each matrix.}
+\item{mu_noise}{Numeric vector. Mean of background noise for each matrix.}
 
-\item{theta}{Numeric vector of length \code{kmat}. The dispersion parameter of the \strong{negative binomial distribution}
-for each matrix. A lower value of \code{theta} increases overdispersion.}
+\item{theta}{Numeric vector. Dispersion parameters of the negative binomial distribution
+for each matrix. Smaller \code{theta} implies higher overdispersion.}
 
-\item{pi}{Numeric vector of length \code{kmat}. The probability of excess zeros (\verb{0 < pi < 1}) for each matrix,
-controlling sparsity due to dropouts or biological factors.}
+\item{pi}{Numeric vector. Probability of excess zeros (\code{0 < pi < 1}) for each matrix.}
 
-\item{kmat}{Integer. The number of count matrices to generate (default: \code{1}).}
+\item{kmat}{Integer. Number of count matrices to simulate. Default is \code{1}.}
 
-\item{depth_range}{Numeric vector of length 2 or \code{NA}. If provided, defines the range of total sequencing
-depth per cell (e.g., \code{c(500, 5000)}). Default: \code{NA} (no depth scaling applied).}
+\item{depth_range}{Numeric vector of length 2 or \code{NA}. Range of total sequencing depth per cell.
+If \code{NA}, no depth adjustment is performed.}
 
-\item{seed}{Integer (optional). A random seed for reproducibility.}
+\item{seed}{Integer (optional). Random seed for reproducibility.}
 }
 \value{
-A \strong{list} of \code{kmat} numeric matrices, each with dimensions \verb{n x p}, where:
+A list containing \code{kmat} matrices. Each matrix has:
 \itemize{
-\item \strong{Rows} correspond to cells (\verb{cell_1, cell_2, ..., cell_n}).
-\item \strong{Columns} correspond to genes (from \code{rownames(B)}).
-\item Expression values follow a \strong{zero-inflated negative binomial (ZINB)} distribution.
+\item Rows representing cells (\code{cell_1, cell_2, ..., cell_n}).
+\item Columns representing genes (based on \code{rownames(B)}).
+\item Count values following a ZINB distribution.
 }
 }
 \description{
-This function generates multiple count matrices following a \strong{zero-inflated negative binomial (ZINB)}
-distribution using an adjacency matrix that defines gene-gene relationships. Each matrix simulates
-gene expression across a specified number of cells, incorporating sequencing depth variability.
+Simulates one or more count matrices following a zero-inflated negative binomial (ZINB) distribution,
+incorporating gene-gene interaction structures and cell-specific sequencing depth variation.
 }
 \details{
-The function simulates count data by:
+Each simulated matrix:
 \enumerate{
-\item Generating gene expression values from a \strong{zero-inflated negative binomial (ZINB)} model.
-\item Modifying gene-gene expression levels based on the adjacency matrix \code{B}.
-\item Incorporating \strong{cell-specific sequencing depth} if \code{depth_range} is specified.
+\item Generates gene expression values based on a ZINB model.
+\item Modulates expression using the input adjacency matrix \code{B}.
+\item Applies random sequencing depth scaling if \code{depth_range} is provided.
 }
 
-\strong{Biological Interpretation:}
-\itemize{
-\item This method is useful for benchmarking \strong{single-cell RNA sequencing (scRNA-seq)} algorithms,
-where excess zeros may arise due to \strong{dropout events}.
-\item The adjacency matrix \code{B} allows simulation of \strong{gene regulatory network (GRN)} interactions.
-\item Sequencing depth variation mimics experimental conditions in \strong{scRNA-seq datasets}.
-}
+The function is particularly useful for benchmarking single-cell RNA-seq network inference
+methods where dropout events and network structure are relevant.
 }
 \examples{
 \dontrun{
-# Define adjacency matrix (example with 5 genes)
+# Create a simple adjacency matrix
 B <- matrix(0, nrow = 5, ncol = 5)
 rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
-B[1, 2] <- B[2, 3] <- B[4, 5] <- 1  # Define some gene interactions
-B <- B + t(B)  # Make symmetric
+B[1,2] <- B[2,3] <- B[4,5] <- 1
+B <- B + t(B)  # Ensure symmetry
 
-# Simulate data with 100 cells, 5 genes, and 2 matrices
+# Simulate two count matrices
 zinb_matrices <- zinb_simdata(
   n = 100, p = 5, B = B,
-  mu_range = list(c(1, 5), c(2, 6)), mu_noise = c(0.5, 0.7),
-  theta = c(1, 2), pi = c(0.2, 0.3), kmat = 2, 
-  depth_range = c(500, 5000), seed = 42
+  mu_range = list(c(1,5), c(2,6)),
+  mu_noise = c(0.5, 0.7),
+  theta = c(1, 2),
+  pi = c(0.2, 0.3),
+  kmat = 2,
+  depth_range = c(500, 5000),
+  seed = 42
 )
 
-# View one of the simulated matrices
+# View one simulated matrix
 print(zinb_matrices[[1]])
 }
 }

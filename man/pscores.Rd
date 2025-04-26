@@ -2,23 +2,51 @@
 % Please edit documentation in R/pscores.R
 \name{pscores}
 \alias{pscores}
-\title{Performance Scores for Predicted Matrices}
+\title{Compute Performance Scores for Predicted Adjacency Matrices}
 \usage{
 pscores(ground_truth, predicted_list, zero_diag = TRUE)
 }
 \arguments{
-\item{ground_truth}{A square adjacency matrix representing the ground truth network.}
+\item{ground_truth}{A square binary adjacency matrix representing the ground truth network.
+Values must be 0 or 1. Only the upper triangle is used for evaluation.}
 
-\item{predicted_list}{A list of square adjacency matrices to be evaluated against the ground truth.}
+\item{predicted_list}{A list of predicted adjacency matrices to evaluate.
+Each must have the same dimensions and row/column names as \code{ground_truth}.}
 
-\item{zero_diag}{Logical; if TRUE, sets the diagonal of the ground truth matrix to zero.}
+\item{zero_diag}{Logical. If \code{TRUE} (default), sets the diagonal of \code{ground_truth} to zero
+before evaluation, removing self-loops.}
 }
 \value{
-A list containing a data frame with computed statistics for each predicted matrix.
+A list with one element:
+\itemize{
+\item \code{Statistics}: A data frame containing evaluation metrics (TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
+for each predicted matrix.
+}
 }
 \description{
-This function evaluates the performance of predicted adjacency matrices against a ground truth matrix.
-It computes various classification metrics such as True Positive Rate (TPR), False Positive Rate (FPR),
-Precision, F1-score, and Matthews Correlation Coefficient (MCC). Additionally, it visualizes the results
-using a radar chart.
+Computes classification metrics by comparing predicted adjacency matrices
+to a ground truth binary network. Visualizes the performance scores using a radar (spider) plot.
+}
+\details{
+For each predicted matrix, the confusion matrix is computed using the upper triangle
+(non-self edges). Metrics including True Positive Rate (TPR), False Positive Rate (FPR),
+Precision, F1-score, and Matthews Correlation Coefficient (MCC) are calculated.
+
+A radar plot is automatically generated summarizing the key scores across matrices.
+}
+\note{
+Requires the \pkg{fmsb}, \pkg{dplyr}, and \pkg{tidyr} packages.
+}
+\examples{
+\dontrun{
+# Simulate ground truth and predictions
+ground_truth <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+diag(ground_truth) <- 0
+pred1 <- ground_truth
+pred2 <- matrix(sample(0:1, 100, replace = TRUE), nrow = 10)
+
+# Compute scores and generate radar plot
+result <- pscores(ground_truth, list(pred1, pred2))
+result$Statistics
+}
 }

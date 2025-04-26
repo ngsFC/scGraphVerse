@@ -7,16 +7,23 @@
 download_Atlas(file_url)
 }
 \arguments{
-\item{file_url}{A character string specifying the URL of the RDS file.}
+\item{file_url}{A character string specifying the URL of the RDS file to download.}
 }
 \value{
-The contents of the RDS file as an R object.
+An R object loaded from the downloaded RDS file.
 }
 \description{
-This function downloads an RDS file from a given URL and reads it into R.
+Downloads an RDS file from a specified URL and reads its contents into R.
+}
+\details{
+This function uses \pkg{httr} to perform the file download. The RDS file is read directly
+from the raw connection without saving it to disk. An internet connection is required.
+
+If the download fails (e.g., invalid URL, server error), an informative error message is returned.
 }
 \examples{
 \dontrun{
-data <- download_Atlas("https://example.com/data.rds")
+# Example: Load an RDS file from a public URL
+atlas_data <- download_Atlas("https://example.com/mydata.rds")
 }
 }

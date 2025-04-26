@@ -7,32 +7,45 @@
 earlyj(input_list, rowg = TRUE)
 }
 \arguments{
-\item{input_list}{A list of matrices, Seurat objects, or SingleCellExperiment objects.}
+\item{input_list}{A list of matrices, \linkS4class{Seurat} objects, or \linkS4class{SingleCellExperiment} objects.
+All elements must be of the same class.}
 
-\item{rowg}{Logical. If TRUE (default), the function assumes that genes are in the rows
-and cells are in the columns. If FALSE, it assumes that genes are in the columns and transposes
-the matrices so that genes are on the rows.}
+\item{rowg}{Logical. If \code{TRUE} (default), genes are assumed to be rows and cells columns.
+If \code{FALSE}, matrices are transposed before renaming and combining.}
 }
 \value{
-A combined matrix, Seurat object, or SingleCellExperiment object with modified cell names.
+A combined matrix, Seurat object, or SingleCellExperiment object with modified (unique) cell names.
 }
 \description{
-This function modifies the cell identifiers of each element in a list by appending
-the matrix index (e.g., "-m1", "-m2", ...) to the cell names. For matrices, if
-\code{rowg} is TRUE, it assumes that genes are in the rows (and cells are in the columns)
-and attaches the suffix to the column names. If \code{rowg} is FALSE, it first transposes the
-matrix so that genes become rows and cells become columns, then modifies the column names.
+Modifies cell identifiers of each element in a list of matrices, \linkS4class{Seurat} objects,
+or \linkS4class{SingleCellExperiment} objects by appending a unique matrix index (e.g., "-m1", "-m2", etc.).
+After renaming, the datasets are merged into a single object.
 }
 \details{
-For Seurat or SingleCellExperiment objects, the function standardizes features and renames
-the cells similarly before merging them.
+For matrices, this function optionally transposes the input before combining. For \code{Seurat}
+and \code{SingleCellExperiment} objects, only features (genes) common across all input datasets are retained
+before merging. The cell names are suffixed with "-m1", "-m2", etc., according to their original list position.
 }
 \examples{
 \dontrun{
-# When matrices have genes on the rows (default):
-combined_matrix <- earlyj(list(matrix1, matrix2, matrix3))
+# Example with matrices where genes are rows (default behavior)
+mat1 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
+mat2 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
+rownames(mat1) <- paste0("Gene", 1:10)
+rownames(mat2) <- paste0("Gene", 1:10)
 
-# When matrices have genes on the columns:
-combined_matrix <- earlyj(list(matrix1, matrix2, matrix3), rowg = FALSE)
+combined_matrix <- earlyj(list(mat1, mat2))
+
+# Example with matrices where genes are columns
+mat3 <- t(mat1)
+mat4 <- t(mat2)
+
+combined_matrix2 <- earlyj(list(mat3, mat4), rowg = FALSE)
+
+# Example with Seurat objects (requires Seurat installed)
+# combined_seurat <- earlyj(list(seurat_obj1, seurat_obj2))
+
+# Example with SingleCellExperiment objects (requires SingleCellExperiment installed)
+# combined_sce <- earlyj(list(sce_obj1, sce_obj2))
 }
 }

@@ -2,45 +2,47 @@
 % Please edit documentation in R/plotROC.R
 \name{plotROC}
 \alias{plotROC}
-\title{Plot ROC Curve for a List of Matrices}
+\title{Plot ROC Curves for Inferred Networks}
 \usage{
 plotROC(matrices_list, ground_truth, plot_title, is_binary = FALSE)
 }
 \arguments{
-\item{matrices_list}{A list of matrices. Each matrix is either binary or weighted.
-For binary matrices, values are assumed to be either 0 or 1.}
+\item{matrices_list}{A list of square matrices representing predicted interactions.
+Each matrix must have the same dimensions and row/column names as \code{ground_truth}.
+Entries may be binary (0/1) or continuous weights.}
 
-\item{ground_truth}{A square matrix representing the ground truth. It contains binary values
-where the upper triangle represents the interactions (1) or lack of interactions (0).}
+\item{ground_truth}{A square binary matrix indicating true interactions (1) in the upper triangle.
+Must match the dimensions and names of each matrix in \code{matrices_list}.}
 
-\item{plot_title}{A string to be used as the title for the ROC curve plot.}
+\item{plot_title}{Character string. Title for the ROC plot.}
 
-\item{is_binary}{A boolean indicating whether the matrices in the list are binary.
-Default is FALSE, indicating that the matrices are weighted.}
+\item{is_binary}{Logical. If \code{TRUE}, matrices are treated as binary predictions.
+Default is \code{FALSE}, for weighted predictions.}
 }
 \value{
-A data frame containing the AUC values for each matrix in the list.
+A data frame containing the Area Under the Curve (AUC) for each matrix.
+The ROC plot is displayed automatically.
 }
 \description{
-This function takes a list of matrices and their corresponding ground truth
-to calculate and plot the Receiver Operating Characteristic (ROC) curve for
-each matrix. The function supports both binary and weighted matrices. If the
-matrices are binary, the function computes the True Positive Rate (TPR) and
-False Positive Rate (FPR) for each matrix. If the matrices are weighted,
-the function computes the ROC curve using the predicted values from the weighted matrices.
+Computes and visualizes Receiver Operating Characteristic (ROC) curves
+for a list of predicted adjacency matrices compared against a binary ground truth network.
 }
 \details{
-The function computes the ROC curve for each matrix, calculates the AUC value,
-and plots the ROC curves. For binary matrices, the AUC is calculated based on the
-True Positive Rate (TPR) and False Positive Rate (FPR). For weighted matrices,
-the AUC is computed using the continuous predicted values. The function supports
-multiple matrices in the input list and generates a dynamic plot for comparison.
+For binary matrices, a single TPR/FPR point is computed per matrix.
+For weighted matrices, a full ROC curve is calculated based on continuous prediction scores.
+Diagonal entries are ignored. Symmetry between rows and columns is not enforced.
 }
 \examples{
 \dontrun{
-# Example of plotting the ROC curve for a list of weighted matrices
-plotROC(matrices_list = list(mat1, mat2), ground_truth = truth_matrix, 
-        plot_title = "ROC Curve for Weighted Matrices", is_binary = FALSE)
-}
+mat1 <- matrix(runif(100), nrow = 10)
+mat2 <- matrix(runif(100), nrow = 10)
+ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
+diag(ground_truth) <- 0
+ground_truth[lower.tri(ground_truth)] <- 0
 
+plotROC(matrices_list = list(mat1, mat2),
+        ground_truth = ground_truth,
+        plot_title = "ROC for Network Inference",
+        is_binary = FALSE)
+}
 }

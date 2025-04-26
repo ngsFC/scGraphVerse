@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_adjacency.R
 \name{generate_adjacency}
 \alias{generate_adjacency}
-\title{Generate Adjacency Matrices from a List of Data Frames}
+\title{Generate Adjacency Matrices from Gene Interaction Tables}
 \usage{
 generate_adjacency(
   df_list,
@@ -10,32 +10,50 @@ generate_adjacency(
 )
 }
 \arguments{
-\item{df_list}{A list of data frames, each containing three columns:
-\itemize{
-\item First column: Gene1 (character)
-\item Second column: Gene2 (character)
-\item Third column: Weight (numeric)
+\item{df_list}{A list of data frames. Each data frame must have three columns:
+\describe{
+\item{Gene1}{Character. First gene in the interaction.}
+\item{Gene2}{Character. Second gene in the interaction.}
+\item{Weight}{Numeric. Weight or strength of the interaction from \code{Gene1} to \code{Gene2}.}
 }}
+
+\item{nCores}{Integer. Number of CPU cores to use for parallel processing.
+Defaults to the number of available workers from the current \pkg{BiocParallel} backend.}
 }
 \value{
-A list of adjacency matrices, one for each data frame in \code{df_list}.
+A list of square numeric adjacency matrices. Each matrix has genes as row and column names,
+and weights as values. Diagonal entries are set to zero (no self-interactions).
 }
 \description{
-This function generates adjacency matrices based on the information provided in
-a list of data frames. Each data frame is expected to have three columns:
-the first and second columns represent gene pairs, and the third column represents
-the weight of the interaction between the genes.
+Constructs adjacency matrices from a list of data frames, each representing
+weighted gene-gene interactions.
 }
 \details{
-The function creates an adjacency matrix for each data frame in \code{df_list} by placing
-the interaction weights in the correct positions based on the gene pairings. The
-diagonal of the resulting matrices is set to zero to ensure no self-interactions are included.
+The function first identifies all unique genes across all data frames to define
+the matrix dimensions. For each interaction table, it places the corresponding
+weights at the appropriate gene pair positions. Parallelization is handled by \pkg{BiocParallel}
+for improved performance on multiple datasets.
+
+Missing weights (\code{NA}) are ignored during construction. Only gene pairs matching the global
+gene list are inserted.
 }
 \examples{
+# Create two simple interaction tables
+df1 <- data.frame(
+  Gene1 = c("GeneA", "GeneB"),
+  Gene2 = c("GeneB", "GeneC"),
+  Weight = c(0.5, 0.8)
+)
 
-# Example data frame
-df1 <- data.frame(Gene1 = c("GeneA", "GeneB"), Gene2 = c("GeneB", "GeneC"), Weight = c(0.5, 0.8))
-df_list <- list(df1)
-adjacency_matrices <- generate_adjacency(df_list)
+df2 <- data.frame(
+  Gene1 = c("GeneC"),
+  Gene2 = c("GeneA"),
+  Weight = 1.0
+)
 
+# Generate adjacency matrices
+adjacency_list <- generate_adjacency(list(df1, df2))
+
+# View one of the matrices
+adjacency_list[[1]]
 }

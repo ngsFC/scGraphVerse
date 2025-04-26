@@ -2,37 +2,36 @@
 % Please edit documentation in R/selgene.R
 \name{selgene}
 \alias{selgene}
-\title{Extract Top Highly Expressed Genes for a Specific Cell Type in a Seurat Object}
+\title{Extract Top Highly Expressed Genes for a Specific Cell Type}
 \usage{
 selgene(seurat_object, cell_type, top_n = NULL)
 }
 \arguments{
-\item{seurat_object}{A Seurat object containing RNA expression data.}
+\item{seurat_object}{A \linkS4class{Seurat} object containing RNA expression data.}
 
-\item{cell_type}{A character string specifying the cell type of interest.}
+\item{cell_type}{Character string specifying the target cell type of interest.}
 
-\item{top_n}{An integer indicating the number of top expressed genes to select.}
+\item{top_n}{Integer. Number of top expressed genes to return.}
 }
 \value{
-A character vector of the selected top \code{n} highly expressed genes.
+A character vector containing the top \code{n} most highly expressed genes for the specified cell type.
 }
 \description{
-This function identifies and extracts the top \code{n} most highly expressed genes
-for a given cell type from the RNA assay in a Seurat object. It computes the
-average expression of each gene across all cells belonging to the specified
-cell type and selects the highest-expressed ones.
+Identifies and extracts the top \code{n} most highly expressed genes for a specified
+cell type from the RNA assay of a \linkS4class{Seurat} object.
 }
 \details{
-The function first validates the presence of the specified \code{cell_type} in the
-metadata and extracts the corresponding cells. It then retrieves the normalized
-gene expression matrix from the \code{"RNA"} assay and calculates the mean expression
-of each gene across the selected cells. The genes are sorted in descending order
-based on their average expression, and the top \code{n} genes are returned.
+The function verifies that the specified \code{cell_type} exists in the metadata of the \code{Seurat} object.
+It retrieves the normalized expression matrix from the \code{"RNA"} assay, computes mean expression per gene
+across all cells of the specified type, and returns the genes with the highest average expression.
+}
+\note{
+Requires the \pkg{Seurat} package.
 }
 \examples{
 \dontrun{
-selected_genes <- pathg(my_seurat_object, cell_type = "T_cells", top_n = 20)
+# Select top 20 genes for the "T_cells" cluster
+selected_genes <- selgene(my_seurat_object, cell_type = "T_cells", top_n = 20)
 print(selected_genes)
 }
-
 }

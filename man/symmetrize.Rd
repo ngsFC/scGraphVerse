@@ -2,7 +2,7 @@
 % Please edit documentation in R/symmetrize.R
 \name{symmetrize}
 \alias{symmetrize}
-\title{Symmetrize a List of Matrices}
+\title{Symmetrize a List of Square Matrices}
 \usage{
 symmetrize(
   matrix_list,
@@ -11,39 +11,40 @@ symmetrize(
 )
 }
 \arguments{
-\item{matrix_list}{A list of matrices to be symmetrized. Each matrix should be square
-and contain numeric values.}
+\item{matrix_list}{A list of square numeric matrices to symmetrize.}
 
-\item{weight_function}{A string specifying the function to combine values at (i, j) and (j, i).
-The default is "mean". Other options include "max", or any other function that can be
-applied to a vector of two numeric values (e.g., "min").}
+\item{weight_function}{Character string or function. Method to combine \eqn{(i,j)} and \eqn{(j,i)} entries.
+Options include \code{"mean"}, \code{"max"}, \code{"min"}, or a user-defined function.}
 
-\item{nCores}{Number of cores for parallel processing. Default is \code{BiocParallel::bpworkers(BiocParallel::bpparam())}.}
+\item{nCores}{Integer. Number of CPU cores to use for parallel processing.
+Defaults to the number of available workers in the current \pkg{BiocParallel} backend.}
 }
 \value{
-A list of symmetrized matrices. Each matrix will have identical values at positions
-(i, j) and (j, i), computed using the specified weight function.
+A list of symmetric matrices, where for each matrix \eqn{A[i,j] = A[j,i]} for all \eqn{i ≠ j}.
 }
 \description{
-This function takes a list of matrices and symmetrizes each matrix by ensuring that
-for each pair of off-diagonal elements (i, j) and (j, i), their values are the same.
-The function allows you to specify how to combine the values at (i, j) and (j, i)
-using a weight function, such as the "mean" or "max" of the two values.
+Symmetrizes each square matrix in a list by ensuring that entries \eqn{(i,j)} and \eqn{(j,i)}
+are identical, based on a specified combination function.
 }
 \details{
-For each matrix in the input list, the function processes every pair of off-diagonal elements
-and applies the chosen \code{weight_function} to symmetrize the matrix. If one of the values at
-(i, j) or (j, i) is zero, the function will use the non-zero value. If both are non-zero,
-the function will apply the \code{weight_function} to the two values.
+For each pair of off-diagonal elements \eqn{(i,j)} and \eqn{(j,i)}:
+\itemize{
+\item If one value is zero, the non-zero value is used.
+\item If both values are non-zero, they are combined using the specified \code{weight_function}.
+}
+Diagonal entries are preserved as-is and not modified.
+
+Parallelization is managed via \pkg{BiocParallel} for improved performance.
 }
 \examples{
-
-# Example list of matrices
-mat1 <- matrix(c(0, 2, 3, 4), nrow = 2, ncol = 2)
-mat2 <- matrix(c(0, 5, 6, 0), nrow = 2, ncol = 2)
+# Create two small asymmetric matrices
+mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
+mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
 matrix_list <- list(mat1, mat2)
 
-# Symmetrize with "mean" function
-symmetrized_matrices <- symmetrize(matrix_list, weight_function = "mean")
+# Symmetrize using the mean function
+sym_list <- symmetrize(matrix_list, weight_function = "mean")
 
+# View the first symmetrized matrix
+sym_list[[1]]
 }
