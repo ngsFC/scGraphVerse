@@ -75,7 +75,7 @@ If you use scGraphVerse, please cite the original GRN inference methods it imple
 ## 🏛 Funding
 
 This work is supported by the project:
-National Centre for HPC, Big Data and Quantum Computing Funded by European Union – Next Generation EU – CN00000013 CUP: B93C22000620006
+**National Centre for HPC, Big Data and Quantum Computing** Funded by European Union – Next Generation EU – CN00000013 **CUP:** B93C22000620006
 
 ---
 
