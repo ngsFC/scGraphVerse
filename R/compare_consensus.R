@@ -110,7 +110,6 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
   TP_count <- sum(edge_colors == "red")
   FN_count <- sum(edge_colors == "blue")
   
-  set.seed(1234)
   plot_tp_fn <- ggraph(graph_reference_no_isolates, layout = "fr") +
     geom_edge_link(aes(color = I(edge_colors)), width = 0.7) +
     geom_node_point(color = "steelblue", size = 1.5) +

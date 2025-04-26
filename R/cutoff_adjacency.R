@@ -67,7 +67,7 @@ cutoff_adjacency <- function(count_matrices,
                              weight_function = "mean", 
                              total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                              grnboost_modules = NULL,
-                             seed = 123,
+                             seed = 1234,
                              debug = FALSE) {
   
   method <- match.arg(method, choices = c("GENIE3", "GRNBoost2", "JRF"))
