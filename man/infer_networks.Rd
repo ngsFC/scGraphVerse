@@ -10,7 +10,7 @@ infer_networks(
   adjm = NULL,
   total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
   grnboost_modules = NULL,
-  seed = 123
+  seed = 1234
 )
 }
 \arguments{
