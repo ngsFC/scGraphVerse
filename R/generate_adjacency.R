@@ -9,7 +9,7 @@
 #'     \item{Gene2}{Character. Second gene in the interaction.}
 #'     \item{Weight}{Numeric. Weight or strength of the interaction from \code{Gene1} to \code{Gene2}.}
 #'   }
-#' @param nCores Integer. Number of CPU cores to use for parallel processing. 
+#' @param nCores Integer. Number of CPU cores to use for parallel processing.
 #'   Defaults to the number of available workers from the current \pkg{BiocParallel} backend.
 #'
 #' @return
@@ -35,7 +35,7 @@
 #'   Gene2 = c("GeneB", "GeneC"),
 #'   Weight = c(0.5, 0.8)
 #' )
-#' 
+#'
 #' df2 <- data.frame(
 #'   Gene1 = c("GeneC"),
 #'   Gene2 = c("GeneA"),
@@ -47,39 +47,39 @@
 #'
 #' # View one of the matrices
 #' adjacency_list[[1]]
-
 generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
   if (!is.list(df_list) || !all(vapply(df_list, is.data.frame))) {
     stop("df_list must be a list of data frames")
   }
-  
+
   # Extract unique genes from all data frames
   all_genes <- sort(unique(unlist(BiocParallel::bplapply(df_list, function(data) {
     unique(c(as.character(data[[1]]), as.character(data[[2]])))
   }, BPPARAM = BiocParallel::MulticoreParam(nCores)))))
-  
+
   # Create a template adjacency matrix
-  template_matrix <- matrix(0, nrow = length(all_genes), ncol = length(all_genes),
-                            dimnames = list(all_genes, all_genes))
-  
+  template_matrix <- matrix(0,
+    nrow = length(all_genes), ncol = length(all_genes),
+    dimnames = list(all_genes, all_genes)
+  )
+
   # Process each data frame in parallel
   adjacency_matrix_list <- BiocParallel::bplapply(df_list, function(data) {
-    adjacency_matrix <- template_matrix 
-    
+    adjacency_matrix <- template_matrix
+
     for (i in seq_len(nrow(data))) {
       gene1 <- as.character(data[i, 1])
       gene2 <- as.character(data[i, 2])
       weight <- as.numeric(data[i, 3])
-      
+
       if (!is.na(weight) && gene1 %in% rownames(adjacency_matrix) && gene2 %in% colnames(adjacency_matrix)) {
         adjacency_matrix[gene1, gene2] <- weight
       }
     }
-    
-    diag(adjacency_matrix) <- 0 
+
+    diag(adjacency_matrix) <- 0
     return(adjacency_matrix)
   }, BPPARAM = BiocParallel::MulticoreParam(nCores))
-  
+
   return(adjacency_matrix_list)
 }
-

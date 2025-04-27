@@ -48,15 +48,13 @@
 #' consensus_union <- create_consensus(list(mat1, mat2), method = "union")
 #'
 #' # (For "INet", you would also provide a weighted_list)
-
 create_consensus <- function(adj_matrix_list, method = "vote", weighted_list = NULL, theta = 0.04, threshold = 0.5, ncores = 1) {
-  
   # Sum all adjacency matrices to get consensus values (default for 'vote' and 'union')
   consensus_matrix <- Reduce("+", adj_matrix_list)
-  
+
   if (method == "vote") {
     threshold_value <- round(length(adj_matrix_list) * 0.75)
-    
+
     # Vote threshold: 1 if >= threshold, 0 if < threshold
     consensus_matrix[consensus_matrix < threshold_value] <- 0
     consensus_matrix[consensus_matrix >= threshold_value] <- 1
@@ -64,11 +62,10 @@ create_consensus <- function(adj_matrix_list, method = "vote", weighted_list = N
     # Union method: any position with a value >= 1 in any matrix is set to 1
     consensus_matrix[consensus_matrix >= 1] <- 1
   } else if (method == "INet") {
-    
     if (is.null(weighted_list)) {
       stop("For method 'INet', a weighted_list must be provided.")
     }
-    
+
     list_weighted <- mapply(function(binary_mat, weighted_mat) {
       if (!is.matrix(binary_mat) || !is.matrix(weighted_mat)) {
         stop("Both binary and weighted elements must be matrices.")
@@ -79,17 +76,15 @@ create_consensus <- function(adj_matrix_list, method = "vote", weighted_list = N
       newmat <- binary_mat * weighted_mat
       return(newmat)
     }, adj_matrix_list, weighted_list, SIMPLIFY = FALSE)
-    
+
     # Normalize the weighted matrices
     list_genie3_norm <- lapply(list_weighted, function(mat) mat / max(mat, na.rm = TRUE))
-    
+
     Con <- consensusNet(list_genie3_norm, theta = theta, ncores = ncores, threshold = threshold)
     consensus_matrix <- as.matrix(as_adjacency_matrix(Con$graphConsensus))
-  
   } else {
     stop("Invalid method. Choose 'vote', 'union', or 'INet'.")
   }
-  
+
   return(consensus_matrix)
 }
-

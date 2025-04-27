@@ -36,36 +36,34 @@
 #'
 #' # View the first symmetrized matrix
 #' sym_list[[1]]
-
 symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
   if (!is.list(matrix_list) || !all(vapply(matrix_list, is.matrix))) {
     stop("matrix_list must be a list of matrices")
   }
-  
-  weight_function <- match.fun(weight_function) 
-  
+
+  weight_function <- match.fun(weight_function)
+
   symmetrized_matrices <- BiocParallel::bplapply(matrix_list, function(mat) {
     p <- nrow(mat)
     sym_mat <- mat
-    
+
     for (i in seq_len(p - 1)) {
       for (j in seq(i + 1, p)) {
         val_ij <- mat[i, j]
         val_ji <- mat[j, i]
-        
+
         if (val_ij == 0 || val_ji == 0) {
           symmetric_value <- max(val_ij, val_ji)
         } else {
           symmetric_value <- weight_function(c(val_ij, val_ji))
         }
-        
+
         sym_mat[i, j] <- symmetric_value
         sym_mat[j, i] <- symmetric_value
       }
     }
     return(sym_mat)
   }, BPPARAM = BiocParallel::MulticoreParam(nCores))
-  
+
   return(symmetrized_matrices)
 }
-

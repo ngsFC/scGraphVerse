@@ -21,7 +21,7 @@
 #' For each predicted matrix, the confusion matrix is computed using the upper triangle
 #' (non-self edges). Metrics including True Positive Rate (TPR), False Positive Rate (FPR),
 #' Precision, F1-score, and Matthews Correlation Coefficient (MCC) are calculated.
-#' 
+#'
 #' A radar plot is automatically generated summarizing the key scores across matrices.
 #'
 #' @note
@@ -42,7 +42,6 @@
 #' # Compute scores and generate radar plot
 #' result <- pscores(ground_truth, list(pred1, pred2))
 #' result$Statistics
-
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
     stop("`ground_truth` must be a square matrix.")
@@ -82,11 +81,13 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
     Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
     F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
     denominator <- sqrt(as.numeric(TP + FP) * as.numeric(TP + FN) *
-                          as.numeric(TN + FP) * as.numeric(TN + FN))
+      as.numeric(TN + FP) * as.numeric(TN + FN))
     MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
 
-    data.frame(Predicted_Matrix = paste("Matrix", i),
-               TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC)
+    data.frame(
+      Predicted_Matrix = paste("Matrix", i),
+      TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC
+    )
   })
 
   stats_df <- do.call(rbind, stat_rows)
@@ -96,7 +97,7 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   radar_data <- stats_df %>%
     dplyr::select(Predicted_Matrix, dplyr::all_of(radar_metrics))
 
-  radar_scaled <- rbind(rep(1, length(radar_metrics)), rep(0, length(radar_metrics)), radar_data[,-1])
+  radar_scaled <- rbind(rep(1, length(radar_metrics)), rep(0, length(radar_metrics)), radar_data[, -1])
   colors <- rainbow(nrow(stats_df))
 
   par(mar = c(2, 2, 2, 2))
@@ -114,4 +115,3 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
 
   return(list(Statistics = stats_df))
 }
-

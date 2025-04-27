@@ -37,93 +37,101 @@
 #'
 #' results <- edge_mining(predicted_list = list(pred_net = predicted), ground_truth = ground_truth)
 #' head(results$pred_net)
-
-edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "Title/Abstract", 
+edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "Title/Abstract",
                         query_edge_types = c("TP", "FP", "FN"), max_retries = 10,
                         BPPARAM = BiocParallel::bpparam()) {
- 
   if (!is.list(predicted_list) || !is.matrix(ground_truth)) {
     stop("predicted_list must be a list of matrices and ground_truth must be a matrix")
   }
-  
+
   # Map user-friendly field names
   field_map <- c("Title/Abstract" = "TIAB", "Title" = "TI", "Abstract" = "AB")
   if (query_field %in% names(field_map)) {
     query_field <- field_map[[query_field]]
   }
-  
+
   # Safe PubMed query function with retries
   safe_query_pubmed <- function(gene1, gene2, max_retries) {
     query <- paste0(gene1, "[", query_field, "] AND ", gene2, "[", query_field, "]")
-    
+
     for (attempt in seq_len(max_retries)) {
-      result <- tryCatch({
-        search_res <- entrez_search(db = "pubmed", term = query, retmax = 100)
-        Sys.sleep(delay) # Always sleep to respect NCBI servers
-        list(pubmed_hits = as.numeric(search_res$count),
-             PMIDs = if (length(search_res$ids) > 0) paste(search_res$ids, collapse = ",") else NA_character_)
-      }, error = function(e) {
-        NULL
-      })
-      
+      result <- tryCatch(
+        {
+          search_res <- entrez_search(db = "pubmed", term = query, retmax = 100)
+          Sys.sleep(delay) # Always sleep to respect NCBI servers
+          list(
+            pubmed_hits = as.numeric(search_res$count),
+            PMIDs = if (length(search_res$ids) > 0) paste(search_res$ids, collapse = ",") else NA_character_
+          )
+        },
+        error = function(e) {
+          NULL
+        }
+      )
+
       if (!is.null(result)) {
-        return(result)  # Success
+        return(result) # Success
       } else {
         Sys.sleep(delay) # Sleep even after failed attempt
       }
     }
-    
+
     # All retries failed
     return(list(pubmed_hits = NA_integer_, PMIDs = NA_character_))
   }
-  
+
   # Main logic
   results_list <- bplapply(seq_along(predicted_list), function(i) {
     predicted <- predicted_list[[i]]
-    
+
     if (!is.matrix(predicted) || is.null(rownames(predicted)) || is.null(colnames(predicted))) {
       stop(paste("Predicted matrix at index", i, "does not have proper row and column names."))
     }
-    
+
     indices <- which(((predicted == 1) | (ground_truth == 1)) & upper.tri(predicted), arr.ind = TRUE)
     if (nrow(indices) == 0) {
-      return(data.frame(gene1 = character(0), gene2 = character(0), edge_type = character(0),
-                        pubmed_hits = integer(0), PMIDs = character(0), query_status = character(0)))
+      return(data.frame(
+        gene1 = character(0), gene2 = character(0), edge_type = character(0),
+        pubmed_hits = integer(0), PMIDs = character(0), query_status = character(0)
+      ))
     }
-    
+
     gene_pairs <- data.frame(
       gene1 = rownames(predicted)[indices[, "row"]],
       gene2 = colnames(predicted)[indices[, "col"]],
       stringsAsFactors = FALSE
     )
-    
+
     gene_pairs$edge_type <- ifelse(predicted[indices] == 1 & ground_truth[indices] == 1, "TP",
-                                   ifelse(predicted[indices] == 1 & ground_truth[indices] == 0, "FP", "FN"))
-    
+      ifelse(predicted[indices] == 1 & ground_truth[indices] == 0, "FP", "FN")
+    )
+
     gene_pairs <- gene_pairs[gene_pairs$edge_type %in% query_edge_types, , drop = FALSE]
-    
-    if (nrow(gene_pairs) == 0) return(gene_pairs)
-    
+
+    if (nrow(gene_pairs) == 0) {
+      return(gene_pairs)
+    }
+
     pubmed_info <- bplapply(seq_len(nrow(gene_pairs)), function(j) {
       res <- safe_query_pubmed(gene_pairs$gene1[j], gene_pairs$gene2[j], max_retries = max_retries)
       return(data.frame(pubmed_hits = res$pubmed_hits, PMIDs = res$PMIDs, stringsAsFactors = FALSE))
     }, BPPARAM = BPPARAM)
-    
+
     pubmed_info <- do.call(rbind, pubmed_info)
     gene_pairs$pubmed_hits <- pubmed_info$pubmed_hits
     gene_pairs$PMIDs <- pubmed_info$PMIDs
-    
+
     # Add query status
     gene_pairs$query_status <- ifelse(is.na(gene_pairs$pubmed_hits), "error",
-                                      ifelse(gene_pairs$pubmed_hits == 0, "no_hits", "hits_found"))
-    
+      ifelse(gene_pairs$pubmed_hits == 0, "no_hits", "hits_found")
+    )
+
     return(gene_pairs)
-    
   }, BPPARAM = BPPARAM)
-  
+
   if (!is.null(names(predicted_list))) {
     names(results_list) <- names(predicted_list)
   }
-  
+
   return(results_list)
 }
