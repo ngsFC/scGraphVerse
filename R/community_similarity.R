@@ -37,7 +37,7 @@
 #' print(result$topology_measures)
 community_similarity <- function(control_output, predicted_list) {
   required_pkgs <- c("igraph", "fmsb")
-  missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
+  missing_pkgs <- required_pkgs[!vapply(required_pkgs, requireNamespace, quietly = TRUE)]
   if (length(missing_pkgs) > 0) {
     stop("Missing packages: ", paste(missing_pkgs, collapse = ", "))
   }

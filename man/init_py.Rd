@@ -32,11 +32,12 @@ If any module is missing or incompatible, an informative error will be raised
 (if \code{required = TRUE}).
 }
 \examples{
-\dontrun{
-# Initialize Python environment (adjust python_path to your system)
-grnboost_modules <- init_py(python_path = "/usr/bin/python3")
-
-# Access numpy
-grnboost_modules$numpy$random$rand(5)
+if (interactive() && requireNamespace("reticulate", quietly = TRUE)) {
+  # Only run if reticulate is installed and session is interactive
+  # Initialize Python environment (adjust python_path to your system if needed)
+  grnboost_modules <- init_py()
+  
+  # Access numpy to generate random numbers
+  grnboost_modules$numpy$random$rand(5)
 }
 }

@@ -71,7 +71,7 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   stopifnot(is.matrix(B), nrow(B) == ncol(B))
   stopifnot(all(B %in% c(0, 1)))
   stopifnot(is.numeric(kmat), kmat > 0, floor(kmat) == kmat)
-  stopifnot(length(mu_range) == kmat, all(sapply(mu_range, function(x) length(x) == 2 && all(x > 0))))
+  stopifnot(length(mu_range) == kmat, all(vapply(mu_range, function(x) length(x) == 2 && all(x > 0))))
   stopifnot(length(mu_noise) == kmat, all(mu_noise >= 0))
   stopifnot(length(theta) == kmat, all(theta > 0))
   stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))

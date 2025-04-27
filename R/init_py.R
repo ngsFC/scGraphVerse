@@ -26,13 +26,15 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' # Initialize Python environment (adjust python_path to your system)
-#' grnboost_modules <- init_py(python_path = "/usr/bin/python3")
-#'
-#' # Access numpy
-#' grnboost_modules$numpy$random$rand(5)
+#' if (interactive() && requireNamespace("reticulate", quietly = TRUE)) {
+#'   # Only run if reticulate is installed and session is interactive
+#'   # Initialize Python environment (adjust python_path to your system if needed)
+#'   grnboost_modules <- init_py()
+#'   
+#'   # Access numpy to generate random numbers
+#'   grnboost_modules$numpy$random$rand(5)
 #' }
+
 init_py <- function(python_path = "/usr/bin/python3", required = TRUE) {
   reticulate::use_python(python_path, required = required)
   

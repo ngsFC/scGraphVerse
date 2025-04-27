@@ -49,7 +49,7 @@
 #' adjacency_list[[1]]
 
 generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
-  if (!is.list(df_list) || !all(sapply(df_list, is.data.frame))) {
+  if (!is.list(df_list) || !all(vapply(df_list, is.data.frame))) {
     stop("df_list must be a list of data frames")
   }
   

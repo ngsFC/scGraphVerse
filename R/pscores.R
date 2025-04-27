@@ -52,7 +52,7 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
     stop("`ground_truth` must contain only binary values (0/1).")
   }
 
-  if (!is.list(predicted_list) || !all(sapply(predicted_list, is.matrix))) {
+  if (!is.list(predicted_list) || !all(vapply(predicted_list, is.matrix))) {
     stop("`predicted_list` must be a list of matrices.")
   }
 

@@ -38,7 +38,7 @@
 #' sym_list[[1]]
 
 symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
-  if (!is.list(matrix_list) || !all(sapply(matrix_list, is.matrix))) {
+  if (!is.list(matrix_list) || !all(vapply(matrix_list, is.matrix))) {
     stop("matrix_list must be a list of matrices")
   }
   

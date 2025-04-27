@@ -44,7 +44,7 @@ earlyj <- function(input_list, rowg = TRUE) {
     stop("Input must be a non-empty list of matrices, Seurat objects, or SingleCellExperiment objects.")
   }
   
-  object_classes <- unique(sapply(input_list, function(x) class(x)[1]))
+  object_classes <- unique(vapply(input_list, function(x) class(x)[1]))
   first_element_type <- object_classes[1]
   
   if (length(object_classes) > 1) {

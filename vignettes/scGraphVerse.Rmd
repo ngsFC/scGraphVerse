@@ -49,13 +49,12 @@ stopifnot(all(rownames(meta_features) == rownames(seurat_subset[["RNA"]]@data)))
 new_rownames <- meta_features$name
 new_rownames <- seurat_subset@assays$RNA@meta.features$name
 
-assay <- seurat_subset[["RNA"]] # Access the RNA assay
+assay <- seurat_subset[["RNA"]]
 rownames(assay@counts) <- new_rownames
 rownames(assay@data) <- new_rownames
 rownames(assay@meta.features) <- new_rownames
 
 seurat_subset[["RNA"]] <- assay
-
 selected_c <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
 selected_f <- rownames(seurat_subset)[Matrix::rowSums(seurat_subset) > 3]
 
@@ -68,7 +67,7 @@ selected_mito <- WhichCells(seurat_subset_filt, expression = percent_mito < 20)
 selected_ribo <- WhichCells(seurat_subset_filt, expression = percent_ribo > 5)
 
 seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_mito)
-seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_ribo)
+#seurat_subset_filt <- subset(seurat_subset_filt, cells = selected_ribo)
 
 # Filter MALAT1
 seurat_subset_filt <- seurat_subset_filt[!grepl("MALAT1", rownames(seurat_subset_filt)), ]
