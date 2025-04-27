@@ -66,7 +66,7 @@ infer_networks <- function(count_matrices_list,
                            adjm = NULL,
                            total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                            grnboost_modules = NULL,
-                           seed = 1234) {
+                           seed = NULL) {
   
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
   
@@ -120,8 +120,10 @@ infer_networks <- function(count_matrices_list,
   
   BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
     mat <- count_matrices_list[[i]]
-    task_seed <- as.integer(round(seed * 100 + i))
-    set.seed(task_seed)
+    if (!is.null(seed)) {
+      task_seed <- as.integer(round(seed * 100 + i))
+      set.seed(task_seed)
+    }
     
     if (method == "GENIE3") {
       adj <- GENIE3::GENIE3(mat, nCores = nCores_inner)

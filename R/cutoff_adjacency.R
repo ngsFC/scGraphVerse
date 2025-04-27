@@ -67,7 +67,7 @@ cutoff_adjacency <- function(count_matrices,
                              weight_function = "mean", 
                              total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                              grnboost_modules = NULL,
-                             seed = 1234,
+                             seed = NULL,
                              debug = FALSE) {
   
   method <- match.arg(method, choices = c("GENIE3", "GRNBoost2", "JRF"))
@@ -88,19 +88,21 @@ cutoff_adjacency <- function(count_matrices,
     }
   })
   
-  shuffle_rows <- function(matrix, seed_vector) {
+  shuffle_rows <- function(matrix, seed_vector, seed = NULL) {
     shuffled <- matrix
     for (i in seq_len(nrow(matrix))) {
-      set.seed(seed_vector[i])
+      if (!is.null(seed)) {
+        set.seed(seed_vector[i])
+      }
       shuffled[i, ] <- sample(matrix[i, ])
     }
     shuffled
   }
   
-  create_shuffled_matrices <- function(mat, n, base_seed) {
+  create_shuffled_matrices <- function(mat, n, base_seed, seed = NULL) {
     lapply(seq_len(n), function(i) {
       seed_vector <- sample(base_seed + i + seq_len(nrow(mat)))
-      shuffle_rows(mat, seed_vector)
+      shuffle_rows(mat, seed_vector, seed = seed)
     })
   }
   
@@ -128,7 +130,7 @@ cutoff_adjacency <- function(count_matrices,
     mat <- count_matrices[[mat_idx]]
     
     base_seed <- as.integer(round(seed * 1000 + mat_idx * 10 + shuf_idx))
-    shuffled <- create_shuffled_matrices(mat, 1, base_seed)[[1]]
+    shuffled <- create_shuffled_matrices(mat, 1, base_seed, seed = seed)[[1]]
     
     args <- list(count_matrices_list = list(shuffled), method = method, adjm = NULL, seed = base_seed)
     
