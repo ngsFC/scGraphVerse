@@ -8,9 +8,8 @@ infer_networks(
   count_matrices_list,
   method = "GENIE3",
   adjm = NULL,
-  total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
-  grnboost_modules = NULL,
-  seed = 1234
+  nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
+  grnboost_modules = NULL
 )
 }
 \arguments{
@@ -22,33 +21,36 @@ infer_networks(
 
 \item{adjm}{Optional. Reference adjacency matrix for matching dimensions when using \code{"ZILGM"} or \code{"PCzinb"}.}
 
-\item{total_cores}{Integer. Total number of CPU cores for parallelization.
+\item{nCores}{Integer. Number of CPU cores to use for parallelization.
 Defaults to the number of workers in the current \pkg{BiocParallel} backend.}
 
 \item{grnboost_modules}{Python modules required for \code{GRNBoost2} (created via \pkg{reticulate}).}
-
-\item{seed}{Integer. Random seed for reproducibility. Default is \code{123}.}
 }
 \value{
+A list of inferred networks:
 \itemize{
-\item For \code{"JRF"}, a list of data frames with inferred edge lists for each dataset.
-\item For other methods, a list of inferred network objects (link lists or adjacency matrices).
+\item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, and \code{"PCzinb"}, a list of inferred network objects (edge lists or adjacency matrices).
+\item For \code{"JRF"}, a list of data frames with inferred edge lists for each condition or dataset.
 }
 }
 \description{
-Infers weighted gene regulatory networks from one or more expression matrices
+Infers weighted gene regulatory networks (GRNs) from one or more expression matrices
 using different inference methods: \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
 }
 \details{
 Each expression matrix is preprocessed automatically depending on its object type (\code{Seurat},
 \code{SingleCellExperiment}, or plain matrix).
 
-Parallelization across matrices is handled with \pkg{BiocParallel}. For \code{GENIE3} and \code{JRF},
-nested parallelism is used: outer jobs distribute matrices and inner jobs distribute tree-based computations.
-
-The methods are based on:
+Parallelization behavior:
 \itemize{
-\item \strong{GENIE3}: Random Forest based inference (Huynh-Thu et al., 2010).
+\item \strong{GENIE3} and \strong{ZILGM}: No external parallelization; internal \code{nCores} parameter controls computation.
+\item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across matrices using \pkg{BiocParallel}.
+\item \strong{JRF}: Joint modeling of all matrices together; internal parallelization across random forest trees using \pkg{doParallel}.
+}
+
+Methods are based on:
+\itemize{
+\item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et al., 2010).
 \item \strong{GRNBoost2}: Gradient boosting trees using arboreto (Moerman et al., 2019).
 \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq (Zhang et al., 2021).
 \item \strong{JRF}: Joint Random Forests across multiple conditions (Petralia et al., 2015).
@@ -56,10 +58,11 @@ The methods are based on:
 }
 }
 \examples{
-set.seed(42)
+set.seed(123)
+
 # Simulate two small expression matrices
-mat1 <- matrix(rpois(100, 5), nrow = 10)
-mat2 <- matrix(rpois(100, 5), nrow = 10)
+mat1 <- matrix(rpois(100, lambda = 5), nrow = 10)
+mat2 <- matrix(rpois(100, lambda = 5), nrow = 10)
 rownames(mat1) <- paste0("Gene", 1:10)
 rownames(mat2) <- paste0("Gene", 1:10)
 
@@ -67,10 +70,9 @@ rownames(mat2) <- paste0("Gene", 1:10)
 networks <- infer_networks(
   count_matrices_list = list(mat1, mat2),
   method = "GENIE3",
-  total_cores = 2,
-  seed = 123
+  nCores = 2
 )
 
-# Inspect first network
-networks[[1]]
+# Inspect first inferred network
+head(networks[[1]])
 }

@@ -13,8 +13,7 @@ zinb_simdata(
   theta,
   pi,
   kmat = 1,
-  depth_range = NA,
-  seed = NULL
+  depth_range = NA
 )
 }
 \arguments{
@@ -39,8 +38,6 @@ for each matrix. Smaller \code{theta} implies higher overdispersion.}
 
 \item{depth_range}{Numeric vector of length 2 or \code{NA}. Range of total sequencing depth per cell.
 If \code{NA}, no depth adjustment is performed.}
-
-\item{seed}{Integer (optional). Random seed for reproducibility.}
 }
 \value{
 A list containing \code{kmat} matrices. Each matrix has:
@@ -69,19 +66,18 @@ methods where dropout events and network structure are relevant.
 # Create a simple adjacency matrix
 B <- matrix(0, nrow = 5, ncol = 5)
 rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
-B[1,2] <- B[2,3] <- B[4,5] <- 1
-B <- B + t(B)  # Ensure symmetry
+B[1, 2] <- B[2, 3] <- B[4, 5] <- 1
+B <- B + t(B) # Ensure symmetry
 
 # Simulate two count matrices
 zinb_matrices <- zinb_simdata(
   n = 100, p = 5, B = B,
-  mu_range = list(c(1,5), c(2,6)),
+  mu_range = list(c(1, 5), c(2, 6)),
   mu_noise = c(0.5, 0.7),
   theta = c(1, 2),
   pi = c(0.2, 0.3),
   kmat = 2,
   depth_range = c(500, 5000),
-  seed = 42
 )
 
 # View one simulated matrix

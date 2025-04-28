@@ -2,36 +2,32 @@
 % Please edit documentation in R/selgene.R
 \name{selgene}
 \alias{selgene}
-\title{Extract Top Highly Expressed Genes for a Specific Cell Type}
+\title{Extract Top Highly Expressed Genes}
 \usage{
-selgene(seurat_object, cell_type, top_n = NULL)
+selgene(object, top_n)
 }
 \arguments{
-\item{seurat_object}{A \linkS4class{Seurat} object containing RNA expression data.}
-
-\item{cell_type}{Character string specifying the target cell type of interest.}
+\item{object}{A \linkS4class{Seurat} object, a \linkS4class{SingleCellExperiment} object, or a numeric expression matrix (genes x cells).}
 
 \item{top_n}{Integer. Number of top expressed genes to return.}
 }
 \value{
-A character vector containing the top \code{n} most highly expressed genes for the specified cell type.
+A character vector containing the top \code{n} most highly expressed genes.
 }
 \description{
-Identifies and extracts the top \code{n} most highly expressed genes for a specified
-cell type from the RNA assay of a \linkS4class{Seurat} object.
+Identifies and extracts the top \code{n} most highly expressed genes across all cells
+from a \linkS4class{Seurat} object, a \linkS4class{SingleCellExperiment} object, or a numeric matrix.
 }
 \details{
-The function verifies that the specified \code{cell_type} exists in the metadata of the \code{Seurat} object.
-It retrieves the normalized expression matrix from the \code{"RNA"} assay, computes mean expression per gene
-across all cells of the specified type, and returns the genes with the highest average expression.
+The function automatically detects the input type, extracts normalized expression data,
+computes the mean expression per gene across all cells, and selects the top genes based on average expression.
 }
 \note{
-Requires the \pkg{Seurat} package.
+Requires the \pkg{Seurat} and \pkg{SingleCellExperiment} packages if S4 objects are provided.
 }
 \examples{
-\dontrun{
-# Select top 20 genes for the "T_cells" cluster
-selected_genes <- selgene(my_seurat_object, cell_type = "T_cells", top_n = 20)
-print(selected_genes)
-}
+counts <- matrix(rpois(100, lambda = 5), nrow = 10)
+rownames(counts) <- paste0("Gene", 1:10)
+colnames(counts) <- paste0("Cell", 1:10)
+selected_genes <- selgene(counts, top_n = 5)
 }

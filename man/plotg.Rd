@@ -33,8 +33,8 @@ If any are missing, an informative error will be thrown.
 }
 \examples{
 # Create two simple adjacency matrices
-adj1 <- matrix(c(0,1,0,1,0,1,0,1,0), nrow = 3)
-adj2 <- matrix(c(0,1,1,1,0,0,1,0,0), nrow = 3)
+adj1 <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3)
+adj2 <- matrix(c(0, 1, 1, 1, 0, 0, 1, 0, 0), nrow = 3)
 
 # Visualize the graphs
 plotg(list(adj1, adj2))

@@ -51,7 +51,7 @@ set.seed(123)
 # Simulate a small random adjacency matrix
 genes <- paste0("Gene", 1:30)
 mat <- matrix(runif(900, min = 0, max = 1), nrow = 30)
-mat[mat < 0.8] <- 0  # Sparsify
+mat[mat < 0.8] <- 0 # Sparsify
 diag(mat) <- 0
 rownames(mat) <- colnames(mat) <- genes
 

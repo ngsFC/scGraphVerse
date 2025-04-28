@@ -39,8 +39,10 @@ ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
 diag(ground_truth) <- 0
 ground_truth[lower.tri(ground_truth)] <- 0
 
-plotROC(matrices_list = list(mat1, mat2),
-        ground_truth = ground_truth,
-        plot_title = "ROC for Network Inference",
-        is_binary = FALSE)
+plotROC(
+  matrices_list = list(mat1, mat2),
+  ground_truth = ground_truth,
+  plot_title = "ROC for Network Inference",
+  is_binary = FALSE
+)
 }

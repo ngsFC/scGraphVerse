@@ -36,7 +36,7 @@ if (interactive() && requireNamespace("reticulate", quietly = TRUE)) {
   # Only run if reticulate is installed and session is interactive
   # Initialize Python environment (adjust python_path to your system if needed)
   grnboost_modules <- init_py()
-  
+
   # Access numpy to generate random numbers
   grnboost_modules$numpy$random$rand(5)
 }
