@@ -15,8 +15,7 @@ test_that("cutoff_adjacency and create_consensus work correctly", {
     n = 2,
     method = "GENIE3",
     quantile_threshold = 0.9,
-    total_cores = 1,
-    seed = 42
+    nCores = 1
   )
 
   expect_true(is.list(bin_adj_list))

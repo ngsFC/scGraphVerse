@@ -3,7 +3,7 @@ test_that("infer_networks and generate_adjacency produce valid matrices", {
   mat <- matrix(rpois(100, lambda = 5), nrow = 10)
   rownames(mat) <- paste0("Gene", 1:10)
 
-  inferred <- infer_networks(count_matrices_list = list(mat), method = "GENIE3", total_cores = 1)
+  inferred <- infer_networks(count_matrices_list = list(mat), method = "GENIE3", nCores = 1)
   adjm <- generate_adjacency(inferred)
   symm <- symmetrize(adjm, weight_function = "mean")[[1]]
 

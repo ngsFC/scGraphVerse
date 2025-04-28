@@ -9,9 +9,7 @@ test_that("zinb_simdata generates count matrices with correct dimensions", {
     theta = 1,
     pi = 0.2,
     kmat = 1,
-    depth_range = c(1000, 5000),
-    seed = 42
-  )
+    depth_range = c(1000, 5000))
 
   expect_true(is.list(sim_matrices))
   expect_equal(length(sim_matrices), 1)
