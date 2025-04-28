@@ -57,12 +57,12 @@ plotg <- function(adj_matrix_list) {
     adj_matrix <- adj_matrix_list[[i]]
 
     if (!is.matrix(adj_matrix) || nrow(adj_matrix) != ncol(adj_matrix)) {
-      warning(paste("Skipping graph", i, ": Adjacency matrix must be square."))
+      warning(sprintf("Skipping graph %d: Adjacency matrix must be square.", i))
       next
     }
 
     if (!all(adj_matrix == t(adj_matrix))) {
-      warning(paste("Skipping graph", i, ": Adjacency matrix must be symmetric."))
+      warning(sprintf("Skipping graph %d: Adjacency matrix must be symmetric.", i))
       next
     }
 
@@ -72,7 +72,7 @@ plotg <- function(adj_matrix_list) {
     g <- igraph::delete_vertices(g, igraph::V(g)[igraph::degree(g) == 0])
 
     if (igraph::vcount(g) == 0 || igraph::ecount(g) == 0) {
-      warning(paste("Skipping graph", i, ": No edges remaining after removing disconnected nodes."))
+      warning(sprintf("Skipping graph %d: No edges remaining after removing disconnected nodes.", i))
       next
     }
 

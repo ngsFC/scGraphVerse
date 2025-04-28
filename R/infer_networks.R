@@ -1,6 +1,6 @@
 #' Infer Gene Regulatory Networks from Expression Matrices
 #'
-#' Infers weighted gene regulatory networks from one or more expression matrices
+#' Infers weighted gene regulatory networks (GRNs) from one or more expression matrices
 #' using different inference methods: \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
 #'
 #' @param count_matrices_list A list of expression matrices (genes × cells) or
@@ -8,27 +8,31 @@
 #' @param method Character string. Inference method to use. One of:
 #'   \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
 #' @param adjm Optional. Reference adjacency matrix for matching dimensions when using \code{"ZILGM"} or \code{"PCzinb"}.
-#' @param total_cores Integer. Total number of CPU cores for parallelization.
+#' @param nCores Integer. Number of CPU cores to use for parallelization.
 #'   Defaults to the number of workers in the current \pkg{BiocParallel} backend.
 #' @param grnboost_modules Python modules required for \code{GRNBoost2} (created via \pkg{reticulate}).
-#' @param seed Integer. Random seed for reproducibility. Default is \code{123}.
 #'
 #' @return
+#' A list of inferred networks:
 #' \itemize{
-#'   \item For \code{"JRF"}, a list of data frames with inferred edge lists for each dataset.
-#'   \item For other methods, a list of inferred network objects (link lists or adjacency matrices).
+#'   \item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, and \code{"PCzinb"}, a list of inferred network objects (edge lists or adjacency matrices).
+#'   \item For \code{"JRF"}, a list of data frames with inferred edge lists for each condition or dataset.
 #' }
 #'
 #' @details
 #' Each expression matrix is preprocessed automatically depending on its object type (\code{Seurat},
 #' \code{SingleCellExperiment}, or plain matrix).
 #'
-#' Parallelization across matrices is handled with \pkg{BiocParallel}. For \code{GENIE3} and \code{JRF},
-#' nested parallelism is used: outer jobs distribute matrices and inner jobs distribute tree-based computations.
-#'
-#' The methods are based on:
+#' Parallelization behavior:
 #' \itemize{
-#'   \item \strong{GENIE3}: Random Forest based inference (Huynh-Thu et al., 2010).
+#'   \item \strong{GENIE3} and \strong{ZILGM}: No external parallelization; internal \code{nCores} parameter controls computation.
+#'   \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across matrices using \pkg{BiocParallel}.
+#'   \item \strong{JRF}: Joint modeling of all matrices together; internal parallelization across random forest trees using \pkg{doParallel}.
+#' }
+#'
+#' Methods are based on:
+#' \itemize{
+#'   \item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et al., 2010).
 #'   \item \strong{GRNBoost2}: Gradient boosting trees using arboreto (Moerman et al., 2019).
 #'   \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq (Zhang et al., 2021).
 #'   \item \strong{JRF}: Joint Random Forests across multiple conditions (Petralia et al., 2015).
@@ -43,10 +47,11 @@
 #' @export
 #'
 #' @examples
-#' set.seed(42)
+#' set.seed(123)
+#' 
 #' # Simulate two small expression matrices
-#' mat1 <- matrix(rpois(100, 5), nrow = 10)
-#' mat2 <- matrix(rpois(100, 5), nrow = 10)
+#' mat1 <- matrix(rpois(100, lambda = 5), nrow = 10)
+#' mat2 <- matrix(rpois(100, lambda = 5), nrow = 10)
 #' rownames(mat1) <- paste0("Gene", 1:10)
 #' rownames(mat2) <- paste0("Gene", 1:10)
 #'
@@ -54,18 +59,17 @@
 #' networks <- infer_networks(
 #'   count_matrices_list = list(mat1, mat2),
 #'   method = "GENIE3",
-#'   total_cores = 2,
-#'   seed = 123
+#'   nCores = 2
 #' )
 #'
-#' # Inspect first network
-#' networks[[1]]
+#' # Inspect first inferred network
+#' head(networks[[1]])
+
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",
                            adjm = NULL,
-                           total_cores = BiocParallel::bpworkers(BiocParallel::bpparam()),
-                           grnboost_modules = NULL,
-                           seed = NULL) {
+                           nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
+                           grnboost_modules = NULL) {
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
 
   # Preprocess matrices
@@ -80,21 +84,43 @@ infer_networks <- function(count_matrices_list,
   })
 
   n_matrices <- length(count_matrices_list)
-  nCores_outer <- min(total_cores, n_matrices)
-  nCores_inner <- max(floor(total_cores / nCores_outer), 1)
-  param_outer <- if (method == "GRNBoost2") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers = nCores_outer, RNGseed = seed)
 
+  # GENIE3 and ZILGM: serial loop
+  if (method %in% c("GENIE3", "ZILGM")) {
+    results <- vector("list", length = n_matrices)
+    for (i in seq_len(n_matrices)) {
+      mat <- count_matrices_list[[i]]
+
+      if (method == "GENIE3") {
+        adj <- GENIE3::GENIE3(mat, nCores = nCores)
+        results[[i]] <- GENIE3::getLinkList(adj)
+
+      } else if (method == "ZILGM") {
+        lambda_max <- ZILGM::find_lammax(t(mat))
+        lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
+        fit <- ZILGM::zilgm(
+          X = t(mat), lambda = lambda_seq, family = "NBII",
+          update_type = "IRLS", do_boot = TRUE, boot_num = 10,
+          sym = "OR", nCores = nCores
+        )
+        adj <- fit$network[[fit$opt_index]]
+        dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
+        results[[i]] <- adj
+      }
+    }
+    return(results)
+  }
+
+  # JRF: all matrices together, parallel inside
   if (method == "JRF") {
     norm_list <- lapply(count_matrices_list, function(mat) {
       t(scale(t(mat)))
     })
 
-    param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = seed)
-    clust <- parallel::makeCluster(nCores_inner)
+    clust <- parallel::makeCluster(nCores)
     on.exit(parallel::stopCluster(clust), add = TRUE)
     doParallel::registerDoParallel(clust)
 
-    # Run JRF joint network inference
     rf <- JRF::JRF(
       X = norm_list,
       genes.name = rownames(norm_list[[1]]),
@@ -102,7 +128,6 @@ infer_networks <- function(count_matrices_list,
       mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     )
 
-    # Split the result into a list of edge lists
     jrf_mat <- list(rf)
     importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
 
@@ -116,20 +141,14 @@ infer_networks <- function(count_matrices_list,
     return(jrf_list)
   }
 
+  # GRNBoost2 and PCzinb: parallel across matrices
+  param_outer <- BiocParallel::MulticoreParam(workers = nCores)
   BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
     mat <- count_matrices_list[[i]]
-    if (!is.null(seed)) {
-      task_seed <- as.integer(round(seed * 100 + i))
-      set.seed(task_seed)
-    }
 
-    if (method == "GENIE3") {
-      adj <- GENIE3::GENIE3(mat, nCores = nCores_inner)
-      GENIE3::getLinkList(adj)
-    } else if (method == "GRNBoost2") {
+    if (method == "GRNBoost2") {
       if (is.null(grnboost_modules)) stop("Provide grnboost_modules for GRNBoost2.")
-      grnboost_modules$numpy$random$seed(as.integer(task_seed))
-
+      
       df <- as.data.frame(t(mat))
       genes <- colnames(df)
       rownames(df) <- make.unique(rownames(df))
@@ -139,22 +158,12 @@ infer_networks <- function(count_matrices_list,
       result_r <- reticulate::py_to_r(result_py)
       if (is.data.frame(result_r)) rownames(result_r) <- NULL
       result_r
-    } else if (method == "ZILGM") {
-      lambda_max <- ZILGM::find_lammax(t(mat))
-      lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
-      fit <- ZILGM::zilgm(
-        X = t(mat), lambda = lambda_seq, family = "NBII",
-        update_type = "IRLS", do_boot = TRUE, boot_num = 10,
-        sym = "OR", nCores = nCores_inner
-      )
-      adj <- fit$network[[fit$opt_index]]
-      dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
-      adj
+
     } else if (method == "PCzinb") {
-      param_inner <- BiocParallel::MulticoreParam(workers = nCores_inner, RNGseed = task_seed)
       adj <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
       dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
       adj
     }
   }, BPPARAM = param_outer)
 }
+

@@ -133,7 +133,7 @@ community_path <- function(adj_matrix,
         plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
         legend.position = "none"
       )
-    print(g)
+    plot(g)
   }
 
   if (verbose) message("Running pathway enrichment...")

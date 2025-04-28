@@ -85,7 +85,7 @@ edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "
     predicted <- predicted_list[[i]]
 
     if (!is.matrix(predicted) || is.null(rownames(predicted)) || is.null(colnames(predicted))) {
-      stop(paste("Predicted matrix at index", i, "does not have proper row and column names."))
+      stop(sprintf("Predicted matrix at index %d does not have proper row and column names.", i))
     }
 
     indices <- which(((predicted == 1) | (ground_truth == 1)) & upper.tri(predicted), arr.ind = TRUE)
