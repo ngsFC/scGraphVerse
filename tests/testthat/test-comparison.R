@@ -8,10 +8,10 @@ test_that("cutoff_adjacency and create_consensus work correctly", {
   adjm2 <- matrix(runif(100), nrow = 10)
   rownames(adjm1) <- colnames(adjm1) <- paste0("Gene", 1:10)
   rownames(adjm2) <- colnames(adjm2) <- paste0("Gene", 1:10)
-
+  symm <- symmetrize(list(adjm1, adjm2), weight_function = "mean")
   bin_adj_list <- cutoff_adjacency(
     count_matrices = list(mat1, mat2),
-    weighted_adjm_list = list(adjm1, adjm2),
+    weighted_adjm_list = symm,
     n = 2,
     method = "GENIE3",
     quantile_threshold = 0.9,
