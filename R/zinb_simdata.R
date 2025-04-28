@@ -16,7 +16,6 @@
 #' @param kmat Integer. Number of count matrices to simulate. Default is \code{1}.
 #' @param depth_range Numeric vector of length 2 or \code{NA}. Range of total sequencing depth per cell.
 #'   If \code{NA}, no depth adjustment is performed.
-#' @param seed Integer (optional). Random seed for reproducibility.
 #'
 #' @return
 #' A list containing \code{kmat} matrices. Each matrix has:
@@ -56,13 +55,11 @@
 #'   pi = c(0.2, 0.3),
 #'   kmat = 2,
 #'   depth_range = c(500, 5000),
-#'   seed = 42
 #' )
 #'
 #' # View one simulated matrix
 #' print(zinb_matrices[[1]])
-zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = NA, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
+zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = NA) {
 
   stopifnot(is.numeric(n), n > 0, floor(n) == n)
   stopifnot(is.numeric(p), p > 0, floor(p) == p)

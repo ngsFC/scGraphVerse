@@ -72,7 +72,6 @@ infer_networks <- function(count_matrices_list,
                            grnboost_modules = NULL) {
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
 
-  # Preprocess matrices
   count_matrices_list <- lapply(count_matrices_list, function(obj) {
     if (inherits(obj, "Seurat")) {
       as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts"))
