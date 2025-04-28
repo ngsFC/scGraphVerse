@@ -51,18 +51,18 @@ seurat_object <- download_Atlas(seurat_url)
 seurat_subset <- subset(
   x = seurat_object,
   subset = disease == "normal" &
-           cell_type == "CD4-positive helper T cell" &
-           donor_id %in% c("AN6", "AN9", "NP18")
+    cell_type == "CD4-positive helper T cell" &
+    donor_id %in% c("AN6", "AN9", "NP18")
 )
 
 # 3. Rename gene IDs to gene symbols
 meta_features <- seurat_subset[["RNA"]]@meta.features
 new_rownames <- meta_features$name
 assay <- seurat_subset[["RNA"]]
-rownames(assay@counts)       <- new_rownames
-rownames(assay@data)         <- new_rownames
+rownames(assay@counts) <- new_rownames
+rownames(assay@data) <- new_rownames
 rownames(assay@meta.features) <- new_rownames
-seurat_subset[["RNA"]]       <- assay
+seurat_subset[["RNA"]] <- assay
 
 # 4. QC: features > 200, expression sum > 3, % mito < 20, etc.
 selected_cells <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
@@ -74,7 +74,7 @@ seurat_subset <- subset(seurat_subset, subset = percent_mito < 20 & percent_ribo
 
 # 5. Remove MALAT1, mitochondrial and ribosomal genes
 seurat_subset <- seurat_subset[!grepl("MALAT1", rownames(seurat_subset)), ]
-seurat_subset <- seurat_subset[!grepl("^MT-",   rownames(seurat_subset)), ]
+seurat_subset <- seurat_subset[!grepl("^MT-", rownames(seurat_subset)), ]
 seurat_subset <- seurat_subset[!grepl("^RP[SL]", rownames(seurat_subset)), ]
 ```
 
@@ -98,21 +98,23 @@ result <- stringdb_adjacency(
   keep_all_genes = FALSE
 )
 wadj <- result$weighted
-adj  <- result$binary
+adj <- result$binary
 
 # 3. Symmetrize and sort
 common <- intersect(rownames(adj), colnames(adj))
-adj    <- adj[common, common]
-adj    <- adj[sort(rownames(adj)), sort(colnames(adj))]
+adj <- adj[common, common]
+adj <- adj[sort(rownames(adj)), sort(colnames(adj))]
 
 # 4. Visualize
 gtruth <- igraph::graph_from_adjacency_matrix(adj, mode = "undirected")
-ggraph::ggraph(gtruth, layout="fr") +
-  ggraph::geom_edge_link(color="gray") +
-  ggraph::geom_node_point(color="steelblue") +
+ggraph::ggraph(gtruth, layout = "fr") +
+  ggraph::geom_edge_link(color = "gray") +
+  ggraph::geom_node_point(color = "steelblue") +
   ggtitle(
-    paste0("Ground Truth: ", igraph::vcount(gtruth)," nodes, ",
-                  igraph::ecount(gtruth)," edges")
+    paste0(
+      "Ground Truth: ", igraph::vcount(gtruth), " nodes, ",
+      igraph::ecount(gtruth), " edges"
+    )
   ) + theme_minimal()
 ```
 
@@ -121,20 +123,20 @@ We leverage a zero‐inflated network‐aware simulator based on the ZILGM frame
 
 
 ```{r}
-
 nodes <- nrow(adj)
-b     <- 3; sigma <- 0.2
+b <- 3
+sigma <- 0.2
 
 count_matrices <- zinb_simdata(
-  n          = 50, 
-  p          = nodes, 
-  B          = adj, 
-  mu_range   = list(c(1,4), c(1,7), c(1,10)),
-  mu_noise   = c(1,3,5),  
-  theta      = c(1,0.7,0.5),  
-  pi         = c(0.2,0.2,0.2),
-  kmat       = 3,
-  depth_range= c(round((1-sigma)*nodes*b), round((1+sigma)*nodes*b))
+  n = 50,
+  p = nodes,
+  B = adj,
+  mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
+  mu_noise = c(1, 3, 5),
+  theta = c(1, 0.7, 0.5),
+  pi = c(0.2, 0.2, 0.2),
+  kmat = 3,
+  depth_range = c(round((1 - sigma) * nodes * b), round((1 + sigma) * nodes * b))
 )
 
 # Transpose each to cells × genes
@@ -152,14 +154,10 @@ late_genie3 <- infer_networks(
   total_cores = 15,
   seed        = 1234
 )
-
-late_genie3_check <- infer_networks1(
-  count_matrices,
-  method      = "GENIE3",
-  total_cores = 15
-)
+```
 
 
-
+```{r}
+sessionInfo()
 ```
 

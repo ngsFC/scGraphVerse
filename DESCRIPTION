@@ -15,11 +15,11 @@ License: MIT
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-biocViews: GeneRegulation, NetworkInference, SingleCell, RNASeq, Visualization, Software
+biocViews: GeneRegulation, NetworkInference, SingleCell, RNASeq, Visualization, Software, GraphAndNetwork, GeneSetEnrichment, NetworkEnrichment, Pathways, Sequencing, Reactome, Network, KEGG
 URL: https://github.com/francesco-cecere/scGraphVerse
 BugReports: https://github.com/francesco-cecere/scGraphVerse/issues
 Depends: 
-    R (>= 4.3.0)
+    R (>= 4.4.0)
 Imports:
     BiocParallel (>= 1.30.0),
     ggplot2,
