@@ -1,57 +1,57 @@
-#' Extract Top Highly Expressed Genes for a Specific Cell Type
+#' Extract Top Highly Expressed Genes
 #'
-#' Identifies and extracts the top \code{n} most highly expressed genes for a specified
-#' cell type from the RNA assay of a \linkS4class{Seurat} object.
+#' Identifies and extracts the top \code{n} most highly expressed genes across all cells
+#' from a \linkS4class{Seurat} object, a \linkS4class{SingleCellExperiment} object, or a numeric matrix.
 #'
-#' @param seurat_object A \linkS4class{Seurat} object containing RNA expression data.
-#' @param cell_type Character string specifying the target cell type of interest.
+#' @param object A \linkS4class{Seurat} object, a \linkS4class{SingleCellExperiment} object, or a numeric expression matrix (genes x cells).
 #' @param top_n Integer. Number of top expressed genes to return.
 #'
 #' @return
-#' A character vector containing the top \code{n} most highly expressed genes for the specified cell type.
+#' A character vector containing the top \code{n} most highly expressed genes.
 #'
 #' @details
-#' The function verifies that the specified \code{cell_type} exists in the metadata of the \code{Seurat} object.
-#' It retrieves the normalized expression matrix from the \code{"RNA"} assay, computes mean expression per gene
-#' across all cells of the specified type, and returns the genes with the highest average expression.
+#' The function automatically detects the input type, extracts normalized expression data,
+#' computes the mean expression per gene across all cells, and selects the top genes based on average expression.
 #'
 #' @note
-#' Requires the \pkg{Seurat} package.
+#' Requires the \pkg{Seurat} and \pkg{SingleCellExperiment} packages if S4 objects are provided.
 #'
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' # Select top 20 genes for the "T_cells" cluster
-#' selected_genes <- selgene(my_seurat_object, cell_type = "T_cells", top_n = 20)
-#' print(selected_genes)
-#' }
-selgene <- function(seurat_object, cell_type, top_n = NULL) {
-  # Validate cell type
-  if (!"cell_type" %in% colnames(seurat_object@meta.data)) {
-    stop("'cell_type' column not found in the Seurat metadata.")
-  }
-  if (!cell_type %in% seurat_object@meta.data$cell_type) {
-    stop("The selected cell type is not present in the metadata.")
-  }
+#' counts <- matrix(rpois(100, lambda = 5), nrow = 10)
+#' rownames(counts) <- paste0("Gene", 1:10)
+#' colnames(counts) <- paste0("Cell", 1:10)
+#' selected_genes <- selgene(counts, top_n = 5)
 
-  cells_in_type <- which(seurat_object@meta.data$cell_type == cell_type)
-  if (length(cells_in_type) == 0) {
-    stop("No cells found for the selected cell type.")
+selgene <- function(object, top_n) {
+  if (missing(top_n) || !is.numeric(top_n)) {
+    stop("Please provide a valid 'top_n' value (positive integer).")
   }
-
-  normalized_data <- as.matrix(seurat_object[["RNA"]]@data)
-  normalized_data <- normalized_data[!duplicated(rownames(normalized_data)), , drop = FALSE]
-  normalized_data <- normalized_data[, !duplicated(colnames(normalized_data)), drop = FALSE]
-
-  if (is.null(top_n)) {
-    stop("The 'top_n' parameter must be provided to select highly expressed genes.")
+  
+  # Extract normalized data based on object class
+  if (inherits(object, "Seurat")) {
+    expr <- object[["RNA"]]@data
+  } else if (inherits(object, "SingleCellExperiment")) {
+    expr <- SummarizedExperiment::assay(object, "logcounts")
+  } else if (is.matrix(object)) {
+    expr <- object
+  } else {
+    stop("Input must be a Seurat object, SingleCellExperiment object, or an expression matrix.")
   }
-
-  avg_expression <- rowMeans(normalized_data[, cells_in_type, drop = FALSE])
+  
+  # Sanitize matrix
+  expr <- as.matrix(expr)
+  expr <- expr[!duplicated(rownames(expr)), , drop = FALSE]
+  expr <- expr[, !duplicated(colnames(expr)), drop = FALSE]
+  
+  # Compute mean expression per gene
+  avg_expression <- rowMeans(expr, na.rm = TRUE)
+  
+  # Select top genes
   sorted_genes <- names(sort(avg_expression, decreasing = TRUE))
   selected_genes <- head(sorted_genes, top_n)
   message("Top ", top_n, " genes selected based on mean expression.")
-
+  
   return(selected_genes)
 }
