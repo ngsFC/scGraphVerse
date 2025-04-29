@@ -2,34 +2,63 @@
 % Please edit documentation in R/download_Atlas.R
 \name{download_Atlas}
 \alias{download_Atlas}
-\title{Download and Load an RDS File from a URL}
+\title{Load H5AD into Seurat or SingleCellExperiment Object}
 \usage{
-download_Atlas(file_url)
+download_Atlas(
+  url,
+  output = c("seurat", "sce"),
+  min.features = 500,
+  min.cells = 30
+)
 }
 \arguments{
-\item{file_url}{A character string specifying the URL of the RDS file to download.}
+\item{url}{Character(1). URL pointing to the \*.h5ad file.}
+
+\item{output}{Character(1). Either \code{"seurat"} (default) for a
+\pkg{Seurat} object, or \code{"sce"} for a
+\pkg{SingleCellExperiment} object.}
+
+\item{min.features}{Integer(1). Minimum number of features detected per cell
+(applies only when \code{output = "seurat"}). Default: 500.}
+
+\item{min.cells}{Integer(1). Minimum number of cells expressing each feature
+(applies only when \code{output = "seurat"}). Default: 30.}
 }
 \value{
-An R object loaded from the downloaded RDS file.
+A \code{\link[Seurat]{Seurat-class}} object if \code{output = "seurat"}, or
+a \code{\link[SingleCellExperiment]{SingleCellExperiment-class}} object if
+\code{output = "sce"}.
 }
 \description{
-Downloads an RDS file from a specified URL (or loads from a local file URL) and reads its contents into R.
+Download an \*.h5ad file from a URL to a temporary file, read it via Python’s
+\pkg{anndata} (through \pkg{reticulate}), and return either a
+\code{\link[Seurat]{Seurat-class}} or a
+\code{\link[SingleCellExperiment]{SingleCellExperiment-class}} object.
 }
 \details{
-Supports both \code{http(s)} URLs (download via \pkg{httr}) and \code{file} URLs (read from local file).
-An internet connection is required for remote URLs.
+Load an AnnData H5AD File into Seurat or SingleCellExperiment
+
+This function hides all Python-side dependencies (auto-installs
+\pkg{anndata} if missing), downloads the specified URL via
+\code{\link[utils]{download.file}} into a temp file, reads it with
+\code{anndata::read_h5ad()}, and constructs your chosen R object.
 }
 \examples{
-# Create a temporary RDS file for demonstration
-temp_file <- tempfile(fileext = ".rds")
-saveRDS(mtcars, temp_file)
+# Seurat object
+pbmc_seurat <- load_h5ad(
+  url    = "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad",
+  output = "seurat",
+  min.features = 500,
+  min.cells    = 30
+)
 
-# Convert local path to a file URL
-temp_url <- paste0("file://", temp_file)
+# SingleCellExperiment object
+pbmc_sce <- load_h5ad(
+  url    = "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad",
+  output = "sce"
+)
 
-# Load the RDS file using download_Atlas
-loaded_data <- download_Atlas(temp_url)
-
-# Check the loaded object
-head(loaded_data)
+}
+\author{
+Your Name
 }
