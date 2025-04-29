@@ -41,41 +41,17 @@ We start by downloading a PBMC dataset from the CellxGene atlas, subsetting to h
 
 
 ```{r}
-options(timeout = 600)
+options(timeout = 2000)
 
 # 1. Download the Seurat object
-seurat_url <- "https://datasets.cellxgene.cziscience.com/89619149-162f-4839-8e97-24735924417c.rds"
-seurat_object <- download_Atlas(seurat_url)
+seurat_url <- "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad"
+seurat_url <- "https://datasets.cellxgene.cziscience.com/84bf2cf0-1944-499e-a22e-fe998f6198b2.h5ad"
 
-# 2. Subset to normal CD4+ helper T cells
-seurat_subset <- subset(
-  x = seurat_object,
-  subset = disease == "normal" &
-    cell_type == "CD4-positive helper T cell" &
-    donor_id %in% c("AN6", "AN9", "NP18")
-)
+seurat_url <- "https://datasets.cellxgene.cziscience.com/fb338c4d-e63a-4b17-abd6-1032a66c8886.h5ad"
 
-# 3. Rename gene IDs to gene symbols
-meta_features <- seurat_subset[["RNA"]]@meta.features
-new_rownames <- meta_features$name
-assay <- seurat_subset[["RNA"]]
-rownames(assay@counts) <- new_rownames
-rownames(assay@data) <- new_rownames
-rownames(assay@meta.features) <- new_rownames
-seurat_subset[["RNA"]] <- assay
+seurat_object <- download_Atlas(url=seurat_url, output="sce")
 
-# 4. QC: features > 200, expression sum > 3, % mito < 20, etc.
-selected_cells <- WhichCells(seurat_subset, expression = nFeature_RNA > 200)
-selected_genes <- rownames(seurat_subset)[Matrix::rowSums(seurat_subset) > 3]
-seurat_subset <- subset(seurat_subset, features = selected_genes, cells = selected_cells)
-seurat_subset <- PercentageFeatureSet(seurat_subset, "^MT-", col.name = "percent_mito")
-seurat_subset <- PercentageFeatureSet(seurat_subset, "^RP[SL]", col.name = "percent_ribo")
-seurat_subset <- subset(seurat_subset, subset = percent_mito < 20 & percent_ribo > 5)
-
-# 5. Remove MALAT1, mitochondrial and ribosomal genes
-seurat_subset <- seurat_subset[!grepl("MALAT1", rownames(seurat_subset)), ]
-seurat_subset <- seurat_subset[!grepl("^MT-", rownames(seurat_subset)), ]
-seurat_subset <- seurat_subset[!grepl("^RP[SL]", rownames(seurat_subset)), ]
+seurat_object <- download_Atlas_sparse(url=seurat_url, output="seurat")
 ```
 
 ## Define a “Ground‐Truth” Regulatory Network
@@ -85,9 +61,8 @@ We use high‐confidence STRINGdb edges as our ground truth. You can substitute 
 ```{r}
 # 1. Select top variable genes
 pathgenes <- selgene(
-  seurat_object = seurat_subset,
-  cell_type     = "CD4-positive helper T cell",
-  top_n         = 500
+  object = seurat_object,
+  top_n  = 500
 )
 
 # 2. Query STRINGdb for high‐confidence edges
