@@ -12,4 +12,3 @@ test_that("infer_networks and generate_adjacency produce valid matrices", {
   expect_true(all(symm >= 0))
   expect_true(all(abs(symm - t(symm)) < 1e-6)) # Symmetric
 })
-

@@ -60,13 +60,12 @@
 #' # View one simulated matrix
 #' print(zinb_matrices[[1]])
 zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = NA) {
-
   stopifnot(is.numeric(n), n > 0, floor(n) == n)
   stopifnot(is.numeric(p), p > 0, floor(p) == p)
   stopifnot(is.matrix(B), nrow(B) == ncol(B))
   stopifnot(all(B %in% c(0, 1)))
   stopifnot(is.numeric(kmat), kmat > 0, floor(kmat) == kmat)
-  stopifnot(length(mu_range) == kmat, all(vapply(mu_range, function(x) length(x) == 2 && all(x > 0),logical(1))))
+  stopifnot(length(mu_range) == kmat, all(vapply(mu_range, function(x) length(x) == 2 && all(x > 0), logical(1))))
   stopifnot(length(mu_noise) == kmat, all(mu_noise >= 0))
   stopifnot(length(theta) == kmat, all(theta > 0))
   stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))

@@ -2,63 +2,26 @@
 % Please edit documentation in R/download_Atlas.R
 \name{download_Atlas}
 \alias{download_Atlas}
-\title{Load H5AD into Seurat or SingleCellExperiment Object}
+\title{Download and Load an RDS File from a URL}
 \usage{
-download_Atlas(
-  url,
-  output = c("seurat", "sce"),
-  min.features = 500,
-  min.cells = 30
-)
+download_Atlas(file_url)
 }
 \arguments{
-\item{url}{Character(1). URL pointing to the \*.h5ad file.}
-
-\item{output}{Character(1). Either \code{"seurat"} (default) for a
-\pkg{Seurat} object, or \code{"sce"} for a
-\pkg{SingleCellExperiment} object.}
-
-\item{min.features}{Integer(1). Minimum number of features detected per cell
-(applies only when \code{output = "seurat"}). Default: 500.}
-
-\item{min.cells}{Integer(1). Minimum number of cells expressing each feature
-(applies only when \code{output = "seurat"}). Default: 30.}
+\item{file_url}{A character string specifying the URL of the RDS file to download.}
 }
 \value{
-A \code{\link[Seurat]{Seurat-class}} object if \code{output = "seurat"}, or
-a \code{\link[SingleCellExperiment]{SingleCellExperiment-class}} object if
-\code{output = "sce"}.
+An R object loaded from the downloaded RDS file.
 }
 \description{
-Download an \*.h5ad file from a URL to a temporary file, read it via Python’s
-\pkg{anndata} (through \pkg{reticulate}), and return either a
-\code{\link[Seurat]{Seurat-class}} or a
-\code{\link[SingleCellExperiment]{SingleCellExperiment-class}} object.
+Downloads an RDS file from a specified URL and reads its contents into R. We used it for https://www.singlecellatlas.org
 }
 \details{
-Load an AnnData H5AD File into Seurat or SingleCellExperiment
+This function uses \pkg{httr} to perform the file download. The RDS file is read directly
+from the raw connection without saving it to disk. An internet connection is required.
 
-This function hides all Python-side dependencies (auto-installs
-\pkg{anndata} if missing), downloads the specified URL via
-\code{\link[utils]{download.file}} into a temp file, reads it with
-\code{anndata::read_h5ad()}, and constructs your chosen R object.
+If the download fails (e.g., invalid URL, server error), an informative error message is returned.
 }
 \examples{
-# Seurat object
-pbmc_seurat <- load_h5ad(
-  url    = "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad",
-  output = "seurat",
-  min.features = 500,
-  min.cells    = 30
-)
-
-# SingleCellExperiment object
-pbmc_sce <- load_h5ad(
-  url    = "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad",
-  output = "sce"
-)
-
-}
-\author{
-Your Name
+# Example: Load an RDS file from a public URL
+atlas_data <- download_Atlas("https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1")
 }

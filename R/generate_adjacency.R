@@ -51,42 +51,42 @@ generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocPar
   if (!is.list(df_list) || !all(vapply(df_list, is.data.frame, logical(1)))) {
     stop("df_list must be a list of data frames")
   }
-  
+
   BPPARAM <- BiocParallel::MulticoreParam(nCores)
-  
+
   # Extract unique genes from all data frames
   all_genes <- sort(unique(unlist(BiocParallel::bplapply(df_list, function(data) {
     unique(c(as.character(data[[1]]), as.character(data[[2]])))
   }, BPPARAM = BPPARAM))))
-  
+
   # Create a template adjacency matrix
   template_matrix <- matrix(0,
-                            nrow = length(all_genes), ncol = length(all_genes),
-                            dimnames = list(all_genes, all_genes)
+    nrow = length(all_genes), ncol = length(all_genes),
+    dimnames = list(all_genes, all_genes)
   )
-  
+
   # Process each data frame in parallel
   adjacency_matrix_list <- BiocParallel::bplapply(df_list, function(data) {
     if (ncol(data) < 3) {
       stop("Each data frame must have at least 3 columns (source, target, weight)")
     }
-    
+
     adjacency_matrix <- template_matrix
-    
+
     for (i in seq_len(nrow(data))) {
       gene1 <- as.character(data[[1]][i])
       gene2 <- as.character(data[[2]][i])
       weight <- as.numeric(data[[3]][i])
-      
+
       if (!is.na(gene1) && !is.na(gene2) && !is.na(weight) &&
-          gene1 %in% rownames(adjacency_matrix) && gene2 %in% colnames(adjacency_matrix)) {
+        gene1 %in% rownames(adjacency_matrix) && gene2 %in% colnames(adjacency_matrix)) {
         adjacency_matrix[gene1, gene2] <- weight
       }
     }
-    
+
     diag(adjacency_matrix) <- 0
     return(adjacency_matrix)
   }, BPPARAM = BPPARAM)
-  
+
   return(adjacency_matrix_list)
 }

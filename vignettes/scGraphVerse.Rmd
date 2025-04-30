@@ -41,17 +41,11 @@ We start by downloading a PBMC dataset from the CellxGene atlas, subsetting to h
 
 
 ```{r}
-options(timeout = 2000)
+# options(timeout = 2000)
 
 # 1. Download the Seurat object
-seurat_url <- "https://datasets.cellxgene.cziscience.com/42e24d96-69c6-4f05-8237-b5d305c49b45.h5ad"
-seurat_url <- "https://datasets.cellxgene.cziscience.com/84bf2cf0-1944-499e-a22e-fe998f6198b2.h5ad"
-
-seurat_url <- "https://datasets.cellxgene.cziscience.com/fb338c4d-e63a-4b17-abd6-1032a66c8886.h5ad"
-
-seurat_object <- download_Atlas(url=seurat_url, output="sce")
-
-seurat_object <- download_Atlas_sparse(url=seurat_url, output="seurat")
+dataset_url <- "https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
+sc_object <- download_Atlas(file_url = dataset_url)
 ```
 
 ## Define a “Ground‐Truth” Regulatory Network
@@ -61,8 +55,12 @@ We use high‐confidence STRINGdb edges as our ground truth. You can substitute 
 ```{r}
 # 1. Select top variable genes
 pathgenes <- selgene(
-  object = seurat_object,
-  top_n  = 500
+  object = sc_object,
+  top_n = 500,
+  cell_type = "T_cells",
+  cell_type_col = "CELL_TYPE",
+  remove_rib = TRUE,
+  remove_mt = TRUE
 )
 
 # 2. Query STRINGdb for high‐confidence edges
@@ -72,6 +70,7 @@ result <- stringdb_adjacency(
   required_score = 900,
   keep_all_genes = FALSE
 )
+
 wadj <- result$weighted
 adj <- result$binary
 
@@ -95,7 +94,6 @@ ggraph::ggraph(gtruth, layout = "fr") +
 
 ## Simulate Zero‐Inflated Count Data
 We leverage a zero‐inflated network‐aware simulator based on the ZILGM framework1, which retains the ground‐truth dependencies in the counts.
-
 
 ```{r}
 nodes <- nrow(adj)
@@ -125,9 +123,8 @@ count_matrices <- lapply(count_matrices, t)
 ```{r}
 late_genie3 <- infer_networks(
   count_matrices,
-  method      = "GENIE3",
-  total_cores = 15,
-  seed        = 1234
+  method = "GENIE3",
+  nCores = 15
 )
 ```
 

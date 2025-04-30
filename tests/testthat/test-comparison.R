@@ -29,4 +29,3 @@ test_that("cutoff_adjacency and create_consensus work correctly", {
   comparison <- compare_consensus(consensus_matrix = consensus, reference_matrix = consensus, false_plot = FALSE)
   expect_true(inherits(comparison, "gg"))
 })
-

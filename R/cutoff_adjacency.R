@@ -113,7 +113,7 @@ cutoff_adjacency <- function(count_matrices,
 
   # Parallel strategy
   param_outer <- if (method == "JRF") {
-    BiocParallel::SerialParam()  # Force serial when method is JRF
+    BiocParallel::SerialParam() # Force serial when method is JRF
   } else {
     BiocParallel::MulticoreParam(workers = nCores)
   }
@@ -152,4 +152,3 @@ cutoff_adjacency <- function(count_matrices,
 
   return(binary_adjm_list)
 }
-

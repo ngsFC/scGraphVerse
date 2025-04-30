@@ -48,7 +48,7 @@
 #'
 #' @examples
 #' set.seed(123)
-#' 
+#'
 #' # Simulate two small expression matrices
 #' mat1 <- matrix(rpois(100, lambda = 5), nrow = 10)
 #' mat2 <- matrix(rpois(100, lambda = 5), nrow = 10)
@@ -64,7 +64,6 @@
 #'
 #' # Inspect first inferred network
 #' head(networks[[1]])
-
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",
                            adjm = NULL,
@@ -93,7 +92,6 @@ infer_networks <- function(count_matrices_list,
       if (method == "GENIE3") {
         adj <- GENIE3::GENIE3(mat, nCores = nCores)
         results[[i]] <- GENIE3::getLinkList(adj)
-
       } else if (method == "ZILGM") {
         lambda_max <- ZILGM::find_lammax(t(mat))
         lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
@@ -147,7 +145,7 @@ infer_networks <- function(count_matrices_list,
 
     if (method == "GRNBoost2") {
       if (is.null(grnboost_modules)) stop("Provide grnboost_modules for GRNBoost2.")
-      
+
       df <- as.data.frame(t(mat))
       genes <- colnames(df)
       rownames(df) <- make.unique(rownames(df))
@@ -157,7 +155,6 @@ infer_networks <- function(count_matrices_list,
       result_r <- reticulate::py_to_r(result_py)
       if (is.data.frame(result_r)) rownames(result_r) <- NULL
       result_r
-
     } else if (method == "PCzinb") {
       adj <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
       dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
@@ -165,4 +162,3 @@ infer_networks <- function(count_matrices_list,
     }
   }, BPPARAM = param_outer)
 }
-
