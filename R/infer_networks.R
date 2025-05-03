@@ -70,95 +70,22 @@ infer_networks <- function(count_matrices_list,
                            nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                            grnboost_modules = NULL) {
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
-
-  count_matrices_list <- lapply(count_matrices_list, function(obj) {
-    if (inherits(obj, "Seurat")) {
-      as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts"))
-    } else if (inherits(obj, "SingleCellExperiment")) {
-      as.matrix(SummarizedExperiment::assay(obj, "counts"))
-    } else {
-      as.matrix(obj)
-    }
-  })
-
+  count_matrices_list <- .convert_counts_list(count_matrices_list)
   n_matrices <- length(count_matrices_list)
-
-  # GENIE3 and ZILGM: serial loop
+  
   if (method %in% c("GENIE3", "ZILGM")) {
-    results <- vector("list", length = n_matrices)
+    results <- vector("list", n_matrices)
     for (i in seq_len(n_matrices)) {
       mat <- count_matrices_list[[i]]
-
-      if (method == "GENIE3") {
-        adj <- GENIE3::GENIE3(mat, nCores = nCores)
-        results[[i]] <- GENIE3::getLinkList(adj)
-      } else if (method == "ZILGM") {
-        lambda_max <- ZILGM::find_lammax(t(mat))
-        lambda_seq <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = 50))
-        fit <- ZILGM::zilgm(
-          X = t(mat), lambda = lambda_seq, family = "NBII",
-          update_type = "IRLS", do_boot = TRUE, boot_num = 10,
-          sym = "OR", nCores = nCores
-        )
-        adj <- fit$network[[fit$opt_index]]
-        dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
-        results[[i]] <- adj
-      }
+      results[[i]] <- if (method == "GENIE3") .run_genie3(mat, nCores) else .run_zilgm(mat, adjm, nCores)
     }
     return(results)
   }
-
-  # JRF: all matrices together, parallel inside
+  
   if (method == "JRF") {
-    norm_list <- lapply(count_matrices_list, function(mat) {
-      t(scale(t(mat)))
-    })
-
-    clust <- parallel::makeCluster(nCores)
-    on.exit(parallel::stopCluster(clust), add = TRUE)
-    doParallel::registerDoParallel(clust)
-
-    rf <- JRF::JRF(
-      X = norm_list,
-      genes.name = rownames(norm_list[[1]]),
-      ntree = 500,
-      mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
-    )
-
-    jrf_mat <- list(rf)
-    importance_columns <- grep("importance", names(jrf_mat[[1]]), value = TRUE)
-
-    jrf_list <- vector("list", length(importance_columns))
-    for (i in seq_along(importance_columns)) {
-      df <- jrf_mat[[1]][, c("gene1", "gene2", importance_columns[i])]
-      names(df)[3] <- importance_columns[i]
-      jrf_list[[i]] <- df
-    }
-
-    return(jrf_list)
+    norm_list <- lapply(count_matrices_list, function(mat) t(scale(t(mat))))
+    return(.run_jrf(norm_list, nCores))
   }
-
-  # GRNBoost2 and PCzinb: parallel across matrices
-  param_outer <- BiocParallel::MulticoreParam(workers = nCores)
-  BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
-    mat <- count_matrices_list[[i]]
-
-    if (method == "GRNBoost2") {
-      if (is.null(grnboost_modules)) stop("Provide grnboost_modules for GRNBoost2.")
-
-      df <- as.data.frame(t(mat))
-      genes <- colnames(df)
-      rownames(df) <- make.unique(rownames(df))
-      df_pandas <- grnboost_modules$pandas$DataFrame(data = as.matrix(df), columns = genes, index = rownames(df))
-
-      result_py <- grnboost_modules$arboreto$grnboost2(expression_data = df_pandas, gene_names = genes)
-      result_r <- reticulate::py_to_r(result_py)
-      if (is.data.frame(result_r)) rownames(result_r) <- NULL
-      result_r
-    } else if (method == "PCzinb") {
-      adj <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
-      dimnames(adj) <- if (is.null(adjm)) list(rownames(mat), rownames(mat)) else dimnames(adjm)
-      adj
-    }
-  }, BPPARAM = param_outer)
+  
+  .run_parallel_networks(count_matrices_list, method, nCores, adjm, grnboost_modules)
 }

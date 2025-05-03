@@ -66,92 +66,15 @@ selgene <- function(object, top_n,
   if (missing(top_n) || length(top_n) != 1 || !is.numeric(top_n) || top_n <= 0) {
     stop("Please provide a valid 'top_n' (a single positive integer).")
   }
-
-  if (inherits(object, "Seurat")) {
-    assay_name <- Seurat::DefaultAssay(object)
-    seurat_assay <- object[[assay_name]]
-    slots_avail <- methods::slotNames(seurat_assay)
-
-    if ("data" %in% slots_avail) {
-      expr <- seurat_assay@data
-      message("Using Seurat assay '", assay_name, "' slot 'data' (log-normalized).")
-    } else {
-      stop(
-        "Assay '", assay_name, "' has no 'data' slot. Available slots: ",
-        paste(slots_avail, collapse = ", ")
-      )
-    }
-
-    if (!is.null(cell_type)) {
-      meta <- object@meta.data
-      if (!cell_type_col %in% colnames(meta)) {
-        stop("Seurat metadata must contain a '", cell_type_col, "' column.")
-      }
-      keep_cells <- rownames(meta)[meta[[cell_type_col]] == cell_type]
-      expr <- expr[, colnames(expr) %in% keep_cells, drop = FALSE]
-      message(
-        "Subsetted to ", length(keep_cells), " cells where ", cell_type_col,
-        " = '", cell_type, "'."
-      )
-    }
-  } else if (inherits(object, "SingleCellExperiment")) {
-    available_assays <- SummarizedExperiment::assayNames(object)
-    assay_to_use <- if (!is.null(assay)) assay else "logcounts"
-
-    if (!assay_to_use %in% available_assays) {
-      stop(
-        "Requested assay '", assay_to_use, "' not found. Available assays: ",
-        paste(available_assays, collapse = ", ")
-      )
-    }
-    expr <- SummarizedExperiment::assay(object, assay_to_use)
-    message("Using SCE assay '", assay_to_use, "' (assumed log-normalized).")
-
-    if (!is.null(cell_type)) {
-      meta <- as.data.frame(SummarizedExperiment::colData(object))
-      if (!cell_type_col %in% colnames(meta)) {
-        stop("SCE colData must contain a '", cell_type_col, "' column.")
-      }
-      keep_cells <- rownames(meta)[meta[[cell_type_col]] == cell_type]
-      expr <- expr[, colnames(expr) %in% keep_cells, drop = FALSE]
-      message(
-        "Subsetted to ", length(keep_cells), " cells where ", cell_type_col,
-        " = '", cell_type, "'."
-      )
-    }
-  } else if (is.matrix(object)) {
-    if (!is.null(cell_type)) {
-      stop("'cell_type' filtering is not supported when input is a raw matrix.")
-    }
-    expr <- object
-  } else {
-    stop("Input must be a Seurat object, SingleCellExperiment object, or numeric matrix.")
+  
+  expr <- .extract_expression(object, assay)
+  
+  if (!is.null(cell_type)) {
+    expr <- .filter_by_cell_type(expr, object, cell_type, cell_type_col)
   }
-
-  expr <- as.matrix(expr)
-  expr <- expr[!duplicated(rownames(expr)), , drop = FALSE]
-  expr <- expr[, !duplicated(colnames(expr)), drop = FALSE]
-
-  # Optional gene filtering
-  gene_names <- rownames(expr)
-  keep_genes <- rep(TRUE, length(gene_names))
-
-  if (remove_mt) {
-    keep_genes <- keep_genes & !grepl("^MT-", gene_names, ignore.case = TRUE)
-    message("Removed mitochondrial genes matching '^MT-'.")
-  }
-
-  if (remove_rib) {
-    keep_genes <- keep_genes & !grepl("^RP[SL]", gene_names, ignore.case = TRUE)
-    message("Removed ribosomal genes matching '^RP[SL]'.")
-  }
-
-  expr <- expr[keep_genes, , drop = FALSE]
-
-  avg_expression <- rowMeans(expr, na.rm = TRUE)
-  sorted_genes <- names(sort(avg_expression, decreasing = TRUE))
-  selected_genes <- head(sorted_genes, top_n)
+  
+  expr <- .filter_genes(expr, remove_mt, remove_rib)
+  selected_genes <- .select_top_genes(expr, top_n)
   message("Top ", top_n, " genes selected based on mean expression.")
-
   return(selected_genes)
 }

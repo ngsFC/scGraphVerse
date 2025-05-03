@@ -57,6 +57,7 @@ stringdb_adjacency <- function(
     required_score = 400,
     keep_all_genes = TRUE,
     verbose = TRUE) {
+  
   if (!requireNamespace("STRINGdb", quietly = TRUE)) {
     stop("Package 'STRINGdb' is required. Please install it via Bioconductor.")
   }
@@ -66,117 +67,37 @@ stringdb_adjacency <- function(
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     stop("Package 'jsonlite' is required. Please install it.")
   }
-
-  if (length(genes) == 0) {
-    stop("Please provide at least one gene in 'genes'.")
-  }
-
+  if (length(genes) == 0) stop("Please provide at least one gene in 'genes'.")
   if (verbose) message("Initializing STRINGdb...")
-
+  
   string_db <- STRINGdb$new(
     version = "11.5",
     species = species,
     score_threshold = required_score,
     input_directory = ""
   )
-
-  # Map gene symbols to STRING IDs
+  
   if (verbose) message("Mapping genes to STRING IDs...")
-  mapped_genes <- string_db$map(
-    data.frame(genes, stringsAsFactors = FALSE), "genes",
-    removeUnmappedRows = FALSE
-  )
-
-  # Extract mapped and unmapped genes
-  mapped_genes <- mapped_genes[!is.na(mapped_genes$STRING_id), ]
-  unmapped_genes <- setdiff(genes, mapped_genes$genes)
-
+  mapping <- .map_genes_to_string(string_db, genes)
+  mapped_genes <- mapping$mapped
+  unmapped_genes <- mapping$unmapped
+  
   if (verbose) {
     message("Mapped ", nrow(mapped_genes), " genes to STRING IDs.")
     if (length(unmapped_genes) > 0 && keep_all_genes) {
       message(length(unmapped_genes), " genes were not found in STRING but will be included as zero rows/columns.")
     }
   }
-
-  if (nrow(mapped_genes) == 0) {
-    stop("No valid STRING IDs found for the provided genes.")
-  }
-
-  # Prepare API request using STRING IDs
+  if (nrow(mapped_genes) == 0) stop("No valid STRING IDs found for the provided genes.")
   if (verbose) message("Retrieving **physical** interactions from STRING API...")
-
-  base_url <- "https://string-db.org/api/json/network"
-  identifiers_str <- paste(mapped_genes$STRING_id, collapse = "\n")
-
-  res <- httr::POST(
-    url = base_url,
-    body = list(
-      identifiers    = identifiers_str,
-      species        = species,
-      required_score = required_score,
-      network_type   = "physical"
-    ),
-    encode = "form"
-  )
-
-  if (res$status_code != 200) {
-    stop("STRING API query failed. Status code: ", res$status_code)
-  }
-
-  # Parse JSON response
-  interactions <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
-
+  interactions <- .query_string_api(mapped_genes$STRING_id, species, required_score)
   if (!is.data.frame(interactions) || nrow(interactions) == 0) {
     if (verbose) message("No STRING physical interactions found.")
-    return(list(
-      weighted = matrix(0, length(genes), length(genes), dimnames = list(genes, genes)),
-      binary = matrix(0, length(genes), length(genes), dimnames = list(genes, genes))
-    ))
+    return(.zero_matrix_result(genes))
   }
-
   if (verbose) message("Found ", nrow(interactions), " STRING physical interactions.")
-
-  # Ensure we use "score" instead of "combined_score"
-  interactions$interaction_score <- interactions$score # Rename for clarity
-
-  # Map STRING IDs to Gene Names
-  id_to_gene <- setNames(mapped_genes$genes, mapped_genes$STRING_id)
-
-  # Convert STRING IDs in interaction table to Gene Names
-  interactions$gene_A <- id_to_gene[interactions$stringId_A]
-  interactions$gene_B <- id_to_gene[interactions$stringId_B]
-
-  # Remove interactions where gene names couldn't be mapped
-  interactions <- interactions[!is.na(interactions$gene_A) & !is.na(interactions$gene_B), ]
-
-  # Select genes to include in the adjacency matrix
-  if (keep_all_genes) {
-    final_gene_list <- genes
-  } else {
-    final_gene_list <- unique(c(interactions$gene_A, interactions$gene_B))
-  }
-
-  # Initialize p×p matrices (filled with 0s)
-  p <- length(final_gene_list)
-  weighted_mat <- matrix(0, nrow = p, ncol = p, dimnames = list(final_gene_list, final_gene_list))
-
-  # Populate adjacency matrix with STRING interaction data
-  if (nrow(interactions) > 0) {
-    for (i in seq_len(nrow(interactions))) {
-      a <- interactions$gene_A[i]
-      b <- interactions$gene_B[i]
-      s <- interactions$interaction_score[i]
-
-      if (!is.na(a) && !is.na(b) && a %in% final_gene_list && b %in% final_gene_list) {
-        weighted_mat[a, b] <- s
-        weighted_mat[b, a] <- s
-      }
-    }
-  }
-
-  binary_mat <- ifelse(weighted_mat > 0, 1, 0)
-
+  matrices <- .build_adjacency_matrices(interactions, mapped_genes, genes, keep_all_genes)
   if (verbose) message("Adjacency matrices constructed successfully.")
-
-  list(weighted = weighted_mat, binary = binary_mat)
+  
+  return(matrices)
 }

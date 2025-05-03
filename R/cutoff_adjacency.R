@@ -78,77 +78,30 @@ cutoff_adjacency <- function(count_matrices,
                              nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
                              grnboost_modules = NULL,
                              debug = FALSE) {
-  method <- match.arg(method, choices = c("GENIE3", "GRNBoost2", "JRF"))
+  method <- match.arg(method, c("GENIE3", "GRNBoost2", "JRF"))
   weight_function <- match.fun(weight_function)
-
+  
   if (length(count_matrices) != length(weighted_adjm_list)) {
     stop("Length of count_matrices must match weighted_adjm_list.")
   }
-
-  # Preprocess expression matrices
-  count_matrices <- lapply(count_matrices, function(obj) {
-    if (inherits(obj, "Seurat")) {
-      as.matrix(Seurat::GetAssayData(obj, assay = "RNA", slot = "counts"))
-    } else if (inherits(obj, "SingleCellExperiment")) {
-      as.matrix(SummarizedExperiment::assay(obj, "counts"))
-    } else {
-      as.matrix(obj)
-    }
-  })
-
-  # Function to shuffle rows independently
-  shuffle_rows <- function(matrix) {
-    shuffled <- matrix
-    for (i in seq_len(nrow(matrix))) {
-      shuffled[i, ] <- sample(matrix[i, ])
-    }
-    shuffled
-  }
-
-  # Define all shuffle jobs
+  
+  count_matrices <- .convert_counts_list(count_matrices)
+  
   job_list <- expand.grid(matrix_idx = seq_along(count_matrices), shuffle_idx = seq_len(n))
-  job_list <- lapply(seq_len(nrow(job_list)), function(i) {
+  jobs <- lapply(seq_len(nrow(job_list)), function(i) {
     list(matrix_idx = job_list$matrix_idx[i], shuffle_idx = job_list$shuffle_idx[i])
   })
-
-  # Parallel strategy
-  param_outer <- if (method == "JRF") {
-    BiocParallel::SerialParam() # Force serial when method is JRF
-  } else {
-    BiocParallel::MulticoreParam(workers = nCores)
-  }
-
-  # Infer networks on shuffled matrices
-  results <- BiocParallel::bplapply(job_list, function(job) {
+  
+  param_outer <- if (method == "JRF") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers = nCores)
+  
+  results <- BiocParallel::bplapply(jobs, function(job) {
     mat_idx <- job$matrix_idx
     mat <- count_matrices[[mat_idx]]
-
-    shuffled <- shuffle_rows(mat)
-
-    args <- list(count_matrices_list = list(shuffled), method = method, adjm = NULL, grnboost_modules = grnboost_modules)
-
-    inferred <- do.call(infer_networks, args)
-    adjm <- generate_adjacency(inferred)
-
-    symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
-    q_value <- quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
-
+    q_value <- .run_network_on_shuffled(mat, method, grnboost_modules, weight_function, quantile_threshold)
     list(matrix_idx = mat_idx, q_value = q_value)
   }, BPPARAM = param_outer)
-
-  # Aggregate quantile thresholds
-  percentile_values_by_matrix <- vector("list", length(count_matrices))
-  for (res in results) {
-    mat_idx <- res$matrix_idx
-    percentile_values_by_matrix[[mat_idx]] <- c(percentile_values_by_matrix[[mat_idx]], res$q_value)
-  }
-
-  # Apply thresholds to original weighted adjacency matrices
-  binary_adjm_list <- lapply(seq_along(weighted_adjm_list), function(idx) {
-    avg_cutoff <- mean(percentile_values_by_matrix[[idx]])
-    if (debug) message(sprintf("[Method: %s] Matrix %d → Cutoff = %.5f", method, idx, avg_cutoff))
-    ifelse(weighted_adjm_list[[idx]] > avg_cutoff, 1, 0)
-  })
-
-  return(binary_adjm_list)
+  
+  cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
+  binary_list <- .binarize_adjacency(weighted_adjm_list, cutoffs, method, debug)
+  return(binary_list)
 }

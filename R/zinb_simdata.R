@@ -62,72 +62,51 @@
 zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth_range = NA) {
   stopifnot(is.numeric(n), n > 0, floor(n) == n)
   stopifnot(is.numeric(p), p > 0, floor(p) == p)
-  stopifnot(is.matrix(B), nrow(B) == ncol(B))
-  stopifnot(all(B %in% c(0, 1)))
+  stopifnot(is.matrix(B), nrow(B) == ncol(B), all(B %in% c(0, 1)))
   stopifnot(is.numeric(kmat), kmat > 0, floor(kmat) == kmat)
   stopifnot(length(mu_range) == kmat, all(vapply(mu_range, function(x) length(x) == 2 && all(x > 0), logical(1))))
   stopifnot(length(mu_noise) == kmat, all(mu_noise >= 0))
   stopifnot(length(theta) == kmat, all(theta > 0))
   stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))
-
+  
   if (!is.na(depth_range[1])) {
     stopifnot(is.numeric(depth_range), length(depth_range) == 2, all(depth_range > 0), depth_range[1] < depth_range[2])
   }
-
+  
   gene_names <- rownames(B)
   cellID <- paste0("cell_", seq_len(n))
-
-  B <- ifelse(B > 0, 1, 0)
-
-  edges <- which(B == 1, arr.ind = TRUE)
-  edges <- edges[edges[, 1] < edges[, 2], ]
-
-  A <- diag(1, nrow = p, ncol = p)
-  for (i in seq_len(nrow(edges))) {
-    tmp <- rep(0, p)
-    tmp[edges[i, ]] <- 1
-    A <- cbind(A, tmp)
-  }
-
-  B[edges] <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), length(edges[, 1]), replace = TRUE)
-  B <- (B | t(B)) * 1
-
+  B <- (B > 0) * 1
+  A_info <- .create_adjacency_expansion(B)
+  A <- A_info$A
+  edges <- A_info$edge_indices
+  
   matrices <- vector("list", kmat)
-
   for (k in seq_len(kmat)) {
     mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
-
-    sigma <- B
-    nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
-    Y_mu <- c(mu, nonzero_sigma)
-
-    Y <- matrix(rzinbinom(length(Y_mu) * n, mu = rep(Y_mu, each = n), theta = theta[k], pi = pi[k]),
-      nrow = length(Y_mu), ncol = n
-    )
+    
+    edge_vals <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), nrow(edges), replace = TRUE)
+    B_weighted <- matrix(0, nrow = p, ncol = p)
+    B_weighted[edges] <- edge_vals
+    B_weighted <- (B_weighted | t(B_weighted)) * 1
+    sigma <- B_weighted[lower.tri(B_weighted)]
+    
+    Y_mu <- c(mu, sigma)
+    Y <- .simulate_counts_ZINB(n, Y_mu, theta[k], pi[k])
     X <- A %*% Y
-
-    noise_matrix <- matrix(rzinbinom(n * p, mu = mu_noise[k], theta = 1, pi = pi[k]), nrow = p, ncol = n)
-    X <- X + noise_matrix
-
+    
+    X <- X + .add_technical_noise(n, p, mu_noise[k], pi[k])
     X <- t(X)
+    
     if (!is.null(gene_names)) colnames(X) <- gene_names
     rownames(X) <- cellID
-
+    
     if (!is.na(depth_range[1])) {
-      cell_depths <- runif(n, min = depth_range[1], max = depth_range[2])
-
-      row_sums <- rowSums(X)
-      row_sums[row_sums == 0] <- 1
-
-      X <- sweep(X, 1, row_sums, FUN = "/")
-      X[is.na(X)] <- 0
-
-      X <- sweep(X, 1, cell_depths, FUN = "*")
-      X <- round(X)
+      X <- .normalize_library_size(X, depth_range)
     }
-
+    
     matrices[[k]] <- X
   }
-
+  
   return(matrices)
 }
+

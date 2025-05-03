@@ -46,72 +46,31 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
     stop("`ground_truth` must be a square matrix.")
   }
-
+  
   if (!all(ground_truth %in% c(0, 1))) {
     stop("`ground_truth` must contain only binary values (0/1).")
   }
-
-  if (!is.list(predicted_list) || !all(vapply(predicted_list, is.matrix))) {
+  
+  if (!is.list(predicted_list) || !all(vapply(predicted_list, is.matrix, logical(1)))) {
     stop("`predicted_list` must be a list of matrices.")
   }
-
-  ground_truth <- as.matrix(ground_truth)
+  
   if (zero_diag) diag(ground_truth) <- 0
-
-  # Extract upper triangle values for ground truth
-  get_upper_tri <- function(mat) mat[upper.tri(mat)]
-  ground_truth_upper <- get_upper_tri(ground_truth)
-
-  metrics <- c("TP", "TN", "FP", "FN", "TPR", "FPR", "Precision", "F1", "MCC")
-  stat_rows <- lapply(seq_along(predicted_list), function(i) {
+  gt_upper <- ground_truth[upper.tri(ground_truth)]
+  
+  stats_list <- lapply(seq_along(predicted_list), function(i) {
     pred <- predicted_list[[i]]
     if (!all(dim(pred) == dim(ground_truth))) {
       stop(sprintf("Predicted matrix %d has mismatched dimensions.", i))
     }
-    pred_upper <- as.numeric(get_upper_tri(pred) > 0)
-    gt_upper <- ground_truth_upper
-
-    TP <- sum(pred_upper == 1 & gt_upper == 1)
-    TN <- sum(pred_upper == 0 & gt_upper == 0)
-    FP <- sum(pred_upper == 1 & gt_upper == 0)
-    FN <- sum(pred_upper == 0 & gt_upper == 1)
-
-    TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)
-    FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
-    Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
-    F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
-    denominator <- sqrt(as.numeric(TP + FP) * as.numeric(TP + FN) *
-      as.numeric(TN + FP) * as.numeric(TN + FN))
-    MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
-
-    data.frame(
-      Predicted_Matrix = paste("Matrix", i),
-      TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC
-    )
+    pred_upper <- as.numeric(pred[upper.tri(pred)] > 0)
+    .compute_confusion_metrics(pred_upper, gt_upper, i)
   })
-
-  stats_df <- do.call(rbind, stat_rows)
-
-  # Radar chart
+  
+  stats_df <- do.call(rbind, stats_list)
+  
   radar_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
-  radar_data <- stats_df %>%
-    dplyr::select(Predicted_Matrix, dplyr::all_of(radar_metrics))
-
-  radar_scaled <- rbind(rep(1, length(radar_metrics)), rep(0, length(radar_metrics)), radar_data[, -1])
-  colors <- rainbow(nrow(stats_df))
-
-  par(mar = c(2, 2, 2, 2))
-  fmsb::radarchart(
-    radar_scaled,
-    axistype = 2,
-    pcol = colors,
-    plty = 1,
-    plwd = 2,
-    cglcol = "grey",
-    caxislabels = seq(0, 1, 0.2),
-    vlcex = 1.1
-  )
-  legend("topright", legend = radar_data$Predicted_Matrix, col = colors, lty = 1, lwd = 2)
-
+  .plot_metrics_radar(stats_df, radar_metrics)
+  
   return(list(Statistics = stats_df))
 }
