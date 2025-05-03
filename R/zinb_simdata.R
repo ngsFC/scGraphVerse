@@ -88,7 +88,8 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
     mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
     
     sigma <- B
-    
+    nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
+
     Y_mu <- c(mu, sigma)
     Y <- .simulate_counts_ZINB(n, Y_mu, theta[k], pi[k])
     X <- A %*% Y
