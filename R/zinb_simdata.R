@@ -75,21 +75,19 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   
   gene_names <- rownames(B)
   cellID <- paste0("cell_", seq_len(n))
-  B <- (B > 0) * 1
+  B <- ifelse(B > 0, 1, 0)
   A_info <- .create_adjacency_expansion(B)
   A <- A_info$A
   edges <- A_info$edge_indices
   
-  edge_vals <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), nrow(edges), replace = TRUE)
-  B_weighted <- matrix(0, nrow = p, ncol = p)
-  B_weighted[edges] <- edge_vals
-  B_weighted <- (B_weighted | t(B_weighted)) * 1
+  B[edges] <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), length(edges[, 1]), replace = TRUE)
+  B <- (B | t(B)) * 1
   
   matrices <- vector("list", kmat)
   for (k in seq_len(kmat)) {
     mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
     
-    sigma <- B_weighted[lower.tri(B_weighted)]
+    sigma <- B
     
     Y_mu <- c(mu, sigma)
     Y <- .simulate_counts_ZINB(n, Y_mu, theta[k], pi[k])
