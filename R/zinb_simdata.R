@@ -80,14 +80,15 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   A <- A_info$A
   edges <- A_info$edge_indices
   
+  edge_vals <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), nrow(edges), replace = TRUE)
+  B_weighted <- matrix(0, nrow = p, ncol = p)
+  B_weighted[edges] <- edge_vals
+  B_weighted <- (B_weighted | t(B_weighted)) * 1
+  
   matrices <- vector("list", kmat)
   for (k in seq_len(kmat)) {
     mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
     
-    edge_vals <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), nrow(edges), replace = TRUE)
-    B_weighted <- matrix(0, nrow = p, ncol = p)
-    B_weighted[edges] <- edge_vals
-    B_weighted <- (B_weighted | t(B_weighted)) * 1
     sigma <- B_weighted[lower.tri(B_weighted)]
     
     Y_mu <- c(mu, sigma)
