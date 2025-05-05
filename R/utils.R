@@ -70,7 +70,7 @@
   edges <- which(B == 1, arr.ind = TRUE)
   edges <- edges[edges[, 1] < edges[, 2], , drop = FALSE]
   
-  A <- diag(1, p)
+  A <- diag(1, nrow=p, ncol=p)
   for (i in seq_len(nrow(edges))) {
     tmp <- rep(0, p)
     tmp[edges[i, ]] <- 1
@@ -205,7 +205,10 @@
 #' @noRd
 
 .shuffle_matrix_rows <- function(mat) {
-  apply(mat, 1, sample)
+  t(apply(mat, 1, sample))
+  rownames(shuffled) <- rownames(mat)
+  colnames(shuffled) <- colnames(mat)  
+  return(shuffled)
 }
 
 .run_network_on_shuffled <- function(mat, method, grnboost_modules, weight_function, quantile_threshold) {

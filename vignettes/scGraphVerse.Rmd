@@ -121,11 +121,70 @@ count_matrices <- lapply(count_matrices, t)
 
 
 ```{r}
-late_genie3 <- infer_networks(
+networks_late <- infer_networks(
   count_matrices,
   method = "GENIE3",
   nCores = 15
 )
+
+list_wadj <- generate_adjacency(networks_late)
+list_swadj <- symmetrize(list_wadj, weight_function = "mean")
+
+binary_adjm_list <- cutoff_adjacency(
+  count_matrices = count_matrices,
+  weighted_adjm_list = list_swadj,
+  n = 2,
+  method = "GENIE3",
+  quantile_threshold = 0.95,
+  nCores = 15,
+  debug = TRUE
+)
+```
+
+```{r}
+earlym <- earlyj(count_matrices)
+networks_early <- infer_networks(
+  earlym,
+  method = "GENIE3",
+  nCores = 15
+)
+
+list_wadj <- generate_adjacency(networks_early)
+list_swadj <- symmetrize(list_wadj, weight_function = "mean")
+
+binary_adjm_list_early <- cutoff_adjacency(
+  count_matrices = earlym,
+  weighted_adjm_list = list_swadj,
+  n = 2,
+  method = "GENIE3",
+  quantile_threshold = 0.95,
+  nCores = 15,
+  debug = TRUE
+)
+
+```
+
+
+```{r}
+networks_joint <- infer_networks(
+  count_matrices_list = count_matrices,
+  method = "JRF",
+  nCores = 15
+)
+
+list_wadj <- generate_adjacency(networks_joint)
+list_swadj <- symmetrize(list_wadj, weight_function = "mean")
+
+binary_adjm_list4 <- cutoff_adjacency(
+  count_matrices = count_matrices,
+  weighted_adjm_list = list_swadj,
+  n = 2,
+  method = "JRF",
+  quantile_threshold = 0.95,
+  nCores = 15,
+  debug = TRUE
+)
+
 ```
 
 
