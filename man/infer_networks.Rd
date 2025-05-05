@@ -8,7 +8,7 @@ infer_networks(
   count_matrices_list,
   method = "GENIE3",
   adjm = NULL,
-  nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
+  nCores = 1,
   grnboost_modules = NULL
 )
 }

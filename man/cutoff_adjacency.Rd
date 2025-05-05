@@ -11,7 +11,7 @@ cutoff_adjacency(
   method = "GENIE3",
   quantile_threshold = 0.99,
   weight_function = "mean",
-  nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
+  nCores = 1,
   grnboost_modules = NULL,
   debug = FALSE
 )

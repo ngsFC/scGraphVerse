@@ -4,10 +4,7 @@
 \alias{generate_adjacency}
 \title{Generate Adjacency Matrices from Gene Interaction Tables}
 \usage{
-generate_adjacency(
-  df_list,
-  nCores = BiocParallel::bpworkers(BiocParallel::bpparam())
-)
+generate_adjacency(df_list, nCores = 1)
 }
 \arguments{
 \item{df_list}{A list of data frames. Each data frame must have three columns:

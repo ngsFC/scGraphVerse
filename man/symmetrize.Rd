@@ -4,11 +4,7 @@
 \alias{symmetrize}
 \title{Symmetrize a List of Square Matrices}
 \usage{
-symmetrize(
-  matrix_list,
-  weight_function = "mean",
-  nCores = BiocParallel::bpworkers(BiocParallel::bpparam())
-)
+symmetrize(matrix_list, weight_function = "mean", nCores = 1)
 }
 \arguments{
 \item{matrix_list}{A list of square numeric matrices to symmetrize.}
