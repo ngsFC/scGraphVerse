@@ -42,7 +42,7 @@ earlyj <- function(input_list, rowg = TRUE) {
     stop("Input must be a non-empty list of matrices, Seurat objects, or SingleCellExperiment objects.")
   }
   
-  object_classes <- unique(vapply(input_list, function(x) class(x)[1], logical(1)))
+  object_classes <- unique(vapply(input_list, function(x) class(x)[1], character(1)))
   if (length(object_classes) > 1) {
     stop("All elements in input_list must be of the same type.")
   }
