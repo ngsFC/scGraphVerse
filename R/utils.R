@@ -205,7 +205,7 @@
 #' @noRd
 
 .shuffle_matrix_rows <- function(mat) {
-  t(apply(mat, 1, sample))
+  shuffled <- t(apply(mat, 1, sample))
   rownames(shuffled) <- rownames(mat)
   colnames(shuffled) <- colnames(mat)  
   return(shuffled)
