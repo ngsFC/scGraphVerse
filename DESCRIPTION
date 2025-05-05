@@ -21,29 +21,45 @@ BugReports: https://github.com/francesco-cecere/scGraphVerse/issues
 Depends: 
     R (>= 4.4.0)
 Imports:
+    AnnotationDbi,
     BiocParallel (>= 1.30.0),
-    ggplot2,
-    rentrez,
+    GENIE3,
+    INetTool,
     Matrix,
+    RColorBrewer,
+    ReactomePA,
     STRINGdb,
     Seurat,
     SingleCellExperiment,
+    SummarizedExperiment,
+    clusterProfiler,
     distributions3,
+    doParallel,
     dplyr,
     fmsb,
     ggraph,
+    ggplot2,
     gridExtra,
+    grDevices,
+    graphics,
+    httr,
     igraph,
+    jsonlite,
     methods,
-    pROC,
+    org.Hs.eg.db,
+    parallel,
     patchwork,
+    pROC,
+    rentrez,
+    reticulate,
+    robin,
     scales,
-    tidyr,
-    GENIE3
+    tidyr
 Suggests:
-    testthat,
+    testthat (>= 3.0.0),
     knitr,
     rmarkdown,
+    tidyverse,
     magick
 VignetteBuilder: knitr
 

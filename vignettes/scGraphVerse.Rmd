@@ -142,7 +142,7 @@ binary_adjm_list <- cutoff_adjacency(
 ```
 
 ```{r}
-earlym <- earlyj(count_matrices)
+earlym <- list(earlyj(count_matrices))
 networks_early <- infer_networks(
   earlym,
   method = "GENIE3",

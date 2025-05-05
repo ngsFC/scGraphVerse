@@ -47,7 +47,7 @@
 #'
 #' # View one of the matrices
 #' adjacency_list[[1]]
-generate_adjacency <- function(df_list, nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
+generate_adjacency <- function(df_list, nCores = 1) {
   if (!is.list(df_list) || !all(vapply(df_list, is.data.frame, logical(1)))) {
     stop("df_list must be a list of data frames")
   }

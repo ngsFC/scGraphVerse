@@ -67,7 +67,7 @@
 infer_networks <- function(count_matrices_list,
                            method = "GENIE3",
                            adjm = NULL,
-                           nCores = BiocParallel::bpworkers(BiocParallel::bpparam()),
+                           nCores = 1,
                            grnboost_modules = NULL) {
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
   count_matrices_list <- .convert_counts_list(count_matrices_list)

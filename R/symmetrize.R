@@ -36,7 +36,7 @@
 #'
 #' # View the first symmetrized matrix
 #' sym_list[[1]]
-symmetrize <- function(matrix_list, weight_function = "mean", nCores = BiocParallel::bpworkers(BiocParallel::bpparam())) {
+symmetrize <- function(matrix_list, weight_function = "mean", nCores = 1) {
   if (!is.list(matrix_list) || !all(vapply(matrix_list, is.matrix, logical(1)))) {
     stop("matrix_list must be a list of matrices")
   }
