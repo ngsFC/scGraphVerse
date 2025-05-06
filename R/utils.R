@@ -120,8 +120,12 @@
   Precision <- ifelse(TP + FP > 0, TP / (TP + FP), 0)
   F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
   
-  denom <- sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
-  MCC <- ifelse(denom > 0, (TP * TN - FP * FN) / denom, 0)
+  denom <- (TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)
+  MCC <- if (denom > 0) {
+    (TP * TN - FP * FN) / sqrt(denom)
+  } else {
+    0
+  }
   
   data.frame(
     Predicted_Matrix = paste("Matrix", index),
@@ -134,25 +138,23 @@
   score_data <- stats_df[, metric_cols, drop = FALSE]
   score_data <- as.data.frame(lapply(score_data, as.numeric))
   
-  if (nrow(score_data) == 0 || anyNA(score_data)) {
-    warning("Skipping radar plot: no valid metrics.")
+  # Drop columns with any NA/Inf
+  score_data <- score_data[, colSums(!is.finite(score_data)) == nrow(score_data), drop = FALSE]
+  
+  if (nrow(score_data) == 0 || ncol(score_data) < 2) {
+    warning("Radar plot skipped: not enough valid metrics.")
     return(invisible(NULL))
   }
   
-  max_vals <- apply(score_data, 2, function(x) ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE)))
-  min_vals <- apply(score_data, 2, function(x) ifelse(all(is.na(x)), NA, min(x, na.rm = TRUE)))
-  
-  if (any(is.infinite(max_vals)) || any(is.infinite(min_vals))) {
-    warning("Radar plot skipped: max or min values invalid.")
-    return(invisible(NULL))
-  }
+  max_vals <- apply(score_data, 2, max, na.rm = TRUE)
+  min_vals <- apply(score_data, 2, min, na.rm = TRUE)
   
   scaled_data <- rbind(max_vals, min_vals, as.matrix(score_data))
   rownames(scaled_data) <- c("Max", "Min", stats_df$Predicted_Matrix)
   
   graphics::par(mar = c(2, 2, 2, 2))
   fmsb::radarchart(
-    data.frame(scaled_data),  # enforce data.frame
+    data.frame(scaled_data),
     axistype = 2,
     pcol = grDevices::rainbow(nrow(score_data)),
     plty = 1,
