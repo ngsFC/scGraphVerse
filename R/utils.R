@@ -114,15 +114,15 @@
   TN <- sum(pred_vec == 0 & gt_vec == 0)
   FP <- sum(pred_vec == 1 & gt_vec == 0)
   FN <- sum(pred_vec == 0 & gt_vec == 1)
-
+  
   TPR <- ifelse(TP + FN > 0, TP / (TP + FN), 0)
   FPR <- ifelse(FP + TN > 0, FP / (FP + TN), 0)
   Precision <- ifelse(TP + FP > 0, TP / (TP + FP), 0)
   F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
-
+  
   denom <- sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
   MCC <- ifelse(denom > 0, (TP * TN - FP * FN) / denom, 0)
-
+  
   data.frame(
     Predicted_Matrix = paste("Matrix", index),
     TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC
@@ -130,30 +130,38 @@
 }
 #' @keywords internal
 #' @noRd
-
 .plot_metrics_radar <- function(stats_df, metric_cols) {
-  score_data <- stats_df[, metric_cols]
+  score_data <- stats_df[, metric_cols, drop = FALSE]
   score_data <- as.data.frame(lapply(score_data, as.numeric))
   
-  max_vals <- apply(score_data, 2, max, na.rm = TRUE)
-  min_vals <- apply(score_data, 2, min, na.rm = TRUE)
+  if (nrow(score_data) == 0 || anyNA(score_data)) {
+    warning("Skipping radar plot: no valid metrics.")
+    return(invisible(NULL))
+  }
+  
+  max_vals <- apply(score_data, 2, function(x) ifelse(all(is.na(x)), NA, max(x, na.rm = TRUE)))
+  min_vals <- apply(score_data, 2, function(x) ifelse(all(is.na(x)), NA, min(x, na.rm = TRUE)))
+  
+  if (any(is.infinite(max_vals)) || any(is.infinite(min_vals))) {
+    warning("Radar plot skipped: max or min values invalid.")
+    return(invisible(NULL))
+  }
   
   scaled_data <- rbind(max_vals, min_vals, as.matrix(score_data))
   rownames(scaled_data) <- c("Max", "Min", stats_df$Predicted_Matrix)
   
-  colors <- grDevices::rainbow(nrow(score_data))
   graphics::par(mar = c(2, 2, 2, 2))
   fmsb::radarchart(
-    scaled_data,
+    data.frame(scaled_data),  # enforce data.frame
     axistype = 2,
-    pcol = colors,
+    pcol = grDevices::rainbow(nrow(score_data)),
     plty = 1,
     plwd = 2,
     cglcol = "grey",
     caxislabels = seq(0, 1, 0.2),
     vlcex = 1.1
   )
-  graphics::legend("topright", legend = stats_df$Predicted_Matrix, col = colors, lty = 1, lwd = 2)
+  graphics::legend("topright", legend = stats_df$Predicted_Matrix, col = grDevices::rainbow(nrow(score_data)), lty = 1, lwd = 2)
 }
 
 #earlyj

@@ -51,9 +51,20 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
     stop("`ground_truth` must contain only binary values (0/1).")
   }
   
-  if (!is.list(predicted_list) || !all(vapply(predicted_list, is.matrix, logical(1)))) {
-    stop("`predicted_list` must be a list of matrices.")
-  }
+  predicted_list <- lapply(predicted_list, function(mat) {
+    mat <- as.matrix(mat)
+    storage.mode(mat) <- "numeric"
+    mat[is.na(mat)] <- 0
+    mat[!is.finite(mat)] <- 0
+    mat[mat > 0] <- 1
+    mat
+  })
+  
+  ground_truth <- as.matrix(ground_truth)
+  storage.mode(ground_truth) <- "numeric"
+  ground_truth[is.na(ground_truth)] <- 0
+  ground_truth[!is.finite(ground_truth)] <- 0
+  ground_truth[ground_truth > 0] <- 1
   
   if (zero_diag) diag(ground_truth) <- 0
   gt_upper <- ground_truth[upper.tri(ground_truth)]
@@ -68,8 +79,7 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   })
   
   stats_df <- do.call(rbind, stats_list)
-  stats_df[-1] <- lapply(stats_df[-1], as.numeric)
-  
+  stats_df[-1] <- lapply(stats_df[-1], as.numeric)  
   radar_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
   .plot_metrics_radar(stats_df, radar_metrics)
   
