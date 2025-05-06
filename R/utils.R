@@ -64,23 +64,59 @@
 #zinbsim
 #' @keywords internal
 #' @noRd
+#' @keywords internal
+#' @noRd
+
+.create_adjacency_expansion < function(B) {
+  p < nrow(B)
+  edges < which(B == 1, arr.ind = TRUE)
+  edges < edges[edges[, 1] < edges[, 2], , drop = FALSE]
+  
+  A < diag(1, nrow=p, ncol=p)
+  for (i in seq_len(nrow(edges))) {
+    tmp < rep(0, p)
+    tmp[edges[i, ]] < 1
+    A < cbind(A, tmp)
+  }
+  list(A = A, edge_indices = edges)
+}
+
+#' @keywords internal
+#' @noRd
+
+.simulate_counts_ZINB < function(n, values, theta, pi) {
+  matrix(rzinbinom(n * length(values), mu = rep(values, each = n), theta = theta, pi = pi),
+         nrow = length(values), ncol = n)
+}
+#' @keywords internal
+#' @noRd
+
+.add_technical_noise < function(n, p, mu, pi) {
+  matrix(rzinbinom(n * p, mu = mu, theta = 1, pi = pi), nrow = p, ncol = n)
+}
+
+#' @keywords internal
+#' @noRd
+
+.normalize_library_size < function(mat, depth_range) {
+  n < nrow(mat)
+  cell_depths < runif(n, min = depth_range[1], max = depth_range[2])
+  row_sums < rowSums(mat)
+  row_sums[row_sums == 0] < 1
+  mat < sweep(mat, 1, row_sums, FUN = "/")
+  mat < sweep(mat, 1, cell_depths, FUN = "*")
+  round(mat)
+}
+
+#pscores
+
+#' @keywords internal
+#' @noRd
 .compute_confusion_metrics <- function(pred_vec, gt_vec, index) {
-  # — Argument checks —
-  if (length(pred_vec) != length(gt_vec)) {
-    stop("`pred_vec` and `gt_vec` must have the same length.")
-  }
-  if (!all(gt_vec %in% c(0, 1))) {
-    stop("`gt_vec` must be binary (0/1).")
-  }
-  
-  # force to integer 0/1
-  pred_bin <- as.integer(pred_vec == 1)
-  gt_bin   <- as.integer(gt_vec   == 1)
-  
-  TP <- sum(pred_bin & gt_bin)
-  TN <- sum(!pred_bin & !gt_bin)
-  FP <- sum(pred_bin & !gt_bin)
-  FN <- sum(!pred_bin & gt_bin)
+  TP <- sum(pred_vec == 1 & gt_vec == 1)
+  TN <- sum(pred_vec == 0 & gt_vec == 0)
+  FP <- sum(pred_vec == 1 & gt_vec == 0)
+  FN <- sum(pred_vec == 0 & gt_vec == 1)
   
   TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)
   FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
@@ -96,79 +132,8 @@
     TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC
   )
 }
-
-#pscores
 #' @keywords internal
 #' @noRd
-
-.plot_metrics_radar <- function(stats_df, metric_cols) {
-  if (!all(metric_cols %in% colnames(stats_df))) {
-    stop("Some metric columns are missing from stats_df.")
-  }
-  
-  # pull raw and coerce
-  score_data <- stats_df[, metric_cols, drop = FALSE]
-  score_data <- as.data.frame(
-    lapply(score_data, function(x) as.numeric(as.character(x)))
-  )
-  
-  # clamp negative MCC → 0, with message
-  if ("MCC" %in% colnames(score_data)) {
-    neg <- which(score_data$MCC < 0)
-    if (length(neg)) {
-      message("Found ", length(neg),
-              " negative MCC value(s); setting them to 0.")
-      score_data$MCC[neg] <- 0
-    }
-  }
-  
-  # drop any non‐finite columns
-  ok_cols <- colSums(is.finite(as.matrix(score_data))) > 0
-  score_data <- score_data[, ok_cols, drop = FALSE]
-  
-  if (nrow(score_data) == 0 || ncol(score_data) < 2) {
-    warning("Radar plot skipped: not enough valid metrics.")
-    return(list(data = NULL, plot = NULL))
-  }
-  
-  # decide axis max: if the highest value ≤ 0.5, use 0.5; else 1
-  overall_max <- max(as.matrix(score_data), na.rm = TRUE)
-  axis_max    <- if (overall_max <= 0.5) 0.5 else 1
-  axis_min    <- 0
-  
-  # build the data.frame with max/min + observations
-  max_row   <- rep(axis_max, ncol(score_data))
-  min_row   <- rep(axis_min, ncol(score_data))
-  plot_data <- rbind(max_row, min_row, score_data)
-  
-  rownames(plot_data) <- c("Max", "Min", stats_df$Predicted_Matrix)
-  axis_labels <- pretty(c(axis_min, axis_max), n = 5)
-  cols        <- grDevices::rainbow(nrow(score_data))
-  
-  graphics::par(mar = c(2, 2, 2, 2))
-  fmsb::radarchart(
-    data.frame(plot_data),
-    axistype    = 2,
-    pcol        = cols,
-    plty        = 1,
-    plwd        = 2,
-    cglcol      = "grey",
-    caxislabels = axis_labels,
-    vlcex       = 1.1
-  )
-  graphics::legend(
-    "topright",
-    legend = stats_df$Predicted_Matrix,
-    col    = cols,
-    lty    = 1,
-    lwd    = 2
-  )
-  
-  return(list(data = plot_data, plot = grDevices::recordPlot()))
-}
-#' @keywords internal
-#' @noRd
-#' @keywords internal
 .plot_metrics_radar <- function(stats_df, metric_cols) {
   if (!all(metric_cols %in% colnames(stats_df))) stop("Missing metrics.")
   sd <- as.data.frame(lapply(stats_df[, metric_cols, drop=FALSE],
@@ -190,7 +155,6 @@
                    col=cols, lty=1, lwd=2)
   list(data=pd, plot=grDevices::recordPlot())
 }
-
 
 #earlyj
 #' @keywords internal
