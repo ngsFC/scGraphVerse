@@ -43,53 +43,22 @@
 #' result <- pscores(ground_truth, list(pred1, pred2))
 #' result$Statistics
 pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
-  if (!is.matrix(ground_truth) || nrow(ground_truth) != ncol(ground_truth)) {
-    stop("`ground_truth` must be a square matrix.")
-  }
-  
-  if (!all(ground_truth %in% c(0, 1))) {
-    stop("`ground_truth` must contain only binary values (0/1).")
-  }
-  
-  predicted_list <- lapply(predicted_list, function(mat) {
-    mat <- as.matrix(mat)
-    storage.mode(mat) <- "numeric"
-    mat[is.na(mat)] <- 0
-    mat[!is.finite(mat)] <- 0
-    mat[mat > 0] <- 1
-    mat
-  })
-  
   ground_truth <- as.matrix(ground_truth)
-  storage.mode(ground_truth) <- "numeric"
-  ground_truth[is.na(ground_truth)] <- 0
-  ground_truth[!is.finite(ground_truth)] <- 0
-  ground_truth[ground_truth > 0] <- 1
   if (zero_diag) diag(ground_truth) <- 0
-  gt_upper <- ground_truth[upper.tri(ground_truth)]
+  gt_u <- ground_truth[upper.tri(ground_truth)]
   
   stats_list <- lapply(seq_along(predicted_list), function(i) {
-    pred <- predicted_list[[i]]
-    if (!all(dim(pred) == dim(ground_truth))) {
-      stop(sprintf("Predicted matrix %d has mismatched dimensions.", i))
-    }
-    pred_upper <- as.numeric(pred[upper.tri(pred)] > 0)
-    .compute_confusion_metrics(pred_upper, gt_upper, i)
+    pred <- as.matrix(predicted_list[[i]])
+    pu   <- as.numeric(pred[upper.tri(pred)] > 0)
+    .compute_confusion_metrics(pu, gt_u, i)
   })
-  
   stats_df <- do.call(rbind, stats_list)
   
-  stats_df[-1] <- as.data.frame(
-    vapply(stats_df[-1], as.numeric, numeric(nrow(stats_df)))
-  )
+  all_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
+  radar_all   <- .plot_metrics_radar(stats_df, all_metrics)
   
-  radar1 <- .plot_metrics_radar(stats_df, c("TPR", "FPR", "Precision"), scale = TRUE)
-  radar2 <- .plot_metrics_radar(stats_df, c("F1", "MCC"), scale = FALSE)
-  
-  return(list(
+  list(
     Statistics = stats_df,
-    Radar_1 = radar1,
-    Radar_2 = radar2
-  ))
+    Radar      = radar_all
+  )
 }
-
