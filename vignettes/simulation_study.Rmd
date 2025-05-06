@@ -205,8 +205,9 @@ scores.vote <- pscores(adj, list(consesusm))
 ```{r}
 adj_comm <- community_path(adj)
 comm_consesusm <- community_path(consesusm)
-topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet)) 
+topscore <- community_similarity(adj_comm,list(comm_consesusm)) 
 ```
+
 
 ```{r}
 sessionInfo()
