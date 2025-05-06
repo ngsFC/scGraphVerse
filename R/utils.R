@@ -168,71 +168,29 @@
 }
 #' @keywords internal
 #' @noRd
+#' @keywords internal
 .plot_metrics_radar <- function(stats_df, metric_cols) {
-  if (!all(metric_cols %in% colnames(stats_df))) {
-    stop("Some metric columns are missing from stats_df.")
+  if (!all(metric_cols %in% colnames(stats_df))) stop("Missing metrics.")
+  sd <- as.data.frame(lapply(stats_df[, metric_cols, drop=FALSE],
+                             function(x) as.numeric(as.character(x))))
+  if ("MCC" %in% names(sd)) {
+    neg <- which(sd$MCC < 0)
+    if (length(neg)) { message("Negative MCC, set to 0."); sd$MCC[neg] <- 0 }
   }
-  
-  # pull raw and coerce
-  score_data <- stats_df[, metric_cols, drop = FALSE]
-  score_data <- as.data.frame(
-    lapply(score_data, function(x) as.numeric(as.character(x)))
-  )
-  
-  # clamp negative MCC → 0, with message
-  if ("MCC" %in% colnames(score_data)) {
-    neg <- which(score_data$MCC < 0)
-    if (length(neg)) {
-      message("Found ", length(neg),
-              " negative MCC value(s); setting them to 0.")
-      score_data$MCC[neg] <- 0
-    }
-  }
-  
-  # drop any non‐finite columns
-  ok_cols <- colSums(is.finite(as.matrix(score_data))) > 0
-  score_data <- score_data[, ok_cols, drop = FALSE]
-  
-  if (nrow(score_data) == 0 || ncol(score_data) < 2) {
-    warning("Radar plot skipped: not enough valid metrics.")
-    return(list(data = NULL, plot = NULL))
-  }
-  
-  # decide axis max: if the highest value ≤ 0.5, use 0.5; else 1
-  overall_max <- max(as.matrix(score_data), na.rm = TRUE)
-  axis_max    <- if (overall_max <= 0.5) 0.5 else 1
-  axis_min    <- 0
-  
-  # build the data.frame with max/min + observations
-  max_row   <- rep(axis_max, ncol(score_data))
-  min_row   <- rep(axis_min, ncol(score_data))
-  plot_data <- rbind(max_row, min_row, score_data)
-  
-  rownames(plot_data) <- c("Max", "Min", stats_df$Predicted_Matrix)
-  axis_labels <- pretty(c(axis_min, axis_max), n = 5)
-  cols        <- grDevices::rainbow(nrow(score_data))
-  
-  graphics::par(mar = c(2, 2, 2, 2))
-  fmsb::radarchart(
-    data.frame(plot_data),
-    axistype    = 2,
-    pcol        = cols,
-    plty        = 1,
-    plwd        = 2,
-    cglcol      = "grey",
-    caxislabels = axis_labels,
-    vlcex       = 1.1
-  )
-  graphics::legend(
-    "topright",
-    legend = stats_df$Predicted_Matrix,
-    col    = cols,
-    lty    = 1,
-    lwd    = 2
-  )
-  
-  return(list(data = plot_data, plot = grDevices::recordPlot()))
+  ok <- colSums(is.finite(as.matrix(sd))) > 0; sd <- sd[, ok, drop=FALSE]
+  if (nrow(sd)==0 || ncol(sd)<2) { warning("Not enough metrics."); return(list(data=NULL, plot=NULL)) }
+  mx <- if (max(sd, na.rm=TRUE) <= 0.5) 0.5 else 1; mn <- 0
+  pd <- rbind(rep(mx, ncol(sd)), rep(mn, ncol(sd)), sd)
+  rownames(pd) <- c("Max","Min", stats_df$Predicted_Matrix)
+  labs <- pretty(c(mn, mx), n=5); cols <- grDevices::rainbow(nrow(sd))
+  graphics::par(mar=c(2,2,2,2))
+  fmsb::radarchart(data.frame(pd), axistype=2, pcol=cols, plty=1, plwd=2,
+                   cglcol="grey", caxislabels=labs, vlcex=1.1)
+  graphics::legend("topright", legend=stats_df$Predicted_Matrix,
+                   col=cols, lty=1, lwd=2)
+  list(data=pd, plot=grDevices::recordPlot())
 }
+
 
 #earlyj
 #' @keywords internal
