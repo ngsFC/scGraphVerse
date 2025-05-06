@@ -64,8 +64,6 @@
 #zinbsim
 #' @keywords internal
 #' @noRd
-#' @keywords internal
-#' @noRd
 
 .create_adjacency_expansion < function(B) {
   p < nrow(B)
