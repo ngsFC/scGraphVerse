@@ -65,16 +65,16 @@
 #' @keywords internal
 #' @noRd
 
-.create_adjacency_expansion < function(B) {
-  p < nrow(B)
-  edges < which(B == 1, arr.ind = TRUE)
-  edges < edges[edges[, 1] < edges[, 2], , drop = FALSE]
+.create_adjacency_expansion <- function(B) {
+  p <- nrow(B)
+  edges <- which(B == 1, arr.ind = TRUE)
+  edges <- edges[edges[, 1] < edges[, 2], , drop = FALSE]
   
-  A < diag(1, nrow=p, ncol=p)
+  A <- diag(1, nrow=p, ncol=p)
   for (i in seq_len(nrow(edges))) {
-    tmp < rep(0, p)
-    tmp[edges[i, ]] < 1
-    A < cbind(A, tmp)
+    tmp <- rep(0, p)
+    tmp[edges[i, ]] <- 1
+    A <- cbind(A, tmp)
   }
   list(A = A, edge_indices = edges)
 }
@@ -82,27 +82,27 @@
 #' @keywords internal
 #' @noRd
 
-.simulate_counts_ZINB < function(n, values, theta, pi) {
+.simulate_counts_ZINB <- function(n, values, theta, pi) {
   matrix(rzinbinom(n * length(values), mu = rep(values, each = n), theta = theta, pi = pi),
          nrow = length(values), ncol = n)
 }
 #' @keywords internal
 #' @noRd
 
-.add_technical_noise < function(n, p, mu, pi) {
+.add_technical_noise <- function(n, p, mu, pi) {
   matrix(rzinbinom(n * p, mu = mu, theta = 1, pi = pi), nrow = p, ncol = n)
 }
 
 #' @keywords internal
 #' @noRd
 
-.normalize_library_size < function(mat, depth_range) {
-  n < nrow(mat)
-  cell_depths < runif(n, min = depth_range[1], max = depth_range[2])
-  row_sums < rowSums(mat)
-  row_sums[row_sums == 0] < 1
-  mat < sweep(mat, 1, row_sums, FUN = "/")
-  mat < sweep(mat, 1, cell_depths, FUN = "*")
+.normalize_library_size <- function(mat, depth_range) {
+  n <- nrow(mat)
+  cell_depths <- runif(n, min = depth_range[1], max = depth_range[2])
+  row_sums <- rowSums(mat)
+  row_sums[row_sums == 0] <- 1
+  mat <- sweep(mat, 1, row_sums, FUN = "/")
+  mat <- sweep(mat, 1, cell_depths, FUN = "*")
   round(mat)
 }
 
