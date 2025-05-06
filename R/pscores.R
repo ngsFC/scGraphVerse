@@ -65,7 +65,6 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   ground_truth[is.na(ground_truth)] <- 0
   ground_truth[!is.finite(ground_truth)] <- 0
   ground_truth[ground_truth > 0] <- 1
-  
   if (zero_diag) diag(ground_truth) <- 0
   gt_upper <- ground_truth[upper.tri(ground_truth)]
   
@@ -79,9 +78,18 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   })
   
   stats_df <- do.call(rbind, stats_list)
-  stats_df[-1] <- lapply(stats_df[-1], as.numeric)  
-  radar_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
-  .plot_metrics_radar(stats_df, radar_metrics)
   
-  return(list(Statistics = stats_df))
+  stats_df[-1] <- as.data.frame(
+    vapply(stats_df[-1], as.numeric, numeric(nrow(stats_df)))
+  )
+  
+  radar1 <- .plot_metrics_radar(stats_df, c("TPR", "FPR", "Precision"), scale = TRUE)
+  radar2 <- .plot_metrics_radar(stats_df, c("F1", "MCC"), scale = FALSE)
+  
+  return(list(
+    Statistics = stats_df,
+    Radar_1 = radar1,
+    Radar_2 = radar2
+  ))
 }
+

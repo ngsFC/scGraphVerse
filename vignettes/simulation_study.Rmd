@@ -190,18 +190,20 @@ joint_auc$plot
 ```
 
 ```{r}
-scores.late.all <- pscores(adj, binary_adjm_listj)
-plotg(slate_adj)
+scores.joint <- pscores(adj, binary_adjm_listj)
+plotg(binary_adjm_listj)
 ```
 
 ```{r}
-consesusm <- create_consensus(slate_adj, method="vote")
-compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
-scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
+consesusm <- create_consensus(binary_adjm_listj, method="vote")
+plotg(list(consesusm))
+
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adj, false_plot = F)
+scores.vote <- pscores(adj, list(consesusm))
 ```
 
 ```{r}
-adj_comm <- community_path(adjm)
+adj_comm <- community_path(adj)
 comm_consesusm <- community_path(consesusm)
 topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet)) 
 ```
