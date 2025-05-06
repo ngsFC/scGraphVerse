@@ -121,10 +121,10 @@
   F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
   
   denom <- (TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)
-  MCC <- if (denom > 0) {
-    (TP * TN - FP * FN) / sqrt(denom)
+  if (is.finite(denom) && denom > 0) {
+    MCC <- (TP * TN - FP * FN) / sqrt(denom)
   } else {
-    0
+    MCC <- 0
   }
   
   data.frame(
