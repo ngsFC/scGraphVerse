@@ -185,7 +185,7 @@ binary_adjm_listj <- cutoff_adjacency(
 ```
 
 ```{r}
-joint_auc <- plotROC(list_swadjj, adj, plot_title = "ROC curve - JRF Joint Integration", is_binary = F)
+joint_auc <- plotROC(list_swadjj, adj, plot_title = "ROC curve - JRF Joint Integration", is_binary = FALSE)
 joint_auc$plot
 ```
 
@@ -198,7 +198,7 @@ plotg(binary_adjm_listj)
 consesusm <- create_consensus(binary_adjm_listj, method="vote")
 plotg(list(consesusm))
 
-compare_consensus(consensus_matrix = consesusm, reference_matrix = adj, false_plot = F)
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adj, false_plot = FALSE)
 scores.vote <- pscores(adj, list(consesusm))
 ```
 
