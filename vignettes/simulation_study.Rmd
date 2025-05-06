@@ -172,12 +172,12 @@ networks_joint <- infer_networks(
   nCores = 15
 )
 
-list_wadj <- generate_adjacency(networks_joint)
-list_swadj <- symmetrize(list_wadj, weight_function = "mean")
+list_wadjj <- generate_adjacency(networks_joint)
+list_swadjj <- symmetrize(list_wadjj, weight_function = "mean")
 
-binary_adjm_list4 <- cutoff_adjacency(
+binary_adjm_listj <- cutoff_adjacency(
   count_matrices = count_matrices,
-  weighted_adjm_list = list_swadj,
+  weighted_adjm_list = list_swadjj,
   n = 2,
   method = "JRF",
   quantile_threshold = 0.95,
@@ -187,8 +187,28 @@ binary_adjm_list4 <- cutoff_adjacency(
 
 ```
 
+```{r}
+joint_auc <- plotROC(list_swadjj, adj, plot_title = "ROC curve - JRF Joint Integration", is_binary = F)
+joint_auc$plot
+```
+
+```{r}
+scores.late.all <- pscores(adj, binary_adjm_listj)
+plotg(slate_adj)
+```
+
+```{r}
+consesusm <- create_consensus(slate_adj, method="vote")
+compare_consensus(consensus_matrix = consesusm, reference_matrix = adjm, false_plot = F)
+scores.late <- pscores(adjm, list(consesusm,consesusu,consesunet))
+```
+
+```{r}
+adj_comm <- community_path(adjm)
+comm_consesusm <- community_path(consesusm)
+topscore <- community_similarity(adj_comm,list(comm_consesusm, comm_consesusu, comm_consesunet)) 
+```
 
 ```{r}
 sessionInfo()
 ```
-

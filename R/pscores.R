@@ -68,6 +68,7 @@ pscores <- function(ground_truth, predicted_list, zero_diag = TRUE) {
   })
   
   stats_df <- do.call(rbind, stats_list)
+  stats_df[-1] <- lapply(stats_df[-1], as.numeric)
   
   radar_metrics <- c("TPR", "FPR", "Precision", "F1", "MCC")
   .plot_metrics_radar(stats_df, radar_metrics)

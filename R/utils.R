@@ -131,8 +131,17 @@
 #' @keywords internal
 #' @noRd
 
-.plot_metrics_radar <- function(scaled_data, labels) {
-  colors <- grDevices::rainbow(nrow(scaled_data) - 2)
+.plot_metrics_radar <- function(stats_df, metric_cols) {
+  score_data <- stats_df[, metric_cols]
+  score_data <- as.data.frame(lapply(score_data, as.numeric))
+  
+  max_vals <- apply(score_data, 2, max, na.rm = TRUE)
+  min_vals <- apply(score_data, 2, min, na.rm = TRUE)
+  
+  scaled_data <- rbind(max_vals, min_vals, as.matrix(score_data))
+  rownames(scaled_data) <- c("Max", "Min", stats_df$Predicted_Matrix)
+  
+  colors <- grDevices::rainbow(nrow(score_data))
   graphics::par(mar = c(2, 2, 2, 2))
   fmsb::radarchart(
     scaled_data,
@@ -144,7 +153,7 @@
     caxislabels = seq(0, 1, 0.2),
     vlcex = 1.1
   )
-  graphics::legend("topright", legend = labels, col = colors, lty = 1, lwd = 2)
+  graphics::legend("topright", legend = stats_df$Predicted_Matrix, col = colors, lty = 1, lwd = 2)
 }
 
 #earlyj
