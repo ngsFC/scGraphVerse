@@ -208,6 +208,11 @@ comm_consesusm <- community_path(consesusm)
 topscore <- community_similarity(adj_comm,list(comm_consesusm)) 
 ```
 
+```{r}
+query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
+
+```
+
 
 ```{r}
 sessionInfo()

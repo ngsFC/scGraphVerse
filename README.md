@@ -1,8 +1,15 @@
+---
+title: "scGraphVerse"
+output: rmarkdown::github_document
+---
+
 # scGraphVerse
 
 <div align="center">
-  <img src="logo.png" alt="scGraphVerse logo" width="200"/>
+  <img src="./man/figures/logo.png" alt="scGraphVerse logo" width="200"/>
 </div>
+
+---
 
 **scGraphVerse** is an R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It supports multiple GRN inference algorithms, consensus construction across methods or datasets, performance evaluation, and rich visualizations — all optimized for single-cell expression analysis.
 
@@ -24,7 +31,7 @@
 ---
 
 <div align="center">
-  <img src="gabstract.png" alt="Example network plot" width="700"/>
+  <img src="./man/figures/gabstract.png" alt="Graphical Abstract" width="700"/>
 </div>
 
 ---
@@ -72,12 +79,9 @@ If you use scGraphVerse, please cite the original GRN inference methods it imple
 5.	Petralia F, Song WM, Tu Z, Wang P. New Method for Joint Network Analysis Reveals Common and Different Coexpression Patterns among Genes and Proteins in Breast Cancer. J Proteome Res. 2016 Mar 4;15(3):743–54.
 
 ---
-## 🏛 Funding
+## Funding
 
 This work is supported by the project:
 **National Centre for HPC, Big Data and Quantum Computing** Funded by European Union – Next Generation EU – CN00000013 **CUP:** B93C22000620006
-
----
-
 
 
