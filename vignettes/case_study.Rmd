@@ -1,0 +1,132 @@
+---
+title: "scGraphVerse Case Study: B-cell GRN Reconstruction"
+author: "Francesco Cecere"
+output:
+  BiocStyle::html_document:
+    toc: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{scGraphVerse Case Study: B-cell GRN Reconstruction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+# Abstract
+
+This vignette demonstrates the **scGraphVerse** workflow on a two-sample B-cell single-cell RNA-seq dataset. We show how to:
+
+1. Load and preprocess public PBMC data.
+2. Infer gene regulatory networks with**JRF**.
+3. Build consensus networks and detect communities.
+4. Validate inferred edges using STRINGdb.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    fig.width = 6,
+    fig.height = 5
+)
+library(scGraphVerse)
+library(Seurat)
+library(tidyverse)
+```
+
+# 1. Dataset and Preprocessing
+
+We use two public PBMC Seurat objects containing whole-blood samples. Our goal is to focus on healthy B cells and a common gene set.
+
+```{r load-data}
+# Download URLs
+url1 <- "https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
+url2 <- "https://www.dropbox.com/s/grt5371v5qarn54/SCA_scRNASEQ_TISSUE_BLOOD.RDS?dl=1"
+
+# Load Seurat objects
+pbmc1 <- download_Atlas(file_url = url1)
+pbmc2 <- download_Atlas(file_url = url2)
+
+# Select top variable genes for B cells, removing ribosomal/mitochondrial
+genes1 <- selgene(pbmc1, top_n = 150, cell_type = "B_cell", cell_type_col = "CELL_TYPE", remove_rib = TRUE, remove_mt = TRUE)
+genes2 <- selgene(pbmc2, top_n = 150, cell_type = "B_cell", cell_type_col = "CELL_TYPE", remove_rib = TRUE, remove_mt = TRUE)
+
+# Intersection of gene sets and subset
+common_genes <- intersect(genes1, genes2)
+pbmc1_sub <- subset(pbmc1, features = common_genes)
+pbmc2_sub <- subset(pbmc2, features = common_genes)
+
+# Filter to B cells
+b1 <- subset(pbmc1_sub, subset = CELL_TYPE == "B_cell")
+ b2 <- subset(pbmc2_sub, subset = CELL_TYPE == "B_cell")
+
+# List for multi-sample analysis
+bcell_list <- list(b1, b2)
+```
+
+# 2. Network Inference
+
+We infer GRNs using three algorithms. Replace `method` to switch.
+
+```{r infer-networks}
+# Choose method: "GENIE3", "GRNBoost2", or "JRF"
+method <- "JRF"
+networks <- infer_networks(count_matrices_list = bcell_list, method = method, nCores = 10)
+```
+
+## 2.1. Building Adjacency Matrices
+
+Convert edge lists to weighted matrices, symmetrize, and threshold to binary networks.
+
+```{r adjacency}
+# Weighted adjacency
+wadj <- generate_adjacency(networks)
+# Symmetrize
+swadj <- symmetrize(wadj, weight_function = "mean")
+# Binary cutoff (top 5%)
+binary_adj <- cutoff_adjacency(count_matrices = bcell_list,
+                              weighted_adjm_list = swadj,
+                              n = 2,
+                              method = method,
+                              quantile_threshold = 0.95,
+                              nCores = 10)
+# Plot
+plotg(binary_adj)
+```
+
+# 3. Consensus and Community Detection
+
+Aggregate multiple binary networks into a consensus and find network modules.
+
+```{r consensus}
+# Consensus by vote
+consensus <- create_consensus(binary_adj, method = "vote")
+plotg(list(consensus))
+
+compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
+
+# Community detection
+communities <- community_path(consensus)
+```
+
+# 4. Validation with STRINGdb
+
+Fetch high-confidence interactions from STRING and evaluate true positives.
+
+```{r stringdb}
+str <- stringdb_adjacency(genes = rownames(consensus), species = 9606, required_score = 900, keep_all_genes = TRUE)$binary
+ground_truth <- symmetrize(list(str), weight_function = "mean")[[1]]
+
+# Edge mining: TP rates
+em <- edge_mining(list(consensus), query_edge_types = "TP", ground_truth = ground_truth)
+```
+
+# 5. Conclusion
+
+This case study illustrates how **scGraphVerse** enables end-to-end GRN reconstruction and validation in single-cell data. Users can swap inference algorithms, tune thresholds, and incorporate external prior networks.
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+

@@ -1,0 +1,60 @@
+url: https://ngsFC.github.io/scGraphVerse
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+navbar:
+  structure:
+    left:
+      - home
+      - reference
+      - articles
+
+home:
+  title: "scGraphVerse"
+  description: >
+    A toolkit for gene regulatory network inference, consensus, and visualization
+    from single-cell RNA-seq data.
+  links:
+    - text: GitHub Repository
+      href: https://github.com/ngsFC/scGraphVerse
+    - text: Report Issues
+      href: https://github.com/ngsFC/scGraphVerse/issues
+
+reference:   
+  - title: "Infer Networks"
+    contents:
+      - infer_networks
+      - cutoff_adjacency
+      - generate_adjacency
+      - earlyj
+      - symmetrize
+  - title: "Consensus & Evaluation"
+    contents:
+      - create_consensus
+      - compare_consensus
+      - community_similarity
+      - plotROC
+      - pscores
+  - title: "Simulation & Visualization"
+    contents:
+      - zinb_simdata
+      - plotg
+  - title: "Data and Utility Functions"
+    contents:
+      - download_Atlas
+      - stringdb_adjacency
+      - edge_mining
+      - selgene
+      - community_path
+      - init_py
+
+articles:
+  - title: "Case Study"
+    contents:
+      - case_study
+  - title: "Simulation Study"
+    contents:
+      - simulation_study
+

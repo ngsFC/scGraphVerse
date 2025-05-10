@@ -1,61 +1,51 @@
 ---
-title: "Getting Started with scGraphVerse"
+title: "scGraphVerse Case Study: Zero-Inflated Simulation and GRN Inference"
 author: "Francesco Cecere"
-output: BiocStyle::html_document
+output:
+  BiocStyle::html_document:
+    toc: true
+    number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Getting Started with scGraphVerse}
+  %\VignetteIndexEntry{scGraphVerse Simulation Study: Simulation and  GRN Reconstruction}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-## Bioconductor compliance
+# Simulation study 
 
-**scGraphVerse** is distributed through Bioconductor; it adheres to the [Bioconductor package guidelines](https://bioconductor.org/developers/package-guidelines/) for documentation, versioning, and testing.  Please make sure to run `BiocCheck::BiocCheck()` before submission, include unit tests under `tests/`, and follow the code‐of‐conduct.
+In this case study, we use **scGraphVerse** to:
 
-## Introduction
-
-Single‐cell RNA‐seq has opened new doors for reconstructing cell‐type‐specific gene regulatory networks (GRNs).  *scGraphVerse* provides a streamlined workflow to:
-
-1.  Simulate single‐cell count data (including zero‐inflation) via the ZILGM framework[^ZILGM]  
-2.  Infer GRNs with multiple algorithms:  
-    -  **GENIE3**[^GENIE3]  
-    -  **GRNBoost2**[^GRNBoost2]  
-    -  **JRF**[^JRF]  
-3.  Evaluate performance against a ground‐truth network  
-4.  Build consensus networks and explore network communities  
-
-Throughout this vignette we’ll highlight the core functions and point you to the original method papers.
+1. Define a ground-truth regulatory network from high-confidence STRINGdb interactions.
+2. Simulate zero-inflated single-cell RNA-seq count data that respects the ground truth.
+3. Infer gene regulatory networks using **JRF**.
+4. Evaluate performance with ROC curves, precision–recall scores, and community similarity.
+5. Build consensus networks and perform edge mining.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 5
 )
 library(scGraphVerse)
-library(Seurat)
+library(igraph)
+library(ggraph)
 library(tidyverse)
 ```
 
-## Load and Pre‐process a Public Dataset
-We start by downloading a PBMC dataset from the CellxGene atlas, subsetting to healthy CD4⁺ T cells, and applying standard QC filters (mitochondrial, ribosomal, feature and count thresholds).
+# 1. Defining a Ground-Truth Network from STRINGdb
 
+We select 500 top-variable T-cell genes and fetch high-confidence edges (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r}
-# options(timeout = 2000)
+```{r ground-truth}
+# 1. Download PBMC data
+url <- "https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
+seu <- download_Atlas(file_url = url)
 
-# 1. Download the Seurat object
-dataset_url <- "https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-sc_object <- download_Atlas(file_url = dataset_url)
-```
-
-## Define a “Ground‐Truth” Regulatory Network
-We use high‐confidence STRINGdb edges as our ground truth. You can substitute any known adjacency matrix here.
-
-
-```{r}
-# 1. Select top variable genes
-pathgenes <- selgene(
-  object = sc_object,
+# 2. Select top 500 T-cell genes
+genes <- selgene(
+  object = seu,
   top_n = 500,
   cell_type = "T_cells",
   cell_type_col = "CELL_TYPE",
@@ -63,157 +53,139 @@ pathgenes <- selgene(
   remove_mt = TRUE
 )
 
-# 2. Query STRINGdb for high‐confidence edges
-result <- stringdb_adjacency(
-  genes          = pathgenes,
-  species        = 9606,
+# 3. Retrieve STRINGdb adjacency
+str_res <- stringdb_adjacency(
+  genes = genes,
+  species = 9606,
   required_score = 900,
   keep_all_genes = FALSE
 )
+wadj_truth <- str_res$weighted
+adj_truth <- str_res$binary
 
-wadj <- result$weighted
-adj <- result$binary
+# 4. Symmetrize and sort
+common <- intersect(rownames(adj_truth), colnames(adj_truth))
+adj_truth <- adj_truth[common, common]
+adj_truth <- adj_truth[order(rownames(adj_truth)), order(colnames(adj_truth))]
 
-# 3. Symmetrize and sort
-common <- intersect(rownames(adj), colnames(adj))
-adj <- adj[common, common]
-adj <- adj[sort(rownames(adj)), sort(colnames(adj))]
-
-# 4. Visualize
-gtruth <- igraph::graph_from_adjacency_matrix(adj, mode = "undirected")
-ggraph::ggraph(gtruth, layout = "fr") +
-  ggraph::geom_edge_link(color = "gray") +
-  ggraph::geom_node_point(color = "steelblue") +
-  ggtitle(
-    paste0(
-      "Ground Truth: ", igraph::vcount(gtruth), " nodes, ",
-      igraph::ecount(gtruth), " edges"
-    )
-  ) + theme_minimal()
+# 5. Visualize network
+gtruth <- graph_from_adjacency_matrix(adj_truth, mode = "undirected")
+ggraph(gtruth, layout = "fr") +
+  geom_edge_link(color = "gray") +
+  geom_node_point(color = "steelblue") +
+  ggtitle(paste0("Ground Truth: ", vcount(gtruth), " nodes, ", ecount(gtruth), " edges")) +
+  theme_minimal()
 ```
 
-## Simulate Zero‐Inflated Count Data
-We leverage a zero‐inflated network‐aware simulator based on the ZILGM framework1, which retains the ground‐truth dependencies in the counts.
+# 2. Simulating Zero-Inflated Count Data
 
-```{r}
-nodes <- nrow(adj)
-b <- 3
-sigma <- 0.2
+We simulate three batches (n=50 cells each) of count matrices that follow the ground-truth network topology with dropout.
 
-count_matrices <- zinb_simdata(
+```{r simulate-zilgm}
+# Simulation parameters
+nodes <- nrow(adj_truth)
+sims <- zinb_simdata(
   n = 50,
   p = nodes,
-  B = adj,
-  mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
-  mu_noise = c(1, 3, 5),
-  theta = c(1, 0.7, 0.5),
-  pi = c(0.2, 0.2, 0.2),
+  B = adj_truth,
+  mu_range = list(c(1,4), c(1,7), c(1,10)),
+  mu_noise = c(1,3,5),
+  theta = c(1,0.7,0.5),
+  pi = c(0.2,0.2,0.2),
   kmat = 3,
-  depth_range = c(round((1 - sigma) * nodes * b), round((1 + sigma) * nodes * b))
+  depth_range = c(0.8*nodes*3, 1.2*nodes*3)
 )
+# Transpose to cells × genes
+count_matrices <- lapply(sims, t)
 
-# Transpose each to cells × genes
-count_matrices <- lapply(count_matrices, t)
+# Inspect sparsity
+sparsity <- sapply(count_matrices, function(mat) mean(mat == 0))
 ```
 
-## Infer Networks with Multiple Algorithms
+# 3. Inferring Networks with JRF
 
-```{r}
-#networks_late <- infer_networks(
-#  count_matrices,
-#  method = "GENIE3",
-#  nCores = 15
-#)
+We run **Joint Random Forests** across the simulated batches to infer shared and batch-specific regulatory edges.
 
-#list_wadj <- generate_adjacency(networks_late)
-#list_swadj <- symmetrize(list_wadj, weight_function = "mean")
-
-#binary_adjm_list <- cutoff_adjacency(
-#  count_matrices = count_matrices,
-#  weighted_adjm_list = list_swadj,
-#  n = 2,
-#  method = "GENIE3",
-#  quantile_threshold = 0.95,
-#  nCores = 15,
-#  debug = TRUE
-#)
-```
-
-```{r}
-#earlym <- list(earlyj(count_matrices))
-#networks_early <- infer_networks(
-#  earlym,
-#  method = "GENIE3",
-#  nCores = 15
-#)
-
-#list_wadj <- generate_adjacency(networks_early)
-#list_swadj <- symmetrize(list_wadj, weight_function = "mean")
-
-#binary_adjm_list_early <- cutoff_adjacency(
-#  count_matrices = earlym,
-#  weighted_adjm_list = list_swadj,
-#  n = 2,
-#  method = "GENIE3",
-#  quantile_threshold = 0.95,
-#  nCores = 15,
-#  debug = TRUE
-#)
-```
-
-
-```{r}
+```{r infer-jrf}
 networks_joint <- infer_networks(
   count_matrices_list = count_matrices,
   method = "JRF",
-  nCores = 15
+  nCores = 10
 )
+# Weighted adjacency
+wadj_list <- generate_adjacency(networks_joint)
+# Symmetrize weights
+swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+```
 
-list_wadjj <- generate_adjacency(networks_joint)
-list_swadjj <- symmetrize(list_wadjj, weight_function = "mean")
+# 4. ROC Curve and AUC
 
-binary_adjm_listj <- cutoff_adjacency(
+Plot the ROC curve comparing continuous edge weights to the binary ground truth.
+
+```{r roc-curve}
+roc_res <- plotROC(
+  swadj_list,
+  adj_truth,
+  plot_title = "ROC Curve: JRF Joint Integration",
+  is_binary = FALSE
+)
+roc_res$plot
+auc_joint <- roc_res$auc
+```
+
+## 4.1. Precision–Recall and Graph Visualization
+
+Compute precision scores and visualize the binary networks.
+
+```{r pr-and-plot}
+# Binary cutoff at 95th percentile
+binary_listj <- cutoff_adjacency(
   count_matrices = count_matrices,
-  weighted_adjm_list = list_swadjj,
+  weighted_adjm_list = swadj_list,
   n = 2,
   method = "JRF",
   quantile_threshold = 0.95,
-  nCores = 15,
+  nCores = 10,
   debug = TRUE
 )
 
+# Precision scores
+pscores_joint <- pscores(adj_truth, binary_listj)
+print(pscores_joint)
+
+# Network plot
+title <- "JRF Binary Networks"
+plotg(binary_listj)
 ```
 
-```{r}
-joint_auc <- plotROC(list_swadjj, adj, plot_title = "ROC curve - JRF Joint Integration", is_binary = FALSE)
-joint_auc$plot
+# 5. Consensus Networks and Community Similarity
+
+Aggregate inferred binaries by majority vote and compare community structure to ground truth.
+
+```{r consensus-communities}
+# Consensus matrix
+consensus <- create_consensus(binary_listj, method = "vote")
+plotg(list(consensus))
+
+# Compare consensus to truth
+evaluate_consensus <- compare_consensus(consensus_matrix = consensus, reference_matrix = adj_truth, false_plot = FALSE)
+
+# Community detection
+comm_truth <- community_path(adj_truth)
+comm_cons <- community_path(consensus)
+# Similarity
+sim_score <- community_similarity(comm_truth, list(comm_cons))
 ```
 
-```{r}
-scores.joint <- pscores(adj, binary_adjm_listj)
-plotg(binary_adjm_listj)
+## 5.1. Edge Mining
+
+Identify true positive edges in the consensus network using edge mining.
+
+```{r edge-mining}
+em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
 ```
 
-```{r}
-consesusm <- create_consensus(binary_adjm_listj, method="vote")
-plotg(list(consesusm))
-
-compare_consensus(consensus_matrix = consesusm, reference_matrix = adj, false_plot = FALSE)
-scores.vote <- pscores(adj, list(consesusm))
-```
-
-```{r}
-adj_comm <- community_path(adj)
-comm_consesusm <- community_path(consesusm)
-topscore <- community_similarity(adj_comm,list(comm_consesusm)) 
-```
-
-```{r}
-query <- edge_mining(list(consesusm), adj, query_edge_types = "TP")
-
-```
-
-
-```{r}
+```{r session-info}
 sessionInfo()
 ```
+
