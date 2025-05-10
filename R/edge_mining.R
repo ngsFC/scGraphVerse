@@ -43,16 +43,16 @@ edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "
   if (!is.list(predicted_list) || !is.matrix(ground_truth)) {
     stop("predicted_list must be a list of matrices and ground_truth must be a matrix")
   }
-  
+
   field_map <- c("Title/Abstract" = "TIAB", "Title" = "TI", "Abstract" = "AB")
   if (query_field %in% names(field_map)) query_field <- field_map[[query_field]]
-  
+
   results_list <- BiocParallel::bplapply(seq_along(predicted_list), function(i) {
     predicted <- predicted_list[[i]]
     if (!is.matrix(predicted) || is.null(rownames(predicted)) || is.null(colnames(predicted))) {
       stop(sprintf("Predicted matrix at index %d lacks row/column names.", i))
     }
-    
+
     gene_pairs <- .identify_edges(predicted, ground_truth, query_edge_types)
     if (is.null(gene_pairs)) {
       return(data.frame(
@@ -60,13 +60,13 @@ edge_mining <- function(predicted_list, ground_truth, delay = 1, query_field = "
         pubmed_hits = integer(0), PMIDs = character(0), query_status = character(0)
       ))
     }
-    
+
     .query_edge_pairs(gene_pairs, query_field, delay, max_retries, BPPARAM)
   }, BPPARAM = BPPARAM)
-  
+
   if (!is.null(names(predicted_list))) {
     names(results_list) <- names(predicted_list)
   }
-  
+
   return(results_list)
 }

@@ -66,13 +66,13 @@ selgene <- function(object, top_n,
   if (missing(top_n) || length(top_n) != 1 || !is.numeric(top_n) || top_n <= 0) {
     stop("Please provide a valid 'top_n' (a single positive integer).")
   }
-  
+
   expr <- .extract_expression(object, assay)
-  
+
   if (!is.null(cell_type)) {
     expr <- .filter_by_cell_type(expr, object, cell_type, cell_type_col)
   }
-  
+
   expr <- .filter_genes(expr, remove_mt, remove_rib)
   selected_genes <- .select_top_genes(expr, top_n)
   message("Top ", top_n, " genes selected based on mean expression.")

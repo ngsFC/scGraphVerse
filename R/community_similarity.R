@@ -41,41 +41,40 @@ community_similarity <- function(control_output, predicted_list) {
   if (length(missing_pkgs) > 0) {
     stop("Missing packages: ", paste(missing_pkgs, collapse = ", "))
   }
-  
+
   control_comm <- control_output$communities$membership
   control_graph <- control_output$graph
   control_topo <- .compute_topo_metrics(control_graph, control_comm)
-  
+
   community_metrics <- list()
   topology_comparison <- list()
-  
+
   for (i in seq_along(predicted_list)) {
     pred <- predicted_list[[i]]
     pred_comm <- pred$communities$membership
     pred_graph <- pred$graph
-    
+
     community_metrics[[paste0("Predicted_", i)]] <- .compare_communities(control_comm, pred_comm)
-    
+
     if (is.null(pred_graph) || !igraph::is_igraph(pred_graph)) {
       warning("Prediction ", i, " has no valid graph. Skipping topology comparison.")
       topology_comparison[[paste0("Predicted_", i)]] <- rep(NA, 4)
       next
     }
-    
+
     topology_comparison[[paste0("Predicted_", i)]] <- .compute_topo_metrics(pred_graph, pred_comm)
   }
-  
+
   comm_df <- as.data.frame(do.call(rbind, community_metrics))
   topo_df <- as.data.frame(do.call(rbind, topology_comparison))
   colnames(topo_df) <- c("Modularity", "Communities", "Density", "Transitivity")
-  
+
   .plot_radar_communities(comm_df)
   .plot_topo_barplots(topo_df, control_topo)
-  
+
   return(list(
     community_metrics = comm_df,
     topology_measures = topo_df,
     control_topology = control_topo
   ))
 }
-

@@ -42,22 +42,22 @@
 #' )
 plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) {
   truth_vec <- as.vector(ground_truth[upper.tri(ground_truth)])
-  
+
   roc_data <- data.frame()
   auc_values <- data.frame(Matrix = character(), AUC = numeric())
-  
+
   if (is_binary) {
     binary_points <- data.frame(FPR = numeric(), TPR = numeric())
-    
+
     for (i in seq_along(matrices_list)) {
       pred_vec <- .prepare_prediction_vectors(matrices_list[[i]], ground_truth)
       coords <- .compute_binary_roc_point(pred_vec, truth_vec)
       binary_points <- dplyr::bind_rows(binary_points, data.frame(FPR = coords$FPR, TPR = coords$TPR))
     }
-    
+
     binary_points <- dplyr::arrange(binary_points, FPR)
     auc <- sum(diff(c(0, binary_points$FPR, 1)) * (c(0, binary_points$TPR) + c(binary_points$TPR, 1)) / 2)
-    
+
     roc_data <- data.frame(
       FPR = c(0, binary_points$FPR, 1),
       TPR = c(0, binary_points$TPR, 1),
@@ -74,10 +74,9 @@ plotROC <- function(matrices_list, ground_truth, plot_title, is_binary = FALSE) 
     }
     p <- .plot_roc_curve(roc_data, NULL, plot_title)
   }
-  
+
   return(list(
     auc = auc_values,
     plot = p
   ))
 }
-

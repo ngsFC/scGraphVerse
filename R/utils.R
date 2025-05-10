@@ -1,11 +1,13 @@
-#plotg
+# plotg
 #' @keywords internal
 #' @noRd
 .create_igraph_plot <- function(mat, index) {
   g <- igraph::graph_from_adjacency_matrix(mat, mode = "undirected", weighted = NULL, diag = FALSE)
   g <- igraph::delete_vertices(g, igraph::V(g)[igraph::degree(g) == 0])
-  
-  if (igraph::vcount(g) == 0 || igraph::ecount(g) == 0) return(NULL)
+
+  if (igraph::vcount(g) == 0 || igraph::ecount(g) == 0) {
+    return(NULL)
+  }
 
   title <- paste("Graph", index, "\nNodes:", igraph::vcount(g), "Edges:", igraph::ecount(g))
   ggraph::ggraph(g, layout = "fr") +
@@ -19,7 +21,7 @@
     )
 }
 
-#compare_consensus
+# compare_consensus
 #' @keywords internal
 #' @noRd
 
@@ -36,8 +38,10 @@
     ggraph::geom_edge_link(aes(color = I(edge_colors)), width = 0.7) +
     ggraph::geom_node_point(color = "steelblue", size = 1.5) +
     ggplot2::labs(
-      title = paste("Reference Graph\n", TP_label, ":", sum(edge_colors == "red"),
-                    FN_label, ":", sum(edge_colors == "blue"))
+      title = paste(
+        "Reference Graph\n", TP_label, ":", sum(edge_colors == "red"),
+        FN_label, ":", sum(edge_colors == "blue")
+      )
     ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "none")
@@ -48,7 +52,9 @@
 .plot_fp_graph <- function(fp_edges_str, FP_label) {
   fp_pairs <- strsplit(fp_edges_str, "-")
   fp_mat <- do.call(rbind, Filter(function(x) length(x) == 2, fp_pairs))
-  if (is.null(fp_mat) || nrow(fp_mat) == 0) return(NULL)
+  if (is.null(fp_mat) || nrow(fp_mat) == 0) {
+    return(NULL)
+  }
 
   graph_fp <- igraph::graph_from_edgelist(fp_mat, directed = FALSE)
   graph_fp <- igraph::delete_vertices(graph_fp, igraph::V(graph_fp)[igraph::degree(graph_fp) == 0])
@@ -61,7 +67,7 @@
     ggplot2::theme(legend.position = "none")
 }
 
-#zinbsim
+# zinbsim
 #' @keywords internal
 #' @noRd
 
@@ -69,8 +75,8 @@
   p <- nrow(B)
   edges <- which(B == 1, arr.ind = TRUE)
   edges <- edges[edges[, 1] < edges[, 2], , drop = FALSE]
-  
-  A <- diag(1, nrow=p, ncol=p)
+
+  A <- diag(1, nrow = p, ncol = p)
   for (i in seq_len(nrow(edges))) {
     tmp <- rep(0, p)
     tmp[edges[i, ]] <- 1
@@ -84,7 +90,8 @@
 
 .simulate_counts_ZINB <- function(n, values, theta, pi) {
   matrix(rzinbinom(n * length(values), mu = rep(values, each = n), theta = theta, pi = pi),
-         nrow = length(values), ncol = n)
+    nrow = length(values), ncol = n
+  )
 }
 #' @keywords internal
 #' @noRd
@@ -106,7 +113,7 @@
   round(mat)
 }
 
-#pscores
+# pscores
 
 #' @keywords internal
 #' @noRd
@@ -115,16 +122,16 @@
   TN <- sum(pred_vec == 0 & gt_vec == 0)
   FP <- sum(pred_vec == 1 & gt_vec == 0)
   FN <- sum(pred_vec == 0 & gt_vec == 1)
-  
+
   TPR <- ifelse((TP + FN) > 0, TP / (TP + FN), 0)
   FPR <- ifelse((FP + TN) > 0, FP / (FP + TN), 0)
   Precision <- ifelse((TP + FP) > 0, TP / (TP + FP), 0)
   F1 <- ifelse((Precision + TPR) > 0, 2 * (Precision * TPR) / (Precision + TPR), 0)
-  
+
   denominator <- sqrt(as.numeric(TP + FP) * as.numeric(TP + FN) *
-                        as.numeric(TN + FP) * as.numeric(TN + FN))
+    as.numeric(TN + FP) * as.numeric(TN + FN))
   MCC <- ifelse(denominator > 0, (TP * TN - FP * FN) / denominator, 0)
-  
+
   data.frame(
     Predicted_Matrix = paste("Matrix", index),
     TP, TN, FP, FN, TPR, FPR, Precision, F1, MCC
@@ -134,27 +141,42 @@
 #' @noRd
 .plot_metrics_radar <- function(stats_df, metric_cols) {
   if (!all(metric_cols %in% colnames(stats_df))) stop("Missing metrics.")
-  sd <- as.data.frame(lapply(stats_df[, metric_cols, drop=FALSE],
-                             function(x) as.numeric(as.character(x))))
+  sd <- as.data.frame(lapply(
+    stats_df[, metric_cols, drop = FALSE],
+    function(x) as.numeric(as.character(x))
+  ))
   if ("MCC" %in% names(sd)) {
     neg <- which(sd$MCC < 0)
-    if (length(neg)) { message("Negative MCC, set to 0."); sd$MCC[neg] <- 0 }
+    if (length(neg)) {
+      message("Negative MCC, set to 0.")
+      sd$MCC[neg] <- 0
+    }
   }
-  ok <- colSums(is.finite(as.matrix(sd))) > 0; sd <- sd[, ok, drop=FALSE]
-  if (nrow(sd)==0 || ncol(sd)<2) { warning("Not enough metrics."); return(list(data=NULL, plot=NULL)) }
-  mx <- if (max(sd, na.rm=TRUE) <= 0.5) 0.5 else 1; mn <- 0
+  ok <- colSums(is.finite(as.matrix(sd))) > 0
+  sd <- sd[, ok, drop = FALSE]
+  if (nrow(sd) == 0 || ncol(sd) < 2) {
+    warning("Not enough metrics.")
+    return(list(data = NULL, plot = NULL))
+  }
+  mx <- if (max(sd, na.rm = TRUE) <= 0.5) 0.5 else 1
+  mn <- 0
   pd <- rbind(rep(mx, ncol(sd)), rep(mn, ncol(sd)), sd)
-  rownames(pd) <- c("Max","Min", stats_df$Predicted_Matrix)
-  labs <- pretty(c(mn, mx), n=5); cols <- grDevices::rainbow(nrow(sd))
-  graphics::par(mar=c(2,2,2,2))
-  fmsb::radarchart(data.frame(pd), axistype=2, pcol=cols, plty=1, plwd=2,
-                   cglcol="grey", caxislabels=labs, vlcex=1.1)
-  graphics::legend("topright", legend=stats_df$Predicted_Matrix,
-                   col=cols, lty=1, lwd=2)
-  list(data=pd, plot=grDevices::recordPlot())
+  rownames(pd) <- c("Max", "Min", stats_df$Predicted_Matrix)
+  labs <- pretty(c(mn, mx), n = 5)
+  cols <- grDevices::rainbow(nrow(sd))
+  graphics::par(mar = c(2, 2, 2, 2))
+  fmsb::radarchart(data.frame(pd),
+    axistype = 2, pcol = cols, plty = 1, plwd = 2,
+    cglcol = "grey", caxislabels = labs, vlcex = 1.1
+  )
+  graphics::legend("topright",
+    legend = stats_df$Predicted_Matrix,
+    col = cols, lty = 1, lwd = 2
+  )
+  list(data = pd, plot = grDevices::recordPlot())
 }
 
-#earlyj
+# earlyj
 #' @keywords internal
 #' @noRd
 
@@ -207,14 +229,14 @@
   do.call(cbind, modified)
 }
 
-#cutoff_adjacency
+# cutoff_adjacency
 #' @keywords internal
 #' @noRd
 
 .shuffle_matrix_rows <- function(mat) {
   shuffled <- t(apply(mat, 1, sample))
   rownames(shuffled) <- rownames(mat)
-  colnames(shuffled) <- colnames(mat)  
+  colnames(shuffled) <- colnames(mat)
   return(shuffled)
 }
 
@@ -247,7 +269,7 @@
   })
 }
 
-#plotROC
+# plotROC
 #' @keywords internal
 #' @noRd
 
@@ -305,7 +327,7 @@
 }
 
 
-#selgene
+# selgene
 #' @keywords internal
 #' @noRd
 
@@ -316,8 +338,10 @@
     slots_avail <- methods::slotNames(seurat_assay)
 
     if (!"data" %in% slots_avail) {
-      stop("Assay '", assay_name, "' has no 'data' slot. Available slots: ",
-           paste(slots_avail, collapse = ", "))
+      stop(
+        "Assay '", assay_name, "' has no 'data' slot. Available slots: ",
+        paste(slots_avail, collapse = ", ")
+      )
     }
     message("Using Seurat assay '", assay_name, "' slot 'data' (log-normalized).")
     return(seurat_assay@data)
@@ -328,8 +352,10 @@
     assay_to_use <- if (!is.null(assay)) assay else "logcounts"
 
     if (!assay_to_use %in% available_assays) {
-      stop("Requested assay '", assay_to_use, "' not found. Available assays: ",
-           paste(available_assays, collapse = ", "))
+      stop(
+        "Requested assay '", assay_to_use, "' not found. Available assays: ",
+        paste(available_assays, collapse = ", ")
+      )
     }
 
     message("Using SCE assay '", assay_to_use, "' (assumed log-normalized).")
@@ -395,7 +421,7 @@
 }
 
 
-#Infer_ networks
+# Infer_ networks
 #' @keywords internal
 #' @noRd
 
@@ -481,7 +507,7 @@
 }
 
 
-#This is community similarity
+# This is community similarity
 #' @keywords internal
 #' @noRd
 
@@ -544,14 +570,16 @@
   }
 }
 
-#This is edge_mining.R
+# This is edge_mining.R
 #' @keywords internal
 #' @noRd
 
 .identify_edges <- function(predicted, ground_truth, query_edge_types) {
   indices <- which(((predicted == 1) | (ground_truth == 1)) & upper.tri(predicted), arr.ind = TRUE)
 
-  if (nrow(indices) == 0) return(NULL)
+  if (nrow(indices) == 0) {
+    return(NULL)
+  }
 
   gene_pairs <- data.frame(
     gene1 = rownames(predicted)[indices[, "row"]],
@@ -565,7 +593,9 @@
 
   gene_pairs <- gene_pairs[gene_pairs$edge_type %in% query_edge_types, , drop = FALSE]
 
-  if (nrow(gene_pairs) == 0) return(NULL)
+  if (nrow(gene_pairs) == 0) {
+    return(NULL)
+  }
   return(gene_pairs)
 }
 #' @keywords internal
@@ -586,7 +616,9 @@
       },
       error = function(e) NULL
     )
-    if (!is.null(result)) return(result)
+    if (!is.null(result)) {
+      return(result)
+    }
     Sys.sleep(delay)
   }
 
@@ -606,12 +638,13 @@
   gene_pairs$pubmed_hits <- pubmed_info$pubmed_hits
   gene_pairs$PMIDs <- pubmed_info$PMIDs
   gene_pairs$query_status <- ifelse(is.na(gene_pairs$pubmed_hits), "error",
-                             ifelse(gene_pairs$pubmed_hits == 0, "no_hits", "hits_found"))
+    ifelse(gene_pairs$pubmed_hits == 0, "no_hits", "hits_found")
+  )
 
   return(gene_pairs)
 }
 
-#This is stringdb
+# This is stringdb
 #' @keywords internal
 #' @noRd
 
@@ -806,4 +839,3 @@
 
   return(pathway_results)
 }
-

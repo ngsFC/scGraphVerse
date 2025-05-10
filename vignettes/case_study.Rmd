@@ -23,10 +23,10 @@ This vignette demonstrates the **scGraphVerse** workflow on a two-sample B-cell 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>",
-    fig.width = 6,
-    fig.height = 5
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 5
 )
 library(scGraphVerse)
 library(Seurat)
@@ -57,7 +57,7 @@ pbmc2_sub <- subset(pbmc2, features = common_genes)
 
 # Filter to B cells
 b1 <- subset(pbmc1_sub, subset = CELL_TYPE == "B_cell")
- b2 <- subset(pbmc2_sub, subset = CELL_TYPE == "B_cell")
+b2 <- subset(pbmc2_sub, subset = CELL_TYPE == "B_cell")
 
 # List for multi-sample analysis
 bcell_list <- list(b1, b2)
@@ -83,12 +83,14 @@ wadj <- generate_adjacency(networks)
 # Symmetrize
 swadj <- symmetrize(wadj, weight_function = "mean")
 # Binary cutoff (top 5%)
-binary_adj <- cutoff_adjacency(count_matrices = bcell_list,
-                              weighted_adjm_list = swadj,
-                              n = 2,
-                              method = method,
-                              quantile_threshold = 0.95,
-                              nCores = 10)
+binary_adj <- cutoff_adjacency(
+  count_matrices = bcell_list,
+  weighted_adjm_list = swadj,
+  n = 2,
+  method = method,
+  quantile_threshold = 0.95,
+  nCores = 10
+)
 # Plot
 plotg(binary_adj)
 ```

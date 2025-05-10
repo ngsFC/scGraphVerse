@@ -88,12 +88,12 @@ sims <- zinb_simdata(
   n = 50,
   p = nodes,
   B = adj_truth,
-  mu_range = list(c(1,4), c(1,7), c(1,10)),
-  mu_noise = c(1,3,5),
-  theta = c(1,0.7,0.5),
-  pi = c(0.2,0.2,0.2),
+  mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
+  mu_noise = c(1, 3, 5),
+  theta = c(1, 0.7, 0.5),
+  pi = c(0.2, 0.2, 0.2),
   kmat = 3,
-  depth_range = c(0.8*nodes*3, 1.2*nodes*3)
+  depth_range = c(0.8 * nodes * 3, 1.2 * nodes * 3)
 )
 # Transpose to cells × genes
 count_matrices <- lapply(sims, t)

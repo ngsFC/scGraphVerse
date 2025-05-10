@@ -68,45 +68,44 @@ zinb_simdata <- function(n, p, B, mu_range, mu_noise, theta, pi, kmat = 1, depth
   stopifnot(length(mu_noise) == kmat, all(mu_noise >= 0))
   stopifnot(length(theta) == kmat, all(theta > 0))
   stopifnot(length(pi) == kmat, all(pi > 0 & pi < 1))
-  
+
   if (!is.na(depth_range[1])) {
     stopifnot(is.numeric(depth_range), length(depth_range) == 2, all(depth_range > 0), depth_range[1] < depth_range[2])
   }
-  
+
   gene_names <- rownames(B)
   cellID <- paste0("cell_", seq_len(n))
   B <- ifelse(B > 0, 1, 0)
   A_info <- .create_adjacency_expansion(B)
   A <- A_info$A
   edges <- A_info$edge_indices
-  
+
   B[edges] <- sample(seq(min(unlist(mu_range)), max(unlist(mu_range))), length(edges[, 1]), replace = TRUE)
   B <- (B | t(B)) * 1
-  
+
   matrices <- vector("list", kmat)
   for (k in seq_len(kmat)) {
     mu <- runif(p, mu_range[[k]][1], mu_range[[k]][2])
-    
+
     sigma <- B
     nonzero_sigma <- sigma[lower.tri(sigma) & sigma != 0]
 
     Y_mu <- c(mu, nonzero_sigma)
     Y <- .simulate_counts_ZINB(n, Y_mu, theta[k], pi[k])
     X <- A %*% Y
-    
+
     X <- X + .add_technical_noise(n, p, mu_noise[k], pi[k])
     X <- t(X)
-    
+
     if (!is.null(gene_names)) colnames(X) <- gene_names
     rownames(X) <- cellID
-    
+
     if (!is.na(depth_range[1])) {
       X <- .normalize_library_size(X, depth_range)
     }
-    
+
     matrices[[k]] <- X
   }
-  
+
   return(matrices)
 }
-

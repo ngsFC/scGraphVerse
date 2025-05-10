@@ -80,27 +80,27 @@ cutoff_adjacency <- function(count_matrices,
                              debug = FALSE) {
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "JRF"))
   weight_function <- match.fun(weight_function)
-  
+
   if (length(count_matrices) != length(weighted_adjm_list)) {
     stop("Length of count_matrices must match weighted_adjm_list.")
   }
-  
+
   count_matrices <- .convert_counts_list(count_matrices)
-  
+
   job_list <- expand.grid(matrix_idx = seq_along(count_matrices), shuffle_idx = seq_len(n))
   jobs <- lapply(seq_len(nrow(job_list)), function(i) {
     list(matrix_idx = job_list$matrix_idx[i], shuffle_idx = job_list$shuffle_idx[i])
   })
-  
+
   param_outer <- if (method == "JRF") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers = nCores)
-  
+
   results <- BiocParallel::bplapply(jobs, function(job) {
     mat_idx <- job$matrix_idx
     mat <- count_matrices[[mat_idx]]
     q_value <- .run_network_on_shuffled(mat, method, grnboost_modules, weight_function, quantile_threshold)
     list(matrix_idx = mat_idx, q_value = q_value)
   }, BPPARAM = param_outer)
-  
+
   cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
   binary_list <- .binarize_adjacency(weighted_adjm_list, cutoffs, method, debug)
   return(binary_list)

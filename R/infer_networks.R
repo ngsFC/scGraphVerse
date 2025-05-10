@@ -72,7 +72,7 @@ infer_networks <- function(count_matrices_list,
   method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
   count_matrices_list <- .convert_counts_list(count_matrices_list)
   n_matrices <- length(count_matrices_list)
-  
+
   if (method %in% c("GENIE3", "ZILGM")) {
     results <- vector("list", n_matrices)
     for (i in seq_len(n_matrices)) {
@@ -81,11 +81,11 @@ infer_networks <- function(count_matrices_list,
     }
     return(results)
   }
-  
+
   if (method == "JRF") {
     norm_list <- lapply(count_matrices_list, function(mat) t(scale(t(mat))))
     return(.run_jrf(norm_list, nCores))
   }
-  
+
   .run_parallel_networks(count_matrices_list, method, nCores, adjm, grnboost_modules)
 }

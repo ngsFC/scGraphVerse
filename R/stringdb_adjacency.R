@@ -57,7 +57,6 @@ stringdb_adjacency <- function(
     required_score = 400,
     keep_all_genes = TRUE,
     verbose = TRUE) {
-  
   if (!requireNamespace("STRINGdb", quietly = TRUE)) {
     stop("Package 'STRINGdb' is required. Please install it via Bioconductor.")
   }
@@ -69,19 +68,19 @@ stringdb_adjacency <- function(
   }
   if (length(genes) == 0) stop("Please provide at least one gene in 'genes'.")
   if (verbose) message("Initializing STRINGdb...")
-  
+
   string_db <- STRINGdb$new(
     version = "11.5",
     species = species,
     score_threshold = required_score,
     input_directory = ""
   )
-  
+
   if (verbose) message("Mapping genes to STRING IDs...")
   mapping <- .map_genes_to_string(string_db, genes)
   mapped_genes <- mapping$mapped
   unmapped_genes <- mapping$unmapped
-  
+
   if (verbose) {
     message("Mapped ", nrow(mapped_genes), " genes to STRING IDs.")
     if (length(unmapped_genes) > 0 && keep_all_genes) {
@@ -98,6 +97,6 @@ stringdb_adjacency <- function(
   if (verbose) message("Found ", nrow(interactions), " STRING physical interactions.")
   matrices <- .build_adjacency_matrices(interactions, mapped_genes, genes, keep_all_genes)
   if (verbose) message("Adjacency matrices constructed successfully.")
-  
+
   return(matrices)
 }

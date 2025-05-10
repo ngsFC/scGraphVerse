@@ -77,21 +77,21 @@ community_path <- function(adj_matrix,
   igraph::V(graph)$name <- gene_names
 
   if (verbose) message("Detecting communities...")
-  
+
   comm_res <- .detect_communities(graph, methods)
   best_method <- comm_res$best_method
   best_communities <- comm_res$best_communities
-  
+
   igraph::V(graph)$community <- as.factor(best_communities)
 
   non_isolated_nodes <- igraph::degree(graph) > 0
   if (plot) {
     .plot_communities(graph, best_method)
   }
-  
+
   if (verbose) message("Running pathway enrichment...")
   pathway_results <- .enrich_communities(graph, non_isolated_nodes, pathway_db, genes_path)
-  
+
   return(list(
     communities = list(best_method = best_method, membership = best_communities),
     pathways = pathway_results,

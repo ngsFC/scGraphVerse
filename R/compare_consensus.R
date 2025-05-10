@@ -54,9 +54,9 @@
 #'
 compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_plot = FALSE) {
   if (!is.matrix(consensus_matrix)) stop("consensus_matrix must be a binary adjacency matrix.")
-  
+
   use_STRINGdb <- is.null(reference_matrix)
-  
+
   if (use_STRINGdb) {
     if (is.null(rownames(consensus_matrix))) stop("consensus_matrix must have row names to query STRINGdb.")
     adj <- stringdb_adjacency(
@@ -67,29 +67,32 @@ compare_consensus <- function(consensus_matrix, reference_matrix = NULL, false_p
     )$binary
     reference_matrix <- symmetrize(list(adj[rownames(consensus_matrix), rownames(consensus_matrix)]), "mean")[[1]]
   }
-  
+
   if (!is.matrix(reference_matrix)) stop("reference_matrix must be a binary adjacency matrix.")
   if (!identical(dim(consensus_matrix), dim(reference_matrix))) stop("Matrices must have the same dimensions.")
-  
+
   graph_ref <- igraph::graph_from_adjacency_matrix(reference_matrix, mode = "undirected", diag = FALSE)
   graph_cons <- igraph::graph_from_adjacency_matrix(consensus_matrix, mode = "undirected", diag = FALSE)
-  
+
   ref_edges <- .edge_to_str(igraph::as_edgelist(graph_ref))
   cons_edges <- .edge_to_str(igraph::as_edgelist(graph_cons))
-  
+
   TP_label <- if (use_STRINGdb) "CE (Confirmed Edges)" else "TP (True Positives)"
   FN_label <- if (use_STRINGdb) "ME (Missing Edges)" else "FN (False Negatives)"
   FP_label <- if (use_STRINGdb) "EE (Extra Edges)" else "FP (False Positives)"
-  
+
   edge_colors <- ifelse(ref_edges %in% cons_edges, "red", "blue")
   plot_tp_fn <- .plot_tp_fn_graph(graph_ref, edge_colors, TP_label, FN_label)
-  
-  if (!false_plot) return(plot_tp_fn)
-  
+
+  if (!false_plot) {
+    return(plot_tp_fn)
+  }
+
   fp_edges <- setdiff(cons_edges, ref_edges)
-  if (length(fp_edges) == 0) return(plot_tp_fn)
-  
+  if (length(fp_edges) == 0) {
+    return(plot_tp_fn)
+  }
+
   plot_fp <- .plot_fp_graph(fp_edges, FP_label)
   return(patchwork::wrap_plots(plot_tp_fn, plot_fp, nrow = 1))
 }
-

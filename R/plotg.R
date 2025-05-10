@@ -40,30 +40,30 @@ plotg <- function(adj_matrix_list) {
   if (!requireNamespace("igraph", quietly = TRUE)) stop("The 'igraph' package is required but not installed.")
   if (!requireNamespace("ggraph", quietly = TRUE)) stop("The 'ggraph' package is required but not installed.")
   if (!requireNamespace("gridExtra", quietly = TRUE)) stop("The 'gridExtra' package is required but not installed.")
-  
+
   if (!is.list(adj_matrix_list)) stop("Input must be a list of adjacency matrices.")
-  
+
   plot_list <- list()
-  
+
   for (i in seq_along(adj_matrix_list)) {
     mat <- adj_matrix_list[[i]]
-    
+
     # Inline validation
     if (!is.matrix(mat) || nrow(mat) != ncol(mat) || !all(mat == t(mat))) {
       warning(sprintf("Skipping graph %d: Adjacency matrix must be square and symmetric.", i))
       next
     }
-    
+
     p <- .create_igraph_plot(mat, i)
     if (is.null(p)) {
       warning(sprintf("Skipping graph %d: No edges remaining after filtering.", i))
       next
     }
-    
+
     plot_list[[length(plot_list) + 1]] <- p
   }
-  
+
   if (length(plot_list) == 0) stop("No valid graphs were generated.")
-  
+
   gridExtra::grid.arrange(grobs = plot_list, ncol = ceiling(sqrt(length(plot_list))))
 }

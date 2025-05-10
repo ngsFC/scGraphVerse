@@ -23,4 +23,3 @@
   # Clean up if needed (e.g., unload dynamic libraries)
   library.dynam.unload("scGraphVerse", libpath)
 }
-
