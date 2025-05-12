@@ -12,7 +12,7 @@
 #'   \pkg{BiocParallel} backend.
 #'
 #' @return A list of symmetric matrices, where for each matrix
-#'   A[i, j] = A[j, i] for all i ≠ j.
+#'   \eqn{A[i, j] = A[j, i]} for all \eqn{i \neq j}.
 #'
 #' @details For each pair of off-diagonal elements (i, j) and (j, i):
 #'   \itemize{

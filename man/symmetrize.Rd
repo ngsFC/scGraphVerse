@@ -19,7 +19,7 @@ processing. Defaults to the number of available workers in the current
 }
 \value{
 A list of symmetric matrices, where for each matrix
-A\code{i, j} = A\code{j, i} for all i ≠ j.
+\eqn{A[i, j] = A[j, i]} for all \eqn{i \neq j}.
 }
 \description{
 Symmetrizes each square matrix in a list by ensuring entries (i, j) and
