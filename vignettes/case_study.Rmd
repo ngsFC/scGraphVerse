@@ -89,7 +89,7 @@ We infer GRNs using three algorithms. Replace `method` to switch.
 
 ```{r infer-networks}
 # Choose method: "GENIE3", "GRNBoost2", or "JRF"
-method <- "JRF"
+method <- "GENIE3"
 networks <- infer_networks(
     count_matrices_list = bcell_list,
     method = method,

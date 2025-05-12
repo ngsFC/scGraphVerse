@@ -122,7 +122,7 @@ and batch-specific regulatory edges.
 ```{r infer-jrf}
 networks_joint <- infer_networks(
     count_matrices_list = count_matrices,
-    method = "JRF",
+    method = "GENIE3",
     nCores = 10
 )
 # Weighted adjacency
@@ -156,7 +156,7 @@ binary_listj <- cutoff_adjacency(
     count_matrices = count_matrices,
     weighted_adjm_list = swadj_list,
     n = 2,
-    method = "JRF",
+    method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 10,
     debug = TRUE

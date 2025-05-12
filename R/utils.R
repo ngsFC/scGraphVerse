@@ -324,7 +324,7 @@
             res$q_value
         )
     }
-    percentile_values_by_matrix
+    percentile_vals
 }
 #' @keywords internal
 #' @noRd
