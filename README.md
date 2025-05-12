@@ -63,7 +63,7 @@ BiocManager::install("drisso/learn2count")
 
 # JRF (GitHub or archived CRAN)
 install.packages(
-  "https://cran.r-project.org/src/contrib/Archive/JRF/JRF.1-4.tar.gz", 
+  "https://cran.r-project.org/src/contrib/Archive/JRF/JRF_0.1-4.tar.gz", 
   repos = NULL, 
   type = "source"
 )

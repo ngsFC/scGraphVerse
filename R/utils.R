@@ -334,7 +334,7 @@
         avg_cutoff <- mean(cutoffs[[i]])
         if (debug) {
             message(sprintf(
-                "[Method: %s] Matrix %d → Cutoff = %.5f",
+                "[Method: %s] Matrix %d \u2192 Cutoff = %.5f",
                 method,
                 i,
                 avg_cutoff

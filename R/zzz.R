@@ -1,12 +1,12 @@
 .onAttach <- function(libname, pkgname) {
     msg <- paste(
-        cli::rule(center = "✨ Welcome to scGraphVerse ✨", line = 2),
+        cli::rule(center = "\u2728 Welcome to scGraphVerse \u2728", line = 2),
         "",
-        "🚀 Network analysis tools for single-cell data.",
+        "\U0001F680 Network analysis tools for single-cell data.",
         "",
         "This work is supported by the project:",
         "National Centre for HPC, Big Data and Quantum Computing",
-        "Funded by European Union – Next Generation EU – CN00000013 🇪🇺",
+        "Funded by European Union \u2013 Next Generation EU \u2013 CN00000013 \U0001F1EA\U0001F1FA",
         "CUP: B93C22000620006",
         "",
         cli::rule(line = 2),

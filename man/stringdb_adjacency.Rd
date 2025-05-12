@@ -19,7 +19,7 @@ stringdb_adjacency(
 \item{species}{Integer. NCBI taxonomy ID of the species. Default is
 \code{9606} (human).}
 
-\item{required_score}{Integer in \link{0,1000}. Minimum confidence score for
+\item{required_score}{Integer in \code{0,1000}. Minimum confidence score for
 interactions. Default is \code{400}.}
 
 \item{keep_all_genes}{Logical. If \code{TRUE} (default), includes all input

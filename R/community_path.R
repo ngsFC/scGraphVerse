@@ -49,23 +49,43 @@
 #' @export
 #'
 #' @examples
-#' set.seed(123)
-#' genes <- paste0("Gene", 1:30)
-#' mat <- matrix(runif(900), nrow = 30)
-#' mat[mat < 0.8] <- 0
-#' diag(mat) <- 0
-#' rownames(mat) <- colnames(mat) <- genes
-#'
-#' result <- community_path(
-#'     adj_matrix = mat,
-#'     methods    = "louvain",
-#'     pathway_db = "KEGG",
-#'     genes_path = 5,
-#'     plot       = FALSE,
-#'     verbose    = FALSE
+#' genes <- c(
+#'     "TP53",   "BRCA1", "EGFR",   "MYC",     "CDKN1A",
+#'     "BCL2",   "MDM2",  "PTEN",   "AKT1",    "MAPK1"
 #' )
 #'
-#' head(result$communities$membership)
+#' adj <- matrix(
+#'     0,
+#'     nrow = length(genes),
+#'     ncol = length(genes),
+#'     dimnames = list(genes, genes)
+#' )
+#'
+#' edge_list <- list(
+#'     c("TP53", "MDM2"),
+#'     c("TP53", "CDKN1A"),
+#'     c("BRCA1", "BCL2"),
+#'     c("PTEN", "AKT1"),
+#'     c("EGFR", "MAPK1"),
+#'     c("MYC", "CDKN1A"),
+#'     c("MYC", "BCL2"),
+#'     c("AKT1", "MAPK1")
+#' )
+#'
+#' for (e in edge_list) {
+#'     adj[e[1], e[2]] <- 1
+#'     adj[e[2], e[1]] <- 1
+#' }
+#'
+#' diag(adj) <- 0
+#' result <- community_path(
+#'     adj_matrix = adj,
+#'     methods    = "louvain",
+#'     pathway_db = "KEGG",
+#'     genes_path = 2,
+#'     plot       = TRUE,
+#'     verbose    = TRUE
+#' )
 community_path <- function(
     adj_matrix,
     methods = "louvain",
