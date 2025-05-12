@@ -83,22 +83,40 @@ on a two-sample B-cell single-cell RNA-seq dataset. We show how to:</p>
 <p>We use two public PBMC Seurat objects containing whole-blood samples.
 Our goal is to focus on healthy B cells and a common gene set.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Download URLs</span></span>
-<span><span class="va">url1</span> <span class="op">&lt;-</span> <span class="st">"https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"</span></span>
-<span><span class="va">url2</span> <span class="op">&lt;-</span> <span class="st">"https://www.dropbox.com/s/grt5371v5qarn54/SCA_scRNASEQ_TISSUE_BLOOD.RDS?dl=1"</span></span>
-<span></span>
+<code class="sourceCode R"><span><span class="va">urls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    url1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>        <span class="st">"https://www.dropbox.com/s/r8qwsng79rhp9gf/"</span>,</span>
+<span>        <span class="st">"SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    url2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>        <span class="st">"https://www.dropbox.com/s/grt5371v5qarn54/"</span>,</span>
+<span>        <span class="st">"SCA_scRNASEQ_TISSUE_BLOOD.RDS?dl=1"</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co"># Load Seurat objects</span></span>
-<span><span class="va">pbmc1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">url1</span><span class="op">)</span></span>
-<span><span class="va">pbmc2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">url2</span><span class="op">)</span></span>
+<span><span class="va">pbmc1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">urls</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">pbmc2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">urls</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Select top variable genes for B cells, removing ribosomal/mitochondrial</span></span>
-<span><span class="va">genes1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selgene.html">selgene</a></span><span class="op">(</span><span class="va">pbmc1</span>, top_n <span class="op">=</span> <span class="fl">150</span>, cell_type <span class="op">=</span> <span class="st">"B_cell"</span>, cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>, remove_rib <span class="op">=</span> <span class="cn">TRUE</span>, remove_mt <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">genes1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selgene.html">selgene</a></span><span class="op">(</span><span class="va">pbmc1</span>,</span>
+<span>    top_n <span class="op">=</span> <span class="fl">150</span>,</span>
+<span>    cell_type <span class="op">=</span> <span class="st">"B_cell"</span>,</span>
+<span>    cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>,</span>
+<span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Using Seurat assay 'RNA' slot 'data' (log-normalized).</span></span>
 <span><span class="co">#&gt; Subsetted to 197 cells where CELL_TYPE = 'B_cell'.</span></span>
 <span><span class="co">#&gt; Removed mitochondrial genes matching '^MT-'.</span></span>
 <span><span class="co">#&gt; Removed ribosomal genes matching '^RP[SL]'.</span></span>
 <span><span class="co">#&gt; Top 150 genes selected based on mean expression.</span></span>
-<span><span class="va">genes2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selgene.html">selgene</a></span><span class="op">(</span><span class="va">pbmc2</span>, top_n <span class="op">=</span> <span class="fl">150</span>, cell_type <span class="op">=</span> <span class="st">"B_cell"</span>, cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>, remove_rib <span class="op">=</span> <span class="cn">TRUE</span>, remove_mt <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">genes2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selgene.html">selgene</a></span><span class="op">(</span><span class="va">pbmc2</span>,</span>
+<span>    top_n <span class="op">=</span> <span class="fl">150</span>,</span>
+<span>    cell_type <span class="op">=</span> <span class="st">"B_cell"</span>,</span>
+<span>    cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>,</span>
+<span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Using Seurat assay 'RNA' slot 'data' (log-normalized).</span></span>
 <span><span class="co">#&gt; Subsetted to 369 cells where CELL_TYPE = 'B_cell'.</span></span>
 <span><span class="co">#&gt; Removed mitochondrial genes matching '^MT-'.</span></span>
@@ -112,7 +130,7 @@ Our goal is to focus on healthy B cells and a common gene set.</p>
 <span></span>
 <span><span class="co"># Filter to B cells</span></span>
 <span><span class="va">b1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">pbmc1_sub</span>, subset <span class="op">=</span> <span class="va">CELL_TYPE</span> <span class="op">==</span> <span class="st">"B_cell"</span><span class="op">)</span></span>
-<span> <span class="va">b2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">pbmc2_sub</span>, subset <span class="op">=</span> <span class="va">CELL_TYPE</span> <span class="op">==</span> <span class="st">"B_cell"</span><span class="op">)</span></span>
+<span><span class="va">b2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">pbmc2_sub</span>, subset <span class="op">=</span> <span class="va">CELL_TYPE</span> <span class="op">==</span> <span class="st">"B_cell"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># List for multi-sample analysis</span></span>
 <span><span class="va">bcell_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">b1</span>, <span class="va">b2</span><span class="op">)</span></span></code></pre></div>
@@ -124,8 +142,12 @@ Our goal is to focus on healthy B cells and a common gene set.</p>
 switch.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Choose method: "GENIE3", "GRNBoost2", or "JRF"</span></span>
-<span><span class="va">method</span> <span class="op">&lt;-</span> <span class="st">"JRF"</span></span>
-<span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infer_networks.html">infer_networks</a></span><span class="op">(</span>count_matrices_list <span class="op">=</span> <span class="va">bcell_list</span>, method <span class="op">=</span> <span class="va">method</span>, nCores <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">method</span> <span class="op">&lt;-</span> <span class="st">"GENIE3"</span></span>
+<span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infer_networks.html">infer_networks</a></span><span class="op">(</span></span>
+<span>    count_matrices_list <span class="op">=</span> <span class="va">bcell_list</span>,</span>
+<span>    method <span class="op">=</span> <span class="va">method</span>,</span>
+<span>    nCores <span class="op">=</span> <span class="fl">10</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: The `slot` argument of `GetAssayData()` is deprecated as of SeuratObject 5.0.0.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use the `layer` argument instead.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">scGraphVerse</span> package.</span></span>
@@ -137,20 +159,22 @@ switch.</p>
 <div class="section level3">
 <h3 id="building-adjacency-matrices">2.1. Building Adjacency Matrices<a class="anchor" aria-label="anchor" href="#building-adjacency-matrices"></a>
 </h3>
-<p>Convert edge lists to weighted matrices, symmetrize, and threshold to
-binary networks.</p>
+<p>Convert edge lists to weighted matrices, symmetrize, and apply
+threshold.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Weighted adjacency</span></span>
 <span><span class="va">wadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span>
 <span><span class="co"># Symmetrize</span></span>
 <span><span class="va">swadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span>
 <span><span class="co"># Binary cutoff (top 5%)</span></span>
-<span><span class="va">binary_adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span>count_matrices <span class="op">=</span> <span class="va">bcell_list</span>,</span>
-<span>                              weighted_adjm_list <span class="op">=</span> <span class="va">swadj</span>,</span>
-<span>                              n <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>                              method <span class="op">=</span> <span class="va">method</span>,</span>
-<span>                              quantile_threshold <span class="op">=</span> <span class="fl">0.95</span>,</span>
-<span>                              nCores <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">binary_adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span>
+<span>    count_matrices <span class="op">=</span> <span class="va">bcell_list</span>,</span>
+<span>    weighted_adjm_list <span class="op">=</span> <span class="va">swadj</span>,</span>
+<span>    n <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    method <span class="op">=</span> <span class="va">method</span>,</span>
+<span>    quantile_threshold <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>    nCores <span class="op">=</span> <span class="fl">10</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co"># Plot</span></span>
 <span><span class="fu"><a href="../reference/plotg.html">plotg</a></span><span class="op">(</span><span class="va">binary_adj</span><span class="op">)</span></span></code></pre></div>
 <p><img src="case_study_files/figure-html/adjacency-1.png" width="576"></p>
@@ -172,7 +196,7 @@ modules.</p>
 <span><span class="co">#&gt; Initializing STRINGdb...</span></span>
 <span><span class="co">#&gt; Mapping genes to STRING IDs...</span></span>
 <span><span class="co">#&gt; Mapped 116 genes to STRING IDs.</span></span>
-<span><span class="co">#&gt; Retrieving **physical** interactions from STRING API...</span></span>
+<span><span class="co">#&gt; Retrieving physical interactions from STRING API...</span></span>
 <span><span class="co">#&gt; Found 71 STRING physical interactions.</span></span>
 <span><span class="co">#&gt; Adjacency matrices constructed successfully.</span></span></code></pre></div>
 <p><img src="case_study_files/figure-html/consensus-2.png" width="576"></p>
@@ -187,7 +211,6 @@ modules.</p>
 <span><span class="co">#&gt; Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...</span></span>
 <span><span class="co">#&gt; Reading KEGG annotation online: "https://rest.kegg.jp/list/pathway/hsa"...</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
-<span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span></code></pre>
 </div>
 <div class="section level2">
@@ -196,17 +219,25 @@ modules.</p>
 <p>Fetch high-confidence interactions from STRING and evaluate true
 positives.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">str</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stringdb_adjacency.html">stringdb_adjacency</a></span><span class="op">(</span>genes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span>, species <span class="op">=</span> <span class="fl">9606</span>, required_score <span class="op">=</span> <span class="fl">900</span>, keep_all_genes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">$</span><span class="va">binary</span></span>
+<code class="sourceCode R"><span><span class="va">str</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stringdb_adjacency.html">stringdb_adjacency</a></span><span class="op">(</span></span>
+<span>    genes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span>,</span>
+<span>    species <span class="op">=</span> <span class="fl">9606</span>,</span>
+<span>    required_score <span class="op">=</span> <span class="fl">900</span>,</span>
+<span>    keep_all_genes <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span><span class="op">$</span><span class="va">binary</span></span>
 <span><span class="co">#&gt; Initializing STRINGdb...</span></span>
 <span><span class="co">#&gt; Mapping genes to STRING IDs...</span></span>
 <span><span class="co">#&gt; Mapped 116 genes to STRING IDs.</span></span>
-<span><span class="co">#&gt; Retrieving **physical** interactions from STRING API...</span></span>
+<span><span class="co">#&gt; Retrieving physical interactions from STRING API...</span></span>
 <span><span class="co">#&gt; Found 71 STRING physical interactions.</span></span>
 <span><span class="co">#&gt; Adjacency matrices constructed successfully.</span></span>
 <span><span class="va">ground_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">str</span><span class="op">)</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span></span>
 <span><span class="co"># Edge mining: TP rates</span></span>
-<span><span class="va">em</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/edge_mining.html">edge_mining</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span>, query_edge_types <span class="op">=</span> <span class="st">"TP"</span>, ground_truth <span class="op">=</span> <span class="va">ground_truth</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">em</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/edge_mining.html">edge_mining</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span>,</span>
+<span>    query_edge_types <span class="op">=</span> <span class="st">"TP"</span>,</span>
+<span>    ground_truth <span class="op">=</span> <span class="va">ground_truth</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="conclusion">5. Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
@@ -244,10 +275,11 @@ prior networks.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] lubridate_1.9.4    forcats_1.0.0      stringr_1.5.1      dplyr_1.1.4       </span></span>
-<span><span class="co">#&gt;  [5] purrr_1.0.4        readr_2.1.5        tidyr_1.3.1        tibble_3.2.1      </span></span>
-<span><span class="co">#&gt;  [9] ggplot2_3.5.2      tidyverse_2.0.0    Seurat_5.3.0       SeuratObject_5.1.0</span></span>
-<span><span class="co">#&gt; [13] sp_2.2-0           scGraphVerse_0.1.0 BiocStyle_2.34.0  </span></span>
+<span><span class="co">#&gt;  [1] doRNG_1.8.6.2      rngtools_1.5.2     foreach_1.5.2      lubridate_1.9.4   </span></span>
+<span><span class="co">#&gt;  [5] forcats_1.0.0      stringr_1.5.1      dplyr_1.1.4        purrr_1.0.4       </span></span>
+<span><span class="co">#&gt;  [9] readr_2.1.5        tidyr_1.3.1        tibble_3.2.1       ggplot2_3.5.2     </span></span>
+<span><span class="co">#&gt; [13] tidyverse_2.0.0    Seurat_5.3.0       SeuratObject_5.1.0 sp_2.2-0          </span></span>
+<span><span class="co">#&gt; [17] scGraphVerse_0.1.0 BiocStyle_2.34.0  </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;   [1] IRanges_2.40.1              R.methodsS3_1.8.2          </span></span>
@@ -261,18 +293,18 @@ prior networks.</p>
 <span><span class="co">#&gt;  [17] parallelly_1.43.0           hdrcde_3.4                 </span></span>
 <span><span class="co">#&gt;  [19] MASS_7.3-54                 pkgdown_2.1.2              </span></span>
 <span><span class="co">#&gt;  [21] reshape2_1.4.4              httpuv_1.6.16              </span></span>
-<span><span class="co">#&gt;  [23] foreach_1.5.2               BiocGenerics_0.52.0        </span></span>
-<span><span class="co">#&gt;  [25] qvalue_2.38.0               withr_3.0.2                </span></span>
-<span><span class="co">#&gt;  [27] xfun_0.52                   ggfun_0.1.8                </span></span>
-<span><span class="co">#&gt;  [29] ggpubr_0.6.0                survival_3.2-11            </span></span>
-<span><span class="co">#&gt;  [31] memoise_2.0.1               clusterProfiler_4.14.6     </span></span>
-<span><span class="co">#&gt;  [33] gson_0.1.0                  systemfonts_1.2.2          </span></span>
-<span><span class="co">#&gt;  [35] networkD3_0.4.1             ragg_1.4.0                 </span></span>
-<span><span class="co">#&gt;  [37] tidytree_0.4.6              zoo_1.8-14                 </span></span>
-<span><span class="co">#&gt;  [39] gtools_3.9.5                pbapply_1.7-2              </span></span>
-<span><span class="co">#&gt;  [41] R.oo_1.27.0                 Formula_1.2-6              </span></span>
-<span><span class="co">#&gt;  [43] KEGGREST_1.46.0             promises_1.3.2             </span></span>
-<span><span class="co">#&gt;  [45] httr_1.4.7                  rstatix_0.7.2              </span></span>
+<span><span class="co">#&gt;  [23] BiocGenerics_0.52.0         qvalue_2.38.0              </span></span>
+<span><span class="co">#&gt;  [25] withr_3.0.2                 xfun_0.52                  </span></span>
+<span><span class="co">#&gt;  [27] ggfun_0.1.8                 ggpubr_0.6.0               </span></span>
+<span><span class="co">#&gt;  [29] survival_3.2-11             memoise_2.0.1              </span></span>
+<span><span class="co">#&gt;  [31] clusterProfiler_4.14.6      gson_0.1.0                 </span></span>
+<span><span class="co">#&gt;  [33] systemfonts_1.2.2           networkD3_0.4.1            </span></span>
+<span><span class="co">#&gt;  [35] ragg_1.4.0                  tidytree_0.4.6             </span></span>
+<span><span class="co">#&gt;  [37] zoo_1.8-14                  gtools_3.9.5               </span></span>
+<span><span class="co">#&gt;  [39] pbapply_1.7-2               R.oo_1.27.0                </span></span>
+<span><span class="co">#&gt;  [41] Formula_1.2-6               KEGGREST_1.46.0            </span></span>
+<span><span class="co">#&gt;  [43] promises_1.3.2              httr_1.4.7                 </span></span>
+<span><span class="co">#&gt;  [45] GENIE3_1.28.0               rstatix_0.7.2              </span></span>
 <span><span class="co">#&gt;  [47] globals_0.17.0              hash_2.2.6.3               </span></span>
 <span><span class="co">#&gt;  [49] fitdistrplus_1.2-2          fmsb_0.7.6                 </span></span>
 <span><span class="co">#&gt;  [51] rstudioapi_0.17.1           UCSC.utils_1.2.0           </span></span>
@@ -283,95 +315,95 @@ prior networks.</p>
 <span><span class="co">#&gt;  [61] polyclip_1.10-7             GenomeInfoDbData_1.2.13    </span></span>
 <span><span class="co">#&gt;  [63] SparseArray_1.6.2           xtable_1.8-4               </span></span>
 <span><span class="co">#&gt;  [65] desc_1.4.3                  pracma_2.4.4               </span></span>
-<span><span class="co">#&gt;  [67] doParallel_1.0.17           JRF_0.1-4                  </span></span>
-<span><span class="co">#&gt;  [69] evaluate_1.0.3              S4Arrays_1.6.0             </span></span>
-<span><span class="co">#&gt;  [71] hms_1.1.3                   GenomicRanges_1.58.0       </span></span>
-<span><span class="co">#&gt;  [73] bookdown_0.43               irlba_2.3.5.1              </span></span>
-<span><span class="co">#&gt;  [75] colorspace_2.1-1            ROCR_1.0-11                </span></span>
-<span><span class="co">#&gt;  [77] readxl_1.4.5                reticulate_1.42.0          </span></span>
-<span><span class="co">#&gt;  [79] spatstat.data_3.1-6         magrittr_2.0.3             </span></span>
-<span><span class="co">#&gt;  [81] lmtest_0.9-40               later_1.4.2                </span></span>
-<span><span class="co">#&gt;  [83] viridis_0.6.5               ggtree_3.14.0              </span></span>
-<span><span class="co">#&gt;  [85] lattice_0.20-44             spatstat.geom_3.3-6        </span></span>
-<span><span class="co">#&gt;  [87] future.apply_1.11.3         scattermore_1.2            </span></span>
-<span><span class="co">#&gt;  [89] XML_3.99-0.18               cowplot_1.1.3              </span></span>
-<span><span class="co">#&gt;  [91] matrixStats_1.5.0           RcppAnnoy_0.0.22           </span></span>
-<span><span class="co">#&gt;  [93] class_7.3-19                pillar_1.10.2              </span></span>
-<span><span class="co">#&gt;  [95] nlme_3.1-152                iterators_1.0.14           </span></span>
-<span><span class="co">#&gt;  [97] caTools_1.18.3              compiler_4.4.2             </span></span>
-<span><span class="co">#&gt;  [99] RSpectra_0.16-2             stringi_1.8.7              </span></span>
-<span><span class="co">#&gt; [101] DescTools_0.99.60           tensor_1.5                 </span></span>
-<span><span class="co">#&gt; [103] SummarizedExperiment_1.36.0 plyr_1.8.9                 </span></span>
-<span><span class="co">#&gt; [105] fda_6.2.0                   crayon_1.5.3               </span></span>
-<span><span class="co">#&gt; [107] abind_1.4-8                 gridGraphics_0.5-1         </span></span>
-<span><span class="co">#&gt; [109] chron_2.3-62                haven_2.5.4                </span></span>
-<span><span class="co">#&gt; [111] graphlayouts_1.2.2          org.Hs.eg.db_3.20.0        </span></span>
-<span><span class="co">#&gt; [113] bit_4.6.0                   rootSolve_1.8.2.4          </span></span>
-<span><span class="co">#&gt; [115] fastmatch_1.1-6             codetools_0.2-18           </span></span>
-<span><span class="co">#&gt; [117] textshaping_1.0.0           bslib_0.9.0                </span></span>
-<span><span class="co">#&gt; [119] e1071_1.7-16                lmom_3.2                   </span></span>
-<span><span class="co">#&gt; [121] fds_1.8                     plotly_4.10.4              </span></span>
-<span><span class="co">#&gt; [123] mime_0.13                   multinet_4.2.2             </span></span>
-<span><span class="co">#&gt; [125] splines_4.4.2               Rcpp_1.0.14                </span></span>
-<span><span class="co">#&gt; [127] fastDummies_1.7.5           cellranger_1.1.0           </span></span>
-<span><span class="co">#&gt; [129] datastructures_0.2.9        knitr_1.50                 </span></span>
-<span><span class="co">#&gt; [131] blob_1.2.4                  robin_2.1.0                </span></span>
-<span><span class="co">#&gt; [133] fs_1.6.6                    listenv_0.9.1              </span></span>
-<span><span class="co">#&gt; [135] expm_1.0-0                  ggsignif_0.6.4             </span></span>
-<span><span class="co">#&gt; [137] ggplotify_0.1.2             sqldf_0.4-11               </span></span>
-<span><span class="co">#&gt; [139] Matrix_1.7-3                tzdb_0.5.0                 </span></span>
-<span><span class="co">#&gt; [141] tweenr_2.0.3                pkgconfig_2.0.3            </span></span>
-<span><span class="co">#&gt; [143] tools_4.4.2                 cachem_1.1.0               </span></span>
-<span><span class="co">#&gt; [145] RSQLite_2.3.9               viridisLite_0.4.2          </span></span>
-<span><span class="co">#&gt; [147] DBI_1.2.3                   distributions3_0.2.2       </span></span>
-<span><span class="co">#&gt; [149] graphite_1.52.0             fastmap_1.2.0              </span></span>
-<span><span class="co">#&gt; [151] rmarkdown_2.29              scales_1.3.0               </span></span>
-<span><span class="co">#&gt; [153] grid_4.4.2                  ica_1.0-3                  </span></span>
-<span><span class="co">#&gt; [155] broom_1.0.8                 sass_0.4.10                </span></span>
-<span><span class="co">#&gt; [157] patchwork_1.3.0             INetTool_0.1.0             </span></span>
-<span><span class="co">#&gt; [159] BiocManager_1.30.25         dotCall64_1.2              </span></span>
-<span><span class="co">#&gt; [161] graph_1.84.1                carData_3.0-5              </span></span>
-<span><span class="co">#&gt; [163] RANN_2.6.2                  farver_2.1.2               </span></span>
-<span><span class="co">#&gt; [165] tidygraph_1.3.1             gsubfn_0.7                 </span></span>
-<span><span class="co">#&gt; [167] yaml_2.3.10                 deSolve_1.40               </span></span>
-<span><span class="co">#&gt; [169] MatrixGenerics_1.18.1       cli_3.6.5                  </span></span>
-<span><span class="co">#&gt; [171] stats4_4.4.2                lifecycle_1.0.4            </span></span>
-<span><span class="co">#&gt; [173] askpass_1.2.1               uwot_0.2.3                 </span></span>
-<span><span class="co">#&gt; [175] Biobase_2.66.0              rainbow_3.8                </span></span>
-<span><span class="co">#&gt; [177] mvtnorm_1.3-3               backports_1.5.0            </span></span>
-<span><span class="co">#&gt; [179] BiocParallel_1.40.2         timechange_0.3.0           </span></span>
-<span><span class="co">#&gt; [181] gtable_0.3.6                ggridges_0.5.6             </span></span>
-<span><span class="co">#&gt; [183] progressr_0.15.1            parallel_4.4.2             </span></span>
-<span><span class="co">#&gt; [185] pROC_1.18.5                 ape_5.8-1                  </span></span>
-<span><span class="co">#&gt; [187] jsonlite_2.0.0              RcppHNSW_0.6.0             </span></span>
-<span><span class="co">#&gt; [189] bitops_1.0-9                bit64_4.6.0-1              </span></span>
-<span><span class="co">#&gt; [191] Rtsne_0.17                  yulab.utils_0.2.0          </span></span>
-<span><span class="co">#&gt; [193] ReactomePA_1.50.0           spatstat.utils_3.1-3       </span></span>
-<span><span class="co">#&gt; [195] proto_1.0.0                 jquerylib_0.1.4            </span></span>
-<span><span class="co">#&gt; [197] GOSemSim_2.32.0             spatstat.univar_3.1-2      </span></span>
-<span><span class="co">#&gt; [199] R.utils_2.13.0              lazyeval_0.2.2             </span></span>
-<span><span class="co">#&gt; [201] shiny_1.10.0                htmltools_0.5.8.1          </span></span>
-<span><span class="co">#&gt; [203] enrichplot_1.26.6           GO.db_3.20.0               </span></span>
-<span><span class="co">#&gt; [205] sctransform_0.4.1           data.tree_1.1.0            </span></span>
-<span><span class="co">#&gt; [207] rappdirs_0.3.3              glue_1.8.0                 </span></span>
-<span><span class="co">#&gt; [209] STRINGdb_2.18.0             spam_2.11-1                </span></span>
-<span><span class="co">#&gt; [211] XVector_0.46.0              qpdf_1.3.5                 </span></span>
-<span><span class="co">#&gt; [213] RCurl_1.98-1.17             treeio_1.30.0              </span></span>
-<span><span class="co">#&gt; [215] mclust_6.1.1                ks_1.14.3                  </span></span>
-<span><span class="co">#&gt; [217] gridExtra_2.3               boot_1.3-28                </span></span>
-<span><span class="co">#&gt; [219] igraph_2.1.4                R6_2.6.1                   </span></span>
-<span><span class="co">#&gt; [221] fdatest_2.1.1               SingleCellExperiment_1.28.1</span></span>
-<span><span class="co">#&gt; [223] gplots_3.2.0                labeling_0.4.3             </span></span>
-<span><span class="co">#&gt; [225] cluster_2.1.2               aplot_0.2.5                </span></span>
-<span><span class="co">#&gt; [227] GenomeInfoDb_1.42.3         DelayedArray_0.32.0        </span></span>
-<span><span class="co">#&gt; [229] tidyselect_1.2.1            plotrix_3.8-4              </span></span>
-<span><span class="co">#&gt; [231] ggforce_0.4.2               car_3.1-3                  </span></span>
-<span><span class="co">#&gt; [233] AnnotationDbi_1.68.0        future_1.40.0              </span></span>
-<span><span class="co">#&gt; [235] munsell_0.5.1               KernSmooth_2.23-20         </span></span>
-<span><span class="co">#&gt; [237] data.table_1.17.0           htmlwidgets_1.6.4          </span></span>
-<span><span class="co">#&gt; [239] fgsea_1.32.4                RColorBrewer_1.1-3         </span></span>
-<span><span class="co">#&gt; [241] rlang_1.1.6                 spatstat.sparse_3.1-0      </span></span>
-<span><span class="co">#&gt; [243] spatstat.explore_3.4-2      rentrez_1.2.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [67] doParallel_1.0.17           evaluate_1.0.3             </span></span>
+<span><span class="co">#&gt;  [69] S4Arrays_1.6.0              hms_1.1.3                  </span></span>
+<span><span class="co">#&gt;  [71] GenomicRanges_1.58.0        bookdown_0.43              </span></span>
+<span><span class="co">#&gt;  [73] irlba_2.3.5.1               colorspace_2.1-1           </span></span>
+<span><span class="co">#&gt;  [75] ROCR_1.0-11                 readxl_1.4.5               </span></span>
+<span><span class="co">#&gt;  [77] reticulate_1.42.0           spatstat.data_3.1-6        </span></span>
+<span><span class="co">#&gt;  [79] magrittr_2.0.3              lmtest_0.9-40              </span></span>
+<span><span class="co">#&gt;  [81] later_1.4.2                 viridis_0.6.5              </span></span>
+<span><span class="co">#&gt;  [83] ggtree_3.14.0               lattice_0.20-44            </span></span>
+<span><span class="co">#&gt;  [85] spatstat.geom_3.3-6         future.apply_1.11.3        </span></span>
+<span><span class="co">#&gt;  [87] scattermore_1.2             XML_3.99-0.18              </span></span>
+<span><span class="co">#&gt;  [89] cowplot_1.1.3               matrixStats_1.5.0          </span></span>
+<span><span class="co">#&gt;  [91] RcppAnnoy_0.0.22            class_7.3-19               </span></span>
+<span><span class="co">#&gt;  [93] pillar_1.10.2               nlme_3.1-152               </span></span>
+<span><span class="co">#&gt;  [95] iterators_1.0.14            caTools_1.18.3             </span></span>
+<span><span class="co">#&gt;  [97] compiler_4.4.2              RSpectra_0.16-2            </span></span>
+<span><span class="co">#&gt;  [99] stringi_1.8.7               DescTools_0.99.60          </span></span>
+<span><span class="co">#&gt; [101] tensor_1.5                  SummarizedExperiment_1.36.0</span></span>
+<span><span class="co">#&gt; [103] plyr_1.8.9                  fda_6.2.0                  </span></span>
+<span><span class="co">#&gt; [105] crayon_1.5.3                abind_1.4-8                </span></span>
+<span><span class="co">#&gt; [107] gridGraphics_0.5-1          chron_2.3-62               </span></span>
+<span><span class="co">#&gt; [109] haven_2.5.4                 graphlayouts_1.2.2         </span></span>
+<span><span class="co">#&gt; [111] org.Hs.eg.db_3.20.0         bit_4.6.0                  </span></span>
+<span><span class="co">#&gt; [113] rootSolve_1.8.2.4           fastmatch_1.1-6            </span></span>
+<span><span class="co">#&gt; [115] codetools_0.2-18            textshaping_1.0.0          </span></span>
+<span><span class="co">#&gt; [117] bslib_0.9.0                 e1071_1.7-16               </span></span>
+<span><span class="co">#&gt; [119] lmom_3.2                    fds_1.8                    </span></span>
+<span><span class="co">#&gt; [121] plotly_4.10.4               mime_0.13                  </span></span>
+<span><span class="co">#&gt; [123] multinet_4.2.2              splines_4.4.2              </span></span>
+<span><span class="co">#&gt; [125] Rcpp_1.0.14                 fastDummies_1.7.5          </span></span>
+<span><span class="co">#&gt; [127] cellranger_1.1.0            datastructures_0.2.9       </span></span>
+<span><span class="co">#&gt; [129] knitr_1.50                  blob_1.2.4                 </span></span>
+<span><span class="co">#&gt; [131] robin_2.1.0                 fs_1.6.6                   </span></span>
+<span><span class="co">#&gt; [133] listenv_0.9.1               expm_1.0-0                 </span></span>
+<span><span class="co">#&gt; [135] ggsignif_0.6.4              ggplotify_0.1.2            </span></span>
+<span><span class="co">#&gt; [137] sqldf_0.4-11                Matrix_1.7-3               </span></span>
+<span><span class="co">#&gt; [139] tzdb_0.5.0                  tweenr_2.0.3               </span></span>
+<span><span class="co">#&gt; [141] pkgconfig_2.0.3             tools_4.4.2                </span></span>
+<span><span class="co">#&gt; [143] cachem_1.1.0                RSQLite_2.3.9              </span></span>
+<span><span class="co">#&gt; [145] viridisLite_0.4.2           DBI_1.2.3                  </span></span>
+<span><span class="co">#&gt; [147] distributions3_0.2.2        graphite_1.52.0            </span></span>
+<span><span class="co">#&gt; [149] fastmap_1.2.0               rmarkdown_2.29             </span></span>
+<span><span class="co">#&gt; [151] scales_1.3.0                grid_4.4.2                 </span></span>
+<span><span class="co">#&gt; [153] ica_1.0-3                   broom_1.0.8                </span></span>
+<span><span class="co">#&gt; [155] sass_0.4.10                 patchwork_1.3.0            </span></span>
+<span><span class="co">#&gt; [157] INetTool_0.1.0              BiocManager_1.30.25        </span></span>
+<span><span class="co">#&gt; [159] dotCall64_1.2               graph_1.84.1               </span></span>
+<span><span class="co">#&gt; [161] carData_3.0-5               RANN_2.6.2                 </span></span>
+<span><span class="co">#&gt; [163] farver_2.1.2                tidygraph_1.3.1            </span></span>
+<span><span class="co">#&gt; [165] gsubfn_0.7                  yaml_2.3.10                </span></span>
+<span><span class="co">#&gt; [167] deSolve_1.40                MatrixGenerics_1.18.1      </span></span>
+<span><span class="co">#&gt; [169] cli_3.6.5                   stats4_4.4.2               </span></span>
+<span><span class="co">#&gt; [171] lifecycle_1.0.4             askpass_1.2.1              </span></span>
+<span><span class="co">#&gt; [173] uwot_0.2.3                  Biobase_2.66.0             </span></span>
+<span><span class="co">#&gt; [175] rainbow_3.8                 mvtnorm_1.3-3              </span></span>
+<span><span class="co">#&gt; [177] backports_1.5.0             BiocParallel_1.40.2        </span></span>
+<span><span class="co">#&gt; [179] timechange_0.3.0            gtable_0.3.6               </span></span>
+<span><span class="co">#&gt; [181] ggridges_0.5.6              progressr_0.15.1           </span></span>
+<span><span class="co">#&gt; [183] parallel_4.4.2              pROC_1.18.5                </span></span>
+<span><span class="co">#&gt; [185] ape_5.8-1                   jsonlite_2.0.0             </span></span>
+<span><span class="co">#&gt; [187] RcppHNSW_0.6.0              bitops_1.0-9               </span></span>
+<span><span class="co">#&gt; [189] bit64_4.6.0-1               Rtsne_0.17                 </span></span>
+<span><span class="co">#&gt; [191] yulab.utils_0.2.0           ReactomePA_1.50.0          </span></span>
+<span><span class="co">#&gt; [193] spatstat.utils_3.1-3        proto_1.0.0                </span></span>
+<span><span class="co">#&gt; [195] jquerylib_0.1.4             GOSemSim_2.32.0            </span></span>
+<span><span class="co">#&gt; [197] spatstat.univar_3.1-2       R.utils_2.13.0             </span></span>
+<span><span class="co">#&gt; [199] lazyeval_0.2.2              shiny_1.10.0               </span></span>
+<span><span class="co">#&gt; [201] htmltools_0.5.8.1           enrichplot_1.26.6          </span></span>
+<span><span class="co">#&gt; [203] GO.db_3.20.0                sctransform_0.4.1          </span></span>
+<span><span class="co">#&gt; [205] data.tree_1.1.0             rappdirs_0.3.3             </span></span>
+<span><span class="co">#&gt; [207] glue_1.8.0                  STRINGdb_2.18.0            </span></span>
+<span><span class="co">#&gt; [209] spam_2.11-1                 XVector_0.46.0             </span></span>
+<span><span class="co">#&gt; [211] qpdf_1.3.5                  RCurl_1.98-1.17            </span></span>
+<span><span class="co">#&gt; [213] treeio_1.30.0               mclust_6.1.1               </span></span>
+<span><span class="co">#&gt; [215] ks_1.14.3                   gridExtra_2.3              </span></span>
+<span><span class="co">#&gt; [217] boot_1.3-28                 igraph_2.1.4               </span></span>
+<span><span class="co">#&gt; [219] R6_2.6.1                    fdatest_2.1.1              </span></span>
+<span><span class="co">#&gt; [221] SingleCellExperiment_1.28.1 gplots_3.2.0               </span></span>
+<span><span class="co">#&gt; [223] labeling_0.4.3              cluster_2.1.2              </span></span>
+<span><span class="co">#&gt; [225] aplot_0.2.5                 GenomeInfoDb_1.42.3        </span></span>
+<span><span class="co">#&gt; [227] DelayedArray_0.32.0         tidyselect_1.2.1           </span></span>
+<span><span class="co">#&gt; [229] plotrix_3.8-4               ggforce_0.4.2              </span></span>
+<span><span class="co">#&gt; [231] car_3.1-3                   AnnotationDbi_1.68.0       </span></span>
+<span><span class="co">#&gt; [233] future_1.40.0               munsell_0.5.1              </span></span>
+<span><span class="co">#&gt; [235] KernSmooth_2.23-20          data.table_1.17.0          </span></span>
+<span><span class="co">#&gt; [237] htmlwidgets_1.6.4           fgsea_1.32.4               </span></span>
+<span><span class="co">#&gt; [239] RColorBrewer_1.1-3          rlang_1.1.6                </span></span>
+<span><span class="co">#&gt; [241] spatstat.sparse_3.1-0       spatstat.explore_3.4-2     </span></span>
+<span><span class="co">#&gt; [243] rentrez_1.2.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
