@@ -6,7 +6,7 @@
         "",
         "This work is supported by the project:",
         "National Centre for HPC, Big Data and Quantum Computing",
-        "Funded by European Union \u2013 Next Generation EU \u2013 CN00000013 \U0001F1EA\U0001F1FA",
+        "Funded by European Union \u2013 Next Generation EU \u2013 CN00000013",
         "CUP: B93C22000620006",
         "",
         cli::rule(line = 2),
@@ -20,3 +20,4 @@
 
 .onUnload <- function(libpath) {
 }
+
