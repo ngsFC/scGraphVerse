@@ -8,34 +8,35 @@ plotg(adj_matrix_list)
 }
 \arguments{
 \item{adj_matrix_list}{A list of square, symmetric adjacency matrices
-with zeros on the diagonal (no self-loops). Each matrix represents an undirected graph.}
+with zeros on the diagonal (no self-loops). Each matrix represents an
+undirected graph.}
 }
 \value{
 A grid of plots displaying all valid graphs in the input list.
 }
 \description{
-Generates and arranges multiple graph visualizations from a list
-of adjacency matrices. Each matrix is converted into an undirected
-\pkg{igraph} object and visualized using a force-directed layout via \pkg{ggraph}.
+Generates and arranges multiple graph visualizations from a list of
+adjacency matrices. Each matrix is converted into an undirected
+\pkg{igraph} object and visualized using a force-directed layout via
+\pkg{ggraph}.
 }
 \details{
-Each adjacency matrix is validated to ensure it is square and symmetric.
-Disconnected nodes (degree zero) are removed prior to visualization.
-Graphs are visualized with a force-directed layout using \pkg{ggraph},
-and multiple plots are arranged into a grid with \pkg{gridExtra}.
+Each adjacency matrix is validated to ensure it is square and
+symmetric. Disconnected nodes (degree zero) are removed prior to
+visualization. Graphs are visualized with a force-directed layout
+using \pkg{ggraph}, and multiple plots are arranged into a grid with
+\pkg{gridExtra}.
 
-Each subplot title includes the graph index, number of nodes, and number of edges.
+Each subplot title includes the graph index, number of nodes, and
+number of edges.
 }
 \note{
-This function requires the following packages to be installed:
-\pkg{igraph}, \pkg{ggraph}, and \pkg{gridExtra}.
-If any are missing, an informative error will be thrown.
+This function requires the following packages:
+\pkg{igraph}, \pkg{ggraph}, and \pkg{gridExtra}. If any are missing,
+an informative error will be thrown.
 }
 \examples{
-# Create two simple adjacency matrices
 adj1 <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3)
 adj2 <- matrix(c(0, 1, 1, 1, 0, 0, 1, 0, 0), nrow = 3)
-
-# Visualize the graphs
 plotg(list(adj1, adj2))
 }

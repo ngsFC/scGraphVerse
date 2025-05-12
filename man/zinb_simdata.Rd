@@ -2,7 +2,8 @@
 % Please edit documentation in R/zinb_simdata.R
 \name{zinb_simdata}
 \alias{zinb_simdata}
-\title{Simulate Zero-Inflated Negative Binomial (ZINB) Count Matrices with Sequencing Depth}
+\title{Simulate Zero-Inflated Negative Binomial (ZINB) Count Matrices with
+Sequencing Depth}
 \usage{
 zinb_simdata(
   n,
@@ -21,65 +22,65 @@ zinb_simdata(
 
 \item{p}{Integer. Number of genes (features) in each simulated matrix.}
 
-\item{B}{A symmetric binary adjacency matrix (0/1) defining gene-gene connectivity.
-Row and column names correspond to gene names.}
+\item{B}{A symmetric binary adjacency matrix (0/1) defining gene-gene
+connectivity. Row and column names correspond to gene names.}
 
-\item{mu_range}{List of numeric vectors (length 2 each). Range of gene expression means
-for each simulated matrix.}
+\item{mu_range}{List of numeric vectors (length 2 each). Range of gene
+expression means for each simulated matrix.}
 
 \item{mu_noise}{Numeric vector. Mean of background noise for each matrix.}
 
-\item{theta}{Numeric vector. Dispersion parameters of the negative binomial distribution
-for each matrix. Smaller \code{theta} implies higher overdispersion.}
+\item{theta}{Numeric vector. Dispersion parameters of the negative
+binomial distribution for each matrix. Smaller \code{theta} implies
+higher overdispersion.}
 
-\item{pi}{Numeric vector. Probability of excess zeros (\code{0 < pi < 1}) for each matrix.}
+\item{pi}{Numeric vector. Probability of excess zeros (\code{0 < pi < 1})
+for each matrix.}
 
-\item{kmat}{Integer. Number of count matrices to simulate. Default is \code{1}.}
+\item{kmat}{Integer. Number of count matrices to simulate. Default is 1.}
 
-\item{depth_range}{Numeric vector of length 2 or \code{NA}. Range of total sequencing depth per cell.
-If \code{NA}, no depth adjustment is performed.}
+\item{depth_range}{Numeric vector of length 2 or \code{NA}. Range of total
+sequencing depth per cell. If \code{NA}, no depth adjustment is
+performed.}
 }
 \value{
 A list containing \code{kmat} matrices. Each matrix has:
 \itemize{
-\item Rows representing cells (\code{cell_1, cell_2, ..., cell_n}).
-\item Columns representing genes (based on \code{rownames(B)}).
+\item Rows representing cells (\code{cell_1, ..., cell_n}).
+\item Columns representing genes (\code{rownames(B)}).
 \item Count values following a ZINB distribution.
 }
 }
 \description{
-Simulates one or more count matrices following a zero-inflated negative binomial (ZINB) distribution,
-incorporating gene-gene interaction structures and cell-specific sequencing depth variation.
+Simulates one or more count matrices following a zero-inflated negative
+binomial (ZINB) distribution, incorporating gene-gene interaction
+structures and cell-specific sequencing depth variation.
 }
 \details{
 Each simulated matrix:
 \enumerate{
 \item Generates gene expression values based on a ZINB model.
-\item Modulates expression using the input adjacency matrix \code{B}.
-\item Applies random sequencing depth scaling if \code{depth_range} is provided.
+\item Modulates expression using the adjacency matrix \code{B}.
+\item Applies random sequencing depth scaling if
+\code{depth_range} is provided.
 }
 
-The function is particularly useful for benchmarking single-cell RNA-seq network inference
-methods where dropout events and network structure are relevant.
+Useful for benchmarking single-cell RNA-seq network inference methods
+with dropout events and network structure.
 }
 \examples{
-# Create a simple adjacency matrix
 B <- matrix(0, nrow = 5, ncol = 5)
 rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
 B[1, 2] <- B[2, 3] <- B[4, 5] <- 1
-B <- B + t(B) # Ensure symmetry
-
-# Simulate two count matrices
+B <- B + t(B)
 zinb_matrices <- zinb_simdata(
-  n = 100, p = 5, B = B,
-  mu_range = list(c(1, 5), c(2, 6)),
-  mu_noise = c(0.5, 0.7),
-  theta = c(1, 2),
-  pi = c(0.2, 0.3),
-  kmat = 2,
-  depth_range = c(500, 5000),
+    n = 100, p = 5, B = B,
+    mu_range = list(c(1, 5), c(2, 6)),
+    mu_noise = c(0.5, 0.7),
+    theta = c(1, 2),
+    pi = c(0.2, 0.3),
+    kmat = 2,
+    depth_range = c(500, 5000)
 )
-
-# View one simulated matrix
 print(zinb_matrices[[1]])
 }

@@ -9,38 +9,43 @@ symmetrize(matrix_list, weight_function = "mean", nCores = 1)
 \arguments{
 \item{matrix_list}{A list of square numeric matrices to symmetrize.}
 
-\item{weight_function}{Character string or function. Method to combine \eqn{(i,j)} and \eqn{(j,i)} entries.
-Options include \code{"mean"}, \code{"max"}, \code{"min"}, or a user-defined function.}
+\item{weight_function}{Character string or function. Method to combine
+entries (i, j) and (j, i). Options include \code{"mean"},
+\code{"max"}, \code{"min"}, or a user-defined function.}
 
-\item{nCores}{Integer. Number of CPU cores to use for parallel processing.
-Defaults to the number of available workers in the current \pkg{BiocParallel} backend.}
+\item{nCores}{Integer. Number of CPU cores to use for parallel
+processing. Defaults to the number of available workers in the current
+\pkg{BiocParallel} backend.}
 }
 \value{
-A list of symmetric matrices, where for each matrix \eqn{A[i,j] = A[j,i]} for all \eqn{i ≠ j}.
+A list of symmetric matrices, where for each matrix
+A\link{i, j} = A\link{j, i} for all i ≠ j.
 }
 \description{
-Symmetrizes each square matrix in a list by ensuring that entries \eqn{(i,j)} and \eqn{(j,i)}
-are identical, based on a specified combination function.
+Symmetrizes each square matrix in a list by ensuring entries (i, j) and
+(j, i) are identical, using a specified combination function.
 }
 \details{
-For each pair of off-diagonal elements \eqn{(i,j)} and \eqn{(j,i)}:
+For each pair of off-diagonal elements (i, j) and (j, i):
 \itemize{
 \item If one value is zero, the non-zero value is used.
-\item If both values are non-zero, they are combined using the specified \code{weight_function}.
+\item If both are non-zero, they are combined using the specified
+\code{weight_function}.
 }
 Diagonal entries are preserved as-is and not modified.
 
-Parallelization is managed via \pkg{BiocParallel} for improved performance.
+Parallelization is managed via \pkg{BiocParallel} for improved
+performance.
 }
 \examples{
-# Create two small asymmetric matrices
 mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
 mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
 matrix_list <- list(mat1, mat2)
 
-# Symmetrize using the mean function
-sym_list <- symmetrize(matrix_list, weight_function = "mean")
+sym_list <- symmetrize(
+    matrix_list,
+    weight_function = "mean"
+)
 
-# View the first symmetrized matrix
 sym_list[[1]]
 }

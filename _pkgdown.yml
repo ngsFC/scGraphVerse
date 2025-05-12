@@ -32,11 +32,12 @@ reference:
       - symmetrize
   - title: "Consensus & Evaluation"
     contents:
-      - create_consensus
-      - compare_consensus
-      - community_similarity
       - plotROC
+      - create_consensus
       - pscores
+      - compare_consensus
+      - community_path
+      - community_similarity
   - title: "Simulation & Visualization"
     contents:
       - zinb_simdata
@@ -47,7 +48,6 @@ reference:
       - stringdb_adjacency
       - edge_mining
       - selgene
-      - community_path
       - init_py
 
 articles:

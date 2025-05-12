@@ -7,21 +7,27 @@
 download_Atlas(file_url)
 }
 \arguments{
-\item{file_url}{A character string specifying the URL of the RDS file to download.}
+\item{file_url}{Character; URL of the RDS file to download.}
 }
 \value{
 An R object loaded from the downloaded RDS file.
 }
 \description{
-Downloads an RDS file from a specified URL and reads its contents into R. We used it for https://www.singlecellatlas.org
+Downloads an RDS file from a specified URL and reads its contents into R.
+We used it for https://www.singlecellatlas.org
 }
 \details{
-This function uses \pkg{httr} to perform the file download. The RDS file is read directly
-from the raw connection without saving it to disk. An internet connection is required.
+This function uses \pkg{httr} to perform the download. The RDS file is read
+directly from a raw connection without saving to disk. An internet connection
+is required.
 
-If the download fails (e.g., invalid URL, server error), an informative error message is returned.
+If the download fails (e.g., invalid URL, server error), an informative error
+message is returned.
 }
 \examples{
-# Example: Load an RDS file from a public URL
-atlas_data <- download_Atlas("https://www.dropbox.com/s/r8qwsng79rhp9gf/SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1")
+url <- paste0(
+    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
+    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
+)
+atlas_data <- download_Atlas(url)
 }

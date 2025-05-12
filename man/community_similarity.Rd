@@ -7,37 +7,46 @@
 community_similarity(control_output, predicted_list)
 }
 \arguments{
-\item{control_output}{A list output from \code{community_path()} representing the ground truth network. Must contain a \code{graph} (igraph object) and \code{communities$membership}.}
+\item{control_output}{A list output from \code{community_path()} representing the
+ground truth network. Must contain a \code{graph} (igraph object) and
+\code{communities$membership}.}
 
-\item{predicted_list}{A list of lists, each output from \code{community_path()} representing predicted networks to compare.}
+\item{predicted_list}{A list of lists, each output from \code{community_path()}
+representing predicted networks to compare.}
 }
 \value{
 A list containing:
 \itemize{
-\item \code{community_metrics}: A data frame with VI, NMI, and ARI scores for each prediction.
-\item \code{topology_measures}: A data frame with raw topological metrics for each prediction.
-\item \code{control_topology}: A list of raw topological metrics for the ground truth network.
+\item \code{community_metrics}: A data frame with VI, NMI, and ARI
+scores for each prediction.
+\item \code{topology_measures}: A data frame with raw topological
+metrics for each prediction.
+\item \code{control_topology}: A list of raw topological metrics for
+the ground truth network.
 }
 }
 \description{
-This function evaluates the similarity between a ground truth community structure and one or more predicted community structures.
-It computes community assignment metrics (VI, NMI, ARI) and raw topological properties (Modularity, Number of Communities, Density, Transitivity).
-Results are visualized through a radar plot for community assignment and bar plots for topology.
+Evaluates similarity between a ground truth community structure and one
+or more predicted community structures. Computes community assignment
+metrics (VI, NMI, ARI) and raw topological properties (Modularity,
+Number of Communities, Density, Transitivity). Visualizes results via a
+radar plot for community assignment and bar plots for topology.
 }
 \details{
-This function requires the \strong{igraph} and \strong{fmsb} packages.
-Community similarity is measured using variation of information (VI), normalized mutual information (NMI), and adjusted Rand index (ARI).
-Topological properties are compared by directly plotting raw values without normalization.
+This function requires the \strong{igraph} and \strong{fmsb}
+packages. Community similarity is measured using variation of
+information (VI), normalized mutual information (NMI), and adjusted
+Rand index (ARI). Topological properties are compared by directly
+plotting raw values without normalization.
 }
 \examples{
-# Example usage:
-# Assuming you have outputs from community_path()
+# Assume outputs from community_path()
 control <- community_path(example_graph_control)
-predictions <- list(
-  community_path(example_graph_pred1),
-  community_path(example_graph_pred2)
+preds <- list(
+    community_path(example_graph_pred1),
+    community_path(example_graph_pred2)
 )
-result <- community_similarity(control, predictions)
+result <- community_similarity(control, preds)
 print(result$community_metrics)
 print(result$topology_measures)
 }

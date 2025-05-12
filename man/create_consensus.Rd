@@ -14,54 +14,69 @@ create_consensus(
 )
 }
 \arguments{
-\item{adj_matrix_list}{A list of binary adjacency matrices (square, 0/1) with identical dimensions
-and matching row/column names.}
+\item{adj_matrix_list}{A list of binary adjacency matrices (square,
+0/1) with identical dimensions and matching row/column names.}
 
 \item{method}{Character string specifying the consensus strategy. One of:
 \itemize{
-\item \code{"vote"} (default): An edge is included if supported by at least \code{threshold} fraction of matrices.
-\item \code{"union"}: An edge is included if present in any matrix.
-\item \code{"INet"}: Combines normalized weighted matrices using \code{\link[INetTool]{consensusNet}}.
+\item \code{"vote"} (default): An edge is included if supported
+by at least \code{threshold} fraction of matrices.
+\item \code{"union"}: An edge is included if present in any
+matrix.
+\item \code{"INet"}: Combines normalized weighted matrices using
+\code{\link[INetTool]{consensusNet}}.
 }}
 
-\item{weighted_list}{A list of weighted adjacency matrices (required if \code{method = "INet"}).}
+\item{weighted_list}{A list of weighted adjacency matrices (required if
+\code{method = "INet"}).}
 
-\item{theta}{Numeric. Tuning parameter passed to \code{consensusNet} (default: \code{0.04}).}
+\item{theta}{Numeric. Tuning parameter passed to \code{consensusNet}
+(default: \code{0.04}).}
 
-\item{threshold}{Numeric between 0 and 1. Threshold for "vote" and "INet" methods. Default is \code{0.5}.}
+\item{threshold}{Numeric between 0 and 1. Threshold for "vote" and
+"INet" methods. Default is \code{0.5}.}
 
-\item{ncores}{Integer. Number of CPU cores to use when \code{method = "INet"}. Default is \code{1}.}
+\item{ncores}{Integer. Number of CPU cores to use when \code{method =
+"INet"}. Default is \code{1}.}
 }
 \value{
-A square consensus adjacency matrix (binary or weighted, depending on the method).
+A square consensus adjacency matrix (binary or weighted,
+depending on the method).
 }
 \description{
-Builds a consensus adjacency matrix from a list of networks using one of three methods:
-\code{"vote"}, \code{"union"}, or \code{"INet"}.
+Builds a consensus adjacency matrix from a list of networks using one
+of three methods: \code{"vote"}, \code{"union"}, or \code{"INet"}.
 }
 \details{
 Consensus construction depends on the selected method:
 \describe{
-\item{\strong{vote}}{Counts the presence of each edge across all matrices and includes edges supported by at least \code{threshold × N} matrices.}
-\item{\strong{union}}{Includes any edge that appears in any matrix.}
-\item{\strong{INet}}{Multiplies binary matrices by corresponding weighted matrices, normalizes the results,
-and applies \code{consensusNet} to generate a consensus network.}
+\item{\strong{vote}}{Counts the presence of each edge across all
+matrices and includes edges supported by at least
+\code{threshold × N} matrices.}
+\item{\strong{union}}{Includes any edge that appears in any
+matrix.}
+\item{\strong{INet}}{Multiplies binary matrices by corresponding
+weighted matrices, normalizes the results, and applies
+\code{consensusNet} to generate a consensus network.}
 }
 
-For "INet", both binary and weighted adjacency matrices must be provided with matching dimensions.
+For "INet", both binary and weighted adjacency matrices must be
+provided with matching dimensions.
 }
 \examples{
-# Example binary adjacency matrices
 mat1 <- matrix(sample(0:1, 25, replace = TRUE), nrow = 5)
 mat2 <- matrix(sample(0:1, 25, replace = TRUE), nrow = 5)
 rownames(mat1) <- colnames(mat1) <- paste0("Gene", 1:5)
 rownames(mat2) <- colnames(mat2) <- paste0("Gene", 1:5)
 
-# Create consensus using voting
-consensus_vote <- create_consensus(list(mat1, mat2), method = "vote", threshold = 0.5)
+consensus_vote <- create_consensus(
+    list(mat1, mat2),
+    method    = "vote",
+    threshold = 0.5
+)
 
-# Create consensus using union
-consensus_union <- create_consensus(list(mat1, mat2), method = "union")
-
-# (For "INet", you would also provide a weighted_list)
+consensus_union <- create_consensus(
+    list(mat1, mat2),
+    method = "union"
+)
 }

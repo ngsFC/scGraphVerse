@@ -15,47 +15,57 @@ edge_mining(
 )
 }
 \arguments{
-\item{predicted_list}{A list of predicted gene adjacency matrices (with row and column names as gene symbols).}
+\item{predicted_list}{A list of predicted adjacency matrices (row and
+column names are gene symbols).}
 
-\item{ground_truth}{A ground truth adjacency matrix (0/1) with row and column names.}
+\item{ground_truth}{A 0/1 adjacency matrix with row and column names.}
 
-\item{delay}{Numeric. Seconds to wait between consecutive queries (default = 0.5).}
+\item{delay}{Numeric. Seconds to wait between consecutive queries
+(default = 1).}
 
-\item{query_field}{Character. The PubMed search field to use. Options: "Title/Abstract" (default), "Title", "Abstract".}
+\item{query_field}{Character. PubMed search field. Options:
+"Title/Abstract" (default), "Title", "Abstract".}
 
-\item{query_edge_types}{Character vector. Which edge types to query: "TP", "FP", "FN" (default all).}
+\item{query_edge_types}{Character vector. Edge types to query:
+c("TP", "FP", "FN") (default all).}
 
-\item{max_retries}{Integer. Number of maximum retries for PubMed queries (default = 3).}
+\item{max_retries}{Integer. Max retries for PubMed queries
+(default = 10).}
 
-\item{BPPARAM}{A BiocParallel parameter object specifying how parallelization should be performed. Default = bpparam().}
+\item{BPPARAM}{A BiocParallel parameter object. Default = bpparam().}
 }
 \value{
-A named list of data frames. Each data frame includes:
+A named list of data.frames. Each data.frame has columns:
 \describe{
-\item{gene1}{First gene in the interaction}
+\item{gene1}{First gene in interaction}
 \item{gene2}{Second gene}
-\item{edge_type}{"TP", "FP", or "FN"}
+\item{edge_type}{One of "TP", "FP", or "FN"}
 \item{pubmed_hits}{Number of PubMed hits}
 \item{PMIDs}{Comma-separated PubMed IDs or NA}
-\item{query_status}{"hits_found", "no_hits", "error"}
+\item{query_status}{One of "hits_found", "no_hits", or "error"}
 }
 }
 \description{
-Query PubMed for Literature Evidence Supporting Predicted Gene-Gene Interactions
+Query PubMed for literature evidence supporting predicted
+gene–gene interactions.
 }
 \details{
-This function compares predicted gene adjacency matrices against a ground truth
-matrix, identifies specific edge types (True Positives, False Positives, False Negatives),
-and queries PubMed for each gene pair. It returns the number of PubMed hits, associated PMIDs, and query status.
+This function compares predicted adjacency matrices against a ground truth
+matrix, identifies edge types (TP, FP, FN), and queries PubMed for each
+gene pair. Returns counts of hits, PMIDs, and query status.
 }
 \examples{
-
 set.seed(123)
 predicted <- matrix(rbinom(100, 1, 0.1), nrow = 10)
-rownames(predicted) <- colnames(predicted) <- paste0("Gene", 1:10)
+rownames(predicted) <- colnames(predicted) <-
+    paste0("Gene", 1:10)
 ground_truth <- matrix(rbinom(100, 1, 0.05), nrow = 10)
-rownames(ground_truth) <- colnames(ground_truth) <- paste0("Gene", 1:10)
+rownames(ground_truth) <- colnames(ground_truth) <-
+    paste0("Gene", 1:10)
 
-results <- edge_mining(predicted_list = list(pred_net = predicted), ground_truth = ground_truth)
+results <- edge_mining(
+    predicted_list = list(pred_net = predicted),
+    ground_truth = ground_truth
+)
 head(results$pred_net)
 }

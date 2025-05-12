@@ -13,55 +13,56 @@ stringdb_adjacency(
 )
 }
 \arguments{
-\item{genes}{A character vector of gene symbols or identifiers (e.g., \code{c("TP53", "BRCA1", ...)}).}
+\item{genes}{A character vector of gene symbols or identifiers, e.g.,
+\code{c("TP53", "BRCA1", ...)}.}
 
-\item{species}{Integer. NCBI taxonomy ID of the species. Default is \code{9606} (human).}
+\item{species}{Integer. NCBI taxonomy ID of the species. Default is
+\code{9606} (human).}
 
-\item{required_score}{Integer between 0 and 1000. Minimum confidence score for interactions. Default is \code{400}.}
+\item{required_score}{Integer in \link{0,1000}. Minimum confidence score for
+interactions. Default is \code{400}.}
 
-\item{keep_all_genes}{Logical. If \code{TRUE} (default), includes all input genes in the final matrix even if unmapped.}
+\item{keep_all_genes}{Logical. If \code{TRUE} (default), includes all input
+genes in the final matrix even if unmapped.}
 
-\item{verbose}{Logical. If \code{TRUE}, displays progress messages. Default is \code{TRUE}.}
+\item{verbose}{Logical. If \code{TRUE}, displays progress messages. Default
+is \code{TRUE}.}
 }
 \value{
 A list containing:
 \itemize{
-\item \code{weighted}: A square numeric adjacency matrix with interaction scores as weights.
+\item \code{weighted}: A square numeric adjacency matrix with scores as
+weights.
 \item \code{binary}: A corresponding binary (0/1) adjacency matrix.
 }
 }
 \description{
-Constructs weighted and binary adjacency matrices for physical protein-protein interactions
-using a POST request to the STRING database API.
+Constructs weighted and binary adj matrices for physical protein-protein
+interactions using a POST request to the STRING database API.
 }
 \details{
 This function:
 \enumerate{
-\item Maps the input genes to STRING internal IDs.
-\item Uses a POST request to retrieve physical protein-protein interactions from STRING.
+\item Maps input genes to STRING internal IDs.
+\item Uses a POST request to retrieve physical protein-protein
+interactions from STRING.
 \item Builds a weighted adjacency matrix using the STRING combined score.
-\item Builds a binary adjacency matrix indicating the presence or absence of interactions.
+\item Builds a binary adjacency matrix indicating presence/absence.
 }
 
-Genes that could not be mapped to STRING are optionally retained as rows/columns of zeros if \code{keep_all_genes = TRUE}.
+Genes not mapped to STRING are optionally retained as zero rows/columns if
+\code{keep_all_genes = TRUE}.
 }
 \note{
-Requires the following packages: \pkg{STRINGdb}, \pkg{httr}, and \pkg{jsonlite}.
+Requires packages: \pkg{STRINGdb}, \pkg{httr}, \pkg{jsonlite}.
 }
 \examples{
-# Define a large set of genes
 large_gene_set <- c("TP53", "BRCA1", "MYC", "EGFR", "PTEN")
-
-# Retrieve adjacency matrices from STRING
 adjacency_list <- stringdb_adjacency(
-  genes = large_gene_set,
-  species = 9606,
-  required_score = 700
+    genes = large_gene_set,
+    species = 9606,
+    required_score = 700
 )
-
-# Access the weighted adjacency matrix
 weighted_mat <- adjacency_list$weighted
-
-# Access the binary adjacency matrix
 binary_mat <- adjacency_list$binary
 }

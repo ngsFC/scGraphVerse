@@ -13,48 +13,69 @@ infer_networks(
 )
 }
 \arguments{
-\item{count_matrices_list}{A list of expression matrices (genes × cells) or
-\linkS4class{Seurat} or \linkS4class{SingleCellExperiment} objects.}
+\item{count_matrices_list}{A list of expression matrices (genes × cells)
+or \linkS4class{Seurat} or \linkS4class{SingleCellExperiment}
+objects.}
 
 \item{method}{Character string. Inference method to use. One of:
-\code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.}
+\code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+\code{"JRF"}, or \code{"PCzinb"}.}
 
-\item{adjm}{Optional. Reference adjacency matrix for matching dimensions when using \code{"ZILGM"} or \code{"PCzinb"}.}
+\item{adjm}{Optional. Reference adjacency matrix for matching dimensions
+when using \code{"ZILGM"} or \code{"PCzinb"}.}
 
-\item{nCores}{Integer. Number of CPU cores to use for parallelization.
-Defaults to the number of workers in the current \pkg{BiocParallel} backend.}
+\item{nCores}{Integer. Number of CPU cores to use for
+parallelization. Defaults to the number of workers in the current
+\pkg{BiocParallel} backend.}
 
-\item{grnboost_modules}{Python modules required for \code{GRNBoost2} (created via \pkg{reticulate}).}
+\item{grnboost_modules}{Python modules required for \code{GRNBoost2}
+(created via \pkg{reticulate}).}
 }
 \value{
 A list of inferred networks:
 \itemize{
-\item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, and \code{"PCzinb"}, a list of inferred network objects (edge lists or adjacency matrices).
-\item For \code{"JRF"}, a list of data frames with inferred edge lists for each condition or dataset.
+\item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+and \code{"PCzinb"}, a list of inferred network objects (edge
+lists or adjacency matrices).
+\item For \code{"JRF"}, a list of data frames with inferred edge
+lists for each condition or dataset.
 }
 }
 \description{
-Infers weighted gene regulatory networks (GRNs) from one or more expression matrices
-using different inference methods: \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
+Infers weighted gene regulatory networks (GRNs) from one or more
+expression matrices using different inference methods:
+\code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+\code{"JRF"}, or \code{"PCzinb"}.
 }
 \details{
-Each expression matrix is preprocessed automatically depending on its object type (\code{Seurat},
-\code{SingleCellExperiment}, or plain matrix).
+Each expression matrix is preprocessed automatically depending
+on its object type (\code{Seurat}, \code{SingleCellExperiment}, or
+plain matrix).
 
 Parallelization behavior:
 \itemize{
-\item \strong{GENIE3} and \strong{ZILGM}: No external parallelization; internal \code{nCores} parameter controls computation.
-\item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across matrices using \pkg{BiocParallel}.
-\item \strong{JRF}: Joint modeling of all matrices together; internal parallelization across random forest trees using \pkg{doParallel}.
+\item \strong{GENIE3} and \strong{ZILGM}: No external
+parallelization; internal \code{nCores} parameter controls
+computation.
+\item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
+matrices using \pkg{BiocParallel}.
+\item \strong{JRF}: Joint modeling of all matrices together;
+internal parallelization across random forest trees using
+\pkg{doParallel}.
 }
 
 Methods are based on:
 \itemize{
-\item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et al., 2010).
-\item \strong{GRNBoost2}: Gradient boosting trees using arboreto (Moerman et al., 2019).
-\item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq (Zhang et al., 2021).
-\item \strong{JRF}: Joint Random Forests across multiple conditions (Petralia et al., 2015).
-\item \strong{PCzinb}: Pairwise correlation under ZINB models (Li et al., 2020).
+\item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et
+al., 2010).
+\item \strong{GRNBoost2}: Gradient boosting trees using arboreto
+(Moerman et al., 2019).
+\item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq
+(Zhang et al., 2021).
+\item \strong{JRF}: Joint Random Forests across multiple conditions
+(Petralia et al., 2015).
+\item \strong{PCzinb}: Pairwise correlation under ZINB models
+(Li et al., 2020).
 }
 }
 \examples{
@@ -68,9 +89,9 @@ rownames(mat2) <- paste0("Gene", 1:10)
 
 # Infer networks using GENIE3
 networks <- infer_networks(
-  count_matrices_list = list(mat1, mat2),
-  method = "GENIE3",
-  nCores = 2
+    count_matrices_list = list(mat1, mat2),
+    method = "GENIE3",
+    nCores = 2
 )
 
 # Inspect first inferred network

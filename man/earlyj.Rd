@@ -7,24 +7,30 @@
 earlyj(input_list, rowg = TRUE)
 }
 \arguments{
-\item{input_list}{A list of matrices, \linkS4class{Seurat} objects, or \linkS4class{SingleCellExperiment} objects.
-All elements must be of the same class.}
+\item{input_list}{A list of matrices, \linkS4class{Seurat} objects,
+or \linkS4class{SingleCellExperiment} objects. All elements must be of the
+same class.}
 
-\item{rowg}{Logical. If \code{TRUE} (default), genes are assumed to be rows and cells columns.
+\item{rowg}{Logical. If \code{TRUE} (default), genes are assumed to be rows
+and cells columns.
 If \code{FALSE}, matrices are transposed before renaming and combining.}
 }
 \value{
-A combined matrix, Seurat object, or SingleCellExperiment object with modified (unique) cell names.
+A combined matrix, Seurat object, or SingleCellExperiment object with
+modified (unique) cell names.
 }
 \description{
-Modifies cell identifiers of each element in a list of matrices, \linkS4class{Seurat} objects,
-or \linkS4class{SingleCellExperiment} objects by appending a unique matrix index (e.g., "-m1", "-m2", etc.).
+Modifies cell identifiers of each element in a list of matrices,
+\linkS4class{Seurat} objects, or \linkS4class{SingleCellExperiment} objects
+by appending a unique matrix index (e.g., "-m1", "-m2", etc.).
 After renaming, the datasets are merged into a single object.
 }
 \details{
-For matrices, this function optionally transposes the input before combining. For \code{Seurat}
-and \code{SingleCellExperiment} objects, only features (genes) common across all input datasets are retained
-before merging. The cell names are suffixed with "-m1", "-m2", etc., according to their original list position.
+For matrices, this function optionally transposes the input before combining.
+For \code{Seurat} and \code{SingleCellExperiment} objects, only features
+(genes) common across all input datasets are retained before merging.
+The cell names are suffixed with "-m1", "-m2", etc., according to their
+original list position.
 }
 \examples{
 # Example with matrices where genes are rows (default behavior)

@@ -1,45 +1,65 @@
 #' Infer Gene Regulatory Networks from Expression Matrices
 #'
-#' Infers weighted gene regulatory networks (GRNs) from one or more expression matrices
-#' using different inference methods: \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
+#' Infers weighted gene regulatory networks (GRNs) from one or more
+#' expression matrices using different inference methods:
+#' \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+#' \code{"JRF"}, or \code{"PCzinb"}.
 #'
-#' @param count_matrices_list A list of expression matrices (genes × cells) or
-#'   \linkS4class{Seurat} or \linkS4class{SingleCellExperiment} objects.
+#' @param count_matrices_list A list of expression matrices (genes × cells)
+#'   or \linkS4class{Seurat} or \linkS4class{SingleCellExperiment}
+#'   objects.
 #' @param method Character string. Inference method to use. One of:
-#'   \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, \code{"JRF"}, or \code{"PCzinb"}.
-#' @param adjm Optional. Reference adjacency matrix for matching dimensions when using \code{"ZILGM"} or \code{"PCzinb"}.
-#' @param nCores Integer. Number of CPU cores to use for parallelization.
-#'   Defaults to the number of workers in the current \pkg{BiocParallel} backend.
-#' @param grnboost_modules Python modules required for \code{GRNBoost2} (created via \pkg{reticulate}).
+#'   \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+#'   \code{"JRF"}, or \code{"PCzinb"}.
+#' @param adjm Optional. Reference adjacency matrix for matching dimensions
+#'   when using \code{"ZILGM"} or \code{"PCzinb"}.
+#' @param nCores Integer. Number of CPU cores to use for
+#'   parallelization. Defaults to the number of workers in the current
+#'   \pkg{BiocParallel} backend.
+#' @param grnboost_modules Python modules required for \code{GRNBoost2}
+#'   (created via \pkg{reticulate}).
 #'
-#' @return
-#' A list of inferred networks:
-#' \itemize{
-#'   \item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"}, and \code{"PCzinb"}, a list of inferred network objects (edge lists or adjacency matrices).
-#'   \item For \code{"JRF"}, a list of data frames with inferred edge lists for each condition or dataset.
-#' }
+#' @return A list of inferred networks:
+#'   \itemize{
+#'     \item For \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
+#'       and \code{"PCzinb"}, a list of inferred network objects (edge
+#'       lists or adjacency matrices).
+#'     \item For \code{"JRF"}, a list of data frames with inferred edge
+#'       lists for each condition or dataset.
+#'   }
 #'
-#' @details
-#' Each expression matrix is preprocessed automatically depending on its object type (\code{Seurat},
-#' \code{SingleCellExperiment}, or plain matrix).
+#' @details Each expression matrix is preprocessed automatically depending
+#'   on its object type (\code{Seurat}, \code{SingleCellExperiment}, or
+#'   plain matrix).
 #'
-#' Parallelization behavior:
-#' \itemize{
-#'   \item \strong{GENIE3} and \strong{ZILGM}: No external parallelization; internal \code{nCores} parameter controls computation.
-#'   \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across matrices using \pkg{BiocParallel}.
-#'   \item \strong{JRF}: Joint modeling of all matrices together; internal parallelization across random forest trees using \pkg{doParallel}.
-#' }
+#'   Parallelization behavior:
+#'   \itemize{
+#'     \item \strong{GENIE3} and \strong{ZILGM}: No external
+#'       parallelization; internal \code{nCores} parameter controls
+#'       computation.
+#'     \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
+#'       matrices using \pkg{BiocParallel}.
+#'     \item \strong{JRF}: Joint modeling of all matrices together;
+#'       internal parallelization across random forest trees using
+#'       \pkg{doParallel}.
+#'   }
 #'
-#' Methods are based on:
-#' \itemize{
-#'   \item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et al., 2010).
-#'   \item \strong{GRNBoost2}: Gradient boosting trees using arboreto (Moerman et al., 2019).
-#'   \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq (Zhang et al., 2021).
-#'   \item \strong{JRF}: Joint Random Forests across multiple conditions (Petralia et al., 2015).
-#'   \item \strong{PCzinb}: Pairwise correlation under ZINB models (Li et al., 2020).
-#' }
+#'   Methods are based on:
+#'   \itemize{
+#'     \item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et
+#'       al., 2010).
+#'     \item \strong{GRNBoost2}: Gradient boosting trees using arboreto
+#'       (Moerman et al., 2019).
+#'     \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq
+#'       (Zhang et al., 2021).
+#'     \item \strong{JRF}: Joint Random Forests across multiple conditions
+#'       (Petralia et al., 2015).
+#'     \item \strong{PCzinb}: Pairwise correlation under ZINB models
+#'       (Li et al., 2020).
+#'   }
 #'
-#' @importFrom BiocParallel bplapply MulticoreParam SerialParam bpworkers bpparam
+#' @importFrom BiocParallel bplapply MulticoreParam SerialParam bpworkers
+#'   bpparam
 #' @importFrom Seurat GetAssayData
 #' @importFrom SummarizedExperiment assay
 #' @importFrom parallel makeCluster stopCluster
@@ -57,35 +77,52 @@
 #'
 #' # Infer networks using GENIE3
 #' networks <- infer_networks(
-#'   count_matrices_list = list(mat1, mat2),
-#'   method = "GENIE3",
-#'   nCores = 2
+#'     count_matrices_list = list(mat1, mat2),
+#'     method = "GENIE3",
+#'     nCores = 2
 #' )
 #'
 #' # Inspect first inferred network
 #' head(networks[[1]])
-infer_networks <- function(count_matrices_list,
-                           method = "GENIE3",
-                           adjm = NULL,
-                           nCores = 1,
-                           grnboost_modules = NULL) {
-  method <- match.arg(method, c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"))
-  count_matrices_list <- .convert_counts_list(count_matrices_list)
-  n_matrices <- length(count_matrices_list)
+infer_networks <- function(
+    count_matrices_list,
+    method = "GENIE3",
+    adjm = NULL,
+    nCores = 1,
+    grnboost_modules = NULL) {
+    method <- match.arg(
+        method,
+        c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb")
+    )
+    count_matrices_list <- .convert_counts_list(count_matrices_list)
+    n_matrices <- length(count_matrices_list)
 
-  if (method %in% c("GENIE3", "ZILGM")) {
-    results <- vector("list", n_matrices)
-    for (i in seq_len(n_matrices)) {
-      mat <- count_matrices_list[[i]]
-      results[[i]] <- if (method == "GENIE3") .run_genie3(mat, nCores) else .run_zilgm(mat, adjm, nCores)
+    if (method %in% c("GENIE3", "ZILGM")) {
+        results <- vector("list", n_matrices)
+        for (i in seq_len(n_matrices)) {
+            mat <- count_matrices_list[[i]]
+            results[[i]] <- if (method == "GENIE3") {
+                .run_genie3(mat, nCores)
+            } else {
+                .run_zilgm(mat, adjm, nCores)
+            }
+        }
+        return(results)
     }
-    return(results)
-  }
 
-  if (method == "JRF") {
-    norm_list <- lapply(count_matrices_list, function(mat) t(scale(t(mat))))
-    return(.run_jrf(norm_list, nCores))
-  }
+    if (method == "JRF") {
+        norm_list <- lapply(
+            count_matrices_list,
+            function(mat) t(scale(t(mat)))
+        )
+        return(.run_jrf(norm_list, nCores))
+    }
 
-  .run_parallel_networks(count_matrices_list, method, nCores, adjm, grnboost_modules)
+    .run_parallel_networks(
+        count_matrices_list,
+        method,
+        nCores,
+        adjm,
+        grnboost_modules
+    )
 }

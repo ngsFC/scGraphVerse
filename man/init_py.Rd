@@ -7,14 +7,14 @@
 init_py(python_path = "/usr/bin/python3", required = TRUE)
 }
 \arguments{
-\item{python_path}{Character string. Path to the Python executable to use
-(e.g., \code{"/usr/bin/python3"}).}
+\item{python_path}{Character string. Path to the Python executable,
+e.g., \code{"/usr/bin/python3"}.}
 
-\item{required}{Logical. If \code{TRUE}, throws an error if Python is not available
-or if the specified path is invalid. Default is \code{TRUE}.}
+\item{required}{Logical. If \code{TRUE}, errors if Python is not
+available or path is invalid. Default: \code{TRUE}.}
 }
 \value{
-A list containing three Python module objects:
+A list with three Python module objects:
 \itemize{
 \item \code{arboreto}: GRNBoost2 algorithm module.
 \item \code{pandas}: Data handling module.
@@ -22,22 +22,18 @@ A list containing three Python module objects:
 }
 }
 \description{
-Sets up the Python environment and loads required Python modules
-(\code{arboreto}, \code{pandas}, and \code{numpy}) needed for running GRNBoost2.
+Sets up the Python environment and lazily loads modules required for
+running GRNBoost2: \code{arboreto}, \code{pandas}, and \code{numpy}.
 }
 \details{
-This function uses the \pkg{reticulate} package to bind R to a specified Python interpreter
-and lazily loads the modules needed for GRNBoost2 network inference.
-If any module is missing or incompatible, an informative error will be raised
-(if \code{required = TRUE}).
+Uses \pkg{reticulate} to bind R to the specified Python
+interpreter and lazily import modules needed for GRNBoost2. If a module
+is missing or incompatible, an informative error is raised (when
+\code{required = TRUE}).
 }
 \examples{
-if (interactive() && requireNamespace("reticulate", quietly = TRUE)) {
-  # Only run if reticulate is installed and session is interactive
-  # Initialize Python environment (adjust python_path to your system if needed)
-  grnboost_modules <- init_py()
-
-  # Access numpy to generate random numbers
-  grnboost_modules$numpy$random$rand(5)
-}
+# Initialize Python environment (adjust python_path as needed)
+modules <- init_py()
+# Use numpy to generate random numbers
+modules$numpy$random$rand(5)
 }

@@ -7,42 +7,44 @@
 plotROC(matrices_list, ground_truth, plot_title, is_binary = FALSE)
 }
 \arguments{
-\item{matrices_list}{A list of square matrices representing predicted interactions.
-Each matrix must have the same dimensions and row/column names as \code{ground_truth}.
-Entries may be binary (0/1) or continuous weights.}
+\item{matrices_list}{A list of square matrices representing predicted
+interactions. Each must share dimnames with \code{ground_truth}; entries
+may be binary (0/1) or continuous weights.}
 
-\item{ground_truth}{A square binary matrix indicating true interactions (1) in the upper triangle.
-Must match the dimensions and names of each matrix in \code{matrices_list}.}
+\item{ground_truth}{A square binary matrix indicating true interactions (1)
+in the upper triangle. Must match dims and names of each element of
+\code{matrices_list}.}
 
 \item{plot_title}{Character string. Title for the ROC plot.}
 
-\item{is_binary}{Logical. If \code{TRUE}, matrices are treated as binary predictions.
-Default is \code{FALSE}, for weighted predictions.}
+\item{is_binary}{Logical. If \code{TRUE}, treat matrices as binary
+predictions. Default \code{FALSE} for weighted predictions.}
 }
 \value{
-A data frame containing the Area Under the Curve (AUC) for each matrix.
-The ROC plot is displayed automatically.
+A list with:\cr
+\code{auc}: data frame of AUC per matrix.\cr
+\code{plot}: the ROC plot (via ggplot2).
 }
 \description{
-Computes and visualizes Receiver Operating Characteristic (ROC) curves
-for a list of predicted adjacency matrices compared against a binary ground truth network.
+Computes and visualizes Receiver Operating Characteristic (ROC) curves for
+a list of predicted adjacency matrices compared against a binary ground
+truth network.
 }
 \details{
-For binary matrices, a single TPR/FPR point is computed per matrix.
-For weighted matrices, a full ROC curve is calculated based on continuous prediction scores.
-Diagonal entries are ignored. Symmetry between rows and columns is not enforced.
+For binary matrices, a single TPR/FPR point is computed per
+matrix. For weighted ones, a full ROC curve is computed from continuous
+scores. Diagonals are ignored; symmetry is not enforced.
 }
 \examples{
 mat1 <- matrix(runif(100), nrow = 10)
 mat2 <- matrix(runif(100), nrow = 10)
-ground_truth <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
-diag(ground_truth) <- 0
-ground_truth[lower.tri(ground_truth)] <- 0
-
+gt <- matrix(sample(c(0, 1), 100, TRUE), nrow = 10)
+diag(gt) <- 0
+gt[lower.tri(gt)] <- 0
 plotROC(
-  matrices_list = list(mat1, mat2),
-  ground_truth = ground_truth,
-  plot_title = "ROC for Network Inference",
-  is_binary = FALSE
+    matrices_list = list(mat1, mat2),
+    ground_truth  = gt,
+    plot_title    = "ROC for Network Inference",
+    is_binary     = FALSE
 )
 }
