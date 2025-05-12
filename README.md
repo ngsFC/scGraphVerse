@@ -67,6 +67,9 @@ install.packages(
   repos = NULL, 
   type = "source"
 )
+
+#INeet-Tool (GitHub)
+remotes::install_github("ValeriaPolicastro/INet-Tool")
 ```
 
 ## 📚 Citation

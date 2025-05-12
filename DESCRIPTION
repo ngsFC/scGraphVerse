@@ -24,7 +24,6 @@ Imports:
     AnnotationDbi,
     BiocParallel (>= 1.30.0),
     GENIE3,
-    INetTool,
     Matrix,
     RColorBrewer,
     ReactomePA,
