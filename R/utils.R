@@ -297,11 +297,12 @@
     return(shuffled)
 }
 
-.run_network_on_shuffled <- function(mat,
-                                     method,
-                                     grnboost_modules,
-                                     weight_function,
-                                     quantile_threshold) {
+.run_network_on_shuffled <- function(
+    mat,
+    method,
+    grnboost_modules,
+    weight_function,
+    quantile_threshold) {
     shuffled <- .shuffle_matrix_rows(mat)
     inferred <- infer_networks(list(shuffled),
         method = method,
@@ -610,45 +611,58 @@
 #' @keywords internal
 #' @noRd
 
-.run_parallel_networks <- function(count_matrices_list,
-                                   method,
-                                   nCores,
-                                   adjm,
-                                   grnboost_modules) {
+.run_parallel_networks <- function(
+    count_matrices_list,
+    method,
+    nCores,
+    adjm,
+    grnboost_modules) {
     param_outer <- BiocParallel::MulticoreParam(workers = nCores)
-    BiocParallel::bplapply(seq_along(count_matrices_list), function(i) {
-        mat <- count_matrices_list[[i]]
+    BiocParallel::bplapply(
+        seq_along(count_matrices_list),
+        function(i) {
+            mat <- count_matrices_list[[i]]
 
-        if (method == "GRNBoost2") {
-            if (is.null(grnboost_modules)) stop("Provide grnboost_modules")
-            df <- as.data.frame(t(mat))
-            genes <- colnames(df)
-            rownames(df) <- make.unique(rownames(df))
-            df_pandas <- grnboost_modules$pandas$DataFrame(
-                data = as.matrix(df),
-                columns = genes,
-                index = rownames(df)
-            )
-            result_py <- grnboost_modules$arboreto$grnboost2(
-                exp_data = df_pandas,
-                gene_names = genes
-            )
-            result_r <- reticulate::py_to_r(result_py)
-            if (is.data.frame(result_r)) rownames(result_r) <- NULL
-            return(result_r)
-        } else if (method == "PCzinb") {
-            adj <- learn2count::PCzinb(t(mat), method = "zinb1", maxcard = 2)
-            dimnames(adj) <- if (is.null(adjm)) {
-                list(
-                    rownames(mat),
-                    rownames(mat)
+            if (method == "GRNBoost2") {
+                if (is.null(grnboost_modules)) {
+                    stop("Provide grnboost_modules")
+                }
+                df <- as.data.frame(t(mat))
+                genes <- colnames(df)
+                rownames(df) <- make.unique(rownames(df))
+                df_pandas <- grnboost_modules$pandas$DataFrame(
+                    data    = as.matrix(df),
+                    columns = genes,
+                    index   = rownames(df)
                 )
-            } else {
-                dimnames(adjm)
+                result_py <- grnboost_modules$arboreto$grnboost2(
+                    exp_data   = df_pandas,
+                    gene_names = genes
+                )
+                result_r <- reticulate::py_to_r(result_py)
+                if (is.data.frame(result_r)) {
+                    rownames(result_r) <- NULL
+                }
+                return(result_r)
+            } else if (method == "PCzinb") {
+                adj <- learn2count::PCzinb(
+                    t(mat),
+                    method  = "zinb1",
+                    maxcard = 2
+                )
+                dimnames(adj) <- if (is.null(adjm)) {
+                    list(
+                        rownames(mat),
+                        rownames(mat)
+                    )
+                } else {
+                    dimnames(adjm)
+                }
+                return(adj)
             }
-            return(adj)
-        }
-    }, BPPARAM = param_outer)
+        },
+        BPPARAM = param_outer
+    )
 }
 
 
@@ -807,11 +821,12 @@
 #' @keywords internal
 #' @noRd
 
-.query_edge_pairs <- function(gene_pairs,
-                              query_field,
-                              delay,
-                              max_retries,
-                              BPPARAM) {
+.query_edge_pairs <- function(
+    gene_pairs,
+    query_field,
+    delay,
+    max_retries,
+    BPPARAM) {
     pubmed_info <- BiocParallel::bplapply(seq_len(nrow(gene_pairs)),
         function(j) {
             res <- .safe_query_pubmed(
@@ -889,12 +904,12 @@
 #' @keywords internal
 #' @noRd
 
-.build_adjacency_matrices <- function(interactions,
-                                      mapped_genes,
-                                      genes,
-                                      keep_all_genes) {
+.build_adjacency_matrices <- function(
+    interactions,
+    mapped_genes,
+    genes,
+    keep_all_genes) {
     interactions$interaction_score <- interactions$score
-
     id_to_gene <- setNames(mapped_genes$genes, mapped_genes$STRING_id)
     interactions$gene_A <- id_to_gene[interactions$stringId_A]
     interactions$gene_B <- id_to_gene[interactions$stringId_B]

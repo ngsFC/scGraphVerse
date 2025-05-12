@@ -52,7 +52,7 @@ urls <- list(
 )
 # Load Seurat objects
 pbmc1 <- download_Atlas(file_url = urls[[1]])
-pbmc2 <- download_Atlas(file_url = url2[[2]])
+pbmc2 <- download_Atlas(file_url = urls[[2]])
 
 # Select top variable genes for B cells, removing ribosomal/mitochondrial
 genes1 <- selgene(pbmc1,

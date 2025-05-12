@@ -60,7 +60,6 @@ generate_adjacency <- function(
 
     BPPARAM <- BiocParallel::MulticoreParam(nCores)
 
-    # Extract unique genes from all data frames
     all_genes <- sort(unique(unlist(
         BiocParallel::bplapply(
             df_list,
@@ -76,7 +75,6 @@ generate_adjacency <- function(
         )
     )))
 
-    # Create a template adjacency matrix
     template_matrix <- matrix(
         0,
         nrow     = length(all_genes),
@@ -84,7 +82,6 @@ generate_adjacency <- function(
         dimnames = list(all_genes, all_genes)
     )
 
-    # Process each data frame in parallel
     adjacency_matrix_list <- BiocParallel::bplapply(
         df_list,
         function(data) {
