@@ -19,5 +19,4 @@
 }
 
 .onUnload <- function(libpath) {
-    library.dynam.unload("scGraphVerse", libpath)
 }
