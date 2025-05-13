@@ -26,8 +26,6 @@
 #' @examples
 #' # Initialize Python environment (adjust python_path as needed)
 #' modules <- init_py()
-#' # Use numpy to generate random numbers
-#' modules$numpy$random$rand(5)
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE) {

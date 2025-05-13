@@ -34,6 +34,4 @@ is missing or incompatible, an informative error is raised (when
 \examples{
 # Initialize Python environment (adjust python_path as needed)
 modules <- init_py()
-# Use numpy to generate random numbers
-modules$numpy$random$rand(5)
 }
