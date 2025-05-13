@@ -61,3 +61,4 @@ Suggests:
     tidyverse,
     magick
 VignetteBuilder: knitr
+LazyData: true
