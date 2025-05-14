@@ -1003,7 +1003,7 @@
 
     return(list(
         best_method = best_method,
-        best_communities = best_communities
+        best_communities = as.integer(best_communities) - 1L
     ))
 }
 #' @keywords internal
