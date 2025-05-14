@@ -9,7 +9,7 @@ representing weighted gene–gene interactions."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,7 +21,7 @@ representing weighted gene–gene interactions."><meta property="og:image" conte
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/francesco-cecere/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -30,7 +30,7 @@ representing weighted gene–gene interactions."><meta property="og:image" conte
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Generate Adjacency Matrices from Gene Interaction Tables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/francesco-cecere/scGraphVerse/blob/HEAD/R/generate_adjacency.R" class="external-link"><code>R/generate_adjacency.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ngsFC/scGraphVerse/blob/HEAD/R/generate_adjacency.R" class="external-link"><code>R/generate_adjacency.R</code></a></small>
       <div class="d-none name"><code>generate_adjacency.Rd</code></div>
     </div>
 
@@ -89,28 +89,45 @@ gene pairs matching the global gene list are inserted.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Create two simple interaction tables</span></span></span>
-<span class="r-in"><span><span class="va">df1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    Gene1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GeneA"</span>, <span class="st">"GeneB"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    Gene2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GeneB"</span>, <span class="st">"GeneC"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    Weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.8</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"count_matrices"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2572799</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2526837</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2223855</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4           CFL1        FTL 0.1965926</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ACTG1      HLA-B 0.1922959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           NACA       EEF2 0.1849416</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">df2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    Gene1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GeneC"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    Gene2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GeneA"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    Weight <span class="op">=</span> <span class="fl">1.0</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Generate adjacency matrices</span></span></span>
-<span class="r-in"><span><span class="va">adjacency_list</span> <span class="op">&lt;-</span> <span class="fu">generate_adjacency</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">df1</span>, <span class="va">df2</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># View one of the matrices</span></span></span>
-<span class="r-in"><span><span class="va">adjacency_list</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       GeneA GeneB GeneC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> GeneA     0   0.5   0.0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> GeneB     0   0.0   0.8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> GeneC     0   0.0   0.0</span>
+<span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu">generate_adjacency</span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">wadj_list</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             ACTG1       BTF3       CD3E       CFL1     EEF1A1      EEF1D</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1  0.00000000 0.09567153 0.03772051 0.04489634 0.14858438 0.05184868</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3   0.07050247 0.00000000 0.04690473 0.02681024 0.17614002 0.05034321</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E   0.04182375 0.04279444 0.00000000 0.08541670 0.03384754 0.06217832</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1   0.06983146 0.02603931 0.08847937 0.00000000 0.08211150 0.09054421</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1 0.10593948 0.08775278 0.03308503 0.13089277 0.00000000 0.05998800</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D  0.02723895 0.02398564 0.02678748 0.04723505 0.02535000 0.00000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             EEF1G       EEF2       FTH1        FTL      HLA-A      HLA-B</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1  0.04220739 0.03599954 0.06299266 0.04414580 0.17486815 0.19229594</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3   0.08128522 0.08010397 0.03442977 0.03425390 0.02772477 0.10991513</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E   0.07792277 0.11304876 0.09544808 0.02761235 0.04644723 0.12593807</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1   0.02721051 0.02793020 0.03454181 0.19659265 0.06084991 0.01820235</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1 0.03786065 0.04554478 0.06377817 0.05107843 0.06712883 0.04748734</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D  0.05542704 0.08481634 0.04465484 0.05259532 0.04449669 0.03142508</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             HLA-C      HLA-E       NACA       PFN1     TMSB4X      UBA52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1  0.10494507 0.04673282 0.05438353 0.04933528 0.10635809 0.05394429</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3   0.05355345 0.03168081 0.18186720 0.02496939 0.02297147 0.04185883</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E   0.07130600 0.02738599 0.13294190 0.04695926 0.05531556 0.10221434</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1   0.04079077 0.03538888 0.03297155 0.05684447 0.10202217 0.16248368</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1 0.08932007 0.07195545 0.01929265 0.03764721 0.05770307 0.02784853</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D  0.03174184 0.01629140 0.02550050 0.06363792 0.03657935 0.03184705</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

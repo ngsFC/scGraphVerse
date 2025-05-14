@@ -9,7 +9,7 @@ gene–gene interactions."><meta property="og:image" content="https://ngsFC.gith
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,7 +21,7 @@ gene–gene interactions."><meta property="og:image" content="https://ngsFC.gith
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/francesco-cecere/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -30,7 +30,7 @@ gene–gene interactions."><meta property="og:image" content="https://ngsFC.gith
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Edge Mining of Gene Interactions Using PubMed</h1>
-      <small class="dont-index">Source: <a href="https://github.com/francesco-cecere/scGraphVerse/blob/HEAD/R/edge_mining.R" class="external-link"><code>R/edge_mining.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ngsFC/scGraphVerse/blob/HEAD/R/edge_mining.R" class="external-link"><code>R/edge_mining.R</code></a></small>
       <div class="d-none name"><code>edge_mining.Rd</code></div>
     </div>
 
@@ -120,37 +120,71 @@ gene pair. Returns counts of hits, PMIDs, and query status.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">predicted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">1</span>, <span class="fl">0.1</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">predicted</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">predicted</span><span class="op">)</span> <span class="op">&lt;-</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ground_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">1</span>, <span class="fl">0.05</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">ground_truth</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">ground_truth</span><span class="op">)</span> <span class="op">&lt;-</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">edge_mining</span><span class="op">(</span></span></span>
-<span class="r-in"><span>    predicted_list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>pred_net <span class="op">=</span> <span class="va">predicted</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    ground_truth <span class="op">=</span> <span class="va">ground_truth</span></span></span>
+<span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">pred_net</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   gene1  gene2 edge_type pubmed_hits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Gene1  Gene2        FP          16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Gene1  Gene4        FP           0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 Gene2  Gene4        FP           0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 Gene7  Gene9        FP           0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 Gene3 Gene10        FN           0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                                                          PMIDs</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 38279496,35709900,33294693,29210166,27329801,24448204,20852103,18679149,16750900,15552041,12810866,12390896,10570058,8294771,8357829,3140236</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                                                                                                                                         &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                                                                                                                                         &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                                                                                                                                         &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                                                                                                                                         &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   query_status</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1   hits_found</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2      no_hits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3      no_hits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4      no_hits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5      no_hits</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2726946</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2554773</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2324460</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4           BTF3     EEF1A1 0.1986628</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          HLA-B      HLA-E 0.1954424</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           NACA       EEF2 0.1917820</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">binary_listj</span> <span class="op">&lt;-</span> <span class="fu"><a href="cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    weighted_adjm_list <span class="op">=</span> <span class="va">swadj_list</span>,</span></span>
+<span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span>,</span></span>
+<span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.19736</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.21316</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.19514</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        HLA-E NACA PFN1 TMSB4X UBA52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    1    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0      0     0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_listj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        HLA-E NACA PFN1 TMSB4X UBA52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0      0     0</span>
+<span class="r-in"><span><span class="va">em</span> <span class="op">&lt;-</span> <span class="fu">edge_mining</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span>, <span class="va">adj_truth</span>, query_edge_types <span class="op">=</span> <span class="st">"TP"</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -101,7 +101,7 @@ networks <- infer_networks(
 
 Convert edge lists to weighted matrices, symmetrize, and apply threshold.
 
-```{r adjacency}
+```{r adjacency, fig.alt="plot Graphs"}
 # Weighted adjacency
 wadj <- generate_adjacency(networks)
 # Symmetrize
@@ -123,11 +123,14 @@ plotg(binary_adj)
 
 Aggregate multiple binary networks into a consensus and find network modules.
 
-```{r consensus}
+```{r consensus, fig.alt="plot consensus Graph"}
 # Consensus by vote
 consensus <- create_consensus(binary_adj, method = "vote")
 plotg(list(consensus))
+```
 
+
+```{r compare-community, fig.alt="comparing Graphs with STRINGdb"}
 compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
 
 # Community detection

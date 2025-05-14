@@ -17,7 +17,7 @@ In this case study, we use **scGraphVerse** to:
 
 1. Define a ground-truth regulatory network from high-confidence interactions.
 2. Simulate zero-inflated scRNA-seq count data that respects the ground truth.
-3. Infer gene regulatory networks using **JRF**.
+3. Infer gene regulatory networks using **GENIE3**.
 4. Evaluate performance with ROC curves, precision–recall scores, 
 and community similarity.
 5. Build consensus networks and perform edge mining.
@@ -32,7 +32,6 @@ knitr::opts_chunk$set(
 library(scGraphVerse)
 library(igraph)
 library(ggraph)
-library(tidyverse)
 ```
 
 # 1. Defining a Ground-Truth Network from STRINGdb
@@ -40,7 +39,7 @@ library(tidyverse)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r ground-truth}
+```{r ground-truth, fig.alt="Reference graph"}
 # 1. Download PBMC data
 url <- paste0(
     "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
@@ -67,10 +66,6 @@ str_res <- stringdb_adjacency(
 )
 wadj_truth <- str_res$weighted
 adj_truth <- str_res$binary
-
-# 4. Symmetrize and sort
-common <- intersect(rownames(adj_truth), colnames(adj_truth))
-adj_truth <- adj_truth[common, common]
 adj_truth <- adj_truth[order(rownames(adj_truth)), order(colnames(adj_truth))]
 
 # 5. Visualize network
@@ -110,8 +105,6 @@ sims <- zinb_simdata(
 # Transpose to cells × genes
 count_matrices <- lapply(sims, t)
 
-# Inspect sparsity
-sparsity <- sapply(count_matrices, function(mat) mean(mat == 0))
 ```
 
 # 3. Inferring Networks with JRF
@@ -135,7 +128,7 @@ swadj_list <- symmetrize(wadj_list, weight_function = "mean")
 
 Plot the ROC curve comparing continuous edge weights to the binary ground truth.
 
-```{r roc-curve}
+```{r roc-curve, fig.alt="ROC curve"}
 roc_res <- plotROC(
     swadj_list,
     adj_truth,
@@ -150,7 +143,7 @@ auc_joint <- roc_res$auc
 
 Compute precision scores and visualize the binary networks.
 
-```{r pr-and-plot}
+```{r pr-and-plot, fig.alt="result Graphs"}
 # Binary cutoff at 95th percentile
 binary_listj <- cutoff_adjacency(
     count_matrices = count_matrices,
@@ -164,10 +157,9 @@ binary_listj <- cutoff_adjacency(
 
 # Precision scores
 pscores_joint <- pscores(adj_truth, binary_listj)
-print(pscores_joint)
+head(pscores_joint)
 
 # Network plot
-title <- "JRF Binary Networks"
 plotg(binary_listj)
 ```
 
@@ -176,11 +168,14 @@ plotg(binary_listj)
 Aggregate inferred binaries by majority vote and compare community structure
 to ground truth.
 
-```{r consensus-communities}
+```{r consensus, fig.alt="consensus Graph"}
 # Consensus matrix
 consensus <- create_consensus(binary_listj, method = "vote")
 plotg(list(consensus))
+```
 
+
+```{r communities, "compare Graph with reference}
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,

@@ -13,7 +13,7 @@ After renaming, the datasets are merged into a single object.'><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,7 +25,7 @@ After renaming, the datasets are merged into a single object.'><meta property="o
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/francesco-cecere/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -34,7 +34,7 @@ After renaming, the datasets are merged into a single object.'><meta property="o
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Modify Cell Names and Combine Datasets</h1>
-      <small class="dont-index">Source: <a href="https://github.com/francesco-cecere/scGraphVerse/blob/HEAD/R/earlyj.R" class="external-link"><code>R/earlyj.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ngsFC/scGraphVerse/blob/HEAD/R/earlyj.R" class="external-link"><code>R/earlyj.R</code></a></small>
       <div class="d-none name"><code>earlyj.Rd</code></div>
     </div>
 
@@ -82,19 +82,80 @@ original list position.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example with matrices where genes are rows (default behavior)</span></span></span>
-<span class="r-in"><span><span class="va">mat1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">10</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">5</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">10</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">mat1</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">mat2</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">combined_matrix</span> <span class="op">&lt;-</span> <span class="fu">earlyj</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">mat1</span>, <span class="va">mat2</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example with matrices where genes are columns</span></span></span>
-<span class="r-in"><span><span class="va">mat3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">mat1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mat4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">mat2</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">combined_matrix2</span> <span class="op">&lt;-</span> <span class="fu">earlyj</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">mat3</span>, <span class="va">mat4</span><span class="op">)</span>, rowg <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">earlym</span> <span class="op">&lt;-</span> <span class="fu">earlyj</span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">earlym</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_1-m1 cell_2-m1 cell_3-m1 cell_4-m1 cell_5-m1 cell_6-m1 cell_7-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          7         4         0         1         4         4        10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           1         2         8         6         7         3         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           4         9         0        11         1         2         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           0        13         0         1         8         2         5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         6         2         3         4         1         1         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          4         2         3         2         1         2         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_8-m1 cell_9-m1 cell_10-m1 cell_11-m1 cell_12-m1 cell_13-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          9         4          5          4          6          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           3         2          4          3          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           2         0          2          1          6          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           2         1          2          0          6          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         0         3          1          0          2         10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          2         5          3          4          5          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_14-m1 cell_15-m1 cell_16-m1 cell_17-m1 cell_18-m1 cell_19-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2         10          1          3          3          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            2          3          4          4          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            2          1          5          6          2          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            0          7          2          0          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          4          0          1          6          3          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           1          1          1          4          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_20-m1 cell_1-m2 cell_2-m2 cell_3-m2 cell_4-m2 cell_5-m2 cell_6-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           1         3         3         5         1         4         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            0         1         1         0         1         0         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            0         4         1         2         1         3         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            1         0         1         0         2         1         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          8         3         0         2         1         0         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           3         4         2         3         1         3         4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_7-m2 cell_8-m2 cell_9-m2 cell_10-m2 cell_11-m2 cell_12-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          1         1         5          6          4          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           0         0         1          0          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           5         2         1          1          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           1         5         2          0          2          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         4         0         2          6          1          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          6         4         5          4          5          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_13-m2 cell_14-m2 cell_15-m2 cell_16-m2 cell_17-m2 cell_18-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           1          1          2          3          1          7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            5          5          1          3          0          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          3          2          2          2          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            6          6          2          2          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          0          3          1          0          1          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           7          6          1          3          1          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_19-m2 cell_20-m2 cell_1-m3 cell_2-m3 cell_3-m3 cell_4-m3 cell_5-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2          4         4        10         2         2         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            7          1         1         1         8         0         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          3         6         6         1         5         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            5          2         3         2         2         2         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          1          3         8         5         2         2         4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           2          5         3         2         5         8         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_6-m3 cell_7-m3 cell_8-m3 cell_9-m3 cell_10-m3 cell_11-m3 cell_12-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          2         3         1         3          1          2          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           1         0         0         1          1          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           0         3         2         1          0          0          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           3         4         8         3          4          4          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         6         1         3         1          2         10          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          1         1         3         3          4          7          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_13-m3 cell_14-m3 cell_15-m3 cell_16-m3 cell_17-m3 cell_18-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2          1          4          3          3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            6          0          5          4          4          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          1          5          5          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            9          1          3          0          6          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          3          7          0          0          4          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           2          6          6          0          0          7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_19-m3 cell_20-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            4          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            0          9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          4          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           0          1</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

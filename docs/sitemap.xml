@@ -1,15 +1,18 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://ngsFC.github.io/scGraphVerse/404.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/LICENSE-text.html</loc></url>
+<url><loc>https://ngsFC.github.io/scGraphVerse/LICENSE.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/articles/case_study.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/articles/index.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/articles/simulation_study.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/authors.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/index.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/news/index.html</loc></url>
+<url><loc>https://ngsFC.github.io/scGraphVerse/reference/adj_truth.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/community_path.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/community_similarity.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/compare_consensus.html</loc></url>
+<url><loc>https://ngsFC.github.io/scGraphVerse/reference/count_matrices.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/create_consensus.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/cutoff_adjacency.html</loc></url>
 <url><loc>https://ngsFC.github.io/scGraphVerse/reference/download_Atlas.html</loc></url>

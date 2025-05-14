@@ -15,7 +15,7 @@ radar plot for community assignment and bar plots for topology."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,7 +27,7 @@ radar plot for community assignment and bar plots for topology."><meta property=
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/francesco-cecere/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -36,7 +36,7 @@ radar plot for community assignment and bar plots for topology."><meta property=
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Compare Community Assignments and Topological Properties</h1>
-      <small class="dont-index">Source: <a href="https://github.com/francesco-cecere/scGraphVerse/blob/HEAD/R/community_similarity.R" class="external-link"><code>R/community_similarity.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ngsFC/scGraphVerse/blob/HEAD/R/community_similarity.R" class="external-link"><code>R/community_similarity.R</code></a></small>
       <div class="d-none name"><code>community_similarity.Rd</code></div>
     </div>
 
@@ -88,83 +88,70 @@ plotting raw values without normalization.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="st">"TP53"</span>,   <span class="st">"BRCA1"</span>, <span class="st">"EGFR"</span>,   <span class="st">"MYC"</span>,     <span class="st">"CDKN1A"</span>,</span></span>
-<span class="r-in"><span>    <span class="st">"BCL2"</span>,   <span class="st">"MDM2"</span>,  <span class="st">"PTEN"</span>,   <span class="st">"AKT1"</span>,    <span class="st">"MAPK1"</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2803988</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2494599</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2402641</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-B      HLA-E 0.2099704</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5           CFL1      UBA52 0.1823513</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           BTF3       NACA 0.1818581</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="fl">0</span>,</span></span>
-<span class="r-in"><span>    nrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">genes</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    ncol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">genes</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">genes</span>, <span class="va">genes</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">binary_listj</span> <span class="op">&lt;-</span> <span class="fu"><a href="cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    weighted_adjm_list <span class="op">=</span> <span class="va">swadj_list</span>,</span></span>
+<span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span>,</span></span>
+<span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.18854</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.19182</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.19202</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        HLA-E NACA PFN1 TMSB4X UBA52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    1    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0      0     0</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">edge_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"MDM2"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"CDKN1A"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BRCA1"</span>, <span class="st">"BCL2"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PTEN"</span>, <span class="st">"AKT1"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EGFR"</span>, <span class="st">"MAPK1"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MYC"</span>, <span class="st">"CDKN1A"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MYC"</span>, <span class="st">"BCL2"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"AKT1"</span>, <span class="st">"MAPK1"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw">for</span> <span class="op">(</span><span class="va">e</span> <span class="kw">in</span> <span class="va">edge_list</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="va">adj</span><span class="op">[</span><span class="va">e</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">e</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
-<span class="r-in"><span>    <span class="va">adj</span><span class="op">[</span><span class="va">e</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="va">e</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">adj</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></span>
-<span class="r-in"><span><span class="va">control</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    adj_matrix <span class="op">=</span> <span class="va">adj</span>,</span></span>
-<span class="r-in"><span>    methods    <span class="op">=</span> <span class="st">"louvain"</span>,</span></span>
-<span class="r-in"><span>    pathway_db <span class="op">=</span> <span class="st">"KEGG"</span>,</span></span>
-<span class="r-in"><span>    genes_path <span class="op">=</span> <span class="fl">2</span>,</span></span>
-<span class="r-in"><span>    plot       <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
-<span class="r-in"><span>    verbose    <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">pred1_adj</span> <span class="op">&lt;-</span> <span class="va">adj</span></span></span>
-<span class="r-in"><span><span class="va">pred1_adj</span><span class="op">[</span><span class="st">"TP53"</span>, <span class="st">"MDM2"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">pred1_adj</span><span class="op">[</span><span class="st">"MDM2"</span>, <span class="st">"TP53"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">pred2_adj</span> <span class="op">&lt;-</span> <span class="va">adj</span></span></span>
-<span class="r-in"><span><span class="va">pred2_adj</span><span class="op">[</span><span class="st">"MYC"</span>, <span class="st">"PTEN"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">pred2_adj</span><span class="op">[</span><span class="st">"PTEN"</span>, <span class="st">"MYC"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
-<span class="r-in"><span><span class="va">pred1</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    adj_matrix <span class="op">=</span> <span class="va">pred1_adj</span>,</span></span>
-<span class="r-in"><span>    methods <span class="op">=</span> <span class="st">"louvain"</span>,</span></span>
-<span class="r-in"><span>    pathway_db <span class="op">=</span> <span class="st">"KEGG"</span>,</span></span>
-<span class="r-in"><span>    genes_path <span class="op">=</span> <span class="fl">2</span>,</span></span>
-<span class="r-in"><span>    plot <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
-<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">pred2</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    adj_matrix <span class="op">=</span> <span class="va">pred2_adj</span>,</span></span>
-<span class="r-in"><span>    methods    <span class="op">=</span> <span class="st">"louvain"</span>,</span></span>
-<span class="r-in"><span>    pathway_db <span class="op">=</span> <span class="st">"KEGG"</span>,</span></span>
-<span class="r-in"><span>    genes_path <span class="op">=</span> <span class="fl">2</span>,</span></span>
-<span class="r-in"><span>    plot       <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
-<span class="r-in"><span>    verbose    <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu">community_similarity</span><span class="op">(</span></span></span>
-<span class="r-in"><span>    control_output <span class="op">=</span> <span class="va">control</span>,</span></span>
-<span class="r-in"><span>    predicted_list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">pred1</span>, <span class="va">pred2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_listj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">comm_cons</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Detecting communities...</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>minimal value for n is 3, returning requested palette with 3 different levels</span>
 <span class="r-plt img"><img src="community_similarity-1.png" alt="" width="700" height="433"></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running pathway enrichment...</span>
+<span class="r-in"><span><span class="va">comm_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Detecting communities...</span>
 <span class="r-plt img"><img src="community_similarity-2.png" alt="" width="700" height="433"></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running pathway enrichment...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Reading KEGG annotation online: "https://rest.kegg.jp/list/pathway/hsa"...</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">sim_score</span> <span class="op">&lt;-</span> <span class="fu">community_similarity</span><span class="op">(</span><span class="va">comm_truth</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">comm_cons</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="community_similarity-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="community_similarity-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

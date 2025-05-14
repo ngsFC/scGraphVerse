@@ -1,6 +1,6 @@
 # scGraphVerse News
 
-## scGraphVerse 0.1.0 (Development Version)
+## scGraphVerse 0.99.0 (Development Version)
 
 ### 🚀 Initial Release
 

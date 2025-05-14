@@ -11,7 +11,7 @@ radar (spider) plot."><meta property="og:image" content="https://ngsFC.github.io
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,7 +23,7 @@ radar (spider) plot."><meta property="og:image" content="https://ngsFC.github.io
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/francesco-cecere/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -32,7 +32,7 @@ radar (spider) plot."><meta property="og:image" content="https://ngsFC.github.io
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Compute Performance Scores for Predicted Adjacency Matrices</h1>
-      <small class="dont-index">Source: <a href="https://github.com/francesco-cecere/scGraphVerse/blob/HEAD/R/pscores.R" class="external-link"><code>R/pscores.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ngsFC/scGraphVerse/blob/HEAD/R/pscores.R" class="external-link"><code>R/pscores.R</code></a></small>
       <div class="d-none name"><code>pscores.Rd</code></div>
     </div>
 
@@ -89,31 +89,34 @@ across matrices.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Simulate ground truth and predictions</span></span></span>
-<span class="r-in"><span><span class="va">ground_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">1</span>, <span class="fl">100</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    nrow <span class="op">=</span> <span class="fl">10</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">ground_truth</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></span>
-<span class="r-in"><span><span class="va">pred1</span> <span class="op">&lt;-</span> <span class="va">ground_truth</span></span></span>
-<span class="r-in"><span><span class="va">pred2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">1</span>, <span class="fl">100</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    nrow <span class="op">=</span> <span class="fl">10</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compute scores and generate radar plot</span></span></span>
-<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">pscores</span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="va">ground_truth</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">pred1</span>, <span class="va">pred2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">binary_listj</span> <span class="op">&lt;-</span> <span class="fu"><a href="cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    count_matrices <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
+<span class="r-in"><span>    weighted_adjm_list <span class="op">=</span> <span class="va">swadj_list</span>,</span></span>
+<span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
+<span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span>,</span></span>
+<span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.20908</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.18948</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.20597</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pscores_data</span> <span class="op">&lt;-</span> <span class="fu">pscores</span><span class="op">(</span><span class="va">adj_truth</span>, <span class="va">binary_listj</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="pscores-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">Statistics</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Predicted_Matrix TP TN FP FN       TPR       FPR Precision        F1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         Matrix 1 26 19  0  0 1.0000000 0.0000000 1.0000000 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         Matrix 2 14 10  9 12 0.5384615 0.4736842 0.6086957 0.5714286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          MCC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 1.00000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.06400461</span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
