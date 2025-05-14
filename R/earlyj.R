@@ -24,7 +24,6 @@
 #'  original list position.
 #'
 #' @importFrom Seurat RenameCells Cells
-#' @importFrom SeuratObject merge.Assay subset.Assay
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
 #' @export

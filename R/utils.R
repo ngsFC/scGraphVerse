@@ -232,7 +232,6 @@
 # earlyj
 #' @keywords internal
 #' @noRd
-
 .merge_matrix_list <- function(input_list, rowg) {
     lapply(seq_along(input_list), function(i) {
         mat <- input_list[[i]]
@@ -249,6 +248,7 @@
 }
 #' @keywords internal
 #' @noRd
+#' @importFrom SeuratObject merge.Assay subset.Assay
 
 .merge_seurat_list <- function(input_list) {
     common_features <- Reduce(intersect, lapply(input_list, rownames))

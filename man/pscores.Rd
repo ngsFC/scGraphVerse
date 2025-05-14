@@ -47,7 +47,7 @@ data(adj_truth)
 networks <- infer_networks(
     count_matrices_list = count_matrices,
     method = "GENIE3",
-    nCores = 15
+    nCores = 1
 )
 
 wadj_list <- generate_adjacency(networks)
@@ -59,7 +59,7 @@ binary_listj <- cutoff_adjacency(
     n = 2,
     method = "GENIE3",
     quantile_threshold = 0.99,
-    nCores = 15,
+    nCores = 1,
     debug = TRUE
 )
 

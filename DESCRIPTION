@@ -29,6 +29,7 @@ Imports:
     ReactomePA,
     STRINGdb,
     Seurat,
+    SeuratObject,
     SingleCellExperiment,
     SummarizedExperiment,
     clusterProfiler,
