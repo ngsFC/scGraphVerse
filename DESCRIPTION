@@ -63,6 +63,6 @@ Suggests:
     JRF,
     ZILGM,
     learn2count,
-    INet-tool
+    INet-Tool
 VignetteBuilder: knitr
 LazyData: true
