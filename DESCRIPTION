@@ -66,3 +66,6 @@ Suggests:
     INetTool
 VignetteBuilder: knitr
 LazyData: true
+URL: https://ngsFC.github.io/scGraphVerse
+BugReports: https://github.com/ngsFC/scGraphVerse/issues
+

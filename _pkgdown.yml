@@ -22,7 +22,11 @@ home:
     - text: Report Issues
       href: https://github.com/ngsFC/scGraphVerse/issues
 
-reference:   
+reference:
+  - title: "Data preparation"
+    contents:
+        - adj_truth
+        - count_matrices   
   - title: "Infer Networks"
     contents:
       - infer_networks
