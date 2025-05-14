@@ -175,7 +175,7 @@ plotg(list(consensus))
 ```
 
 
-```{r communities, "compare Graph with reference"}
+```{r communities, fig.alt="compare Graph with reference"}
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,

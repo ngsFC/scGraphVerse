@@ -140,16 +140,16 @@ al., 2010).</p></li>
 <span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
-<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2663768</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2467107</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2385148</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-B      HLA-E 0.2013621</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           NACA       EEF2 0.1956099</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6          ACTG1      HLA-B 0.1899475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2644125</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2513935</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2468772</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-B      HLA-E 0.1975167</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5           BTF3       NACA 0.1864610</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           NACA       EEF2 0.1859207</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -160,12 +160,12 @@ al., 2010).</p></li>
 <span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
 <span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
-<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.21566</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.19096</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.18098</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.20636</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.22127</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.21631</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>

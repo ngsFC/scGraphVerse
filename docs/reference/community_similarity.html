@@ -93,16 +93,16 @@ plotting raw values without normalization.</p>
 <span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="infer_networks.html">infer_networks</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
-<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span></span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2803988</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2494599</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2402641</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-B      HLA-E 0.2099704</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           CFL1      UBA52 0.1823513</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           BTF3       NACA 0.1818581</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2490924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-C       PFN1 0.2345418</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-B     TMSB4X 0.2301956</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4           BTF3     EEF1A1 0.2040955</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ACTG1      HLA-B 0.1924662</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           BTF3       NACA 0.1905001</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -113,12 +113,12 @@ plotting raw values without normalization.</p>
 <span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
 <span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
-<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">15</span>,</span></span>
+<span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.18854</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.19182</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.19202</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.19736</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.21316</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.19514</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
@@ -150,8 +150,7 @@ plotting raw values without normalization.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Reading KEGG annotation online: "https://rest.kegg.jp/list/pathway/hsa"...</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">sim_score</span> <span class="op">&lt;-</span> <span class="fu">community_similarity</span><span class="op">(</span><span class="va">comm_truth</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">comm_cons</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="community_similarity-3.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="community_similarity-4.png" alt="" width="700" height="433"></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in i_compare(comm1, comm2, method):</span> At vendor/cigraph/src/community/community_misc.c:277 : Membership indices should be less than total number of vertices. Found member of cluster 18, but only 18 vertices. Invalid value</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
