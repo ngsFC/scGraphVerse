@@ -176,7 +176,7 @@ threshold.</p>
 <span><span class="op">)</span></span>
 <span><span class="co"># Plot</span></span>
 <span><span class="fu"><a href="../reference/plotg.html">plotg</a></span><span class="op">(</span><span class="va">binary_adj</span><span class="op">)</span></span></code></pre></div>
-<p><img src="case_study_files/figure-html/adjacency-1.png" width="576"></p>
+<p><img src="case_study_files/figure-html/adjacency-1.png" alt="plot Graphs" width="576"></p>
 </div>
 </div>
 <div class="section level2">
@@ -188,23 +188,22 @@ modules.</p>
 <code class="sourceCode R"><span><span class="co"># Consensus by vote</span></span>
 <span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_adj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plotg.html">plotg</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="case_study_files/figure-html/consensus-1.png" width="576"></p>
+<p><img src="case_study_files/figure-html/consensus-1.png" alt="plot consensus Graph" width="576"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/compare_consensus.html">compare_consensus</a></span><span class="op">(</span>consensus_matrix <span class="op">=</span> <span class="va">consensus</span>, false_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_consensus.html">compare_consensus</a></span><span class="op">(</span>consensus_matrix <span class="op">=</span> <span class="va">consensus</span>, false_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Initializing STRINGdb...</span></span>
 <span><span class="co">#&gt; Mapping genes to STRING IDs...</span></span>
 <span><span class="co">#&gt; Mapped 116 genes to STRING IDs.</span></span>
 <span><span class="co">#&gt; Retrieving physical interactions from STRING API...</span></span>
 <span><span class="co">#&gt; Found 71 STRING physical interactions.</span></span>
 <span><span class="co">#&gt; Adjacency matrices constructed successfully.</span></span></code></pre></div>
-<p><img src="case_study_files/figure-html/consensus-2.png" width="576"></p>
+<p><img src="case_study_files/figure-html/compare-community-1.png" alt="comparing Graphs with STRINGdb" width="576"></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># Community detection</span></span>
 <span><span class="va">communities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/community_path.html">community_path</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detecting communities...</span></span></code></pre></div>
-<p><img src="case_study_files/figure-html/consensus-3.png" width="576"></p>
+<p><img src="case_study_files/figure-html/compare-community-2.png" alt="comparing Graphs with STRINGdb" width="576"></p>
 <pre><code><span><span class="co">#&gt; Running pathway enrichment...</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="co">#&gt; Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...</span></span>
