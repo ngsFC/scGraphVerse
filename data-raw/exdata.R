@@ -10,7 +10,7 @@ seu <- download_Atlas(file_url = url)
 # 2. Select top 500 T-cell genes
 genes <- selgene(
     object = seu,
-    top_n = 50,
+    top_n = 100,
     cell_type = "T_cells",
     cell_type_col = "CELL_TYPE",
     remove_rib = TRUE,
@@ -37,7 +37,7 @@ adj_truth <- adj_truth[order(rownames(adj_truth)), order(colnames(adj_truth))]
 # Simulation parameters
 nodes <- nrow(adj_truth)
 sims <- zinb_simdata(
-    n = 20,
+    n = 40,
     p = nodes,
     B = adj_truth,
     mu_range = list(c(1, 4), c(1, 7), c(1, 10)),

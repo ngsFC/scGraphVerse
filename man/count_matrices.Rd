@@ -5,7 +5,7 @@
 \alias{count_matrices}
 \title{Toy gene expression dataset for examples}
 \format{
-A list with 3 matrices, each of dimension 18 genes x 20 cells.
+A list with 3 matrices, each of dimension 38 genes x 40 cells.
 }
 \usage{
 data(count_matrices)

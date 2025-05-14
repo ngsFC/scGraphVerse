@@ -3,7 +3,7 @@
 #' An afjacency matrix generated using real dataset and STRINGdb for
 #' demonstrating functions in the scGraphVerse package.
 #'
-#' @format A matrix of dimension 18x18.
+#' @format A matrix of dimension 38x38.
 #' @usage data(adj_truth)
 #' @examples
 #' data(adj_truth)
