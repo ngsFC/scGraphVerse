@@ -685,9 +685,9 @@
 
 .compare_communities <- function(control_comm, pred_comm) {
     c(
-        VI  = igraph::compare(c0, p0, method = "vi"),
-        NMI = igraph::compare(c0, p0, method = "nmi"),
-        ARI = igraph::compare(c0, p0, method = "adjusted.rand")
+        VI  = igraph::compare(control_comm, pred_comm, method = "vi"),
+        NMI = igraph::compare(control_comm, pred_comm, method = "nmi"),
+        ARI = igraph::compare(control_comm, pred_comm, method = "adjusted.rand")
     )
 }
 
