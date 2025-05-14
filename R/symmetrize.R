@@ -29,16 +29,17 @@
 #' @export
 #'
 #' @examples
-#' mat1 <- matrix(c(0, 2, 3, 4), nrow = 2)
-#' mat2 <- matrix(c(0, 5, 6, 0), nrow = 2)
-#' matrix_list <- list(mat1, mat2)
+#' data("count_matrices")
 #'
-#' sym_list <- symmetrize(
-#'     matrix_list,
-#'     weight_function = "mean"
+#' networks <- infer_networks(
+#'     count_matrices_list = count_matrices,
+#'     method = "GENIE3",
+#'     nCores = 15
 #' )
+#' head(networks[[1]])
 #'
-#' sym_list[[1]]
+#' wadj_list <- generate_adjacency(networks)
+#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
 symmetrize <- function(
     matrix_list,
     weight_function = "mean",

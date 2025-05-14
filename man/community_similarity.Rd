@@ -40,69 +40,32 @@ Rand index (ARI). Topological properties are compared by directly
 plotting raw values without normalization.
 }
 \examples{
-genes <- c(
-    "TP53",   "BRCA1", "EGFR",   "MYC",     "CDKN1A",
-    "BCL2",   "MDM2",  "PTEN",   "AKT1",    "MAPK1"
+data(count_matrices)
+data(adj_truth)
+networks <- infer_networks(
+    count_matrices_list = count_matrices,
+    method = "GENIE3",
+    nCores = 15
 )
+head(networks[[1]])
 
-adj <- matrix(
-    0,
-    nrow = length(genes),
-    ncol = length(genes),
-    dimnames = list(genes, genes)
+wadj_list <- generate_adjacency(networks)
+swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+
+binary_listj <- cutoff_adjacency(
+    count_matrices = count_matrices,
+    weighted_adjm_list = swadj_list,
+    n = 2,
+    method = "GENIE3",
+    quantile_threshold = 0.99,
+    nCores = 15,
+    debug = TRUE
 )
+head(binary_listj[[1]])
 
-edge_list <- list(
-    c("TP53", "MDM2"),
-    c("TP53", "CDKN1A"),
-    c("BRCA1", "BCL2"),
-    c("PTEN", "AKT1"),
-    c("EGFR", "MAPK1"),
-    c("MYC", "CDKN1A"),
-    c("MYC", "BCL2"),
-    c("AKT1", "MAPK1")
-)
+consensus <- create_consensus(binary_listj, method = "vote")
+comm_cons <- community_path(consensus)
+comm_truth <- community_path(adj_truth)
 
-for (e in edge_list) {
-    adj[e[1], e[2]] <- 1
-    adj[e[2], e[1]] <- 1
-}
-
-diag(adj) <- 0
-control <- community_path(
-    adj_matrix = adj,
-    methods    = "louvain",
-    pathway_db = "KEGG",
-    genes_path = 2,
-    plot       = FALSE,
-    verbose    = FALSE
-)
-
-pred1_adj <- adj
-pred1_adj["TP53", "MDM2"] <- pred1_adj["MDM2", "TP53"] <- 0
-
-pred2_adj <- adj
-pred2_adj["MYC", "PTEN"] <- pred2_adj["PTEN", "MYC"] <- 1
-pred1 <- community_path(
-    adj_matrix = pred1_adj,
-    methods = "louvain",
-    pathway_db = "KEGG",
-    genes_path = 2,
-    plot = FALSE,
-    verbose = FALSE
-)
-
-pred2 <- community_path(
-    adj_matrix = pred2_adj,
-    methods    = "louvain",
-    pathway_db = "KEGG",
-    genes_path = 2,
-    plot       = FALSE,
-    verbose    = FALSE
-)
-
-comparison <- community_similarity(
-    control_output = control,
-    predicted_list = list(pred1, pred2)
-)
+sim_score <- community_similarity(comm_truth, list(comm_cons))
 }

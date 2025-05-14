@@ -44,20 +44,19 @@
 #' @export
 #'
 #' @examples
-#' B <- matrix(0, nrow = 5, ncol = 5)
-#' rownames(B) <- colnames(B) <- paste0("Gene", 1:5)
-#' B[1, 2] <- B[2, 3] <- B[4, 5] <- 1
-#' B <- B + t(B)
-#' zinb_matrices <- zinb_simdata(
-#'     n = 100, p = 5, B = B,
-#'     mu_range = list(c(1, 5), c(2, 6)),
-#'     mu_noise = c(0.5, 0.7),
-#'     theta = c(1, 2),
-#'     pi = c(0.2, 0.3),
-#'     kmat = 2,
-#'     depth_range = c(500, 5000)
+#' data(adj_truth)
+#' nodes <- nrow(adj_truth)
+#' sims <- zinb_simdata(
+#'     n = 50,
+#'     p = nodes,
+#'     B = adj_truth,
+#'     mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
+#'     mu_noise = c(1, 3, 5),
+#'     theta = c(1, 0.7, 0.5),
+#'     pi = c(0.2, 0.2, 0.2),
+#'     kmat = 3,
+#'     depth_range = c(0.8 * nodes * 3, 1.2 * nodes * 3)
 #' )
-#' print(zinb_matrices[[1]])
 zinb_simdata <- function(
     n,
     p,

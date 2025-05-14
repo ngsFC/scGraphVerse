@@ -40,22 +40,15 @@ Missing weights (\code{NA}) are ignored during construction. Only
 gene pairs matching the global gene list are inserted.
 }
 \examples{
-# Create two simple interaction tables
-df1 <- data.frame(
-    Gene1 = c("GeneA", "GeneB"),
-    Gene2 = c("GeneB", "GeneC"),
-    Weight = c(0.5, 0.8)
+data("count_matrices")
+
+networks <- infer_networks(
+    count_matrices_list = count_matrices,
+    method = "GENIE3",
+    nCores = 15
 )
+head(networks[[1]])
 
-df2 <- data.frame(
-    Gene1 = c("GeneC"),
-    Gene2 = c("GeneA"),
-    Weight = 1.0
-)
-
-# Generate adjacency matrices
-adjacency_list <- generate_adjacency(list(df1, df2))
-
-# View one of the matrices
-adjacency_list[[1]]
+wadj_list <- generate_adjacency(networks)
+head(wadj_list[[1]])
 }

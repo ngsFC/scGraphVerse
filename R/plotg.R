@@ -32,9 +32,29 @@
 #' @export
 #'
 #' @examples
-#' adj1 <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3)
-#' adj2 <- matrix(c(0, 1, 1, 1, 0, 0, 1, 0, 0), nrow = 3)
-#' plotg(list(adj1, adj2))
+#' data(count_matrices)
+#'
+#' networks <- infer_networks(
+#'     count_matrices_list = count_matrices,
+#'     method = "GENIE3",
+#'     nCores = 15
+#' )
+#' head(networks[[1]])
+#'
+#' wadj_list <- generate_adjacency(networks)
+#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#'
+#' binary_listj <- cutoff_adjacency(
+#'     count_matrices = count_matrices,
+#'     weighted_adjm_list = swadj_list,
+#'     n = 2,
+#'     method = "GENIE3",
+#'     quantile_threshold = 0.99,
+#'     nCores = 15,
+#'     debug = TRUE
+#' )
+#' head(binary_listj[[1]])
+#' plotg(binary_listj)
 plotg <- function(
     adj_matrix_list) {
     if (!requireNamespace("igraph", quietly = TRUE)) {

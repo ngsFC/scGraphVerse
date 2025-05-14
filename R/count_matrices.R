@@ -9,4 +9,3 @@
 #' data(count_matrices)
 #' str(count_matrices)
 "count_matrices"
-

@@ -29,19 +29,10 @@
 #' @export
 #'
 #' @examples
-#' # Example with matrices where genes are rows (default behavior)
-#' mat1 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
-#' mat2 <- matrix(rpois(100, 5), nrow = 10, ncol = 10)
-#' rownames(mat1) <- paste0("Gene", 1:10)
-#' rownames(mat2) <- paste0("Gene", 1:10)
+#' data(count_matrices)
 #'
-#' combined_matrix <- earlyj(list(mat1, mat2))
-#'
-#' # Example with matrices where genes are columns
-#' mat3 <- t(mat1)
-#' mat4 <- t(mat2)
-#'
-#' combined_matrix2 <- earlyj(list(mat3, mat4), rowg = FALSE)
+#' earlym <- earlyj(count_matrices)
+#' head(earlym)
 #'
 earlyj <- function(input_list, rowg = TRUE) {
     if (!is.list(input_list) || length(input_list) == 0) {

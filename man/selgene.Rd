@@ -70,32 +70,19 @@ matching gene names. These should follow standard naming conventions (e.g.,
 }
 
 \examples{
-library(SingleCellExperiment)
-
-expr_mat <- matrix(rnorm(1000, mean = 3), nrow = 100, ncol = 10)
-rownames(expr_mat) <- c(
-    paste0("MT-", 1:5),
-    paste0("RPL", 6:15),
-    paste0("Gene", 16:100)
+url <- paste0(
+    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
+    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
 )
-colnames(expr_mat) <- paste0("Cell", 1:10)
-
-cell_md <- DataFrame(celltype = rep(c("A", "B"), each = 5))
-
-sce <- SingleCellExperiment(
-    assays   = list(logcounts = expr_mat),
-    colData  = cell_md
+seu <- download_Atlas(file_url = url)
+genes <- selgene(
+    object = seu,
+    top_n = 50,
+    cell_type = "T_cells",
+    cell_type_col = "CELL_TYPE",
+    remove_rib = TRUE,
+    remove_mt = TRUE
 )
-
-top_genes <- selgene(
-    object         = sce,
-    top_n          = 10,
-    cell_type      = "A",
-    cell_type_col  = "celltype",
-    remove_mt      = TRUE,
-    remove_rib     = TRUE
-)
-
 }
 \seealso{
 \linkS4class{Seurat}, \linkS4class{SingleCellExperiment}

@@ -53,25 +53,40 @@ Requires the \pkg{igraph}, \pkg{ggraph}, \pkg{patchwork},
 \pkg{Matrix}, and \pkg{STRINGdb} packages.
 }
 \examples{
-set.seed(42)
-
-# Simulate small example matrices
-original <- matrix(
-    sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)),
-    5, 5
+data(count_matrices)
+data(adj_truth)
+networks <- infer_networks(
+    count_matrices_list = count_matrices,
+    method = "GENIE3",
+    nCores = 15
 )
-consensus <- matrix(
-    sample(0:1, 25, replace = TRUE, prob = c(0.8, 0.2)),
-    5, 5
-)
-diag(original) <- diag(consensus) <- 0
-rownames(original) <- colnames(original) <- paste0("Gene", 1:5)
-rownames(consensus) <- colnames(consensus) <- paste0("Gene", 1:5)
+head(networks[[1]])
 
-# Compare consensus network to original network
+wadj_list <- generate_adjacency(networks)
+swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+
+binary_listj <- cutoff_adjacency(
+    count_matrices = count_matrices,
+    weighted_adjm_list = swadj_list,
+    n = 2,
+    method = "GENIE3",
+    quantile_threshold = 0.99,
+    nCores = 15,
+    debug = TRUE
+)
+head(binary_listj[[1]])
+
+consensus <- create_consensus(binary_listj, method = "vote")
+
 compare_consensus(
     consensus,
-    reference_matrix = original,
-    false_plot       = TRUE
+    false_plot = TRUE
 )
+
+compare_consensus(
+    consensus,
+    reference_matrix = adj_truth,
+    false_plot = TRUE
+)
+
 }

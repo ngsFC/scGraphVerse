@@ -33,24 +33,30 @@
 #' @export
 #'
 #' @examples
-#' # Simulate ground truth and predictions
-#' ground_truth <- matrix(
-#'     sample(0:1, 100, replace = TRUE),
-#'     nrow = 10
-#' )
-#' diag(ground_truth) <- 0
-#' pred1 <- ground_truth
-#' pred2 <- matrix(
-#'     sample(0:1, 100, replace = TRUE),
-#'     nrow = 10
+#' data(count_matrices)
+#' data(adj_truth)
+#'
+#' networks <- infer_networks(
+#'     count_matrices_list = count_matrices,
+#'     method = "GENIE3",
+#'     nCores = 15
 #' )
 #'
-#' # Compute scores and generate radar plot
-#' result <- pscores(
-#'     ground_truth,
-#'     list(pred1, pred2)
+#' wadj_list <- generate_adjacency(networks)
+#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#'
+#' binary_listj <- cutoff_adjacency(
+#'     count_matrices = count_matrices,
+#'     weighted_adjm_list = swadj_list,
+#'     n = 2,
+#'     method = "GENIE3",
+#'     quantile_threshold = 0.99,
+#'     nCores = 15,
+#'     debug = TRUE
 #' )
-#' result$Statistics
+#'
+#' pscores_data <- pscores(adj_truth, binary_listj)
+#'
 pscores <- function(
     ground_truth,
     predicted_list,

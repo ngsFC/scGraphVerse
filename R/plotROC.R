@@ -29,17 +29,27 @@
 #' @export
 #'
 #' @examples
-#' mat1 <- matrix(runif(100), nrow = 10)
-#' mat2 <- matrix(runif(100), nrow = 10)
-#' gt <- matrix(sample(c(0, 1), 100, TRUE), nrow = 10)
-#' diag(gt) <- 0
-#' gt[lower.tri(gt)] <- 0
-#' plotROC(
-#'     matrices_list = list(mat1, mat2),
-#'     ground_truth  = gt,
-#'     plot_title    = "ROC for Network Inference",
-#'     is_binary     = FALSE
+#' data(count_matrices)
+#' data(adj_truth)
+#'
+#' networks <- infer_networks(
+#'     count_matrices_list = count_matrices,
+#'     method = "GENIE3",
+#'     nCores = 15
 #' )
+#' head(networks[[1]])
+#'
+#' wadj_list <- generate_adjacency(networks)
+#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#'
+#' roc_res <- plotROC(
+#'     swadj_list,
+#'     adj_truth,
+#'     plot_title = "ROC Curve: JRF Joint Integration",
+#'     is_binary = FALSE
+#' )
+#' roc_res$plot
+#' auc_joint <- roc_res$auc
 plotROC <- function(
     matrices_list,
     ground_truth,

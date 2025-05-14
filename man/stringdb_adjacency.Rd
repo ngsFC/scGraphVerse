@@ -57,12 +57,25 @@ Genes not mapped to STRING are optionally retained as zero rows/columns if
 Requires packages: \pkg{STRINGdb}, \pkg{httr}, \pkg{jsonlite}.
 }
 \examples{
-large_gene_set <- c("TP53", "BRCA1", "MYC", "EGFR", "PTEN")
-adjacency_list <- stringdb_adjacency(
-    genes = large_gene_set,
-    species = 9606,
-    required_score = 700
+url <- paste0(
+    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
+    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
 )
-weighted_mat <- adjacency_list$weighted
-binary_mat <- adjacency_list$binary
+seu <- download_Atlas(file_url = url)
+genes <- selgene(
+    object = seu,
+    top_n = 50,
+    cell_type = "T_cells",
+    cell_type_col = "CELL_TYPE",
+    remove_rib = TRUE,
+    remove_mt = TRUE
+)
+str_res <- stringdb_adjacency(
+    genes = genes,
+    species = 9606,
+    required_score = 900,
+    keep_all_genes = FALSE
+)
+wadj_truth <- str_res$weighted
+adj_truth <- str_res$binary
 }

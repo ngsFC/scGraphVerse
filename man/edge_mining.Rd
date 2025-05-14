@@ -55,17 +55,31 @@ matrix, identifies edge types (TP, FP, FN), and queries PubMed for each
 gene pair. Returns counts of hits, PMIDs, and query status.
 }
 \examples{
-set.seed(123)
-predicted <- matrix(rbinom(100, 1, 0.1), nrow = 10)
-rownames(predicted) <- colnames(predicted) <-
-    paste0("Gene", 1:10)
-ground_truth <- matrix(rbinom(100, 1, 0.05), nrow = 10)
-rownames(ground_truth) <- colnames(ground_truth) <-
-    paste0("Gene", 1:10)
+data(count_matrices)
+data(adj_truth)
 
-results <- edge_mining(
-    predicted_list = list(pred_net = predicted),
-    ground_truth = ground_truth
+networks <- infer_networks(
+    count_matrices_list = count_matrices,
+    method = "GENIE3",
+    nCores = 15
 )
-head(results$pred_net)
+head(networks[[1]])
+
+wadj_list <- generate_adjacency(networks)
+swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+
+binary_listj <- cutoff_adjacency(
+    count_matrices = count_matrices,
+    weighted_adjm_list = swadj_list,
+    n = 2,
+    method = "GENIE3",
+    quantile_threshold = 0.99,
+    nCores = 15,
+    debug = TRUE
+)
+head(binary_listj[[1]])
+
+consensus <- create_consensus(binary_listj, method = "vote")
+head(consensus)
+em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
 }

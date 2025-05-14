@@ -77,39 +77,26 @@ al., 2010).
 }
 }
 \examples{
-set.seed(123)
+data(count_matrices)
 
-# Simulate two small expression matrices
-mat1 <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
-mat2 <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
-rownames(mat1) <- paste0("Gene", 1:10)
-rownames(mat2) <- paste0("Gene", 1:10)
-
-# Infer networks using GENIE3
-network_list <- infer_networks(
-    count_matrices_list = list(mat1, mat2),
+networks <- infer_networks(
+    count_matrices_list = count_matrices,
     method = "GENIE3",
-    nCores = 2
+    nCores = 15
 )
+head(networks[[1]])
 
-# Convert inferred networks into adjacency matrices
-list_wadj <- generate_adjacency(network_list)
-list_swadj <- symmetrize(
-    list_wadj,
-    weight_function = "mean"
+wadj_list <- generate_adjacency(networks)
+swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+
+binary_listj <- cutoff_adjacency(
+    count_matrices = count_matrices,
+    weighted_adjm_list = swadj_list,
+    n = 2,
+    method = "GENIE3",
+    quantile_threshold = 0.99,
+    nCores = 15,
+    debug = TRUE
 )
-
-# Apply cutoff based on shuffled quantiles
-binary_adjm_list <- cutoff_adjacency(
-    count_matrices     = list(mat1, mat2),
-    weighted_adjm_list = list_swadj,
-    n                  = 2,
-    method             = "GENIE3",
-    quantile_threshold = 0.95,
-    nCores             = 2,
-    debug              = TRUE
-)
-
-# Inspect one thresholded adjacency matrix
-binary_adjm_list[[1]]
+head(binary_listj[[1]])
 }

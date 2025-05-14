@@ -20,4 +20,3 @@
 
 .onUnload <- function(libpath) {
 }
-

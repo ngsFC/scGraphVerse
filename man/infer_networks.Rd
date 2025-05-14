@@ -6,7 +6,7 @@
 \usage{
 infer_networks(
   count_matrices_list,
-  method = "GENIE3",
+  method = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"),
   adjm = NULL,
   nCores = 1,
   grnboost_modules = NULL
@@ -79,21 +79,12 @@ al., 2010).
 }
 }
 \examples{
-set.seed(123)
+data("count_matrices")
 
-# Simulate two small expression matrices
-mat1 <- matrix(rpois(100, lambda = 5), nrow = 10)
-mat2 <- matrix(rpois(100, lambda = 5), nrow = 10)
-rownames(mat1) <- paste0("Gene", 1:10)
-rownames(mat2) <- paste0("Gene", 1:10)
-
-# Infer networks using GENIE3
 networks <- infer_networks(
-    count_matrices_list = list(mat1, mat2),
+    count_matrices_list = count_matrices,
     method = "GENIE3",
-    nCores = 2
+    nCores = 15
 )
-
-# Inspect first inferred network
 head(networks[[1]])
 }

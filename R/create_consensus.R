@@ -46,21 +46,31 @@
 #' @export
 #'
 #' @examples
-#' mat1 <- matrix(sample(0:1, 25, replace = TRUE), nrow = 5)
-#' mat2 <- matrix(sample(0:1, 25, replace = TRUE), nrow = 5)
-#' rownames(mat1) <- colnames(mat1) <- paste0("Gene", 1:5)
-#' rownames(mat2) <- colnames(mat2) <- paste0("Gene", 1:5)
+#' data(count_matrices)
 #'
-#' consensus_vote <- create_consensus(
-#'     list(mat1, mat2),
-#'     method    = "vote",
-#'     threshold = 0.5
+#' networks <- infer_networks(
+#'     count_matrices_list = count_matrices,
+#'     method = "GENIE3",
+#'     nCores = 15
 #' )
+#' head(networks[[1]])
 #'
-#' consensus_union <- create_consensus(
-#'     list(mat1, mat2),
-#'     method = "union"
+#' wadj_list <- generate_adjacency(networks)
+#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#'
+#' binary_listj <- cutoff_adjacency(
+#'     count_matrices = count_matrices,
+#'     weighted_adjm_list = swadj_list,
+#'     n = 2,
+#'     method = "GENIE3",
+#'     quantile_threshold = 0.99,
+#'     nCores = 15,
+#'     debug = TRUE
 #' )
+#' head(binary_listj[[1]])
+#'
+#' consensus <- create_consensus(binary_listj, method = "vote")
+#' head(consensus)
 create_consensus <- function(
     adj_matrix_list,
     method = "vote",
@@ -83,14 +93,14 @@ create_consensus <- function(
             consensus_matrix >= 1
         ] <- 1
     } else if (method == "INet") {
-      if (!requireNamespace("INetTool", quietly = TRUE)) {
-        stop(
-          "Package 'INetTool' is required for method = 'INet'.\n",
-          "Please install it via:
+        if (!requireNamespace("INetTool", quietly = TRUE)) {
+            stop(
+                "Package 'INetTool' is required for method = 'INet'.\n",
+                "Please install it via:
           remotes::install_github('ValeriaPolicastro/INet-Tool')",
-          call. = FALSE
-        )
-      }
+                call. = FALSE
+            )
+        }
         if (is.null(weighted_list)) {
             stop(
                 "For method 'INet', a weighted_list must be provided."
