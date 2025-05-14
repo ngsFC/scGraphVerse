@@ -684,9 +684,6 @@
 #' @noRd
 
 .compare_communities <- function(control_comm, pred_comm) {
-    c0 <- as.integer(control_comm) - 1L
-    p0 <- as.integer(pred_comm)    - 1L
-
     c(
         VI  = igraph::compare(c0, p0, method = "vi"),
         NMI = igraph::compare(c0, p0, method = "nmi"),
