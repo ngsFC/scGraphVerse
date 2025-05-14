@@ -60,7 +60,7 @@
 #' networks <- infer_networks(
 #'     count_matrices_list = count_matrices,
 #'     method = "GENIE3",
-#'     nCores = 15
+#'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
@@ -73,7 +73,7 @@
 #'     n = 2,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.99,
-#'     nCores = 15,
+#'     nCores = 1,
 #'     debug = TRUE
 #' )
 #' head(binary_listj[[1]])

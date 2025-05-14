@@ -116,7 +116,7 @@ and batch-specific regulatory edges.
 networks_joint <- infer_networks(
     count_matrices_list = count_matrices,
     method = "GENIE3",
-    nCores = 10
+    nCores = 1
 )
 # Weighted adjacency
 wadj_list <- generate_adjacency(networks_joint)
@@ -151,7 +151,7 @@ binary_listj <- cutoff_adjacency(
     n = 2,
     method = "GENIE3",
     quantile_threshold = 0.95,
-    nCores = 10,
+    nCores = 1,
     debug = TRUE
 )
 

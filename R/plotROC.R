@@ -35,7 +35,7 @@
 #' networks <- infer_networks(
 #'     count_matrices_list = count_matrices,
 #'     method = "GENIE3",
-#'     nCores = 15
+#'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
@@ -45,7 +45,7 @@
 #' roc_res <- plotROC(
 #'     swadj_list,
 #'     adj_truth,
-#'     plot_title = "ROC Curve: JRF Joint Integration",
+#'     plot_title = "ROC Curve: GENIE3",
 #'     is_binary = FALSE
 #' )
 #' roc_res$plot
