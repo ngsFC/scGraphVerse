@@ -265,9 +265,7 @@ structure to ground truth.</p>
 <span><span class="co"># Community detection</span></span>
 <span><span class="va">comm_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/community_path.html">community_path</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detecting communities...</span></span></code></pre></div>
-<p>&lt;img
-src=“/home/francescoc/Desktop/Project/check/scGraphVerse/docs/articles/simulation_study_files/figure-html/communities,”compare
-Graph with reference”-1.png” width=“576” /&gt;</p>
+<p><img src="simulation_study_files/figure-html/communities-1.png" alt="compare Graph with reference" width="576"></p>
 <pre><code><span><span class="co">#&gt; Running pathway enrichment...</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="co">#&gt; Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...</span></span>
@@ -286,9 +284,7 @@ Graph with reference”-1.png” width=“576” /&gt;</p>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="va">comm_cons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/community_path.html">community_path</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detecting communities...</span></span></code></pre>
-<p>&lt;img
-src=“/home/francescoc/Desktop/Project/check/scGraphVerse/docs/articles/simulation_study_files/figure-html/communities,”compare
-Graph with reference”-2.png” width=“576” /&gt;</p>
+<p><img src="simulation_study_files/figure-html/communities-2.png" alt="compare Graph with reference" width="576"></p>
 <pre><code><span><span class="co">#&gt; Running pathway enrichment...</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
@@ -303,11 +299,7 @@ Graph with reference”-2.png” width=“576” /&gt;</p>
 <span><span class="co">#&gt; 'select()' returned 1:1 mapping between keys and columns</span></span>
 <span><span class="co"># Similarity</span></span>
 <span><span class="va">sim_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/community_similarity.html">community_similarity</a></span><span class="op">(</span><span class="va">comm_truth</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">comm_cons</span><span class="op">)</span><span class="op">)</span></span></code></pre>
-<p>&lt;img
-src=“/home/francescoc/Desktop/Project/check/scGraphVerse/docs/articles/simulation_study_files/figure-html/communities,”compare
-Graph with reference”-3.png” width=“576” /&gt;&lt;img
-src=“/home/francescoc/Desktop/Project/check/scGraphVerse/docs/articles/simulation_study_files/figure-html/communities,”compare
-Graph with reference”-4.png” width=“576” /&gt;</p>
+<p><img src="simulation_study_files/figure-html/communities-3.png" alt="compare Graph with reference" width="576"><img src="simulation_study_files/figure-html/communities-4.png" alt="compare Graph with reference" width="576"></p>
 <div class="section level3">
 <h3 id="edge-mining">5.1. Edge Mining<a class="anchor" aria-label="anchor" href="#edge-mining"></a>
 </h3>

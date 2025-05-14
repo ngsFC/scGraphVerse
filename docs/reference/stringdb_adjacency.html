@@ -107,6 +107,7 @@ interactions from STRING.</p></li>
 <span class="r-in"><span>    <span class="st">"SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">url</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in curl::curl_fetch_memory(url, handle = handle):</span> Error in the HTTP2 framing layer [www.dropbox.com]: h2_process_pending_input: nghttp2_session_mem_recv() returned -902:The user callback function failed</span>
 <span class="r-in"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="selgene.html">selgene</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    object <span class="op">=</span> <span class="va">seu</span>,</span></span>
 <span class="r-in"><span>    top_n <span class="op">=</span> <span class="fl">50</span>,</span></span>
@@ -115,25 +116,18 @@ interactions from STRING.</p></li>
 <span class="r-in"><span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Using Seurat assay 'RNA' slot 'data' (log-normalized).</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Subsetted to 923 cells where CELL_TYPE = 'T_cells'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed mitochondrial genes matching '^MT-'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed ribosomal genes matching '^RP[SL]'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Top 50 genes selected based on mean expression.</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'seu' not found</span>
 <span class="r-in"><span><span class="va">str_res</span> <span class="op">&lt;-</span> <span class="fu">stringdb_adjacency</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    genes <span class="op">=</span> <span class="va">genes</span>,</span></span>
 <span class="r-in"><span>    species <span class="op">=</span> <span class="fl">9606</span>,</span></span>
 <span class="r-in"><span>    required_score <span class="op">=</span> <span class="fl">900</span>,</span></span>
 <span class="r-in"><span>    keep_all_genes <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Initializing STRINGdb...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapping genes to STRING IDs...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapped 50 genes to STRING IDs.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Retrieving physical interactions from STRING API...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Found 15 STRING physical interactions.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Adjacency matrices constructed successfully.</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'genes' not found</span>
 <span class="r-in"><span><span class="va">wadj_truth</span> <span class="op">&lt;-</span> <span class="va">str_res</span><span class="op">$</span><span class="va">weighted</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'str_res' not found</span>
 <span class="r-in"><span><span class="va">adj_truth</span> <span class="op">&lt;-</span> <span class="va">str_res</span><span class="op">$</span><span class="va">binary</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'str_res' not found</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
