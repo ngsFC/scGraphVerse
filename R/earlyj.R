@@ -22,7 +22,8 @@
 #'  (genes) common across all input datasets are retained before merging.
 #'  The cell names are suffixed with "-m1", "-m2", etc., according to their
 #'  original list position.
-#'
+#'  
+#' @importFrom SeuratObject merge.Assay subset.Assay
 #' @importFrom Seurat RenameCells Cells
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is

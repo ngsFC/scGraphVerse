@@ -248,14 +248,13 @@
 }
 #' @keywords internal
 #' @noRd
-#' @importFrom SeuratObject merge.Assay subset.Assay
 
 .merge_seurat_list <- function(input_list) {
     common_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(common_features) == 0) stop("No common feat among Seurat objs.")
 
     modified <- lapply(seq_along(input_list), function(i) {
-        obj <- SeuratObject::subset.Assay(input_list[[i]], features = common_features)
+        obj <- subset(input_list[[i]], features = common_features)
         Seurat::RenameCells(obj,
             new.names = paste0(
                 Seurat::Cells(obj),
@@ -264,7 +263,7 @@
         )
     })
 
-    do.call(SeuratObject::merge.Assay, modified)
+    do.call(merge, modified)
 }
 #' @keywords internal
 #' @noRd
