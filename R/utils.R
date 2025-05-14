@@ -679,6 +679,7 @@
   metrics[is.na(metrics)] <- 0
   metrics
 }
+
 #' @keywords internal
 #' @noRd
 
