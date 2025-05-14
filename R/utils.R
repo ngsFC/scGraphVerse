@@ -636,8 +636,8 @@
                     index   = rownames(df)
                 )
                 result_py <- grnboost_modules$arboreto$grnboost2(
-                    exp_data   = df_pandas,
-                    gene_names = genes
+                    expression_data = df_pandas,
+                    tf_names = genes
                 )
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
