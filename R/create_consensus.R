@@ -83,6 +83,14 @@ create_consensus <- function(
             consensus_matrix >= 1
         ] <- 1
     } else if (method == "INet") {
+      if (!requireNamespace("INetTool", quietly = TRUE)) {
+        stop(
+          "Package 'INetTool' is required for method = 'INet'.\n",
+          "Please install it via:
+          remotes::install_github('ValeriaPolicastro/INet-Tool')",
+          call. = FALSE
+        )
+      }
         if (is.null(weighted_list)) {
             stop(
                 "For method 'INet', a weighted_list must be provided."
