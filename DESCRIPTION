@@ -59,6 +59,9 @@ Suggests:
     knitr,
     rmarkdown,
     tidyverse,
-    magick
+    magick,
+    JRF,
+    ZILGM,
+    learn2count
 VignetteBuilder: knitr
 LazyData: true

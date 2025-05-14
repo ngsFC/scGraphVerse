@@ -86,43 +86,91 @@
 #' head(networks[[1]])
 infer_networks <- function(
     count_matrices_list,
-    method = "GENIE3",
+    method = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"),
     adjm = NULL,
     nCores = 1,
-    grnboost_modules = NULL) {
-    method <- match.arg(
-        method,
-        c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb")
-    )
-    count_matrices_list <- .convert_counts_list(count_matrices_list)
-    n_matrices <- length(count_matrices_list)
-
-    if (method %in% c("GENIE3", "ZILGM")) {
-        results <- vector("list", n_matrices)
-        for (i in seq_len(n_matrices)) {
-            mat <- count_matrices_list[[i]]
-            results[[i]] <- if (method == "GENIE3") {
-                .run_genie3(mat, nCores)
-            } else {
-                .run_zilgm(mat, adjm, nCores)
-            }
+    grnboost_modules = NULL
+) {
+  method <- match.arg(method)
+  count_matrices_list <- .convert_counts_list(count_matrices_list)
+  n_matrices <- length(count_matrices_list)
+  
+  # GENIE3 / ZILGM
+  if (method %in% c("GENIE3", "ZILGM")) {
+    results <- vector("list", n_matrices)
+    for (i in seq_len(n_matrices)) {
+      mat <- count_matrices_list[[i]]
+      if (method == "GENIE3") {
+        results[[i]] <- .run_genie3(mat, nCores)
+      } else {
+        if (!requireNamespace("ZILGM", quietly = TRUE)) {
+          stop(
+            "Package 'ZILGM' is required for method = 'ZILGM'.\n",
+            "Please install it via: remotes::install_github('bbeomjin/ZILGM')",
+            call. = FALSE
+          )
         }
-        return(results)
+        results[[i]] <- .run_zilgm(mat, adjm, nCores)
+      }
     }
-
-    if (method == "JRF") {
-        norm_list <- lapply(
-            count_matrices_list,
-            function(mat) t(scale(t(mat)))
-        )
-        return(.run_jrf(norm_list, nCores))
+    return(results)
+  }
+  
+  # JRF
+  if (method == "JRF") {
+    if (!requireNamespace("JRF", quietly = TRUE)) {
+      stop(
+        "Package 'JRF' is required for method = 'JRF'.\n",
+        "Please install it from the CRAN archive:\n",
+        "install.packages(\
+        'https://cran.r-project.org/src/contrib/Archive/JRF/JRF_0.1-4.tar.gz',
+        repos = NULL, type = 'source'\
+                )",
+        call. = FALSE
+      )
     }
-
-    .run_parallel_networks(
-        count_matrices_list,
-        method,
-        nCores,
-        adjm,
-        grnboost_modules
+    norm_list <- lapply(
+      count_matrices_list,
+      function(mat) t(scale(t(mat)))
     )
+    return(.run_jrf(norm_list, nCores))
+  }
+  
+  # GRNBoost2
+  if (method == "GRNBoost2") {
+    if (!requireNamespace("reticulate", quietly = TRUE)) {
+      stop(
+        "Package 'reticulate' and the Python 'arboreto' module are required for
+        method = 'GRNBoost2'.\n",
+        "Please install Python arboreto via terminal: pip install arboreto",
+        call. = FALSE
+      )
+    }
+    modules <- init_py()
+    return(.run_parallel_networks(
+      count_matrices_list,
+      method,
+      nCores,
+      adjm,
+      grnboost_modules
+    ))
+  }
+  
+  # PCzinb
+  if (method == "PCzinb") {
+    if (!requireNamespace("learn2count", quietly = TRUE)) {
+      stop(
+        "Package 'learn2count' is required for method = 'PCzinb'.\n",
+        "Please install it via: BiocManager::install('drisso/learn2count')",
+        call. = FALSE
+      )
+    }
+    return(.run_parallel_networks(
+      count_matrices_list,
+      method,
+      nCores,
+      adjm,
+      grnboost_modules
+    ))
+  }
 }

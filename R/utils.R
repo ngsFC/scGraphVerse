@@ -536,7 +536,7 @@
 }
 
 
-# Infer_ networks
+# Infer_networks
 #' @keywords internal
 #' @noRd
 
@@ -666,7 +666,7 @@
 }
 
 
-# This is community similarity
+# community similarity
 #' @keywords internal
 #' @noRd
 
