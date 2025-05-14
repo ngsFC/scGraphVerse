@@ -95,7 +95,8 @@ infer_networks <- function(
                 if (!requireNamespace("ZILGM", quietly = TRUE)) {
                     stop(
                         "Package 'ZILGM' is required for method = 'ZILGM'.\n",
-                        "Please install it via: remotes::install_github('bbeomjin/ZILGM')",
+                        "Please install it via:.\n",
+                        "remotes::install_github('bbeomjin/ZILGM')",
                         call. = FALSE
                     )
                 }
@@ -127,9 +128,9 @@ infer_networks <- function(
     if (method == "GRNBoost2") {
         if (!requireNamespace("reticulate", quietly = TRUE)) {
             stop(
-                "Package 'reticulate' and the Python 'arboreto' module are required for
+                "'reticulate' and the Python 'arboreto' module are required for
         method = 'GRNBoost2'.\n",
-                "Please install Python arboreto via terminal: pip install arboreto",
+                "Please install arboreto via terminal: pip install arboreto",
                 call. = FALSE
             )
         }
@@ -147,7 +148,7 @@ infer_networks <- function(
         if (!requireNamespace("learn2count", quietly = TRUE)) {
             stop(
                 "Package 'learn2count' is required for method = 'PCzinb'.\n",
-                "Please install it via: BiocManager::install('drisso/learn2count')",
+                "Please install it: BiocManager::install('drisso/learn2count')",
                 call. = FALSE
             )
         }

@@ -18,7 +18,7 @@ This vignette demonstrates the **scGraphVerse** workflow on a two-sample B-cell
 single-cell RNA-seq dataset. We show how to:
 
 1. Load and preprocess public PBMC data.
-2. Infer gene regulatory networks with**JRF**.
+2. Infer gene regulatory networks with**GENIE3**.
 3. Build consensus networks and detect communities.
 4. Validate inferred edges using STRINGdb.
 

@@ -96,8 +96,8 @@ create_consensus <- function(
         if (!requireNamespace("INetTool", quietly = TRUE)) {
             stop(
                 "Package 'INetTool' is required for method = 'INet'.\n",
-                "Please install it via:
-          remotes::install_github('ValeriaPolicastro/INet-Tool')",
+                "Please install it via:",
+                "    remotes::install_github('ValeriaPolicastro/INet-Tool')",
                 call. = FALSE
             )
         }
