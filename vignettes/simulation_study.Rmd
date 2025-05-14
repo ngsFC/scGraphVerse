@@ -39,7 +39,7 @@ library(ggraph)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r ground-truth, fig.alt="Reference graph"}
+```{r gtruth, fig.alt="Reference graph"}
 # 1. Download PBMC data
 url <- paste0(
     "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
@@ -88,7 +88,7 @@ ggraph(gtruth, layout = "fr") +
 We simulate three batches (n=50 cells each) of count matrices that follow the 
 ground-truth network topology with dropout.
 
-```{r simulate-zilgm}
+```{r simulate}
 # Simulation parameters
 nodes <- nrow(adj_truth)
 sims <- zinb_simdata(
@@ -112,7 +112,7 @@ count_matrices <- lapply(sims, t)
 We run **Joint Random Forests** across the simulated batches to infer shared 
 and batch-specific regulatory edges.
 
-```{r infer-jrf}
+```{r genie3}
 networks_joint <- infer_networks(
     count_matrices_list = count_matrices,
     method = "GENIE3",
@@ -128,7 +128,7 @@ swadj_list <- symmetrize(wadj_list, weight_function = "mean")
 
 Plot the ROC curve comparing continuous edge weights to the binary ground truth.
 
-```{r roc-curve, fig.alt="ROC curve"}
+```{r roc, fig.alt="ROC curve"}
 roc_res <- plotROC(
     swadj_list,
     adj_truth,
@@ -143,7 +143,7 @@ auc_joint <- roc_res$auc
 
 Compute precision scores and visualize the binary networks.
 
-```{r pr-and-plot, fig.alt="result Graphs"}
+```{r cutoff, fig.alt="result Graphs"}
 # Binary cutoff at 95th percentile
 binary_listj <- cutoff_adjacency(
     count_matrices = count_matrices,
@@ -175,7 +175,7 @@ plotg(list(consensus))
 ```
 
 
-```{r communities, "compare Graph with reference}
+```{r communities, "compare Graph with reference"}
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,
@@ -194,11 +194,11 @@ sim_score <- community_similarity(comm_truth, list(comm_cons))
 
 Identify true positive edges in the consensus network using edge mining.
 
-```{r edge-mining}
+```{r edgemining}
 em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
 ```
 
-```{r session-info}
+```{r sessioninfo}
 sessionInfo()
 ```
 

@@ -1,3 +1,4 @@
+#' @importFrom cli rule
 .onAttach <- function(libname, pkgname) {
     msg <- paste(
         cli::rule(center = "\u2728 Welcome to scGraphVerse \u2728", line = 2),

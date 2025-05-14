@@ -39,7 +39,7 @@ library(tidyverse)
 We use two public PBMC Seurat objects containing whole-blood samples.
 Our goal is to focus on healthy B cells and a common gene set.
 
-```{r load-data}
+```{r loaddata}
 urls <- list(
     url1 = paste0(
         "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
@@ -87,7 +87,7 @@ bcell_list <- list(b1, b2)
 
 We infer GRNs using three algorithms. Replace `method` to switch.
 
-```{r infer-networks}
+```{r genie3}
 # Choose method: "GENIE3", "GRNBoost2", or "JRF"
 method <- "GENIE3"
 networks <- infer_networks(
@@ -130,7 +130,7 @@ plotg(list(consensus))
 ```
 
 
-```{r compare-community, fig.alt="comparing Graphs with STRINGdb"}
+```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb"}
 compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
 
 # Community detection
@@ -166,7 +166,7 @@ and incorporate external prior networks.
 
 # Session Information
 
-```{r session-info}
+```{r sessioninfo}
 sessionInfo()
 ```
 

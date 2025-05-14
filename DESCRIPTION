@@ -53,7 +53,8 @@ Imports:
     reticulate,
     robin,
     scales,
-    tidyr
+    tidyr,
+    cli
 Suggests:
     testthat (>= 3.0.0),
     knitr,
