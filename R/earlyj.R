@@ -23,7 +23,8 @@
 #'  The cell names are suffixed with "-m1", "-m2", etc., according to their
 #'  original list position.
 #'
-#' @importFrom Seurat RenameCells Cells merge subset
+#' @importFrom Seurat RenameCells Cells
+#' @importFrom SeuratObject merge.Assay subset.Assay
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom methods is
 #' @export

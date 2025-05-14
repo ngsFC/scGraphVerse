@@ -255,7 +255,7 @@
     if (length(common_features) == 0) stop("No common feat among Seurat objs.")
 
     modified <- lapply(seq_along(input_list), function(i) {
-        obj <- Seurat::subset(input_list[[i]], features = common_features)
+        obj <- SeuratObject::subset.Assay(input_list[[i]], features = common_features)
         Seurat::RenameCells(obj,
             new.names = paste0(
                 Seurat::Cells(obj),
@@ -264,7 +264,7 @@
         )
     })
 
-    do.call(Seurat::merge, modified)
+    do.call(SeuratObject::merge.Assay, modified)
 }
 #' @keywords internal
 #' @noRd
