@@ -670,14 +670,14 @@
 #' @noRd
 
 .compute_topo_metrics <- function(graph, comm) {
-  metrics <- c(
-    Modularity   = igraph::modularity(graph, comm),
-    Communities  = length(unique(comm)),
-    Density      = igraph::edge_density(graph),
-    Transitivity = igraph::transitivity(graph, type = "global")
-  )
-  metrics[is.na(metrics)] <- 0
-  metrics
+    metrics <- c(
+        Modularity   = igraph::modularity(graph, comm),
+        Communities  = length(unique(comm)),
+        Density      = igraph::edge_density(graph),
+        Transitivity = igraph::transitivity(graph, type = "global")
+        )
+    metrics[is.na(metrics)] <- 0
+    metrics
 }
 
 #' @keywords internal
