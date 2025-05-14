@@ -51,7 +51,7 @@
 #'     weighted_adjm_list = swadj_list,
 #'     n = 2,
 #'     method = "GENIE3",
-#'     quantile_threshold = 0.99,
+#'     quantile_threshold = 0.95,
 #'     nCores = 1,
 #'     debug = TRUE
 #' )
