@@ -86,76 +86,146 @@ original list position.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">earlym</span> <span class="op">&lt;-</span> <span class="fu">earlyj</span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">earlym</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_1-m1 cell_2-m1 cell_3-m1 cell_4-m1 cell_5-m1 cell_6-m1 cell_7-m1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          7         4         0         1         4         4        10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           1         2         8         6         7         3         3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           4         9         0        11         1         2         2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           0        13         0         1         8         2         5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         6         2         3         4         1         1         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          4         2         3         2         1         2         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_8-m1 cell_9-m1 cell_10-m1 cell_11-m1 cell_12-m1 cell_13-m1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          9         4          5          4          6          3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           3         2          4          3          0          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           2         0          2          1          6          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           2         1          2          0          6          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         0         3          1          0          2         10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          2         5          3          4          5          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_14-m1 cell_15-m1 cell_16-m1 cell_17-m1 cell_18-m1 cell_19-m1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2         10          1          3          3          6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            2          3          4          4          1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            2          1          5          6          2          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            0          7          2          0          2          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          4          0          1          6          3          3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           1          1          1          4          2          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_20-m1 cell_1-m2 cell_2-m2 cell_3-m2 cell_4-m2 cell_5-m2 cell_6-m2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           1         3         3         5         1         4         3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            0         1         1         0         1         0         2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            0         4         1         2         1         3         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            1         0         1         0         2         1         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          8         3         0         2         1         0         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           3         4         2         3         1         3         4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_7-m2 cell_8-m2 cell_9-m2 cell_10-m2 cell_11-m2 cell_12-m2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          1         1         5          6          4          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           0         0         1          0          1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           5         2         1          1          2          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           1         5         2          0          2          4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         4         0         2          6          1          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          6         4         5          4          5          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_13-m2 cell_14-m2 cell_15-m2 cell_16-m2 cell_17-m2 cell_18-m2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           1          1          2          3          1          7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            5          5          1          3          0          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          3          2          2          2          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            6          6          2          2          0          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          0          3          1          0          1          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           7          6          1          3          1          4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_19-m2 cell_20-m2 cell_1-m3 cell_2-m3 cell_3-m3 cell_4-m3 cell_5-m3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2          4         4        10         2         2         3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            7          1         1         1         8         0         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          3         6         6         1         5         0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            5          2         3         2         2         2         0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          1          3         8         5         2         2         4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           2          5         3         2         5         8         2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_6-m3 cell_7-m3 cell_8-m3 cell_9-m3 cell_10-m3 cell_11-m3 cell_12-m3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1          2         3         1         3          1          2          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3           1         0         0         1          1          2          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E           0         3         2         1          0          0          3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1           3         4         8         3          4          4          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1         6         1         3         1          2         10          5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D          1         1         3         3          4          7          4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_13-m3 cell_14-m3 cell_15-m3 cell_16-m3 cell_17-m3 cell_18-m3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2          1          4          3          3          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            6          0          5          4          4          2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            1          1          5          5          2          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            9          1          3          0          6          4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          3          7          0          0          4          3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           2          6          6          0          0          7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        cell_19-m3 cell_20-m3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           3          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            4          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            0          9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            0          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1          4          3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D           0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_1-m1 cell_2-m1 cell_3-m1 cell_4-m1 cell_5-m1 cell_6-m1 cell_7-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           2         3         7         9         2         7         7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB         1         1         5         1         2         3         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            4         2         0         2         3         2         6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D            1         0         3         1         0         0        11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            2         1         3         2         2         1        11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            0         4         0         1         0         0         5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_8-m1 cell_9-m1 cell_10-m1 cell_11-m1 cell_12-m1 cell_13-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           6         0          4          7         14         13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB         3         0          2          2          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            9         0          2          2          6          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D            2         0          4          1          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            3         2          5          6          7          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            2         0          1          3          1          7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_14-m1 cell_15-m1 cell_16-m1 cell_17-m1 cell_18-m1 cell_19-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            1          1          5          6          3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          8          0          3          3          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             3          2          5          1          1          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             3          1          0          5          6          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             1          4          2          2          4         12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             2          4          2          0          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_20-m1 cell_21-m1 cell_22-m1 cell_23-m1 cell_24-m1 cell_25-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            7          4          5          2          1          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          2          5          1          2          3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             5          3          2          6          0          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             0          2          4          2          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             2          3          2          4          3          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             3          1          2          0          1          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_26-m1 cell_27-m1 cell_28-m1 cell_29-m1 cell_30-m1 cell_31-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            8         10          3          4          1          7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          1          0          1          3          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             6          0          3          1          2          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             1          2          0          0          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             8          6          0          0          1          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             2          8          3          4          6          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_32-m1 cell_33-m1 cell_34-m1 cell_35-m1 cell_36-m1 cell_37-m1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            3          8          5          2          6          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          3          8          0          1          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             0          8          2          7          1          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             2          0          0          1          2          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             2          0          1          0          2          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             1          1          0          3          0          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_38-m1 cell_39-m1 cell_40-m1 cell_1-m2 cell_2-m2 cell_3-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            8          5          4         4         4         7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          1          5          0         4         3         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             2          3          0         2         2         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             1          1          1         1         3        12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             3          3          1         0         3         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            10          0          1         0         1         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_4-m2 cell_5-m2 cell_6-m2 cell_7-m2 cell_8-m2 cell_9-m2 cell_10-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           1         1         1         5         2         4          9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB         0         2         4         1         5         1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            1         7         5         1         2         3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D            1         2         2         0         3         4          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            4         1         1         0         4         4          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            1         0         2         4         2         1          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_11-m2 cell_12-m2 cell_13-m2 cell_14-m2 cell_15-m2 cell_16-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            8          5          5          4          4          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          1          1          4          7          0          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             2          3          3          2          5          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             2          4          2         10          6          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             0          7          3          3          8          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             3          8          1          7          5          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_17-m2 cell_18-m2 cell_19-m2 cell_20-m2 cell_21-m2 cell_22-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            8          4          1          6          3          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          0          8          1          0          0          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             0          3          1          1          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             0          2          1          6          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             2          4          1          1          6          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             3          2          2          2          0          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_23-m2 cell_24-m2 cell_25-m2 cell_26-m2 cell_27-m2 cell_28-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            2          6          1          1          2          7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          3          0          4          0          3          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             2          0          0          1          2          8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             0          1          1          4          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             2          7          3          5         14          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             4          1          2          1          1          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_29-m2 cell_30-m2 cell_31-m2 cell_32-m2 cell_33-m2 cell_34-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            6          2          6          1          6          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          1          2          0          3          4          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             3          3          0          3          5          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             2          7          1          1          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            12          2          1          2          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             3          0          0          2          2          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_35-m2 cell_36-m2 cell_37-m2 cell_38-m2 cell_39-m2 cell_40-m2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           10          3          5          5          4          9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          8          4          2          1          1          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             0          2          1          5          1          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             1          1          3          2          1          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             1          1          6          1          0          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             4          1          2          1          1          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_1-m3 cell_2-m3 cell_3-m3 cell_4-m3 cell_5-m3 cell_6-m3 cell_7-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           4         3         4         4         3         2         8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB         5         5         0         8         1         5         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            2         2         1         1         1         5         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D            4         0         3         7         1         0         4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            2         2         1         2         2         3         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            4         1         2         0         3         2         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_8-m3 cell_9-m3 cell_10-m3 cell_11-m3 cell_12-m3 cell_13-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1           5         2         18          2          7          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB         6         1          1          1          0          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            3         0          5          2          5          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D            8         6          1          0          0          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E            9         4          4          0          4          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            1         1         13          1          0          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_14-m3 cell_15-m3 cell_16-m3 cell_17-m3 cell_18-m3 cell_19-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            2          7          5          7          3          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          3          6          3          1          0          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             3          2          2          6          2          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             2          2          4          9          6          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             1          2          4          4          6          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             1          4          2          9          2          4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_20-m3 cell_21-m3 cell_22-m3 cell_23-m3 cell_24-m3 cell_25-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            6          4          8          3          5          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          4          5          1          1          3          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             0          1          1         11         10          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             2          3          2          3          1          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             3          2          1          9          5          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             1          3          3          4          5          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_26-m3 cell_27-m3 cell_28-m3 cell_29-m3 cell_30-m3 cell_31-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            7          1         14          5          9          8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          0          4          2          6          1          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             5          2          0          5          1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             4          1          2          0          6          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             1          0          2          3          4          3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             0         10          3          4          3          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_32-m3 cell_33-m3 cell_34-m3 cell_35-m3 cell_36-m3 cell_37-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            2          6          8          6          3          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          1          1          7          0          2          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3            11          1         10          2          9          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             3          3          0          2          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             2          1          7          3          2          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1             1          5          1          3          1          5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         cell_38-m3 cell_39-m3 cell_40-m3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1            3          1          6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB          0         11          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3             2          6          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D             1          2          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E             3          6          2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1            10          5          0</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

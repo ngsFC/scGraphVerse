@@ -97,12 +97,12 @@ plotting raw values without normalization.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2490924</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-C       PFN1 0.2345418</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-B     TMSB4X 0.2301956</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           BTF3     EEF1A1 0.2040955</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ACTG1      HLA-B 0.1924662</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           BTF3       NACA 0.1905001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          EIF3E      PCBP1 0.1697351</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          EEF1G      PTPRC 0.1401353</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         EEF1A1       NACA 0.1371151</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4           CD3E       CD3D 0.1336590</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        HNRNPA1    PTPRCAP 0.1332902</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          PTPRC       CYBA 0.1316393</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -112,33 +112,46 @@ plotting raw values without normalization.</p>
 <span class="r-in"><span>    weighted_adjm_list <span class="op">=</span> <span class="va">swadj_list</span>,</span></span>
 <span class="r-in"><span>    n <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
-<span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span></span>
+<span class="r-in"><span>    quantile_threshold <span class="op">=</span> <span class="fl">0.95</span>,</span></span>
 <span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.19736</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.21316</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.19514</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.05784</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.06358</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.06316</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        ACTG1 BTF3 CD3E CFL1 EEF1A1 EEF1D EEF1G EEF2 FTH1 FTL HLA-A HLA-B HLA-C</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0    0      0     0     0    0    0   0     0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        HLA-E NACA PFN1 TMSB4X UBA52</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0    0      0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    1    0      0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0    0      0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0    0      0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1A1     0    0    0      0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EEF1D      0    0    0      0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ACTG1 ARHGDIB BTF3 CD3D CD3E CFL1 COX4I1 COX7C CYBA EEF1A1 EEF1D EEF1G</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1       0       0    0    0    0    1      0     0    0      0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB     0       0    0    0    0    0      0     0    0      0     0     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3        0       0    0    0    0    0      0     0    0      0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D        0       0    0    0    1    0      0     0    0      0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E        0       0    0    1    0    0      0     0    0      0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1        1       0    0    0    0    0      0     0    0      0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         EEF2 EIF1 EIF3E FTH1 FTL HLA-A HLA-B HLA-C HLA-E HNRNPA1 HNRNPA2B1 MYL6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0     1    0   0     0     0     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB    0    0     0    0   0     0     0     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0     0    0   0     0     0     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D       0    0     0    0   0     0     0     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0     0    1   0     0     0     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0     0    0   0     0     1     0     0       0         0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         NACA PCBP1 PCBP2 PFN1 PTPRC PTPRCAP RAC2 SKP1 SNRPD2 TMSB4X UBA52 UBC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0     0     0    0     0       0    0    0      0      0     0   1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB    0     0     0    0     0       0    1    0      0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0     0     0    0     0       0    0    0      1      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D       0     0     0    0     0       0    0    0      1      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       1     0     0    0     0       0    0    1      0      0     1   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0     0     0    0     0       0    0    0      0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         UQCRB YBX1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1       0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB     0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3        0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D        0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E        0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1        0    1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_listj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">comm_cons</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Detecting communities...</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>minimal value for n is 3, returning requested palette with 3 different levels</span>
 <span class="r-plt img"><img src="community_similarity-1.png" alt="" width="700" height="433"></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running pathway enrichment...</span>
 <span class="r-in"><span><span class="va">comm_truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="community_path.html">community_path</a></span><span class="op">(</span><span class="va">adj_truth</span><span class="op">)</span></span></span>
@@ -148,9 +161,12 @@ plotting raw values without normalization.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Reading KEGG annotation online: "https://rest.kegg.jp/list/pathway/hsa"...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">sim_score</span> <span class="op">&lt;-</span> <span class="fu">community_similarity</span><span class="op">(</span><span class="va">comm_truth</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">comm_cons</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in i_compare(comm1, comm2, method):</span> At vendor/cigraph/src/community/community_misc.c:277 : Membership indices should be less than total number of vertices. Found member of cluster 18, but only 18 vertices. Invalid value</span>
+<span class="r-plt img"><img src="community_similarity-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="community_similarity-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

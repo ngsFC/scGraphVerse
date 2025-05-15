@@ -90,12 +90,12 @@ performance.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           NACA       BTF3 0.2586192</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-B     TMSB4X 0.2395404</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          HLA-C       PFN1 0.2223955</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           NACA       EEF2 0.2034615</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           BTF3     EEF1A1 0.1868147</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6          HLA-B      HLA-E 0.1855651</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          EIF3E      PCBP1 0.1527405</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          PTPRC       CYBA 0.1473377</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          EEF1G      PTPRC 0.1401396</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         EEF1A1       NACA 0.1347636</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        HNRNPA1    PTPRCAP 0.1297679</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1288507</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu">symmetrize</span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
