@@ -75,7 +75,7 @@ al., 2010).
 \item \strong{JRF}: Joint Random Forests across multiple conditions
 (Petralia et al., 2015).
 \item \strong{PCzinb}: Pairwise correlation under ZINB models
-(Li et al., 2020).
+(Nguyen et al., 2023).
 }
 }
 \examples{
