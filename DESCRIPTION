@@ -49,7 +49,6 @@ Imports:
     parallel,
     patchwork,
     pROC,
-    reactome.db,
     rentrez,
     reticulate,
     robin,
