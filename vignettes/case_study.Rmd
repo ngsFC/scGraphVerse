@@ -12,10 +12,10 @@ vignette: >
 ---
 
 
-# Abstract
+# Introduction
 
-This vignette demonstrates the **scGraphVerse** workflow on a two-sample B-cell
-single-cell RNA-seq dataset. We show how to:
+This vignette demonstrates the **scGraphVerse** workflow on a single-cell 
+RNA-seq dataset. We show how to:
 
 1. Load and preprocess public PBMC data.
 2. Infer gene regulatory networks with**GENIE3**.
@@ -32,55 +32,81 @@ knitr::opts_chunk$set(
 library(scGraphVerse)
 library(Seurat)
 library(tidyverse)
+library(TENxPBMCData)
+library(scater)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(SingleR)
+library(celldex)
 ```
 
 # 1. Dataset and Preprocessing
 
-We use two public PBMC Seurat objects containing whole-blood samples.
+We use two public PBMC SCE objects containing PBMC samples.
 Our goal is to focus on healthy B cells and a common gene set.
 
 ```{r loaddata}
-urls <- list(
-    url1 = paste0(
-        "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
-        "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-    ),
-    url2 = paste0(
-        "https://www.dropbox.com/s/grt5371v5qarn54/",
-        "SCA_scRNASEQ_TISSUE_BLOOD.RDS?dl=1"
-    )
-)
-# Load Seurat objects
-pbmc1 <- download_Atlas(file_url = urls[[1]])
-pbmc2 <- download_Atlas(file_url = urls[[2]])
+# 1. Load PBMC data
+pbmc_obj <- TENxPBMCData("pbmc3k")
+pbmc_obj1 <- TENxPBMCData("pbmc4k")
 
-# Select top variable genes for B cells, removing ribosomal/mitochondrial
-genes1 <- selgene(pbmc1,
-    top_n = 150,
+sce <- logNormCounts(pbmc_obj)
+symbols_tenx <- rowData(sce)$Symbol_TENx
+valid <- !is.na(symbols_tenx) & symbols_tenx != ""
+sce <- sce[valid, ]
+rownames(sce) <- make.unique(symbols_tenx[valid])
+logcounts(sce) <- as.matrix(logcounts(sce))
+colnames(sce) <- paste0("cell_", seq_len(ncol(sce)))
+
+sce1 <- logNormCounts(pbmc_obj1)
+symbols_tenx1 <- rowData(sce1)$Symbol_TENx
+valid1 <- !is.na(symbols_tenx1) & symbols_tenx1 != ""
+sce1 <- sce1[valid1, ]
+rownames(sce1) <- make.unique(symbols_tenx1[valid1])
+logcounts(sce1) <- as.matrix(logcounts(sce1))
+colnames(sce1) <- paste0("cell_", seq_len(ncol(sce1)))
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+pred1 <- SingleR(test = sce1, ref = ref, labels = ref$label.main)
+colData(sce1)$predicted_celltype <- pred1$labels
+
+pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
+colData(sce)$predicted_celltype <- pred$labels
+
+# 2. Select top 500 B-cell genes
+genes <- selgene(
+    object = sce,
+    top_n = 500,
     cell_type = "B_cell",
-    cell_type_col = "CELL_TYPE",
+    cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
     remove_mt = TRUE
 )
-genes2 <- selgene(pbmc2,
-    top_n = 150,
+
+# 2. Select top 500 B-cell genes
+genes1 <- selgene(
+    object = sce1,
+    top_n = 500,
     cell_type = "B_cell",
-    cell_type_col = "CELL_TYPE",
+    cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
     remove_mt = TRUE
 )
 
-# Intersection of gene sets and subset
-common_genes <- intersect(genes1, genes2)
-pbmc1_sub <- subset(pbmc1, features = common_genes)
-pbmc2_sub <- subset(pbmc2, features = common_genes)
+commong <- intersect(genes, genes1)
 
-# Filter to B cells
-b1 <- subset(pbmc1_sub, subset = CELL_TYPE == "B_cell")
-b2 <- subset(pbmc2_sub, subset = CELL_TYPE == "B_cell")
+pbmc1_sub <- subset(sce, features = commong)
+pbmc2_sub <- subset(sce1, features = commong)
+
+pbmc1_sub <- pbmc1_sub[commong, ]
+pbmc2_sub <- pbmc2_sub[commong, ]
+
+pbmc1_sub <- pbmc1_sub[, colData(pbmc1_sub)$predicted_celltype == "B_cell"]
+pbmc2_sub <- pbmc2_sub[, colData(pbmc2_sub)$predicted_celltype == "B_cell"]
 
 # List for multi-sample analysis
-bcell_list <- list(b1, b2)
+bcell_list <- list(pbmc1_sub, pbmc2_sub)
+
 ```
 
 # 2. Network Inference

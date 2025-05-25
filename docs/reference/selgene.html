@@ -132,24 +132,17 @@ matching gene names. These should follow standard naming conventions (e.g.,
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="st">"https://www.dropbox.com/s/r8qwsng79rhp9gf/"</span>,</span></span>
-<span class="r-in"><span>    <span class="st">"SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="download_Atlas.html">download_Atlas</a></span><span class="op">(</span>file_url <span class="op">=</span> <span class="va">url</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">count_matrices</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu">selgene</span><span class="op">(</span></span></span>
-<span class="r-in"><span>    object <span class="op">=</span> <span class="va">seu</span>,</span></span>
-<span class="r-in"><span>    top_n <span class="op">=</span> <span class="fl">50</span>,</span></span>
+<span class="r-in"><span>    object <span class="op">=</span> <span class="va">count_matrices</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>    top_n <span class="op">=</span> <span class="fl">20</span>,</span></span>
 <span class="r-in"><span>    cell_type <span class="op">=</span> <span class="st">"T_cells"</span>,</span></span>
 <span class="r-in"><span>    cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>,</span></span>
 <span class="r-in"><span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Using Seurat assay 'RNA' slot 'data' (log-normalized).</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Subsetted to 923 cells where CELL_TYPE = 'T_cells'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed mitochondrial genes matching '^MT-'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed ribosomal genes matching '^RP[SL]'.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Top 50 genes selected based on mean expression.</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .extract_expression(object, assay):</span> Requested assay 'logcounts' not found. assays: counts</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -11,9 +11,61 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+# Introduction
+
+scGraphVerse is a modular and extensible R package for constructing, comparing, 
+and visualizing gene regulatory networks (GRNs) from single-cell RNAseq data.
+It includes a collection of inference algorithms, post-processing utilities,
+and visualization functions, all designed with interoperability, 
+reproducibility, and scalability in mind.
+
+Single-cell data presents unique challenges: high sparsity, batch variation, 
+and the need to distinguish shared versus condition-specific regulation. 
+scGraphVerse helps address these through multi-method inference, consensus
+building, simulation benchmarking, and communities and pathway analysis. 
+It starts with SingleCellExperiment, Seurat or matrix-based objects, enabling 
+flexible pipelines across diverse experimental setups.
+
+## Why use scGraphVerse?
+
+While several GRN inference packages exist in Bioconductor 
+(e.g. GENIE3, minet, SCENIC, netZoo), most are limited to single-method 
+inference or lack support for multi-condition, multi-replicate, and 
+multi-method comparisons. scGraphVerse adds value by:
+
+1. Supporting multiple inference algorithms, including GENIE3, GRNBoost2, 
+ZILGM, PCzinb, and Joint Random Forests (JRF).
+2. Providing joint modeling of GRNs across multiple conditions via JRF
+3. Enabling benchmarking simulations from known ground-truth GRNs with 
+customizable ZINB-based count matrix generation.
+4. Offering community analysis, including consensus GRNs, similarity analysis,
+and STRINGdb integration.
+
+Users can plug in their single-cell objects, infer networks and visualize
+regulatory structure using built-in radar plots, ROC curves, 
+and community overlays.
+
+## How scGraphVerse works
+
+The typical scGraphVerse workflow begins with one or more count matrices, 
+or objects like SingleCellExperiment or Seurat. These are passed to the core 
+function infer_networks(), which runs the selected inference methods and
+returns an adjacency matrix or list of matrices.
+
+For benchmarking or teaching purposes, synthetic datasets can be generated 
+using zinb_simdata() based on a known adjacency matrix. This supports method
+comparison across early, late, and joint integration strategies using 
+earlyj() and compare_consensus().
+
+An end-to-end workflow, from network inference to community detection and 
+consensus visualization, is provided in the rest of vignettes.
+
+As intended for both high-throughput analysis and intuitive usage, 
+scGraphVerse supports custom workflows using its modular functions.
+
 # Simulation study 
 
-In this case study, we use **scGraphVerse** to:
+In this simulation study, we use **scGraphVerse** to:
 
 1. Define a ground-truth regulatory network from high-confidence interactions.
 2. Simulate zero-inflated scRNA-seq count data that respects the ground truth.
@@ -32,6 +84,13 @@ knitr::opts_chunk$set(
 library(scGraphVerse)
 library(igraph)
 library(ggraph)
+library(TENxPBMCData)
+library(scater)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(SingleR)
+library(celldex)
+
 ```
 
 # 1. Defining a Ground-Truth Network from STRINGdb
@@ -39,20 +98,28 @@ library(ggraph)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r gtruth, fig.alt="Reference graph"}
-# 1. Download PBMC data
-url <- paste0(
-    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
-    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-)
-seu <- download_Atlas(file_url = url)
+```{r}
+# 1. Load PBMC data
+pbmc_obj <- TENxPBMCData("pbmc3k")
+
+sce <- logNormCounts(pbmc_obj)
+symbols_tenx <- rowData(sce)$Symbol_TENx
+valid <- !is.na(symbols_tenx) & symbols_tenx != ""
+sce <- sce[valid, ]
+rownames(sce) <- make.unique(symbols_tenx[valid])
+logcounts(sce) <- as.matrix(logcounts(sce))
+colnames(sce) <- paste0("cell_", seq_len(ncol(sce)))
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
+colData(sce)$predicted_celltype <- pred$labels
 
 # 2. Select top 500 T-cell genes
 genes <- selgene(
-    object = seu,
+    object = sce,
     top_n = 500,
     cell_type = "T_cells",
-    cell_type_col = "CELL_TYPE",
+    cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
     remove_mt = TRUE
 )
@@ -64,6 +131,7 @@ str_res <- stringdb_adjacency(
     required_score = 900,
     keep_all_genes = FALSE
 )
+
 wadj_truth <- str_res$weighted
 adj_truth <- str_res$binary
 adj_truth <- adj_truth[order(rownames(adj_truth)), order(colnames(adj_truth))]
@@ -109,8 +177,8 @@ count_matrices <- lapply(sims, t)
 
 # 3. Inferring Networks with JRF
 
-We run **Joint Random Forests** across the simulated batches to infer shared 
-and batch-specific regulatory edges.
+We run **GENIE3** across the simulated batches to infer batch-specific
+regulatory edges.
 
 ```{r genie3}
 networks_joint <- infer_networks(

@@ -108,12 +108,12 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          EEF1G      PTPRC 0.1475067</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          EIF3E      PCBP1 0.1461004</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E       CD3D 0.1398844</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          PTPRC       CYBA 0.1335812</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         EEF1A1       NACA 0.1273391</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6        HNRNPA1    PTPRCAP 0.1248806</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1978938</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1975936</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1553977</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4           CD3E       CD3D 0.1540997</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          HLA-E        FOS 0.1483368</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6         GNB2L1      UBA52 0.1482091</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -127,38 +127,31 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 <span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.08759</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.08969</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.09596</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.10220</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.10990</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.10400</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">binary_listj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         ACTG1 ARHGDIB BTF3 CD3D CD3E CFL1 COX4I1 COX7C CYBA EEF1A1 EEF1D EEF1G</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1       0       0    0    0    0    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB     0       0    0    0    0    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3        0       0    0    0    0    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D        0       0    0    0    1    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E        0       0    0    1    0    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1        0       0    0    0    0    0      0     0    0      0     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         EEF2 EIF1 EIF3E FTH1 FTL HLA-A HLA-B HLA-C HLA-E HNRNPA1 HNRNPA2B1 MYL6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB    0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D       0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0    0     0    0   0     0     0     0     0       0         0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         NACA PCBP1 PCBP2 PFN1 PTPRC PTPRCAP RAC2 SKP1 SNRPD2 TMSB4X UBA52 UBC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1      0     0     0    0     0       0    0    0      0      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB    0     0     0    0     0       0    1    0      0      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3       0     0     0    0     0       0    0    0      1      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D       0     0     0    0     0       0    0    0      1      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E       0     0     0    0     0       0    0    0      0      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1       0     0     0    0     0       0    0    0      0      0     0   0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         UQCRB YBX1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1       0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARHGDIB     0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3        0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D        0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E        0    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFL1        0    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       ACTG1 ARPC2 ARPC3 BTF3 CD3D CD3E CD74 CFL1 COX4I1 COX7C CXCR4 EEF1A1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1     0     0     0    0    0    0    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2     0     0     1    0    0    0    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3     0     1     0    0    0    0    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3      0     0     0    0    0    0    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D      0     0     0    0    0    1    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E      0     0     0    0    1    0    0    0      0     0     0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       EEF1D EEF2 EIF1 EIF3K EIF4A2 FOS FTH1 FTL GNB2L1 HLA-A HLA-B HLA-C HLA-E</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1     0    0    0     0      0   0    0   0      0     0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2     0    0    0     0      0   0    0   0      0     0     0     0     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3     0    0    0     0      0   0    0   0      0     0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3      0    0    0     0      0   0    0   0      0     0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D      0    0    0     0      0   0    0   0      0     0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E      0    0    0     0      0   0    0   0      0     0     0     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       JUN JUNB MYL12B MYL6 NACA PABPC1 PFN1 TMSB4X UBA52 UBC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1   0    0      0    0    0      0    0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2   0    0      0    0    0      0    0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3   0    0      0    0    0      0    0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3    0    0      0    0    0      0    0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D    0    0      0    0    0      0    0      0     0   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E    0    0      0    0    0      0    0      0     0   0</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_listj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -168,7 +161,7 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Initializing STRINGdb...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Mapping genes to STRING IDs...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapped 38 genes to STRING IDs.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapped 35 genes to STRING IDs.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Retrieving physical interactions from STRING API...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Found 31 STRING physical interactions.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Adjacency matrices constructed successfully.</span>

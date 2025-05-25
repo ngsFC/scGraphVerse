@@ -70,6 +70,8 @@ install.packages(
 
 #INeet-Tool (GitHub)
 remotes::install_github("ValeriaPolicastro/INet-Tool")
+Note: if the package ‘datastructure’ is not available for your version of R use devtools::install_github("dirmeier/datastructures") before installing INet-Tool, if you do not have Rtools download it from: https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html
+
 ```
 
 ## 📚 Citation

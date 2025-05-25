@@ -20,10 +20,7 @@
 #' @export
 #'
 #' @examples
-#' url <- paste0(
-#'     "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
-#'     "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-#' )
+#' url <- "https://zenodo.org/records/15511027/files/sce_obj.rds?download=1"
 #' atlas_data <- download_Atlas(url)
 download_Atlas <- function(file_url) {
     if (!requireNamespace("httr", quietly = TRUE)) {

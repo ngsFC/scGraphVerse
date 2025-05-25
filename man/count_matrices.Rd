@@ -3,9 +3,9 @@
 \docType{data}
 \name{count_matrices}
 \alias{count_matrices}
-\title{Toy gene expression dataset for examples}
+\title{Toy list of SingleCellExperiment objects}
 \format{
-A list with 3 matrices, each of dimension 38 genes x 40 cells.
+A list with 3 SingleCellExperiment objects, each of dimension 35 genes x 40 cells.
 }
 \usage{
 data(count_matrices)

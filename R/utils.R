@@ -282,7 +282,7 @@
         obj
     })
 
-    do.call(cbind, modified)
+    do.call(SummarizedExperiment::cbind, modified)
 }
 
 # cutoff_adjacency

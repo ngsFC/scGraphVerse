@@ -1,23 +1,34 @@
 library(scGraphVerse)
+library(TENxPBMCData)
+library(scater)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(SingleR)
+library(celldex)
 
-# 1. Download PBMC data
-url <- paste0(
-    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
-    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-)
-seu <- download_Atlas(file_url = url)
+sce <- TENxPBMCData("pbmc3k")
 
-# 2. Select top 500 T-cell genes
+sce <- logNormCounts(pbmc_obj)
+symbols_tenx <- rowData(sce)$Symbol_TENx
+valid <- !is.na(symbols_tenx) & symbols_tenx != ""
+sce <- sce[valid, ]
+rownames(sce) <- make.unique(symbols_tenx[valid])
+logcounts(sce) <- as.matrix(logcounts(sce))
+colnames(sce) <- paste0("cell_", seq_len(ncol(sce)))
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
+colData(sce)$predicted_celltype <- pred$labels
+
 genes <- selgene(
-    object = seu,
+    object = sce,
     top_n = 100,
     cell_type = "T_cells",
-    cell_type_col = "CELL_TYPE",
+    cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
     remove_mt = TRUE
 )
 
-# 3. Retrieve STRINGdb adjacency
 str_res <- stringdb_adjacency(
     genes = genes,
     species = 9606,
@@ -28,13 +39,10 @@ str_res <- stringdb_adjacency(
 wadj_truth <- str_res$weighted
 adj_truth <- str_res$binary
 
-# 4. Symmetrize and sort
 common <- intersect(rownames(adj_truth), colnames(adj_truth))
 adj_truth <- adj_truth[common, common]
 adj_truth <- adj_truth[order(rownames(adj_truth)), order(colnames(adj_truth))]
 
-# 2. Simulating Zero-Inflated Count Data
-# Simulation parameters
 nodes <- nrow(adj_truth)
 sims <- zinb_simdata(
     n = 40,
@@ -47,8 +55,12 @@ sims <- zinb_simdata(
     kmat = 3,
     depth_range = c(0.8 * nodes * 3, 1.2 * nodes * 3)
 )
-# Transpose to cells × genes
+
 count_matrices <- lapply(sims, t)
+count_matrices <- lapply(count_matrices, function(mat) {
+  col_data <- DataFrame(CELL_TYPE = rep("T_cells", ncol(mat)))
+  SingleCellExperiment(assays = list(counts = mat), colData = col_data)
+})
 
 usethis::use_data(count_matrices, overwrite = TRUE)
 usethis::use_data(adj_truth, overwrite = TRUE)

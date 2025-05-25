@@ -57,19 +57,17 @@ Genes not mapped to STRING are optionally retained as zero rows/columns if
 Requires packages: \pkg{STRINGdb}, \pkg{httr}, \pkg{jsonlite}.
 }
 \examples{
-url <- paste0(
-    "https://www.dropbox.com/s/r8qwsng79rhp9gf/",
-    "SCA_scRNASEQ_TISSUE_WHOLE_BLOOD.RDS?dl=1"
-)
-seu <- download_Atlas(file_url = url)
+data(count_matrices)
 genes <- selgene(
-    object = seu,
-    top_n = 50,
+    object = count_matrices[[1]],
+    top_n = 20,
     cell_type = "T_cells",
     cell_type_col = "CELL_TYPE",
     remove_rib = TRUE,
-    remove_mt = TRUE
+    remove_mt = TRUE,
+    assay = "counts"
 )
+
 str_res <- stringdb_adjacency(
     genes = genes,
     species = 9606,
