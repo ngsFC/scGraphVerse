@@ -140,9 +140,14 @@ matching gene names. These should follow standard naming conventions (e.g.,
 <span class="r-in"><span>    cell_type <span class="op">=</span> <span class="st">"T_cells"</span>,</span></span>
 <span class="r-in"><span>    cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>,</span></span>
 <span class="r-in"><span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>    assay <span class="op">=</span> <span class="st">"counts"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .extract_expression(object, assay):</span> Requested assay 'logcounts' not found. assays: counts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using SCE assay 'counts' (log-normalized).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Subsetted to 40 cells where CELL_TYPE = 'T_cells'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed mitochondrial genes matching '^MT-'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed ribosomal genes matching '^RP[SL]'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Top 20 genes selected based on mean expression.</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -109,9 +109,14 @@ interactions from STRING.</p></li>
 <span class="r-in"><span>    cell_type <span class="op">=</span> <span class="st">"T_cells"</span>,</span></span>
 <span class="r-in"><span>    cell_type_col <span class="op">=</span> <span class="st">"CELL_TYPE"</span>,</span></span>
 <span class="r-in"><span>    remove_rib <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>    remove_mt <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>    assay <span class="op">=</span> <span class="st">"counts"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .extract_expression(object, assay):</span> Requested assay 'logcounts' not found. assays: counts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using SCE assay 'counts' (log-normalized).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Subsetted to 40 cells where CELL_TYPE = 'T_cells'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed mitochondrial genes matching '^MT-'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removed ribosomal genes matching '^RP[SL]'.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Top 20 genes selected based on mean expression.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">str_res</span> <span class="op">&lt;-</span> <span class="fu">stringdb_adjacency</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    genes <span class="op">=</span> <span class="va">genes</span>,</span></span>
@@ -119,11 +124,14 @@ interactions from STRING.</p></li>
 <span class="r-in"><span>    required_score <span class="op">=</span> <span class="fl">900</span>,</span></span>
 <span class="r-in"><span>    keep_all_genes <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'genes' not found</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Initializing STRINGdb...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapping genes to STRING IDs...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapped 20 genes to STRING IDs.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Retrieving physical interactions from STRING API...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Found 19 STRING physical interactions.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Adjacency matrices constructed successfully.</span>
 <span class="r-in"><span><span class="va">wadj_truth</span> <span class="op">&lt;-</span> <span class="va">str_res</span><span class="op">$</span><span class="va">weighted</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'str_res' not found</span>
 <span class="r-in"><span><span class="va">adj_truth</span> <span class="op">&lt;-</span> <span class="va">str_res</span><span class="op">$</span><span class="va">binary</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'str_res' not found</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
