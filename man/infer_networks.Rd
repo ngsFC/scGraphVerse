@@ -9,7 +9,14 @@ infer_networks(
   method = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"),
   adjm = NULL,
   nCores = 1,
-  grnboost_modules = NULL
+  grnboost_modules = NULL,
+  genie3_params = list(),
+  grnboost2_params = list(),
+  zilgm_params = list(),
+  jrf_params = list(),
+  pczinb_params = list(),
+  verbose = FALSE,
+  seed = NULL
 )
 }
 \arguments{
@@ -30,6 +37,52 @@ parallelization. Defaults to the number of workers in the current
 
 \item{grnboost_modules}{Python modules required for \code{GRNBoost2}
 (created via \pkg{reticulate}).}
+
+\item{genie3_params}{List of parameters for GENIE3 method:
+\itemize{
+\item \code{regulators}: Vector of regulator gene names (default: all genes)
+\item \code{targets}: Vector of target gene names (default: all genes)
+\item \code{tree.method}: "RF" or "ET" (default: "RF")
+\item \code{K}: Number of candidate regulators (default: "sqrt")
+\item \code{nb.trees}: Number of trees per ensemble (default: 1000)
+\item \code{seed}: Random seed for reproducibility (default: NULL)
+}}
+
+\item{grnboost2_params}{List of parameters for GRNBoost2 method:
+\itemize{
+\item \code{tf_names}: Vector of transcription factor names (default: all genes)
+\item \code{gene_names}: Vector of target gene names (default: all genes)
+\item \code{client_or_address}: Dask client or address (default: NULL)
+\item \code{seed}: Random seed for reproducibility (default: NULL)
+}}
+
+\item{zilgm_params}{List of parameters for ZILGM method:
+\itemize{
+\item \code{lambda}: Regularization parameter (default: 0.1)
+\item \code{alpha}: Elastic net mixing parameter (default: 1)
+\item \code{max_iter}: Maximum iterations (default: 100)
+\item \code{tol}: Convergence tolerance (default: 1e-4)
+}}
+
+\item{jrf_params}{List of parameters for JRF method:
+\itemize{
+\item \code{ntree}: Number of trees (default: 500)
+\item \code{mtry}: Number of variables to sample at each split (default: sqrt(p))
+\item \code{nodesize}: Minimum node size (default: 5)
+\item \code{maxnodes}: Maximum number of nodes (default: NULL)
+}}
+
+\item{pczinb_params}{List of parameters for PCzinb method:
+\itemize{
+\item \code{gamma}: Regularization parameter (default: 0.1)
+\item \code{beta}: Beta parameter (default: 0.1)
+\item \code{max_iter}: Maximum iterations (default: 100)
+\item \code{tol}: Convergence tolerance (default: 1e-4)
+}}
+
+\item{verbose}{Logical. If TRUE, display progress messages. Default: FALSE.}
+
+\item{seed}{Integer. Random seed for reproducibility. Default: NULL.}
 }
 \value{
 A list of inferred networks:

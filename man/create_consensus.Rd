@@ -10,7 +10,10 @@ create_consensus(
   weighted_list = NULL,
   theta = 0.04,
   threshold = 0.5,
-  ncores = 1
+  ncores = 1,
+  tolerance = 0.1,
+  nitermax = 50,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -38,6 +41,15 @@ matrix.
 
 \item{ncores}{Integer. Number of CPU cores to use when \code{method =
 "INet"}. Default is \code{1}.}
+
+\item{tolerance}{Numeric. Tolerance for differences between similar graphs
+in INet method. Default is \code{0.1}.}
+
+\item{nitermax}{Integer. Maximum number of iterations for INet algorithm.
+Default is \code{50}.}
+
+\item{verbose}{Logical. If TRUE, display verbose output for INet method.
+Default is \code{FALSE}.}
 }
 \value{
 A square consensus adjacency matrix (binary or weighted,

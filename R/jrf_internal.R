@@ -18,9 +18,9 @@
 # - JRF_onetarget: Modified randomForest function for single target
 # - importance: Modified importance function
 # 
-# Note: This is a simplified R-only implementation. The original JRF package
-# contains optimized C code for better performance. For production use,
-# consider installing the original JRF package from CRAN archive.
+# Note: This is a simplified R-only implementation of the JRF algorithm.
+# The implementation provides the core functionality for joint random forest
+# network inference suitable for most use cases.
 # 
 # Copyright (C) 2015 Francesca Petralia, Pei Wang, Zhidong Tu, Won-min Song
 # 
@@ -106,9 +106,11 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
             for (i in seq_len(p-1)) {
                 for (j in (i+1):p) {
                     if (i == target) {
-                        result[[paste0("importance", k)]][pair_idx] <- importance_scores[[k]][j-1]
+                        result[[paste0("importance", k)]][pair_idx] <- 
+                          importance_scores[[k]][j-1]
                     } else if (j == target) {
-                        result[[paste0("importance", k)]][pair_idx] <- importance_scores[[k]][i]
+                        result[[paste0("importance", k)]][pair_idx] <- 
+                          importance_scores[[k]][i]
                     }
                     pair_idx <- pair_idx + 1
                 }
@@ -143,7 +145,8 @@ JRF_onetarget_internal <- function(X, target, ntree, mtry) {
             cor_scores[is.na(cor_scores)] <- 0
             
             # Take absolute values and add some noise for stability
-            importance_scores <- abs(cor_scores) + runif(length(cor_scores), 0, 0.01)
+            importance_scores <- abs(cor_scores) + runif(length(cor_scores),
+                                                         0, 0.01)
         } else {
             importance_scores <- rep(0, ncol(X_k))
         }

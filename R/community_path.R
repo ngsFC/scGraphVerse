@@ -20,18 +20,23 @@
 #' @param method_params List of parameters for community detection methods.
 #'   Common parameters include:
 #'   \itemize{
-#'     \item \code{resolution}: Resolution parameter for Louvain/Leiden (default: 1)
+#'     \item \code{resolution}: Resolution parameter for Louvain/Leiden 
+#'     (default: 1)
 #'     \item \code{steps}: Number of steps for Walktrap (default: 4)
 #'     \item \code{spins}: Number of spins for Spinglass (default: 25)
 #'     \item \code{nb.trials}: Number of trials for Infomap (default: 10)
 #'   }
 #' @param comparison_params List of parameters for robin comparison:
 #'   \itemize{
-#'     \item \code{measure}: Stability measure ("vi", "nmi", "split.join", "adjusted.rand"). Default: "vi"
-#'     \item \code{type}: Robin construction type ("dependent", "independent"). Default: "independent"
-#'     \item \code{rewire.w.type}: Rewiring strategy for weighted graphs. Default: "Rewire"
+#'     \item \code{measure}: Stability measure ("vi", "nmi", "split.join",
+#'      "adjusted.rand"). Default: "vi"
+#'     \item \code{type}: Robin construction type ("dependent", "independent").
+#'      Default: "independent"
+#'     \item \code{rewire.w.type}: Rewiring strategy for weighted graphs.
+#'      Default: "Rewire"
 #'   }
-#' @param BPPARAM BiocParallel backend for parallel processing. Default: \code{BiocParallel::bpparam()}.
+#' @param BPPARAM BiocParallel backend for parallel processing. 
+#' Default: \code{BiocParallel::bpparam()}.
 #'
 #' @return A list with elements:
 #'   \itemize{

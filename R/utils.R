@@ -606,16 +606,8 @@
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     ), params)
     
-    # Try external JRF package first, fall back to internal implementation
-    if (requireNamespace("JRF", quietly = TRUE)) {
-        rf <- do.call(JRF::JRF, jrf_args)
-    } else {
-        warning(
-            "JRF package not available, using simplified internal implementation. ",
-            "For better performance, install JRF package from CRAN archive."
-        )
-        rf <- do.call(JRF_simplified, jrf_args)
-    }
+    # Use internal JRF implementation
+    rf <- do.call(JRF_simplified, jrf_args)
 
     importance_columns <- grep("importance", names(rf), value = TRUE)
     lapply(importance_columns, function(col) {
@@ -1040,6 +1032,59 @@
     return(method_args)
 }
 
+# Parameter helper functions for infer_networks
+.merge_genie3_params <- function(user_params) {
+    defaults <- list(
+        regulators = NULL,
+        targets = NULL,
+        tree.method = "RF",
+        K = "sqrt",
+        nb.trees = 1000,
+        seed = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_grnboost2_params <- function(user_params) {
+    defaults <- list(
+        tf_names = NULL,
+        gene_names = NULL,
+        client_or_address = NULL,
+        seed = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_zilgm_params <- function(user_params) {
+    defaults <- list(
+        lambda = 0.1,
+        alpha = 1,
+        max_iter = 100,
+        tol = 1e-4
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_jrf_params <- function(user_params) {
+    defaults <- list(
+        ntree = 500,
+        mtry = NULL,
+        nodesize = 5,
+        maxnodes = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_pczinb_params <- function(user_params) {
+    defaults <- list(
+        gamma = 0.1,
+        beta = 0.1,
+        max_iter = 100,
+        tol = 1e-4
+    )
+    modifyList(defaults, user_params)
+}
+
 .detect_communities <- function(graph, methods, method_params = list(), 
                                 comparison_params = list(), 
                                 BPPARAM = BiocParallel::bpparam()) {
@@ -1069,11 +1114,11 @@
         res <- tryCatch(
             do.call(robin::robinCompare, c(
                 list(graph = graph,
-                     method1 = methods[1],
-                     method2 = methods[2],
-                     args1 = args1,
-                     args2 = args2,
-                     BPPARAM = BPPARAM),
+                    method1 = methods[1],
+                    method2 = methods[2],
+                    args1 = args1,
+                    args2 = args2,
+                    BPPARAM = BPPARAM),
                 comparison_params
             )),
             error = function(e) {

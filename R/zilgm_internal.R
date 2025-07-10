@@ -10,8 +10,9 @@
 # 
 # Original paper:
 # Park, B., Choi, H., & Park, C. (2021). 
-# "Zero-inflated latent Gaussian mixture models for inference of gene regulatory networks"
-# 
+# "Zero-inflated latent Gaussian mixture models for inference 
+#of gene regulatory networks"
+#
 # The functions included here are:
 # - find_lammax: Computes maximum lambda value from KKT condition
 # - zilgm: Main network estimation function
@@ -43,9 +44,9 @@ find_lammax <- function(X) {
 
 #' @keywords internal
 #' @noRd
-zilgm <- function(X, lambda = NULL, nlambda = 50, family = "NBII", 
-                  update_type = "IRLS", sym = "OR", do_boot = TRUE, 
-                  boot_num = 10, nCores = 1, ...) {
+zilgm <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
+    update_type = "IRLS", sym = "OR", do_boot = TRUE, 
+        boot_num = 10, nCores = 1, ...) {
     
     # Input validation
     if (!is.matrix(X)) {

@@ -20,7 +20,7 @@
 #'   (created via \pkg{reticulate}).
 #' @param genie3_params List of parameters for GENIE3 method:
 #'   \itemize{
-#'     \item \code{regulators}: Vector of regulator gene names (default: all genes)
+#'     \item \code{regulators}: Vector of regulator gene names (default: all)
 #'     \item \code{targets}: Vector of target gene names (default: all genes)
 #'     \item \code{tree.method}: "RF" or "ET" (default: "RF")
 #'     \item \code{K}: Number of candidate regulators (default: "sqrt")
@@ -29,8 +29,8 @@
 #'   }
 #' @param grnboost2_params List of parameters for GRNBoost2 method:
 #'   \itemize{
-#'     \item \code{tf_names}: Vector of transcription factor names (default: all genes)
-#'     \item \code{gene_names}: Vector of target gene names (default: all genes)
+#'     \item \code{tf_names}: Vector of transcription factor names (default:all)
+#'     \item \code{gene_names}: Vector of target gene names (default: all)
 #'     \item \code{client_or_address}: Dask client or address (default: NULL)
 #'     \item \code{seed}: Random seed for reproducibility (default: NULL)
 #'   }
@@ -44,7 +44,8 @@
 #' @param jrf_params List of parameters for JRF method:
 #'   \itemize{
 #'     \item \code{ntree}: Number of trees (default: 500)
-#'     \item \code{mtry}: Number of variables to sample at each split (default: sqrt(p))
+#'     \item \code{mtry}: Number of variables to sample at each split 
+#'     (default: sqrt(p))
 #'     \item \code{nodesize}: Minimum node size (default: 5)
 #'     \item \code{maxnodes}: Maximum number of nodes (default: NULL)
 #'   }
@@ -209,55 +210,3 @@ infer_networks <- function(
     }
 }
 
-# Parameter helper functions
-.merge_genie3_params <- function(user_params) {
-    defaults <- list(
-        regulators = NULL,
-        targets = NULL,
-        tree.method = "RF",
-        K = "sqrt",
-        nb.trees = 1000,
-        seed = NULL
-    )
-    modifyList(defaults, user_params)
-}
-
-.merge_grnboost2_params <- function(user_params) {
-    defaults <- list(
-        tf_names = NULL,
-        gene_names = NULL,
-        client_or_address = NULL,
-        seed = NULL
-    )
-    modifyList(defaults, user_params)
-}
-
-.merge_zilgm_params <- function(user_params) {
-    defaults <- list(
-        lambda = 0.1,
-        alpha = 1,
-        max_iter = 100,
-        tol = 1e-4
-    )
-    modifyList(defaults, user_params)
-}
-
-.merge_jrf_params <- function(user_params) {
-    defaults <- list(
-        ntree = 500,
-        mtry = NULL,
-        nodesize = 5,
-        maxnodes = NULL
-    )
-    modifyList(defaults, user_params)
-}
-
-.merge_pczinb_params <- function(user_params) {
-    defaults <- list(
-        gamma = 0.1,
-        beta = 0.1,
-        max_iter = 100,
-        tol = 1e-4
-    )
-    modifyList(defaults, user_params)
-}
