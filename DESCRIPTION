@@ -10,8 +10,10 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     from single-cell RNA sequencing data. It integrates multiple methods (GENIE3, 
     GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
     building across methods or datasets, and provides tools for evaluating regulatory 
-    structure and community similarity.
-License: MIT + file LICENSE
+    structure and community similarity. This package includes adapted functions from 
+    ZILGM (Park et al., 2021) and JRF (Petralia et al., 2015) packages with proper 
+    attribution under GPL-2 license.
+License: GPL (>= 2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -54,7 +56,8 @@ Imports:
     robin,
     scales,
     tidyr,
-    cli
+    cli,
+    INetTool
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -62,8 +65,6 @@ Suggests:
     tidyverse,
     magick,
     JRF,
-    ZILGM,
     learn2count,
-    INetTool
 VignetteBuilder: knitr
 LazyData: true

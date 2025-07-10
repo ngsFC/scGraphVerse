@@ -9,24 +9,39 @@ output: rmarkdown::github_document
   <img src="./man/figures/logo.png" alt="scGraphVerse logo" width="200"/>
 </div>
 
+[![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
+[![R-CMD-check](https://github.com/ngsFC/scGraphVerse/workflows/R-CMD-check/badge.svg)](https://github.com/ngsFC/scGraphVerse/actions)
+
 ---
 
-**scGraphVerse** is an R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It supports multiple GRN inference algorithms, consensus construction across methods or datasets, performance evaluation, and rich visualizations — all optimized for single-cell expression analysis.
+**scGraphVerse** is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, enhanced parameter control, consensus construction, and rich visualizations — all optimized for single-cell expression analysis.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
+### 🔍 **Multiple GRN Inference Methods**
+- **GENIE3** (tree-based ensemble)
+- **GRNBoost2** (Python-based gradient boosting)
+- **ZILGM** (zero-inflated Gaussian graphical model)
+- **PCzinb** (partial correlation with zero-inflated NB model)
+- **JRF** (joint random forests)
 
-- 🔍 Inference of GRNs using:
-  - **GENIE3** (tree-based ensemble)
-  - **GRNBoost2** (Python-based gradient boosting)
-  - **ZILGM** (zero-inflated Gaussian graphical model)
-  - **PCzinb** (partial correlation with zero-inflated NB model)
-  - **JRF** (joint random forests for multi-sample networks)
-- 🎯 Network thresholding using shuffled matrix null models (`cutoff_adjacency`)
-- 🧠 Consensus construction across methods using voting, union, or INet
-- 📊 Performance metrics: ROC, AUC, classification metrics, and network topology
-- 🧩 Network visualization using `ggraph` and `igraph`
+### 🧠 **Advanced Consensus Methods**
+- **Voting consensus** 
+- **Union consensus** 
+- **INet-tool consensus**
+ 
+### 📊 **Comprehensive Evaluation**
+- **Performance metrics**: ROC, AUC, precision, recall, F1-score, MCC
+- **Network topology analysis**: modularity, clustering, degree distribution
+- **Community detection** with robin package integration
+- **Pathway enrichment** analysis (KEGG, Reactome)
+
+### 🧩 **Rich Visualizations**
+- **Network plots** with community highlighting
+- **ROC curves** and performance dashboards
+- **Consensus comparison** visualizations
+- **Pathway radar charts** and enrichment plots
 
 ---
 
@@ -38,55 +53,69 @@ output: rmarkdown::github_document
 
 ## 🧪 Installation
 
-### Development version (GitHub)
-For now, install the development version directly from GitHub:
+### From GitHub (Recommended)
 
 ```r
-install.packages("devtools")
+# Install development version
+if (!require("devtools")) install.packages("devtools")
 devtools::install_github("ngsFC/scGraphVerse")
 ```
+
 ---
 
-## 📦 External Dependencies
-Some inference methods used by scGraphVerse require external packages that are not available on CRAN or Bioconductor. You must install these manually:
+---
 
-```r
-# GRNBoost2 (Python - arboreto)
-# Install using pip (run in your terminal, not R):
-pip install arboreto
+## 📄 License & Attribution
 
-# ZILGM (GitHub)
-remotes::install_github("bbeomjin/ZILGM")
+**scGraphVerse** is licensed under **GPL (>= 2)** .
 
-# PCzinb (GitHub)
-BiocManager::install("drisso/learn2count")
+### Integrated Code Attribution
 
-# JRF (GitHub or archived CRAN)
-install.packages(
-  "https://cran.r-project.org/src/contrib/Archive/JRF/JRF_0.1-4.tar.gz", 
-  repos = NULL, 
-  type = "source"
-)
+This package includes adapted functions from:
 
-#INeet-Tool (GitHub)
-remotes::install_github("ValeriaPolicastro/INet-Tool")
-Note: if the package ‘datastructure’ is not available for your version of R use devtools::install_github("dirmeier/datastructures") before installing INet-Tool, if you do not have Rtools download it from: https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html
+- **ZILGM** (Park et al., 2021) - GPL-2 license
+- **JRF** (Petralia et al., 2015) - GPL (>= 2) license
 
-```
+All integrated code maintains proper attribution and copyright notices.
+
+---
 
 ## 📚 Citation
-If you use scGraphVerse, please cite the original GRN inference methods it implements:
 
-1.	Huynh-Thu VA, Irrthum A, Wehenkel L, Geurts P. Inferring Regulatory Networks from Expression Data Using Tree-Based Methods. PLOS ONE. 2010 Sep 28;5(9):e12776.
-2.	Moerman T, Aibar Santos S, Bravo González-Blas C, Simm J, Moreau Y, Aerts J, et al. GRNBoost2 and Arboreto: efficient and scalable inference of gene regulatory networks. Bioinformatics. 2019 Jun 15;35(12):2159–61.
-3.	Park B, Choi H, Park C. Negative binomial graphical model with excess zeros. Stat Anal Data Min ASA Data Sci J. 2021;14(5):449–65.
-4.	Nguyen TKH, Berge K van den, Chiogna M, Risso D. Structure learning for zero-inflated counts with an application to single-cell RNA sequencing data. Ann Appl Stat. 2023 Sep;17(3):2555–73.
-5.	Petralia F, Song WM, Tu Z, Wang P. New Method for Joint Network Analysis Reveals Common and Different Coexpression Patterns among Genes and Proteins in Breast Cancer. J Proteome Res. 2016 Mar 4;15(3):743–54.
+```r
+# Get citation information
+citation("scGraphVerse")
+```
+
+Please also cite the original methods implemented:
+
+1. **GENIE3**: Huynh-Thu et al. (2010). *PLOS ONE* 5(9):e12776
+2. **GRNBoost2**: Moerman et al. (2019). *Bioinformatics* 35(12):2159-61
+3. **ZILGM**: Park et al. (2021). *Bioinformatics* 37(18):3085-3092
+4. **JRF**: Petralia et al. (2015). *Bioinformatics* 31(12):i197-i205
+5. **PCzinb**: Nguyen et al. (2023). *Ann. Appl. Stat.* 17(3):2555-73
+6. **INet-Tool**: Policastro et al. (2021). *BMC Bioinformatics* 22:1-18
 
 ---
-## Funding
 
-This work is supported by the project:
-**National Centre for HPC, Big Data and Quantum Computing** Funded by European Union – Next Generation EU – CN00000013 **CUP:** B93C22000620006
+## 🆘 Support
 
+- **Documentation**: [https://ngsFC.github.io/scGraphVerse](https://ngsFC.github.io/scGraphVerse)
+- **Issues**: [GitHub Issues](https://github.com/ngsFC/scGraphVerse/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ngsFC/scGraphVerse/discussions)
 
+---
+
+## 💰 Funding
+
+This work is supported by the **National Centre for HPC, Big Data and Quantum Computing** 
+- **Funded by**: European Union – Next Generation EU – CN00000013 
+- **CUP**: B93C22000620006
+
+---
+
+---
+
+<div align="center">
+  <p><strong>Happy Network Inference! 🧬📊</strong></p>
+</div>

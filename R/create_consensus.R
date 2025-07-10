@@ -22,6 +22,12 @@
 #'   "INet" methods. Default is \code{0.5}.
 #' @param ncores Integer. Number of CPU cores to use when \code{method =
 #'   "INet"}. Default is \code{1}.
+#' @param tolerance Numeric. Tolerance for differences between similar graphs
+#'   in INet method. Default is \code{0.1}.
+#' @param nitermax Integer. Maximum number of iterations for INet algorithm.
+#'   Default is \code{50}.
+#' @param verbose Logical. If TRUE, display verbose output for INet method.
+#'   Default is \code{FALSE}.
 #'
 #' @return A square consensus adjacency matrix (binary or weighted,
 #'   depending on the method).
@@ -77,7 +83,10 @@ create_consensus <- function(
     weighted_list = NULL,
     theta = 0.04,
     threshold = 0.5,
-    ncores = 1) {
+    ncores = 1,
+    tolerance = 0.1,
+    nitermax = 50,
+    verbose = FALSE) {
     consensus_matrix <- Reduce("+", adj_matrix_list)
 
     if (method == "vote") {
@@ -136,7 +145,10 @@ create_consensus <- function(
             list_norm,
             theta     = theta,
             ncores    = ncores,
-            threshold = threshold
+            threshold = threshold,
+            tolerance = tolerance,
+            nitermax  = nitermax,
+            verbose   = verbose
         )
         consensus_matrix <- as.matrix(
             as_adjacency_matrix(Con$graphConsensus)

@@ -18,6 +18,45 @@
 #'   \pkg{BiocParallel} backend.
 #' @param grnboost_modules Python modules required for \code{GRNBoost2}
 #'   (created via \pkg{reticulate}).
+#' @param genie3_params List of parameters for GENIE3 method:
+#'   \itemize{
+#'     \item \code{regulators}: Vector of regulator gene names (default: all genes)
+#'     \item \code{targets}: Vector of target gene names (default: all genes)
+#'     \item \code{tree.method}: "RF" or "ET" (default: "RF")
+#'     \item \code{K}: Number of candidate regulators (default: "sqrt")
+#'     \item \code{nb.trees}: Number of trees per ensemble (default: 1000)
+#'     \item \code{seed}: Random seed for reproducibility (default: NULL)
+#'   }
+#' @param grnboost2_params List of parameters for GRNBoost2 method:
+#'   \itemize{
+#'     \item \code{tf_names}: Vector of transcription factor names (default: all genes)
+#'     \item \code{gene_names}: Vector of target gene names (default: all genes)
+#'     \item \code{client_or_address}: Dask client or address (default: NULL)
+#'     \item \code{seed}: Random seed for reproducibility (default: NULL)
+#'   }
+#' @param zilgm_params List of parameters for ZILGM method:
+#'   \itemize{
+#'     \item \code{lambda}: Regularization parameter (default: 0.1)
+#'     \item \code{alpha}: Elastic net mixing parameter (default: 1)
+#'     \item \code{max_iter}: Maximum iterations (default: 100)
+#'     \item \code{tol}: Convergence tolerance (default: 1e-4)
+#'   }
+#' @param jrf_params List of parameters for JRF method:
+#'   \itemize{
+#'     \item \code{ntree}: Number of trees (default: 500)
+#'     \item \code{mtry}: Number of variables to sample at each split (default: sqrt(p))
+#'     \item \code{nodesize}: Minimum node size (default: 5)
+#'     \item \code{maxnodes}: Maximum number of nodes (default: NULL)
+#'   }
+#' @param pczinb_params List of parameters for PCzinb method:
+#'   \itemize{
+#'     \item \code{gamma}: Regularization parameter (default: 0.1)
+#'     \item \code{beta}: Beta parameter (default: 0.1)
+#'     \item \code{max_iter}: Maximum iterations (default: 100)
+#'     \item \code{tol}: Convergence tolerance (default: 1e-4)
+#'   }
+#' @param verbose Logical. If TRUE, display progress messages. Default: FALSE.
+#' @param seed Integer. Random seed for reproducibility. Default: NULL.
 #'
 #' @return A list of inferred networks:
 #'   \itemize{
@@ -80,49 +119,52 @@ infer_networks <- function(
     method = c("GENIE3", "GRNBoost2", "ZILGM", "JRF", "PCzinb"),
     adjm = NULL,
     nCores = 1,
-    grnboost_modules = NULL) {
+    grnboost_modules = NULL,
+    genie3_params = list(),
+    grnboost2_params = list(),
+    zilgm_params = list(),
+    jrf_params = list(),
+    pczinb_params = list(),
+    verbose = FALSE,
+    seed = NULL) {
     method <- match.arg(method)
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
+    
+    # Set seed if provided
+    if (!is.null(seed)) {
+        set.seed(seed)
+    }
+    
+    # Merge method-specific parameters with defaults
+    genie3_params <- .merge_genie3_params(genie3_params)
+    grnboost2_params <- .merge_grnboost2_params(grnboost2_params)
+    zilgm_params <- .merge_zilgm_params(zilgm_params)
+    jrf_params <- .merge_jrf_params(jrf_params)
+    pczinb_params <- .merge_pczinb_params(pczinb_params)
 
     if (method %in% c("GENIE3", "ZILGM")) {
         results <- vector("list", n_matrices)
         for (i in seq_len(n_matrices)) {
             mat <- count_matrices_list[[i]]
             if (method == "GENIE3") {
-                results[[i]] <- .run_genie3(mat, nCores)
+                if (verbose) message("Running GENIE3 on matrix ", i, "/", n_matrices)
+                results[[i]] <- .run_genie3(mat, nCores, genie3_params)
             } else {
-                if (!requireNamespace("ZILGM", quietly = TRUE)) {
-                    stop(
-                        "Package 'ZILGM' is required for method = 'ZILGM'.\n",
-                        "Please install it via:.\n",
-                        "remotes::install_github('bbeomjin/ZILGM')",
-                        call. = FALSE
-                    )
-                }
-                results[[i]] <- .run_zilgm(mat, adjm, nCores)
+                if (verbose) message("Running ZILGM on matrix ", i, "/", n_matrices)
+                results[[i]] <- .run_zilgm(mat, adjm, nCores, zilgm_params)
             }
         }
         return(results)
     }
 
     if (method == "JRF") {
-        if (!requireNamespace("JRF", quietly = TRUE)) {
-            stop(
-                "Package 'JRF' is required for method = 'JRF'.\n",
-                "Please install it from the CRAN archive:\n",
-                "install.packages(\
-        'https://cran.r-project.org/src/contrib/Archive/JRF/JRF_0.1-4.tar.gz',
-        repos = NULL, type = 'source'\
-                )",
-                call. = FALSE
-            )
-        }
         norm_list <- lapply(
             count_matrices_list,
             function(mat) t(scale(t(mat)))
         )
-        return(.run_jrf(norm_list, nCores))
+        if (verbose) message("Running JRF on all matrices jointly")
+        return(.run_jrf(norm_list, nCores, jrf_params))
     }
 
     if (method == "GRNBoost2") {
@@ -134,13 +176,14 @@ infer_networks <- function(
                 call. = FALSE
             )
         }
-        modules <- init_py()
+        if (verbose) message("Running GRNBoost2 on ", n_matrices, " matrices")
         return(.run_parallel_networks(
             count_matrices_list,
             method,
             nCores,
             adjm,
-            grnboost_modules
+            grnboost_modules,
+            grnboost2_params
         ))
     }
 
@@ -152,12 +195,67 @@ infer_networks <- function(
                 call. = FALSE
             )
         }
+        if (verbose) message("Running PCzinb on ", n_matrices, " matrices")
         return(.run_parallel_networks(
             count_matrices_list,
             method,
             nCores,
             adjm,
-            grnboost_modules
+            grnboost_modules,
+            pczinb_params
         ))
     }
+}
+
+# Parameter helper functions
+.merge_genie3_params <- function(user_params) {
+    defaults <- list(
+        regulators = NULL,
+        targets = NULL,
+        tree.method = "RF",
+        K = "sqrt",
+        nb.trees = 1000,
+        seed = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_grnboost2_params <- function(user_params) {
+    defaults <- list(
+        tf_names = NULL,
+        gene_names = NULL,
+        client_or_address = NULL,
+        seed = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_zilgm_params <- function(user_params) {
+    defaults <- list(
+        lambda = 0.1,
+        alpha = 1,
+        max_iter = 100,
+        tol = 1e-4
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_jrf_params <- function(user_params) {
+    defaults <- list(
+        ntree = 500,
+        mtry = NULL,
+        nodesize = 5,
+        maxnodes = NULL
+    )
+    modifyList(defaults, user_params)
+}
+
+.merge_pczinb_params <- function(user_params) {
+    defaults <- list(
+        gamma = 0.1,
+        beta = 0.1,
+        max_iter = 100,
+        tol = 1e-4
+    )
+    modifyList(defaults, user_params)
 }

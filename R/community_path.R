@@ -17,6 +17,21 @@
 #'   communities. Default: \code{TRUE}.
 #' @param verbose Logical. If \code{TRUE}, shows progress messages.
 #'   Default: \code{TRUE}.
+#' @param method_params List of parameters for community detection methods.
+#'   Common parameters include:
+#'   \itemize{
+#'     \item \code{resolution}: Resolution parameter for Louvain/Leiden (default: 1)
+#'     \item \code{steps}: Number of steps for Walktrap (default: 4)
+#'     \item \code{spins}: Number of spins for Spinglass (default: 25)
+#'     \item \code{nb.trials}: Number of trials for Infomap (default: 10)
+#'   }
+#' @param comparison_params List of parameters for robin comparison:
+#'   \itemize{
+#'     \item \code{measure}: Stability measure ("vi", "nmi", "split.join", "adjusted.rand"). Default: "vi"
+#'     \item \code{type}: Robin construction type ("dependent", "independent"). Default: "independent"
+#'     \item \code{rewire.w.type}: Rewiring strategy for weighted graphs. Default: "Rewire"
+#'   }
+#' @param BPPARAM BiocParallel backend for parallel processing. Default: \code{BiocParallel::bpparam()}.
 #'
 #' @return A list with elements:
 #'   \itemize{
@@ -45,7 +60,7 @@
 #' @importFrom ggplot2 aes scale_color_manual labs theme_minimal
 #'   theme element_text
 #' @importFrom RColorBrewer brewer.pal
-#' @importFrom grDevices colorRampPalette
+#' @importFrom grDevices colorRampPalette\n#' @importFrom BiocParallel bpparam
 #' @export
 #'
 #' @examples
@@ -81,7 +96,10 @@ community_path <- function(
     pathway_db = "KEGG",
     genes_path = 5,
     plot = TRUE,
-    verbose = TRUE) {
+    verbose = TRUE,
+    method_params = list(),
+    comparison_params = list(),
+    BPPARAM = BiocParallel::bpparam()) {
     if (!is.matrix(adj_matrix) || nrow(adj_matrix) != ncol(adj_matrix)) {
         stop("adj_matrix must be a square matrix.")
     }
@@ -97,7 +115,7 @@ community_path <- function(
     igraph::V(graph)$name <- gene_names
 
     if (verbose) message("Detecting communities...")
-    comm_res <- .detect_communities(graph, methods)
+    comm_res <- .detect_communities(graph, methods, method_params, comparison_params, BPPARAM)
     best_method <- comm_res$best_method
     best_communities <- comm_res$best_communities
     igraph::V(graph)$community <- as.factor(best_communities)

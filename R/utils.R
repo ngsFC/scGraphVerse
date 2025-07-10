@@ -556,24 +556,30 @@
 #' @keywords internal
 #' @noRd
 
-.run_genie3 <- function(mat, nCores) {
-    adj <- GENIE3::GENIE3(mat, nCores = nCores)
+.run_genie3 <- function(mat, nCores, params = list()) {
+    genie3_args <- modifyList(list(exprMatrix = mat, nCores = nCores), params)
+    # Remove seed from GENIE3 args as it's not supported
+    genie3_args$seed <- NULL
+    adj <- do.call(GENIE3::GENIE3, genie3_args)
     GENIE3::getLinkList(adj)
 }
 #' @keywords internal
 #' @noRd
 
-.run_zilgm <- function(mat, adjm, nCores) {
-    lambda_max <- ZILGM::find_lammax(t(mat))
+.run_zilgm <- function(mat, adjm, nCores, params = list()) {
+    lambda_max <- find_lammax(t(mat))
     lambda_seq <- exp(seq(log(lambda_max),
         log(1e-4 * lambda_max),
         length.out = 50
     ))
-    fit <- ZILGM::zilgm(
+    
+    zilgm_args <- modifyList(list(
         X = t(mat), lambda = lambda_seq, family = "NBII",
         update_type = "IRLS", do_boot = TRUE, boot_num = 10,
         sym = "OR", nCores = nCores
-    )
+    ), params)
+    
+    fit <- do.call(zilgm, zilgm_args)
     adj <- fit$network[[fit$opt_index]]
     dimnames(adj) <- if (is.null(adjm)) {
         list(
@@ -588,17 +594,26 @@
 #' @keywords internal
 #' @noRd
 
-.run_jrf <- function(norm_list, nCores) {
+.run_jrf <- function(norm_list, nCores, params = list()) {
     clust <- parallel::makeCluster(nCores)
     on.exit(parallel::stopCluster(clust), add = TRUE)
     doParallel::registerDoParallel(clust)
 
-    rf <- JRF::JRF(
+    jrf_args <- modifyList(list(
         X = norm_list,
         genes.name = rownames(norm_list[[1]]),
         ntree = 500,
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
-    )
+    ), params)
+    
+    # Try to use external JRF package first, fall back to internal implementation
+    if (requireNamespace("JRF", quietly = TRUE)) {
+        rf <- do.call(JRF::JRF, jrf_args)
+    } else {
+        warning("JRF package not available, using simplified internal implementation. ",
+                "For better performance, install JRF package from CRAN archive.")
+        rf <- do.call(JRF_simplified, jrf_args)
+    }
 
     importance_columns <- grep("importance", names(rf), value = TRUE)
     lapply(importance_columns, function(col) {
@@ -615,7 +630,8 @@
     method,
     nCores,
     adjm,
-    grnboost_modules) {
+    grnboost_modules,
+    params = list()) {
     param_outer <- BiocParallel::MulticoreParam(workers = nCores)
     BiocParallel::bplapply(
         seq_along(count_matrices_list),
@@ -966,18 +982,97 @@
 #' @keywords internal
 #' @noRd
 
-.detect_communities <- function(graph, methods) {
+.prepare_method_args <- function(method, method_params) {
+    method_args <- list()
+    
+    # Extract method-specific parameters
+    if (method == "louvain" && !is.null(method_params$resolution)) {
+        method_args$resolution <- method_params$resolution
+    }
+    
+    if (method == "leiden") {
+        if (!is.null(method_params$resolution)) {
+            method_args$resolution <- method_params$resolution
+        }
+        if (!is.null(method_params$objective_function)) {
+            method_args$objective_function <- method_params$objective_function
+        }
+        if (!is.null(method_params$beta)) {
+            method_args$beta <- method_params$beta
+        }
+        if (!is.null(method_params$n_iterations)) {
+            method_args$n_iterations <- method_params$n_iterations
+        }
+    }
+    
+    if (method == "walktrap") {
+        if (!is.null(method_params$steps)) {
+            method_args$steps <- method_params$steps
+        }
+    }
+    
+    if (method == "spinglass") {
+        if (!is.null(method_params$spins)) {
+            method_args$spins <- method_params$spins
+        }
+        if (!is.null(method_params$start.temp)) {
+            method_args$start.temp <- method_params$start.temp
+        }
+        if (!is.null(method_params$stop.temp)) {
+            method_args$stop.temp <- method_params$stop.temp
+        }
+        if (!is.null(method_params$cool.fact)) {
+            method_args$cool.fact <- method_params$cool.fact
+        }
+        if (!is.null(method_params$gamma)) {
+            method_args$gamma <- method_params$gamma
+        }
+    }
+    
+    if (method == "infomap") {
+        if (!is.null(method_params$nb.trials)) {
+            method_args$nb.trials <- method_params$nb.trials
+        }
+    }
+    
+    return(method_args)
+}
+
+.detect_communities <- function(graph, methods, method_params = list(), 
+                                comparison_params = list(), BPPARAM = BiocParallel::bpparam()) {
+    
+    # Merge default comparison parameters
+    comparison_defaults <- list(
+        measure = "vi",
+        type = "independent",
+        rewire.w.type = "Rewire",
+        verbose = TRUE
+    )
+    comparison_params <- modifyList(comparison_defaults, comparison_params)
+    
     if (length(methods) == 1) {
         best_method <- methods[1]
-        best_communities <- robin::membershipCommunities(graph,
-            method = best_method
-        )
+        
+        # Prepare method-specific parameters
+        method_args <- .prepare_method_args(best_method, method_params)
+        
+        best_communities <- do.call(robin::membershipCommunities, 
+            c(list(graph = graph, method = best_method), method_args))
     } else if (length(methods) == 2) {
+        # Prepare method-specific parameters for both methods
+        args1 <- .prepare_method_args(methods[1], method_params)
+        args2 <- .prepare_method_args(methods[2], method_params)
+        
         res <- tryCatch(
-            robin::robinCompare(graph,
-                method1 = methods[1],
-                method2 = methods[2]
-            ),
+            do.call(robin::robinCompare, c(
+                list(graph = graph,
+                     method1 = methods[1],
+                     method2 = methods[2],
+                     args1 = args1,
+                     args2 = args2,
+                     BPPARAM = BPPARAM),
+                comparison_params
+            )),
             error = function(e) {
                 stop(
                     "robinCompare failed: ",
@@ -986,7 +1081,7 @@
             }
         )
 
-        auc <- robin::robinAUC(res)
+        auc <- robin::robinAUC(res, verbose = comparison_params$verbose)
         if (auc[1] < auc[2]) {
             best_method <- methods[1]
             best_communities <- res$Communities1
