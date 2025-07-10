@@ -131,10 +131,8 @@ infer_networks <- function(
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
     
-    # Set seed if provided
-    if (!is.null(seed)) {
-        set.seed(seed)
-    }
+    # Note: Seed handling is method-specific and implemented within each method
+    # to comply with Bioconductor guidelines
     
     # Merge method-specific parameters with defaults
     genie3_params <- .merge_genie3_params(genie3_params)
@@ -148,10 +146,14 @@ infer_networks <- function(
         for (i in seq_len(n_matrices)) {
             mat <- count_matrices_list[[i]]
             if (method == "GENIE3") {
-                if (verbose) message("Running GENIE3 on matrix ", i, "/", n_matrices)
+                if (verbose) {
+                    message("Running GENIE3 on matrix ", i, "/", n_matrices)
+                }
                 results[[i]] <- .run_genie3(mat, nCores, genie3_params)
             } else {
-                if (verbose) message("Running ZILGM on matrix ", i, "/", n_matrices)
+                if (verbose) {
+                    message("Running ZILGM on matrix ", i, "/", n_matrices)
+                }
                 results[[i]] <- .run_zilgm(mat, adjm, nCores, zilgm_params)
             }
         }

@@ -64,7 +64,6 @@ Suggests:
     rmarkdown,
     tidyverse,
     magick,
-    JRF,
     learn2count,
 VignetteBuilder: knitr
-LazyData: true
+LazyData: false

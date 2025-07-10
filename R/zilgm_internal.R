@@ -67,7 +67,11 @@ zilgm <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Generate lambda sequence if not provided
     if (is.null(lambda)) {
         lambda_max <- find_lammax(X)
-        lambda <- exp(seq(log(lambda_max), log(1e-4 * lambda_max), length.out = nlambda))
+        lambda <- exp(seq(
+            log(lambda_max), 
+            log(1e-4 * lambda_max), 
+            length.out = nlambda
+        ))
     }
     
     # Compute regularization path
@@ -75,7 +79,9 @@ zilgm <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     
     # Bootstrap stability selection if requested
     if (do_boot) {
-        boot_result <- zilgm_boot(X, lambda, family, update_type, sym, boot_num, nCores)
+        boot_result <- zilgm_boot(
+            X, lambda, family, update_type, sym, boot_num, nCores
+        )
         networks <- boot_result$networks
         stability <- boot_result$stability
     } else {
@@ -86,10 +92,10 @@ zilgm <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Select optimal network using stability or cross-validation
     if (do_boot) {
         # Use stability selection
-        stability_scores <- sapply(networks, function(net) {
+        stability_scores <- vapply(networks, function(net) {
             if (is.null(net)) return(0)
             mean(net != 0)
-        })
+        }, FUN.VALUE = numeric(1))
         opt_index <- which.max(stability_scores)
     } else {
         # Use middle of path as default
@@ -144,7 +150,7 @@ zilgm_internal <- function(X, lambda, family, update_type) {
     
     # Simplified network estimation (placeholder implementation)
     # In actual ZILGM, this would involve iterative optimization
-    for (j in 1:p) {
+    for (j in seq_len(p)) {
         # Exclude current node
         X_j <- X[, -j, drop = FALSE]
         y_j <- X[, j]
@@ -222,9 +228,9 @@ zilgm_boot <- function(X, lambda, family, update_type, sym, boot_num, nCores) {
     # Bootstrap sampling
     boot_networks <- vector("list", boot_num)
     
-    for (b in 1:boot_num) {
+    for (b in seq_len(boot_num)) {
         # Bootstrap sample
-        boot_indices <- sample(1:n, n, replace = TRUE)
+        boot_indices <- sample(seq_len(n), n, replace = TRUE)
         X_boot <- X[boot_indices, , drop = FALSE]
         
         # Compute path for bootstrap sample
@@ -238,7 +244,7 @@ zilgm_boot <- function(X, lambda, family, update_type, sym, boot_num, nCores) {
     for (i in seq_along(lambda)) {
         edge_count <- matrix(0, p, p)
         
-        for (b in 1:boot_num) {
+        for (b in seq_len(boot_num)) {
             if (!is.null(boot_networks[[b]][[i]])) {
                 edge_count <- edge_count + (boot_networks[[b]][[i]] != 0)
             }

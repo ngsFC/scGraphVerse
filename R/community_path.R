@@ -115,7 +115,9 @@ community_path <- function(
     igraph::V(graph)$name <- gene_names
 
     if (verbose) message("Detecting communities...")
-    comm_res <- .detect_communities(graph, methods, method_params, comparison_params, BPPARAM)
+    comm_res <- .detect_communities(
+        graph, methods, method_params, comparison_params, BPPARAM
+    )
     best_method <- comm_res$best_method
     best_communities <- comm_res$best_communities
     igraph::V(graph)$community <- as.factor(best_communities)

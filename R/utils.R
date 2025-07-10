@@ -606,12 +606,14 @@
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     ), params)
     
-    # Try to use external JRF package first, fall back to internal implementation
+    # Try external JRF package first, fall back to internal implementation
     if (requireNamespace("JRF", quietly = TRUE)) {
         rf <- do.call(JRF::JRF, jrf_args)
     } else {
-        warning("JRF package not available, using simplified internal implementation. ",
-                "For better performance, install JRF package from CRAN archive.")
+        warning(
+            "JRF package not available, using simplified internal implementation. ",
+            "For better performance, install JRF package from CRAN archive."
+        )
         rf <- do.call(JRF_simplified, jrf_args)
     }
 
@@ -1039,7 +1041,8 @@
 }
 
 .detect_communities <- function(graph, methods, method_params = list(), 
-                                comparison_params = list(), BPPARAM = BiocParallel::bpparam()) {
+                                comparison_params = list(), 
+                                BPPARAM = BiocParallel::bpparam()) {
     
     # Merge default comparison parameters
     comparison_defaults <- list(

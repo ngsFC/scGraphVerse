@@ -47,7 +47,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
     }
     
     # Check that all matrices have the same number of genes
-    n_genes <- sapply(X, nrow)
+    n_genes <- vapply(X, nrow, FUN.VALUE = integer(1))
     if (length(unique(n_genes)) > 1) {
         stop("All matrices in X must have the same number of genes")
     }
@@ -64,7 +64,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
         genes.name <- if (!is.null(rownames(X[[1]]))) {
             rownames(X[[1]])
         } else {
-            paste0("Gene", 1:p)
+            paste0("Gene", seq_len(p))
         }
     }
     
@@ -77,13 +77,13 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
     )
     
     # Add importance columns for each class
-    for (k in 1:length(X)) {
+    for (k in seq_along(X)) {
         result[[paste0("importance", k)]] <- numeric(n_pairs)
     }
     
     # Generate all gene pairs
     pair_idx <- 1
-    for (i in 1:(p-1)) {
+    for (i in seq_len(p-1)) {
         for (j in (i+1):p) {
             result$gene1[pair_idx] <- genes.name[i]
             result$gene2[pair_idx] <- genes.name[j]
@@ -92,7 +92,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
     }
     
     # Compute importance scores for each target gene
-    for (target in 1:p) {
+    for (target in seq_len(p)) {
         if (target %% 10 == 0) {
             message("Processing gene ", target, " of ", p)
         }
@@ -101,9 +101,9 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
         importance_scores <- JRF_onetarget_internal(X, target, ntree, mtry)
         
         # Fill in the result matrix
-        for (k in 1:length(X)) {
+        for (k in seq_along(X)) {
             pair_idx <- 1
-            for (i in 1:(p-1)) {
+            for (i in seq_len(p-1)) {
                 for (j in (i+1):p) {
                     if (i == target) {
                         result[[paste0("importance", k)]][pair_idx] <- importance_scores[[k]][j-1]
@@ -131,7 +131,7 @@ JRF_onetarget_internal <- function(X, target, ntree, mtry) {
     # Compute importance scores for each class
     importance_list <- vector("list", length(X))
     
-    for (k in 1:length(X)) {
+    for (k in seq_along(X)) {
         # Simple random forest importance using correlation
         # This is a simplified version - the original uses optimized C code
         y_k <- y_list[[k]]
