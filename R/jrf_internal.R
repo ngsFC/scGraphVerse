@@ -107,10 +107,10 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL) {
                 for (j in (i+1):p) {
                     if (i == target) {
                         result[[paste0("importance", k)]][pair_idx] <- 
-                          importance_scores[[k]][j-1]
+                            importance_scores[[k]][j-1]
                     } else if (j == target) {
                         result[[paste0("importance", k)]][pair_idx] <- 
-                          importance_scores[[k]][i]
+                            importance_scores[[k]][i]
                     }
                     pair_idx <- pair_idx + 1
                 }
@@ -146,7 +146,7 @@ JRF_onetarget_internal <- function(X, target, ntree, mtry) {
             
             # Take absolute values and add some noise for stability
             importance_scores <- abs(cor_scores) + runif(length(cor_scores),
-                                                         0, 0.01)
+                0, 0.01)
         } else {
             importance_scores <- rep(0, ncol(X_k))
         }
