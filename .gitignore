@@ -3,3 +3,13 @@
 .RData
 .Ruserdata
 *.Rproj
+
+# R CMD check
+*.Rcheck/
+..Rcheck/
+*..Rcheck/
+00check.log
+
+# Other R build artifacts
+*.tar.gz
+*.zip
