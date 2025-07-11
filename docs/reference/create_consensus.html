@@ -47,7 +47,10 @@ of three methods: <code>"vote"</code>, <code>"union"</code>, or <code>"INet"</co
 <span>  weighted_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theta <span class="op">=</span> <span class="fl">0.04</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  ncores <span class="op">=</span> <span class="fl">1</span></span>
+<span>  ncores <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  tolerance <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  nitermax <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -89,6 +92,21 @@ matrix.</p></li>
 <dd><p>Integer. Number of CPU cores to use when <code>method =
 "INet"</code>. Default is <code>1</code>.</p></dd>
 
+
+<dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
+<dd><p>Numeric. Tolerance for differences between similar graphs
+in INet method. Default is <code>0.1</code>.</p></dd>
+
+
+<dt id="arg-nitermax">nitermax<a class="anchor" aria-label="anchor" href="#arg-nitermax"></a></dt>
+<dd><p>Integer. Maximum number of iterations for INet algorithm.
+Default is <code>50</code>.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical. If TRUE, display verbose output for INet method.
+Default is <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -127,12 +145,12 @@ provided with matching dimensions.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.2087312</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1875566</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1555786</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           CD3E        JUN 0.1526677</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5          HLA-E        FOS 0.1513746</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1488015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.2002341</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1942305</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E       CD3D 0.1647460</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          ARPC3      ARPC2 0.1610786</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5           CD3E        JUN 0.1571037</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          HLA-E        FOS 0.1500092</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -206,7 +224,7 @@ provided with matching dimensions.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

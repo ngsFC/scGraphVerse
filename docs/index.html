@@ -62,14 +62,17 @@
 <div align="center">
 <p><img src="./reference/figures/logo.png" alt="scGraphVerse logo" width="200"></p>
 </div>
+<p><a href="https://www.gnu.org/licenses/gpl-2.0" class="external-link"><img src="https://img.shields.io/badge/License-GPL%20v2+-blue.svg" alt="License: GPL v2+"></a> <a href="https://github.com/ngsFC/scGraphVerse/actions" class="external-link"><img src="https://github.com/ngsFC/scGraphVerse/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></p>
 <hr>
-<p><strong>scGraphVerse</strong> is an R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It supports multiple GRN inference algorithms, consensus construction across methods or datasets, performance evaluation, and rich visualizations — all optimized for single-cell expression analysis.</p>
+<p><strong>scGraphVerse</strong> is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, enhanced parameter control, consensus construction, and rich visualizations — all optimized for single-cell expression analysis.</p>
 <hr>
 <div class="section level2">
-<h2 id="id_-features">✨ Features<a class="anchor" aria-label="anchor" href="#id_-features"></a>
+<h2 id="id_-key-features">✨ Key Features<a class="anchor" aria-label="anchor" href="#id_-key-features"></a>
 </h2>
-<ul>
-<li>🔍 Inference of GRNs using:
+<div class="section level3">
+<h3 id="id_-multiple-grn-inference-methods">🔍 <strong>Multiple GRN Inference Methods</strong>
+<a class="anchor" aria-label="anchor" href="#id_-multiple-grn-inference-methods"></a>
+</h3>
 <ul>
 <li>
 <strong>GENIE3</strong> (tree-based ensemble)</li>
@@ -80,14 +83,45 @@
 <li>
 <strong>PCzinb</strong> (partial correlation with zero-inflated NB model)</li>
 <li>
-<strong>JRF</strong> (joint random forests for multi-sample networks)</li>
+<strong>JRF</strong> (joint random forests)</li>
 </ul>
-</li>
-<li>🎯 Network thresholding using shuffled matrix null models (<code>cutoff_adjacency</code>)</li>
-<li>🧠 Consensus construction across methods using voting, union, or INet</li>
-<li>📊 Performance metrics: ROC, AUC, classification metrics, and network topology</li>
-<li>🧩 Network visualization using <code>ggraph</code> and <code>igraph</code>
-</li>
+</div>
+<div class="section level3">
+<h3 id="id_-advanced-consensus-methods">🧠 <strong>Advanced Consensus Methods</strong>
+<a class="anchor" aria-label="anchor" href="#id_-advanced-consensus-methods"></a>
+</h3>
+<ul>
+<li><strong>Voting consensus</strong></li>
+<li><strong>Union consensus</strong></li>
+<li><strong>INet-tool consensus</strong></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="id_-comprehensive-evaluation">📊 <strong>Comprehensive Evaluation</strong>
+<a class="anchor" aria-label="anchor" href="#id_-comprehensive-evaluation"></a>
+</h3>
+<ul>
+<li>
+<strong>Performance metrics</strong>: ROC, AUC, precision, recall, F1-score, MCC</li>
+<li>
+<strong>Network topology analysis</strong>: modularity, clustering, degree distribution</li>
+<li>
+<strong>Community detection</strong> with robin package integration</li>
+<li>
+<strong>Pathway enrichment</strong> analysis (KEGG, Reactome)</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="id_-visualizations">🧩 <strong>Visualizations</strong>
+<a class="anchor" aria-label="anchor" href="#id_-visualizations"></a>
+</h3>
+<ul>
+<li>
+<strong>Network plots</strong> with community highlighting</li>
+<li>
+<strong>ROC curves</strong> and performance dashboards</li>
+<li>
+<strong>Consensus comparison</strong> visualizations</li>
 </ul>
 <hr>
 <div align="center">
@@ -95,61 +129,74 @@
 </div>
 <hr>
 </div>
+</div>
 <div class="section level2">
 <h2 id="id_-installation">🧪 Installation<a class="anchor" aria-label="anchor" href="#id_-installation"></a>
 </h2>
 <div class="section level3">
-<h3 id="development-version-github">Development version (GitHub)<a class="anchor" aria-label="anchor" href="#development-version-github"></a>
+<h3 id="from-github-recommended">From GitHub (Recommended)<a class="anchor" aria-label="anchor" href="#from-github-recommended"></a>
 </h3>
-<p>For now, install the development version directly from GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install development version</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ngsFC/scGraphVerse"</span><span class="op">)</span></span></code></pre></div>
+<hr>
 <hr>
 </div>
 </div>
 <div class="section level2">
-<h2 id="id_-external-dependencies">📦 External Dependencies<a class="anchor" aria-label="anchor" href="#id_-external-dependencies"></a>
+<h2 id="id_-license--attribution">📄 License &amp; Attribution<a class="anchor" aria-label="anchor" href="#id_-license--attribution"></a>
 </h2>
-<p>Some inference methods used by scGraphVerse require external packages that are not available on CRAN or Bioconductor. You must install these manually:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># GRNBoost2 (Python - arboreto)</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># Install using pip (run in your terminal, not R):</span></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>pip install arboreto</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># ZILGM (GitHub)</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"bbeomjin/ZILGM"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># PCzinb (GitHub)</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"drisso/learn2count"</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># JRF (GitHub or archived CRAN)</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="fu">install.packages</span>(</span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="st">"https://cran.r-project.org/src/contrib/Archive/JRF/JRF_0.1-4.tar.gz"</span>, </span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">repos =</span> <span class="cn">NULL</span>, </span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"source"</span></span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>)</span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#INeet-Tool (GitHub)</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"ValeriaPolicastro/INet-Tool"</span>)</span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>Note<span class="sc">:</span> <span class="cf">if</span> the package ‘datastructure’ is not available <span class="cf">for</span> your version of R use devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"dirmeier/datastructures"</span>) before installing INet<span class="sc">-</span>Tool, <span class="cf">if</span> you do not have Rtools download it from<span class="sc">:</span> https<span class="sc">:</span><span class="er">//</span>cran.r<span class="sc">-</span>project.org<span class="sc">/</span>bin<span class="sc">/</span>windows<span class="sc">/</span>Rtools<span class="sc">/</span>rtools44<span class="sc">/</span>rtools.html</span></code></pre></div>
+<p><strong>scGraphVerse</strong> is licensed under <strong>GPL (&gt;= 2)</strong> .</p>
+<div class="section level3">
+<h3 id="integrated-code-attribution">Integrated Code Attribution<a class="anchor" aria-label="anchor" href="#integrated-code-attribution"></a>
+</h3>
+<p>This package includes adapted functions from:</p>
+<ul>
+<li>
+<strong>ZILGM</strong> (Park et al., 2021) - GPL-2 license</li>
+<li>
+<strong>JRF</strong> (Petralia et al., 2015) - GPL (&gt;= 2) license</li>
+</ul>
+<p>All integrated code maintains proper attribution and copyright notices.</p>
+<hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="id_-citation">📚 Citation<a class="anchor" aria-label="anchor" href="#id_-citation"></a>
 </h2>
-<p>If you use scGraphVerse, please cite the original GRN inference methods it implements:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get citation information</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"scGraphVerse"</span><span class="op">)</span></span></code></pre></div>
+<p>Please also cite the original methods implemented:</p>
 <ol style="list-style-type: decimal">
-<li>Huynh-Thu VA, Irrthum A, Wehenkel L, Geurts P. Inferring Regulatory Networks from Expression Data Using Tree-Based Methods. PLOS ONE. 2010 Sep 28;5(9):e12776.</li>
-<li>Moerman T, Aibar Santos S, Bravo González-Blas C, Simm J, Moreau Y, Aerts J, et al. GRNBoost2 and Arboreto: efficient and scalable inference of gene regulatory networks. Bioinformatics. 2019 Jun 15;35(12):2159–61.</li>
-<li>Park B, Choi H, Park C. Negative binomial graphical model with excess zeros. Stat Anal Data Min ASA Data Sci J. 2021;14(5):449–65.</li>
-<li>Nguyen TKH, Berge K van den, Chiogna M, Risso D. Structure learning for zero-inflated counts with an application to single-cell RNA sequencing data. Ann Appl Stat. 2023 Sep;17(3):2555–73.</li>
-<li>Petralia F, Song WM, Tu Z, Wang P. New Method for Joint Network Analysis Reveals Common and Different Coexpression Patterns among Genes and Proteins in Breast Cancer. J Proteome Res. 2016 Mar 4;15(3):743–54.</li>
+<li>
+<strong>GENIE3</strong>: Huynh-Thu et al. (2010). <em>PLOS ONE</em> 5(9):e12776</li>
+<li>
+<strong>GRNBoost2</strong>: Moerman et al. (2019). <em>Bioinformatics</em> 35(12):2159-61</li>
+<li>
+<strong>ZILGM</strong>: Park et al. (2021). <em>Statistical Analysis and Data Mining</em> 37(18):3085-3092</li>
+<li>
+<strong>JRF</strong>: Petralia et al. (2015). <em>Journal of Proteome Research</em> 31(12):i197-i205</li>
+<li>
+<strong>PCzinb</strong>: Nguyen et al. (2023). <em>Ann. Appl. Stat.</em> 17(3):2555-73</li>
+<li>
+<strong>INet-Tool</strong>: Policastro et al (2025). <em>Comput Stat</em> 40, 1517–1539</li>
 </ol>
+<hr>
 <hr>
 </div>
 <div class="section level2">
-<h2 id="funding">Funding<a class="anchor" aria-label="anchor" href="#funding"></a>
+<h2 id="id_-funding">💰 Funding<a class="anchor" aria-label="anchor" href="#id_-funding"></a>
 </h2>
-<p>This work is supported by the project: <strong>National Centre for HPC, Big Data and Quantum Computing</strong> Funded by European Union – Next Generation EU – CN00000013 <strong>CUP:</strong> B93C22000620006</p>
+<p>This work is supported by the <strong>National Centre for HPC, Big Data and Quantum Computing</strong> - <strong>Funded by</strong>: European Union – Next Generation EU – CN00000013 - <strong>CUP</strong>: B93C22000620006</p>
+<hr>
+<hr>
+<div align="center">
+<p>
+<strong>Happy Network Inference! 🧬📊</strong>
+</p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -166,7 +213,7 @@
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
+<li><small><a href="https://www.r-project.org/Licenses/GPL-3" class="external-link">GPL-3</a></small></li>
 </ul>
 </div>
 
@@ -196,7 +243,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

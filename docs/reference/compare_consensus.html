@@ -108,12 +108,12 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1978938</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1975936</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1553977</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           CD3E       CD3D 0.1540997</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5          HLA-E        FOS 0.1483368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         GNB2L1      UBA52 0.1482091</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          HLA-A       CD74 0.2070147</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          ARPC2      ARPC3 0.1846300</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1587095</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1502544</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          UBA52     GNB2L1 0.1477301</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          ARPC2      HLA-E 0.1451217</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">swadj_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj_list</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
@@ -185,7 +185,7 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

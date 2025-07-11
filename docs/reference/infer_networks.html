@@ -52,7 +52,14 @@ expression matrices using different inference methods:
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GENIE3"</span>, <span class="st">"GRNBoost2"</span>, <span class="st">"ZILGM"</span>, <span class="st">"JRF"</span>, <span class="st">"PCzinb"</span><span class="op">)</span>,</span>
 <span>  adjm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nCores <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  grnboost_modules <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  grnboost_modules <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  genie3_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  grnboost2_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  zilgm_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  jrf_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  pczinb_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,6 +93,57 @@ parallelization. Defaults to the number of workers in the current
 <dt id="arg-grnboost-modules">grnboost_modules<a class="anchor" aria-label="anchor" href="#arg-grnboost-modules"></a></dt>
 <dd><p>Python modules required for <code>GRNBoost2</code>
 (created via <span class="pkg">reticulate</span>).</p></dd>
+
+
+<dt id="arg-genie-params">genie3_params<a class="anchor" aria-label="anchor" href="#arg-genie-params"></a></dt>
+<dd><p>List of parameters for GENIE3 method:</p><ul><li><p><code>regulators</code>: Vector of regulator gene names (default: all)</p></li>
+<li><p><code>targets</code>: Vector of target gene names (default: all genes)</p></li>
+<li><p><code>tree.method</code>: "RF" or "ET" (default: "RF")</p></li>
+<li><p><code>K</code>: Number of candidate regulators (default: "sqrt")</p></li>
+<li><p><code>nb.trees</code>: Number of trees per ensemble (default: 1000)</p></li>
+<li><p><code>seed</code>: Random seed for reproducibility (default: NULL)</p></li>
+</ul></dd>
+
+
+<dt id="arg-grnboost-params">grnboost2_params<a class="anchor" aria-label="anchor" href="#arg-grnboost-params"></a></dt>
+<dd><p>List of parameters for GRNBoost2 method:</p><ul><li><p><code>tf_names</code>: Vector of transcription factor names (default:all)</p></li>
+<li><p><code>gene_names</code>: Vector of target gene names (default: all)</p></li>
+<li><p><code>client_or_address</code>: Dask client or address (default: NULL)</p></li>
+<li><p><code>seed</code>: Random seed for reproducibility (default: NULL)</p></li>
+</ul></dd>
+
+
+<dt id="arg-zilgm-params">zilgm_params<a class="anchor" aria-label="anchor" href="#arg-zilgm-params"></a></dt>
+<dd><p>List of parameters for ZILGM method:</p><ul><li><p><code>lambda</code>: Regularization parameter (default: 0.1)</p></li>
+<li><p><code>alpha</code>: Elastic net mixing parameter (default: 1)</p></li>
+<li><p><code>max_iter</code>: Maximum iterations (default: 100)</p></li>
+<li><p><code>tol</code>: Convergence tolerance (default: 1e-4)</p></li>
+</ul></dd>
+
+
+<dt id="arg-jrf-params">jrf_params<a class="anchor" aria-label="anchor" href="#arg-jrf-params"></a></dt>
+<dd><p>List of parameters for JRF method:</p><ul><li><p><code>ntree</code>: Number of trees (default: 500)</p></li>
+<li><p><code>mtry</code>: Number of variables to sample at each split
+(default: sqrt(p))</p></li>
+<li><p><code>nodesize</code>: Minimum node size (default: 5)</p></li>
+<li><p><code>maxnodes</code>: Maximum number of nodes (default: NULL)</p></li>
+</ul></dd>
+
+
+<dt id="arg-pczinb-params">pczinb_params<a class="anchor" aria-label="anchor" href="#arg-pczinb-params"></a></dt>
+<dd><p>List of parameters for PCzinb method:</p><ul><li><p><code>gamma</code>: Regularization parameter (default: 0.1)</p></li>
+<li><p><code>beta</code>: Beta parameter (default: 0.1)</p></li>
+<li><p><code>max_iter</code>: Maximum iterations (default: 100)</p></li>
+<li><p><code>tol</code>: Convergence tolerance (default: 1e-4)</p></li>
+</ul></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical. If TRUE, display progress messages. Default: FALSE.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Integer. Random seed for reproducibility. Default: NULL.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -132,12 +190,12 @@ al., 2010).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          HLA-A       CD74 0.1935277</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          ARPC2      ARPC3 0.1884827</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1619897</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1526407</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           CD3E       CD3D 0.1516705</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         GNB2L1      UBA52 0.1455088</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1992252</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1973449</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1589728</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1538982</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC2      HLA-E 0.1475527</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1475117</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -149,7 +207,7 @@ al., 2010).</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

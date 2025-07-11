@@ -98,57 +98,57 @@ gene pairs matching the global gene list are inserted.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          HLA-A       CD74 0.1858023</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          ARPC2      ARPC3 0.1751190</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E        JUN 0.1615847</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          ARPC3      ARPC2 0.1594392</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           CD3E       CD3D 0.1563555</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6          HLA-E        FOS 0.1478306</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1958075</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1825388</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E        JUN 0.1591790</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1559576</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC3      ARPC2 0.1531626</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1510760</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wadj_list</span> <span class="op">&lt;-</span> <span class="fu">generate_adjacency</span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">wadj_list</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            ACTG1      ARPC2      ARPC3       BTF3       CD3D       CD3E</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.00000000 0.02690957 0.02077466 0.01661380 0.02134228 0.01504805</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.02636769 0.00000000 0.17511900 0.03512419 0.03035430 0.01900967</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.04239162 0.15943918 0.00000000 0.01830107 0.04095059 0.02494982</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.01753110 0.06532913 0.02049185 0.00000000 0.02671579 0.01740751</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.02134735 0.01520188 0.02973876 0.02381209 0.00000000 0.06927693</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.01493842 0.01878633 0.02004757 0.01335589 0.15635547 0.00000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.00000000 0.02493511 0.01961513 0.01652989 0.02073884 0.01273021</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.02922446 0.00000000 0.19580749 0.03729172 0.02895152 0.01989290</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.04587756 0.15316255 0.00000000 0.01758217 0.04148737 0.02517191</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.01668527 0.05526111 0.02164676 0.00000000 0.02587963 0.02079854</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01928397 0.01512428 0.02348295 0.02695807 0.00000000 0.05856223</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.01326815 0.01830392 0.01814102 0.01412293 0.15107604 0.00000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             CD74       CFL1     COX4I1      COX7C      CXCR4     EEF1A1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.08470898 0.13922749 0.02047269 0.04234207 0.02563135 0.03775465</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.02915526 0.03714272 0.09682041 0.02955051 0.02124824 0.02326137</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.01634836 0.01578584 0.02146191 0.01455501 0.01791817 0.05370438</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.01803541 0.03938972 0.02334161 0.02059373 0.02180824 0.02080362</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01146576 0.03282019 0.02760942 0.01270394 0.02159107 0.02563729</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.02220676 0.03488997 0.01350296 0.03068252 0.01730786 0.02109253</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.08883134 0.13241443 0.02219209 0.04150163 0.02112254 0.03575508</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.02595408 0.03649671 0.07782606 0.02715714 0.02192692 0.01735406</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.01558391 0.01508012 0.01982806 0.01432990 0.01874117 0.05478942</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.01184714 0.03926069 0.02328771 0.01977217 0.02031861 0.01937873</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01400183 0.03479437 0.02535686 0.01627593 0.02098537 0.02958265</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.02493609 0.03514325 0.01520519 0.03606816 0.01779641 0.01616632</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            EEF1D       EEF2       EIF1      EIF3K     EIF4A2        FOS</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.11293529 0.02436698 0.02909577 0.03079902 0.02874695 0.02844395</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.02037821 0.02087374 0.02619647 0.02106675 0.02161155 0.01772251</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.01652498 0.02731288 0.02077199 0.02017737 0.01759740 0.03143276</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.03263510 0.03075883 0.02425816 0.04676622 0.02071337 0.01954023</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01998485 0.05381664 0.01163846 0.01837944 0.04243326 0.01586359</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.03852772 0.05717606 0.04404197 0.05906754 0.01260034 0.02948626</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             FTH1        FTL     GNB2L1      HLA-A      HLA-B      HLA-C</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.01351512 0.01860715 0.02429960 0.04222998 0.02380728 0.01920757</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.01634745 0.01447703 0.01938371 0.02092933 0.02913384 0.03068704</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.02720366 0.02634202 0.01199720 0.02226193 0.03101081 0.02123643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.02440705 0.06656335 0.03133631 0.02241261 0.04739648 0.02297414</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01144358 0.02221341 0.01273714 0.03688392 0.01032211 0.02930643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.02875915 0.06550639 0.06510992 0.05059970 0.02724530 0.02463685</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.10265551 0.02141465 0.03019781 0.03145272 0.03400668 0.03012456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.01989051 0.02000929 0.02112145 0.01709886 0.02050362 0.01373497</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.01602088 0.02512840 0.01846733 0.02002010 0.01764248 0.03062107</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.02927805 0.03136549 0.02183571 0.04800538 0.01874525 0.02027003</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01870759 0.05967515 0.01387757 0.02136977 0.04034910 0.01576583</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.03359357 0.05456821 0.03711578 0.06156763 0.01552984 0.03021396</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             FTH1        FTL     GNB2L1      HLA-A       HLA-B      HLA-C</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.01400532 0.01844659 0.02189152 0.04448960 0.020542365 0.02162012</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.01915096 0.01339853 0.01863569 0.02155302 0.030603201 0.03120906</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.02532727 0.02243639 0.01100061 0.02116910 0.028595142 0.02207077</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.02252678 0.06829034 0.03188525 0.02820518 0.046245807 0.02252482</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01422817 0.02375772 0.01059342 0.03961776 0.009829607 0.02700100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.02553187 0.05977088 0.05362244 0.05350131 0.027918739 0.02712502</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            HLA-E        JUN       JUNB     MYL12B       MYL6       NACA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.03251946 0.03339470 0.02213290 0.02777947 0.02131712 0.05609360</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.14631769 0.01516971 0.01736608 0.01974519 0.01606883 0.02956529</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.06802799 0.01631444 0.06812708 0.02422993 0.02175867 0.08506261</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.02174459 0.01486841 0.05338029 0.01974219 0.02625980 0.04575505</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01892189 0.01110193 0.02491380 0.04108381 0.08050555 0.01712703</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.03743174 0.16158473 0.02075895 0.01640276 0.02596471 0.01283216</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.02950453 0.03440864 0.01909864 0.02510698 0.02487530 0.06107672</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.13593169 0.01845333 0.01449122 0.02079244 0.01891664 0.03408373</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.06226122 0.01673868 0.06776126 0.02295754 0.02177739 0.07866394</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.02037207 0.01437712 0.05260025 0.02134463 0.02518671 0.04921457</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01891514 0.01346938 0.02215629 0.04355098 0.07321885 0.01801307</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.04109074 0.15917897 0.02240135 0.01607750 0.02633425 0.01116767</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           PABPC1       PFN1     TMSB4X      UBA52        UBC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.02043541 0.06794008 0.08590655 0.02976105 0.02681456</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.01639577 0.02949127 0.03129337 0.01338146 0.02389948</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.03191277 0.01749760 0.02126223 0.03693797 0.02157591</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.03478748 0.01912155 0.01727888 0.01180140 0.04046061</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01695718 0.01926646 0.05568377 0.01577266 0.02157404</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.01791122 0.03006454 0.01792943 0.02161755 0.03763111</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACTG1 0.02169809 0.06506835 0.08049746 0.02964736 0.02651774</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC2 0.01498962 0.02953058 0.03115680 0.01372645 0.02052449</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ARPC3 0.03193658 0.01927519 0.02367370 0.03580187 0.02763674</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BTF3  0.03579083 0.01986354 0.02023513 0.01480496 0.04506863</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3D  0.01493916 0.01669910 0.05705149 0.01751023 0.02310793</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CD3E  0.01739301 0.03117878 0.01892572 0.02286621 0.04043658</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -160,7 +160,7 @@ gene pairs matching the global gene list are inserted.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
