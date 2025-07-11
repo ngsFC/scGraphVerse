@@ -37,11 +37,10 @@ output: rmarkdown::github_document
 - **Community detection** with robin package integration
 - **Pathway enrichment** analysis (KEGG, Reactome)
 
-### 🧩 **Rich Visualizations**
+### 🧩 **Visualizations**
 - **Network plots** with community highlighting
 - **ROC curves** and performance dashboards
 - **Consensus comparison** visualizations
-- **Pathway radar charts** and enrichment plots
 
 ---
 
@@ -91,18 +90,12 @@ Please also cite the original methods implemented:
 
 1. **GENIE3**: Huynh-Thu et al. (2010). *PLOS ONE* 5(9):e12776
 2. **GRNBoost2**: Moerman et al. (2019). *Bioinformatics* 35(12):2159-61
-3. **ZILGM**: Park et al. (2021). *Bioinformatics* 37(18):3085-3092
-4. **JRF**: Petralia et al. (2015). *Bioinformatics* 31(12):i197-i205
+3. **ZILGM**: Park et al. (2021). *Statistical Analysis and Data Mining* 37(18):3085-3092
+4. **JRF**: Petralia et al. (2015). *Journal of Proteome Research* 31(12):i197-i205
 5. **PCzinb**: Nguyen et al. (2023). *Ann. Appl. Stat.* 17(3):2555-73
-6. **INet-Tool**: Policastro et al. (2021). *BMC Bioinformatics* 22:1-18
+6. **INet-Tool**: Policastro et al (2025). *Comput Stat* 40, 1517–1539
 
 ---
-
-## 🆘 Support
-
-- **Documentation**: [https://ngsFC.github.io/scGraphVerse](https://ngsFC.github.io/scGraphVerse)
-- **Issues**: [GitHub Issues](https://github.com/ngsFC/scGraphVerse/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ngsFC/scGraphVerse/discussions)
 
 ---
 
