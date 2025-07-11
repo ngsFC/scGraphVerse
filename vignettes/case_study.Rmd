@@ -108,6 +108,10 @@ pbmc2_sub <- pbmc2_sub[, colData(pbmc2_sub)$predicted_celltype == "B_cell"]
 bcell_list <- list(pbmc1_sub, pbmc2_sub)
 
 shuffle_matrix_rows <- function(mat) {
+    # Convert DelayedArray to matrix if needed
+    if (is(mat, "DelayedArray")) {
+        mat <- as.matrix(mat)
+    }
     shuffled <- t(apply(mat, 1, sample))
     rownames(shuffled) <- rownames(mat)
     colnames(shuffled) <- colnames(mat)
