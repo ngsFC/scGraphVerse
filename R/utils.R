@@ -1037,9 +1037,9 @@
     defaults <- list(
         regulators = NULL,
         targets = NULL,
-        tree.method = "RF",
+        treeMethod = "RF",
         K = "sqrt",
-        nb.trees = 1000,
+        nTrees = 1000,
         seed = NULL
     )
     modifyList(defaults, user_params)

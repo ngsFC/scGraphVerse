@@ -116,7 +116,7 @@ shuffle_matrix_rows <- function(mat) {
 
 
 
-check <- shuffle_matrix_rows(GetAssayData(bcell_list[[1]], "counts")[1:5,1:5])
+check <- shuffle_matrix_rows(assay(bcell_list[[1]], "counts")[1:5,1:5])
 ```
 
 # 2. Network Inference

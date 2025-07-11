@@ -22,9 +22,9 @@
 #'   \itemize{
 #'     \item \code{regulators}: Vector of regulator gene names (default: all)
 #'     \item \code{targets}: Vector of target gene names (default: all genes)
-#'     \item \code{tree.method}: "RF" or "ET" (default: "RF")
+#'     \item \code{treeMethod}: "RF" or "ET" (default: "RF")
 #'     \item \code{K}: Number of candidate regulators (default: "sqrt")
-#'     \item \code{nb.trees}: Number of trees per ensemble (default: 1000)
+#'     \item \code{nTrees}: Number of trees per ensemble (default: 1000)
 #'     \item \code{seed}: Random seed for reproducibility (default: NULL)
 #'   }
 #' @param grnboost2_params List of parameters for GRNBoost2 method:
