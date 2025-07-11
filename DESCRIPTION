@@ -14,6 +14,7 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     ZILGM (Park et al., 2021) and JRF (Petralia et al., 2015) packages with proper 
     attribution under GPL-2 license.
 License: GPL-3
+License_file: LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -65,5 +66,9 @@ Suggests:
     tidyverse,
     magick,
     learn2count,
+    celldex,
+    SingleR,
+    TENxPBMCData,
+    scater,
 VignetteBuilder: knitr
 LazyData: false

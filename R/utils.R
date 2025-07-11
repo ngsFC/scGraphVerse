@@ -1251,3 +1251,6 @@
 
     return(pathway_results)
 }
+
+# Define global variables to avoid R CMD check NOTEs for ggplot2 aes() usage
+utils::globalVariables(c("FPR", "TPR", "community"))
