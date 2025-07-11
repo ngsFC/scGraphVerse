@@ -606,6 +606,10 @@
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
     ), params)
     
+    # Filter out unsupported parameters for JRF_simplified
+    supported_params <- c("X", "ntree", "mtry", "genes.name")
+    jrf_args <- jrf_args[names(jrf_args) %in% supported_params]
+    
     # Use internal JRF implementation
     rf <- do.call(JRF_simplified, jrf_args)
 
