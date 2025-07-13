@@ -173,9 +173,40 @@ infer_networks <- function(
     if (method == "GRNBoost2") {
         if (!requireNamespace("reticulate", quietly = TRUE)) {
             stop(
-                "'reticulate' and the Python 'arboreto' module are required for
-        method = 'GRNBoost2'.\n",
-                "Please install arboreto via terminal: pip install arboreto",
+                "'reticulate' package is required for method = 'GRNBoost2'.\n",
+                "Install with: install.packages('reticulate')",
+                call. = FALSE
+            )
+        }
+        
+        # Check if Python and arboreto are available
+        python_available <- tryCatch({
+            reticulate::py_available(initialize = TRUE)
+        }, error = function(e) FALSE)
+        
+        if (!python_available) {
+            stop(
+                "Python is not available or not properly configured.\n",
+                "Please ensure Python is installed and accessible.\n",
+                "You may need to restart R after installing Python.\n",
+                "For setup help, see: vignette('python-setup', package = 'scGraphVerse')",
+                call. = FALSE
+            )
+        }
+        
+        arboreto_available <- tryCatch({
+            reticulate::py_module_available("arboreto")
+        }, error = function(e) FALSE)
+        
+        if (!arboreto_available) {
+            stop(
+                "Python package 'arboreto' is required for GRNBoost2.\n",
+                "Install options:\n",
+                "  1. Automatic: setup_grnboost2()\n",
+                "  2. Manual pip: pip install arboreto\n",
+                "  3. Manual conda: conda install -c bioconda arboreto\n",
+                "  4. From R: reticulate::py_install('arboreto')\n",
+                "For detailed setup instructions, see: vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
             )
         }
