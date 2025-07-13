@@ -650,10 +650,7 @@
                 )
                 result_py <- grnboost_modules$arboreto$grnboost2(
                     expression_data = df_pandas,
-                    tf_names = if(!is.null(params$tf_names)) params$tf_names else genes,
-                    gene_names = params$gene_names,
-                    client_or_address = params$client_or_address,
-                    seed = params$seed
+                    tf_names = genes
                 )
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
