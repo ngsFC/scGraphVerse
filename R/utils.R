@@ -581,6 +581,7 @@
     
     fit <- do.call(zilgm, zilgm_args)
     adj <- fit$network[[fit$opt_index]]
+    adj <- adj * 1
     dimnames(adj) <- if (is.null(adjm)) {
         list(
             rownames(mat),
