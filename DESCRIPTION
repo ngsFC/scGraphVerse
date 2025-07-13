@@ -11,7 +11,7 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
     building across methods or datasets, and provides tools for evaluating regulatory 
     structure and community similarity. GRNBoost2 requires Python package 'arboreto' 
-    which can be installed using the provided setup_grnboost2() function. This package 
+    which can be installed using init_py(install_missing = TRUE). This package 
     includes adapted functions from ZILGM (Park et al., 2021) and JRF (Petralia et al., 2015) 
     packages with proper attribution under GPL-2 license.
 License: GPL-3
@@ -74,4 +74,4 @@ Suggests:
 VignetteBuilder: knitr
 LazyData: false
 SystemRequirements: Python (>= 3.6) and arboreto Python package for GRNBoost2 method. 
-    Use setup_grnboost2() function for automated installation.
+    Use init_py(install_missing = TRUE) for automated installation.

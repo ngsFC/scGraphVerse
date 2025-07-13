@@ -37,7 +37,7 @@ parallelization. Defaults to the number of workers in the current
 
 \item{grnboost_modules}{Python modules required for \code{GRNBoost2}
 (created via \pkg{reticulate}). Use \code{init_py()} to create this object,
-or NULL to auto-detect. See \code{setup_grnboost2()} for automated
+or NULL to auto-detect. Use \code{init_py(install_missing = TRUE)} for automated
 dependency installation.}
 
 \item{genie3_params}{List of parameters for GENIE3 method:
@@ -126,7 +126,7 @@ Methods are based on:
 al., 2010).
 \item \strong{GRNBoost2}: Gradient boosting trees using arboreto
 (Moerman et al., 2019). \strong{Requires Python package 'arboreto'}.
-Use \code{setup_grnboost2()} for automated installation.
+Use \code{init_py(install_missing = TRUE)} for automated installation.
 \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq
 (Zhang et al., 2021).
 \item \strong{JRF}: Joint Random Forests across multiple conditions
@@ -147,6 +147,6 @@ networks <- infer_networks(
 head(networks[[1]])
 
 # For GRNBoost2 usage (requires Python setup):
-# 1. Install dependencies: setup_grnboost2()
+# 1. Install dependencies: init_py(install_missing = TRUE)
 # 2. Run: infer_networks(count_matrices, method = "GRNBoost2")
 }

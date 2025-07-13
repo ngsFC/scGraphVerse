@@ -202,7 +202,7 @@ infer_networks <- function(
             stop(
                 "Python package 'arboreto' is required for GRNBoost2.\n",
                 "Install options:\n",
-                "  1. Automatic: setup_grnboost2()\n",
+                "  1. Automatic: init_py(install_missing = TRUE)\n",
                 "  2. Manual pip: pip install arboreto\n",
                 "  3. Manual conda: conda install -c bioconda arboreto\n",
                 "  4. From R: reticulate::py_install('arboreto')\n",
