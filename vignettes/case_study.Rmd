@@ -170,7 +170,9 @@ plotg(list(consensus))
 ```
 
 
-```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb"}
+```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb", eval=FALSE}
+# Note: This requires internet connection for STRINGdb
+# To run this section, set eval=TRUE and ensure internet connectivity
 compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
 
 # Community detection
@@ -181,7 +183,9 @@ communities <- community_path(consensus)
 
 Fetch high-confidence interactions from STRING and evaluate true positives.
 
-```{r stringdb}
+```{r stringdb, eval=FALSE}
+# Note: This requires internet connection for STRINGdb downloads
+# To run this section, set eval=TRUE and ensure internet connectivity
 str <- stringdb_adjacency(
     genes = rownames(consensus),
     species = 9606,

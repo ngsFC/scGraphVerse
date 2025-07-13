@@ -98,7 +98,10 @@ library(celldex)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r}
+```{r, eval=FALSE}
+# Note: This section requires internet connectivity for external data downloads
+# To run this section, set eval=TRUE and ensure internet connectivity
+
 # 1. Load PBMC data
 pbmc_obj <- TENxPBMCData("pbmc3k")
 
@@ -146,6 +149,28 @@ ggraph(gtruth, layout = "fr") +
         vcount(gtruth),
         " nodes, ",
         ecount(gtruth),
+        " edges"
+    )) +
+    theme_minimal()
+```
+
+For demonstration purposes, we'll use the built-in example data:
+
+```{r demo-data}
+# Use built-in example data for demonstration
+data("adj_truth")
+data("count_matrices")
+
+# Visualize the example ground truth network
+gtruth <- igraph::graph_from_adjacency_matrix(adj_truth, mode = "undirected")
+ggraph(gtruth, layout = "fr") +
+    geom_edge_link(color = "gray") +
+    geom_node_point(color = "steelblue") +
+    ggtitle(paste0(
+        "Example Ground Truth: ",
+        igraph::vcount(gtruth),
+        " nodes, ",
+        igraph::ecount(gtruth),
         " edges"
     )) +
     theme_minimal()
@@ -243,7 +268,10 @@ plotg(list(consensus))
 ```
 
 
-```{r communities, fig.alt="compare Graph with reference"}
+```{r communities, fig.alt="compare Graph with reference", eval=FALSE}
+# Note: This section may require internet connectivity for STRINGdb validation
+# To run this section, set eval=TRUE and ensure internet connectivity
+
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,
@@ -256,6 +284,16 @@ comm_truth <- community_path(adj_truth)
 comm_cons <- community_path(consensus)
 # Similarity
 sim_score <- community_similarity(comm_truth, list(comm_cons))
+```
+
+```{r communities-demo}
+# Alternative: Simple community detection without external validation
+comm_truth <- community_path(adj_truth, plot = FALSE, verbose = FALSE)
+comm_cons <- community_path(consensus, plot = FALSE, verbose = FALSE)
+
+# Community similarity
+sim_score <- community_similarity(comm_truth, list(comm_cons))
+print(sim_score)
 ```
 
 ## 5.1. Edge Mining

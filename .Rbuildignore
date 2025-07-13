@@ -11,3 +11,7 @@
 ^docs/
 ^\.claude$
 
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
