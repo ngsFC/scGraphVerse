@@ -156,7 +156,7 @@ ggraph(gtruth, layout = "fr") +
 
 For demonstration purposes, we'll use the built-in example data:
 
-```{r demo-data}
+```{r demo-data, fig.alt="Example ground truth network visualization showing nodes and edges"}
 # Use built-in example data for demonstration
 data("adj_truth")
 data("count_matrices")
