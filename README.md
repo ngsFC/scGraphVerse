@@ -34,13 +34,13 @@ devtools::install_github("ngsFC/scGraphVerse")
 
 ### Inference Algorithms
 
-| Method | Description | Best For |
-|--------|-------------|----------|
-| **GENIE3** | Tree-based ensemble learning | General-purpose, robust |
-| **GRNBoost2** | Gradient boosting with Dask | Large-scale datasets |
-| **ZILGM** | Zero-inflated Gaussian graphical models | Sparse, zero-inflated data |
-| **JRF** | Joint Random Forests | Multi-condition analysis |
-| **PCzinb** | Partial correlation with ZINB | Direct regulatory relationships |
+| Method | Description |
+|--------|-------------|
+| **GENIE3** | Tree-based ensemble learning |
+| **GRNBoost2** | Gradient boosting with Dask |
+| **ZILGM** | Zero-inflated Gaussian graphical models | 
+| **JRF** | Joint Random Forests |
+| **PCzinb** | Partial correlation with ZINB |
 
 
 ## Documentation
