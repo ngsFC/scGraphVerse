@@ -6,15 +6,8 @@
   <h3>✨ Comprehensive Gene Regulatory Network Analysis for Single-Cell Data ✨</h3>
   
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-  [![R-CMD-check](https://github.com/ngsFC/scGraphVerse/workflows/R-CMD-check/badge.svg)](https://github.com/ngsFC/scGraphVerse/actions)
-  [![Codecov](https://codecov.io/gh/ngsFC/scGraphVerse/branch/main/graph/badge.svg)](https://codecov.io/gh/ngsFC/scGraphVerse)
   
-  **🚀 GENIE3 • GRNBoost2 • ZILGM • JRF • PCzinb 🚀**
-  
-  <img src="https://img.shields.io/badge/Single--Cell-Ready-brightgreen?style=for-the-badge&logo=dna" alt="Single-Cell Ready"/>
-  <img src="https://img.shields.io/badge/Multi--Method-Consensus-orange?style=for-the-badge&logo=network-wired" alt="Multi-Method"/>
-  <img src="https://img.shields.io/badge/Visualization-Rich-purple?style=for-the-badge&logo=chart-line" alt="Rich Visualization"/>
-  
+ 
 </div>
 
 ---
@@ -25,13 +18,13 @@
 
 ### ⚡ Key Features
 
-| Feature | Description | Power |
-|---------|-------------|--------|
-| 🔬 **Multiple Inference Methods** | GENIE3, GRNBoost2, ZILGM, JRF, PCzinb | 5 algorithms |
-| 🤝 **Consensus Networks** | Voting, union, INet integration | Smart combining |
-| 📊 **Comprehensive Evaluation** | ROC curves, AUC, F1-score, community analysis | Full metrics |
-| 🎨 **Rich Visualizations** | Interactive networks, performance plots | Publication-ready |
-| 🔧 **Flexible Integration** | SingleCellExperiment, Seurat, matrix objects | All formats |
+| Feature | Description | 
+|---------|-------------|
+| 🔬 **Multiple Inference Methods** | GENIE3, GRNBoost2, ZILGM, JRF, PCzinb |
+| 🤝 **Consensus Networks** | Voting, union, INet integration | 
+| 📊 **Comprehensive Evaluation** | ROC curves, AUC, F1-score, community analysis | 
+| 🎨 **Visualizations** | Interactive networks, performance plots | 
+| 🔧 **Flexible Integration** | SingleCellExperiment, Seurat, matrix objects | 
 
 ## 🚀 Installation
 
@@ -42,20 +35,17 @@
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("ngsFC/scGraphVerse")
 
-# For GRNBoost2 support (optional Python setup)
-library(scGraphVerse)
-init_py(install_missing = TRUE)  # 🐍 Python magic
 ```
 
 ### 🔬 Inference Algorithms
 
-| Method | Description | Best For | Speed |
-|--------|-------------|----------|--------|
-| **GENIE3** 🌳 | Tree-based ensemble learning | General-purpose | ⚡⚡⚡ |
-| **GRNBoost2** 🚀 | Gradient boosting with Dask | Large datasets | ⚡⚡⚡⚡ |
-| **ZILGM** 🎯 | Zero-inflated Gaussian graphical models | Sparse data | ⚡⚡ |
-| **JRF** 🌲 | Joint Random Forests | Multi-condition | ⚡⚡ |
-| **PCzinb** 🔗 | Partial correlation with ZINB | Direct regulation | ⚡⚡⚡ |
+| Method | Description |
+|--------|-------------|
+| **GENIE3** 🌳 | Tree-based ensemble learning | 
+| **GRNBoost2** 🚀 | Gradient boosting with Dask |
+| **ZILGM** 🎯 | Zero-inflated Gaussian graphical models |
+| **JRF** 🌲 | Joint Random Forests | 
+| **PCzinb** 🔗 | Partial correlation with ZINB |
 
 ### 🎪 Quick Start Demo
 
@@ -79,7 +69,6 @@ consensus <- create_consensus(wadj, method = "vote")
 # Visualize! 🎨
 plotg(list(consensus))
 ```
-
 
 ## 📚 Documentation
 
@@ -138,9 +127,5 @@ This work is supported by the **National Centre for HPC, Big Data and Quantum Co
 <div align="center">
   <h2>🧬 Happy Network Inference! 📊</h2>
   <p><em>Discover the hidden connections in your single-cell data</em></p>
-  
-  <img src="https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Powered%20by-R-blue?style=for-the-badge&logo=r"/>
-  <img src="https://img.shields.io/badge/For-Scientists-green?style=for-the-badge&logo=atom"/>
-  
+   
 </div>
