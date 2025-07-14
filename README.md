@@ -2,75 +2,124 @@
 
 <div align="center">
   <img src="./man/figures/logo.png" alt="scGraphVerse logo" width="200"/>
-  <h3>Comprehensive Gene Regulatory Network Analysis for Single-Cell Data</h3>
+  <h1>🧬 scGraphVerse</h1>
+  <h3>✨ Comprehensive Gene Regulatory Network Analysis for Single-Cell Data ✨</h3>
   
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+  [![R-CMD-check](https://github.com/ngsFC/scGraphVerse/workflows/R-CMD-check/badge.svg)](https://github.com/ngsFC/scGraphVerse/actions)
+  [![Codecov](https://codecov.io/gh/ngsFC/scGraphVerse/branch/main/graph/badge.svg)](https://codecov.io/gh/ngsFC/scGraphVerse)
+  
+  **🚀 GENIE3 • GRNBoost2 • ZILGM • JRF • PCzinb 🚀**
+  
+  <img src="https://img.shields.io/badge/Single--Cell-Ready-brightgreen?style=for-the-badge&logo=dna" alt="Single-Cell Ready"/>
+  <img src="https://img.shields.io/badge/Multi--Method-Consensus-orange?style=for-the-badge&logo=network-wired" alt="Multi-Method"/>
+  <img src="https://img.shields.io/badge/Visualization-Rich-purple?style=for-the-badge&logo=chart-line" alt="Rich Visualization"/>
   
 </div>
 
 ---
 
-## Overview
+## 🎯 Overview
 
-**scGraphVerse** is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, consensus construction, and rich visualizations optimized for single-cell expression analysis.
+> **scGraphVerse** is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, consensus construction, and rich visualizations optimized for single-cell expression analysis.
 
-### Key Features
+### ⚡ Key Features
 
-- **🔬 Multiple Inference Methods**: GENIE3, GRNBoost2, ZILGM, JRF, PCzinb
-- **🤝 Consensus Networks**: Voting, union, INet
-- **📊 Comprehensive Evaluation**: ROC curves, AUC, F1-score, community analysis
-- **🎨 Rich Visualizations**: Interactive networks, performance plots, publication-ready figures
-- **🔧 Flexible Integration**: Works with SingleCellExperiment, Seurat, and matrix objects
+| Feature | Description | Power |
+|---------|-------------|--------|
+| 🔬 **Multiple Inference Methods** | GENIE3, GRNBoost2, ZILGM, JRF, PCzinb | 5 algorithms |
+| 🤝 **Consensus Networks** | Voting, union, INet integration | Smart combining |
+| 📊 **Comprehensive Evaluation** | ROC curves, AUC, F1-score, community analysis | Full metrics |
+| 🎨 **Rich Visualizations** | Interactive networks, performance plots | Publication-ready |
+| 🔧 **Flexible Integration** | SingleCellExperiment, Seurat, matrix objects | All formats |
 
-## Installation
+## 🚀 Installation
 
-### Development Version
+### 💻 Development Version
 
 ```r
 # Install development version
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("ngsFC/scGraphVerse")
+
+# For GRNBoost2 support (optional Python setup)
+library(scGraphVerse)
+init_py(install_missing = TRUE)  # 🐍 Python magic
 ```
 
-### Inference Algorithms
+### 🔬 Inference Algorithms
 
-| Method | Description |
-|--------|-------------|
-| **GENIE3** | Tree-based ensemble learning |
-| **GRNBoost2** | Gradient boosting with Dask |
-| **ZILGM** | Zero-inflated Gaussian graphical models | 
-| **JRF** | Joint Random Forests |
-| **PCzinb** | Partial correlation with ZINB |
+| Method | Description | Best For | Speed |
+|--------|-------------|----------|--------|
+| **GENIE3** 🌳 | Tree-based ensemble learning | General-purpose | ⚡⚡⚡ |
+| **GRNBoost2** 🚀 | Gradient boosting with Dask | Large datasets | ⚡⚡⚡⚡ |
+| **ZILGM** 🎯 | Zero-inflated Gaussian graphical models | Sparse data | ⚡⚡ |
+| **JRF** 🌲 | Joint Random Forests | Multi-condition | ⚡⚡ |
+| **PCzinb** 🔗 | Partial correlation with ZINB | Direct regulation | ⚡⚡⚡ |
 
-
-## Documentation
-
-- **Package Website**: https://ngsfc.github.io/scGraphVerse/
-- **Vignettes**: 
-  - [Simulation Study](https://ngsfc.github.io/scGraphVerse/articles/simulation_study.html)
-  - [Case Study](https://ngsfc.github.io/scGraphVerse/articles/case_study.html)
-- **Reference Manual**: https://ngsfc.github.io/scGraphVerse/reference/
-
-## Citation
+### 🎪 Quick Start Demo
 
 ```r
-citation("scGraphVerse")
+library(scGraphVerse)
+
+# Load example data 📊
+data("count_matrices")
+
+# Infer networks 🧠
+networks <- infer_networks(
+  count_matrices_list = count_matrices,
+  method = "GENIE3",
+  nCores = 4
+)
+
+# Create consensus magic ✨
+wadj <- generate_adjacency(networks)
+consensus <- create_consensus(wadj, method = "vote")
+
+# Visualize! 🎨
+plotg(list(consensus))
 ```
 
-Please also cite the original methods:
 
-1. **GENIE3**: Huynh-Thu et al. (2010). *PLOS ONE* 5(9):e12776
-2. **GRNBoost2**: Moerman et al. (2019). *Bioinformatics* 35(12):2159-61
-3. **ZILGM**: Park et al. (2021). *Statistical Analysis and Data Mining* 37(18):3085-3092
-4. **JRF**: Petralia et al. (2015). *Journal of Proteome Research* 31(12):i197-i205
-5. **PCzinb**: Nguyen et al. (2023). *Ann. Appl. Stat.* 17(3):2555-73
-6. **INet-Tool**: Policastro et al. (2025). *Comput Stat* 40, 1517–1539
+## 📚 Documentation
 
-## License
+<div align="center">
 
-**scGraphVerse** is licensed under **GPL (≥ 2)**.
+| Resource | Link | Description |
+|----------|------|-------------|
+| 🌐 **Website** | [ngsfc.github.io/scGraphVerse](https://ngsfc.github.io/scGraphVerse/) | Main documentation hub |
+| 📖 **Simulation Study** | [Vignette](https://ngsfc.github.io/scGraphVerse/articles/simulation_study.html) | Benchmarking tutorial |
+| 🔬 **Case Study** | [Vignette](https://ngsfc.github.io/scGraphVerse/articles/case_study.html) | Real-world example |
+| 📋 **Reference** | [Manual](https://ngsfc.github.io/scGraphVerse/reference/) | Function documentation |
 
-### Integrated Code Attribution
+</div>
+
+## 📝 Citation
+
+```r
+citation("scGraphVerse")  # 🎓 Academic credit
+```
+
+### 🌟 Please also cite the original methods:
+
+<div align="center">
+
+| Method | Citation | Journal |
+|--------|----------|---------|
+| **GENIE3** 🌳 | Huynh-Thu et al. (2010) | *PLOS ONE* 5(9):e12776 |
+| **GRNBoost2** 🚀 | Moerman et al. (2019) | *Bioinformatics* 35(12):2159-61 |
+| **ZILGM** 🎯 | Park et al. (2021) | *Statistical Analysis and Data Mining* 37(18):3085-3092 |
+| **JRF** 🌲 | Petralia et al. (2015) | *Journal of Proteome Research* 31(12):i197-i205 |
+| **PCzinb** 🔗 | Nguyen et al. (2023) | *Ann. Appl. Stat.* 17(3):2555-73 |
+| **INet-Tool** 🔧 | Policastro et al. (2025) | *Comput Stat* 40, 1517–1539 |
+
+</div>
+
+## ⚖️ License
+
+**scGraphVerse** is licensed under **GPL (≥ 2)** 📜
+
+### 🤝 Integrated Code Attribution
 
 This package includes adapted functions from:
 - **ZILGM** (Park et al., 2021) - GPL-2 license
@@ -78,14 +127,20 @@ This package includes adapted functions from:
 
 All integrated code maintains proper attribution and copyright notices.
 
-## Funding
+## 💰 Funding
 
-This work is supported by the **National Centre for HPC, Big Data and Quantum Computing**
+This work is supported by the **National Centre for HPC, Big Data and Quantum Computing** 🇪🇺
 - **Funded by**: European Union – Next Generation EU – CN00000013
 - **CUP**: B93C22000620006
 
 ---
 
 <div align="center">
-  <strong>Happy Network Inference! 🧬📊</strong>
+  <h2>🧬 Happy Network Inference! 📊</h2>
+  <p><em>Discover the hidden connections in your single-cell data</em></p>
+  
+  <img src="https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Powered%20by-R-blue?style=for-the-badge&logo=r"/>
+  <img src="https://img.shields.io/badge/For-Scientists-green?style=for-the-badge&logo=atom"/>
+  
 </div>
