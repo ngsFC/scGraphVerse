@@ -82,12 +82,75 @@ stringdb_adjacency <- function(
         message("Initializing STRINGdb...")
     }
 
-    string_db <- STRINGdb$new(
-        version         = "11.5",
-        species         = species,
-        score_threshold = required_score,
-        input_directory = ""
-    )
+    # Alternative approach: Try to use a direct API method without STRINGdb initialization
+    if (verbose) {
+        message("Attempting direct STRING API access to bypass SSL initialization issues...")
+    }
+    
+    # Try direct API call first
+    direct_result <- tryCatch({
+        .direct_string_api_call(genes, species, required_score, verbose, keep_all_genes)
+    }, error = function(e) {
+        if (verbose) message("Direct API approach failed, trying STRINGdb initialization...")
+        NULL
+    })
+    
+    if (!is.null(direct_result)) {
+        return(direct_result)
+    }
+    
+    # Fallback to STRINGdb initialization with SSL workarounds
+    old_method <- getOption("download.file.method")
+    old_extra <- getOption("download.file.extra")
+    old_curl_bundle <- Sys.getenv("CURL_CA_BUNDLE")
+    old_curl_opts <- getOption("RCurlOptions")
+    
+    on.exit({
+        options(download.file.method = old_method)
+        options(download.file.extra = old_extra)
+        Sys.setenv(CURL_CA_BUNDLE = old_curl_bundle)
+        options(RCurlOptions = old_curl_opts)
+    })
+    
+    # Configure SSL bypass methods
+    options(download.file.method = "libcurl")
+    options(download.file.extra = c("-k", "--insecure"))
+    Sys.setenv(CURL_CA_BUNDLE = "")
+    Sys.setenv(CURL_INSECURE = "1")
+    options(RCurlOptions = list(ssl.verifypeer = FALSE, ssl.verifyhost = FALSE))
+    
+    string_db <- tryCatch({
+        STRINGdb$new(
+            version         = "11.5",
+            species         = species,
+            score_threshold = required_score,
+            input_directory = ""
+        )
+    }, error = function(e1) {
+        if (verbose) message("LibCurl failed, trying alternative methods...")
+        
+        # Try with internal method override
+        Sys.setenv(DOWNLOAD_FILE_METHOD = "internal")
+        options(download.file.method = "internal")
+        
+        tryCatch({
+            STRINGdb$new(
+                version         = "11.5",
+                species         = species,
+                score_threshold = required_score,
+                input_directory = ""
+            )
+        }, error = function(e2) {
+            if (verbose) {
+                message("STRINGdb initialization failed due to SSL certificate issues.")
+                message("Error: ", e1$message)
+                message("This is a known issue with some network configurations.")
+                message("Workaround: Use pre-downloaded STRING data or alternative networks.")
+            }
+            stop("Unable to initialize STRINGdb. SSL certificate verification failed. ",
+                 "Consider using cached data or alternative protein interaction databases.")
+        })
+    })
 
     if (verbose) {
         message("Mapping genes to STRING IDs...")
@@ -143,4 +206,140 @@ stringdb_adjacency <- function(
     }
 
     return(matrices)
+}
+
+# Direct STRING API call that bypasses STRINGdb R package initialization
+.direct_string_api_call <- function(genes, species, required_score, verbose, keep_all_genes = TRUE) {
+    if (verbose) {
+        message("Using direct STRING API approach...")
+    }
+    
+    # First, try to get STRING IDs using direct API
+    mapping_url <- "https://string-db.org/api/json/get_string_ids"
+    
+    # Prepare gene list for POST request
+    gene_list <- paste(genes, collapse = "\n")
+    
+    # Try to get STRING IDs
+    string_ids <- tryCatch({
+        if (verbose) message("Mapping genes to STRING IDs via direct API...")
+        
+        response <- httr::POST(
+            url = mapping_url,
+            body = list(
+                identifiers = gene_list,
+                species = species,
+                limit = 1,
+                echo_query = 1,
+                caller_identity = "scGraphVerse"
+            ),
+            encode = "form",
+            httr::config(ssl_verifypeer = FALSE, ssl_verifyhost = FALSE)
+        )
+        
+        if (httr::status_code(response) != 200) {
+            stop("STRING API request failed with status: ", httr::status_code(response))
+        }
+        
+        result <- httr::content(response, as = "text", encoding = "UTF-8")
+        jsonlite::fromJSON(result)
+    }, error = function(e) {
+        if (verbose) message("Direct STRING ID mapping failed: ", e$message)
+        return(NULL)
+    })
+    
+    if (is.null(string_ids) || nrow(string_ids) == 0) {
+        if (verbose) message("No STRING IDs obtained via direct API")
+        return(NULL)
+    }
+    
+    # Get interactions using direct API
+    interactions <- tryCatch({
+        if (verbose) message("Retrieving interactions via direct API...")
+        
+        string_protein_ids <- unique(string_ids$stringId)
+        protein_list <- paste(string_protein_ids, collapse = "%0d")
+        
+        interaction_url <- "https://string-db.org/api/json/network"
+        
+        response <- httr::POST(
+            url = interaction_url,
+            body = list(
+                identifiers = protein_list,
+                species = species,
+                required_score = required_score,
+                add_white_nodes = 0,
+                caller_identity = "scGraphVerse"
+            ),
+            encode = "form",
+            httr::config(ssl_verifypeer = FALSE, ssl_verifyhost = FALSE)
+        )
+        
+        if (httr::status_code(response) != 200) {
+            stop("STRING interaction API request failed with status: ", httr::status_code(response))
+        }
+        
+        result <- httr::content(response, as = "text", encoding = "UTF-8")
+        jsonlite::fromJSON(result)
+    }, error = function(e) {
+        if (verbose) message("Direct STRING interaction retrieval failed: ", e$message)
+        return(NULL)
+    })
+    
+    if (is.null(interactions) || nrow(interactions) == 0) {
+        if (verbose) message("No interactions obtained via direct API")
+        return(.zero_matrix_result(genes))
+    }
+    
+    # Convert STRING IDs back to gene names and build matrices
+    # Create mapping from STRING ID to gene name
+    id_to_gene <- setNames(string_ids$queryItem, string_ids$stringId)
+    
+    # Map interaction partners to gene names
+    interactions$gene1 <- id_to_gene[interactions$stringId_A]
+    interactions$gene2 <- id_to_gene[interactions$stringId_B]
+    
+    # Remove rows where genes couldn't be mapped back
+    interactions <- interactions[!is.na(interactions$gene1) & !is.na(interactions$gene2), ]
+    
+    if (nrow(interactions) == 0) {
+        if (verbose) message("No valid gene mappings for interactions")
+        return(.zero_matrix_result(genes))
+    }
+    
+    # Build adjacency matrices directly
+    all_genes <- unique(c(interactions$gene1, interactions$gene2))
+    if (keep_all_genes) {
+        missing_genes <- setdiff(genes, all_genes)
+        all_genes <- c(all_genes, missing_genes)
+    }
+    all_genes <- sort(all_genes)
+    
+    n_genes <- length(all_genes)
+    weighted_adj <- matrix(0, nrow = n_genes, ncol = n_genes)
+    rownames(weighted_adj) <- colnames(weighted_adj) <- all_genes
+    
+    # Fill in the weights (use combined_score)
+    for (i in seq_len(nrow(interactions))) {
+        g1 <- interactions$gene1[i]
+        g2 <- interactions$gene2[i]
+        score <- as.numeric(interactions$score[i])
+        
+        if (g1 %in% all_genes && g2 %in% all_genes) {
+            weighted_adj[g1, g2] <- score
+            weighted_adj[g2, g1] <- score  # Make symmetric
+        }
+    }
+    
+    # Create binary matrix
+    binary_adj <- (weighted_adj > 0) * 1
+    
+    if (verbose) {
+        message("Direct API approach successful: ", nrow(interactions), " interactions found")
+    }
+    
+    return(list(
+        weighted = weighted_adj,
+        binary = binary_adj
+    ))
 }
