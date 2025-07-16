@@ -89,7 +89,7 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
     zeta <- matrix(0, nrow = n, ncol = p)
     
     # Estimate dispersion for each gene
-    for (i in 1:p) {
+    for (i in seq_len(p)) {
         # Initialize with method of moments
         mu_i <- mean(X[, i])
         var_i <- var(X[, i])
@@ -100,7 +100,7 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
         }
         
         # Estimate parameters iteratively
-        for (iter in 1:iter.theta) {
+        for (iter in seq_len(iter.theta)) {
             # Fit ZINB model
             fit_result <- tryCatch({
                 optim_funnoT(
@@ -121,9 +121,9 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
             zeta_new <- tryCatch({
                 zinbOptimizeDispersion(
                     mu = exp(cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
-                        1:p]), 
+                        seq_len(p)]), 
                     logitPi = -cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
-                        (p+1):(2*p)],
+                        (p + 1):(2 * p)],
                     Y = X[, i], 
                     n = n
                 )
@@ -149,7 +149,7 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
     while (ncard <= maxcard) {
         V <- matrix(0, nrow = p, ncol = p)
         
-        for (i in 1:p) {
+        for (i in seq_len(p)) {
             # Get current neighbors
             neighbors <- which(adj[, i] == 1)
             
@@ -398,9 +398,9 @@ zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
 #' @keywords internal
 #' @noRd
 zinb.loglik.regression <- function(alpha, Y,
-                                   A.mu = matrix(nrow = length(Y), ncol = 0),
-                                   A.pi = matrix(nrow = length(Y), ncol = 0),
-                                   C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
+    A.mu = matrix(nrow = length(Y), ncol = 0),
+    A.pi = matrix(nrow = length(Y), ncol = 0),
+    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
     
     # Parse the model
     r <- zinb.regression.parseModel(alpha = alpha, A.mu = A.mu, A.pi = A.pi)
@@ -415,12 +415,9 @@ zinb.loglik.regression <- function(alpha, Y,
 #' @keywords internal
 #' @noRd
 zinb.loglik.regression.gradient <- function(alpha, Y,
-                                            A.mu = matrix(nrow = length(Y),
-                                                          ncol = 0),
-                                            A.pi = matrix(nrow = length(Y),
-                                                          ncol = 0),
-                                            C.theta = matrix(0, nrow=length(Y),
-                                                             ncol = 1)) {
+    A.mu = matrix(nrow = length(Y), ncol = 0),
+    A.pi = matrix(nrow = length(Y), ncol = 0),
+    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
     
     # Parse the model
     r <- zinb.regression.parseModel(alpha = alpha, A.mu = A.mu, A.pi = A.pi)
@@ -462,9 +459,9 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
     }
     
     list(logMu = logMu,
-         logitPi = logitPi,
-         dim.alpha = dim.alpha,
-         start.alpha = start.alpha)
+        logitPi = logitPi,
+        dim.alpha = dim.alpha,
+        start.alpha = start.alpha)
 }
 
 #' ZINB Log-Likelihood
@@ -472,15 +469,19 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
 #' @noRd
 zinb.loglik <- function(Y, mu, theta, logitPi) {
     # log-probabilities of counts under the NB model
-    logPnb <- suppressWarnings(dnbinom(Y, size = theta, mu = mu, log = TRUE))
+    logPnb <- dnbinom(Y, size = theta, mu = mu, log = TRUE)
+    # Handle potential warnings by checking for valid values
+    if (any(is.na(logPnb))) {
+        logPnb[is.na(logPnb)] <- -Inf
+    }
     
     # contribution of zero inflation
     lognorm <- -log1pexp(logitPi)
     
     # log-likelihood
     result <- sum(logPnb[Y > 0]) + 
-              sum(logPnb[Y == 0] + log1pexp(logitPi[Y == 0] - logPnb[Y == 0])) + 
-              sum(lognorm)
+        sum(logPnb[Y == 0] + log1pexp(logitPi[Y == 0] - logPnb[Y == 0])) + 
+        sum(lognorm)
     
     return(result)
 }
@@ -498,8 +499,8 @@ zinb.loglik.dispersion <- function(zeta, Y, mu, logitPi) {
 zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
     # Simplified gradient (full implementation would be more complex)
     theta <- exp(zeta)
-    grad <- sum(digamma(Y+theta) - digamma(theta) + log(theta) - log(theta+mu) + 
-                (Y - mu) / (theta + mu)) * theta
+    grad <- sum(digamma(Y + theta) - digamma(theta) + log(theta) - 
+                log(theta + mu) + (Y - mu) / (theta + mu)) * theta
     return(grad)
 }
 
