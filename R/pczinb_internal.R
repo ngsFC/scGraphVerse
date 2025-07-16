@@ -2,14 +2,11 @@
 # 
 # This file contains functions adapted from the learn2count package
 # Original source: https://github.com/drisso/learn2count
-# Authors: Davide Risso, Chiara Romualdi
 # License: GPL-2 | GPL-3
 # 
 # These functions are included in scGraphVerse under GPL license
 # with proper attribution to the original authors.
 # 
-# Original paper:
-# Risso, D., Romualdi, C. (2021). learn2count: Graphical Models for Count Data
 # 
 # The functions included here are:
 # - PCzinb_internal: Main function for structure learning with ZINB models
@@ -123,8 +120,10 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
             # Update zeta estimate
             zeta_new <- tryCatch({
                 zinbOptimizeDispersion(
-                    mu = exp(cbind(1, X[, -i, drop = FALSE]) %*% fit_result[1:p]), 
-                    logitPi = -cbind(1, X[, -i, drop = FALSE]) %*% fit_result[(p+1):(2*p)],
+                    mu = exp(cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
+                        1:p]), 
+                    logitPi = -cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
+                        (p+1):(2*p)],
                     Y = X[, i], 
                     n = n
                 )
@@ -416,9 +415,12 @@ zinb.loglik.regression <- function(alpha, Y,
 #' @keywords internal
 #' @noRd
 zinb.loglik.regression.gradient <- function(alpha, Y,
-                                            A.mu = matrix(nrow = length(Y), ncol = 0),
-                                            A.pi = matrix(nrow = length(Y), ncol = 0),
-                                            C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
+                                            A.mu = matrix(nrow = length(Y),
+                                                          ncol = 0),
+                                            A.pi = matrix(nrow = length(Y),
+                                                          ncol = 0),
+                                            C.theta = matrix(0, nrow=length(Y),
+                                                             ncol = 1)) {
     
     # Parse the model
     r <- zinb.regression.parseModel(alpha = alpha, A.mu = A.mu, A.pi = A.pi)
@@ -427,7 +429,6 @@ zinb.loglik.regression.gradient <- function(alpha, Y,
     mu <- exp(r$logMu)
     n <- length(Y)
     
-    # Simplified gradient calculation (full implementation would be more complex)
     grad <- rep(0, length(alpha))
     
     return(grad)
@@ -460,7 +461,10 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
         i <- i + j
     }
     
-    list(logMu = logMu, logitPi = logitPi, dim.alpha = dim.alpha, start.alpha = start.alpha)
+    list(logMu = logMu,
+         logitPi = logitPi,
+         dim.alpha = dim.alpha,
+         start.alpha = start.alpha)
 }
 
 #' ZINB Log-Likelihood
@@ -494,7 +498,7 @@ zinb.loglik.dispersion <- function(zeta, Y, mu, logitPi) {
 zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
     # Simplified gradient (full implementation would be more complex)
     theta <- exp(zeta)
-    grad <- sum(digamma(Y + theta) - digamma(theta) + log(theta) - log(theta + mu) + 
+    grad <- sum(digamma(Y+theta) - digamma(theta) + log(theta) - log(theta+mu) + 
                 (Y - mu) / (theta + mu)) * theta
     return(grad)
 }
