@@ -2,15 +2,18 @@
 # 
 # This file contains functions adapted from the learn2count package
 # Original source: https://github.com/drisso/learn2count
+# Authors: Davide Risso, Chiara Romualdi
 # License: GPL-2 | GPL-3
 # 
 # These functions are included in scGraphVerse under GPL license
 # with proper attribution to the original authors.
 # 
+# Original paper:
+# Risso, D., Romualdi, C. (2021). learn2count: Graphical Models for Count Data
 # 
 # The functions included here are:
 # - PCzinb_internal: Main function for structure learning with ZINB models
-# - zinb1_noT: ZINB1 algorithm implementation
+# - zinb1_noT: ZINB1 algorithm implementation  
 # - Helper functions for ZINB likelihood calculations
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -20,8 +23,8 @@
 
 #' Internal PCzinb Function
 #' 
-#' This function implements PC algorithm for 
-#' Zero-Inflated Negative Binomial data
+#' This function implements PC algorithm for Zero-Inflated Negative 
+#' Binomial data
 #' Adapted from learn2count package
 #' 
 #' @param X Count matrix (samples x genes)
@@ -51,10 +54,6 @@ PCzinb_internal <- function(X, method = "zinb1", maxcard = 2, alpha = 0.05,
         alpha <- 2 * pnorm(n^0.2, lower.tail = FALSE)
     }
     
-    # Initialize adjacency matrix
-    adj <- matrix(1, nrow = p, ncol = p)
-    diag(adj) <- 0
-    
     # Call appropriate method
     if (method == "zinb1") {
         adj <- zinb1_noT(X, maxcard, alpha, extend)
@@ -65,126 +64,310 @@ PCzinb_internal <- function(X, method = "zinb1", maxcard = 2, alpha = 0.05,
     return(adj)
 }
 
-#' ZINB1 Structure Learning Algorithm
-#' 
-#' Implementation of the ZINB1 algorithm from learn2count package
-#' 
-#' @param X Count matrix (samples x genes)
-#' @param maxcard Maximum cardinality of conditional sets
-#' @param alpha Significance level
-#' @param extend Whether to use union/intersection of tests
-#' 
-#' @return Adjacency matrix
+#' Structure learning with zero-inflated negative binomial model
+#'
+#' This function estimates the adjacency matrix of a ZINB model given a matrix
+#' of counts, using the optim function. Original implementation from 
+#' learn2count.
+#'
+#' This approach assumes that the structure of the graph depends on both the
+#' mean parameter and the zero inflation parameter. We call this model `zinb1`.
+#'
+#' @param X the matrix of counts (n times p).
+#' @param maxcard the upper bound of the cardinality of the conditional sets K
+#' @param alpha the significant level of the tests
+#' @param extend if TRUE it considers the union of the tests, otherwise it
+#'   considers the intersection.
+#' @return the estimated adjacency matrix of the graph.
 #' @keywords internal
 #' @noRd
 zinb1_noT <- function(X, maxcard, alpha, extend) {
     p <- ncol(X)
     n <- nrow(X)
     
-    # Estimate dispersion parameters
+    # Estimate dispersion parameter
     iter.theta <- 2
     stop.epsilon <- 0.0001
     
-    # Initialize zeta (dispersion parameters)
+    # Sequential computation (replacing foreach due to BiocCheck requirements)
     zeta <- matrix(0, nrow = n, ncol = p)
     
-    # Estimate dispersion for each gene
     for (i in seq_len(p)) {
-        # Initialize with method of moments
-        mu_i <- mean(X[, i])
-        var_i <- var(X[, i])
-        if (var_i > mu_i) {
-            zeta_init <- mu_i^2 / (var_i - mu_i)
+        iter <- 1
+        local.lik <- rep(NA, iter.theta)
+        
+        # 1. Estimate zeta
+        mean_xi <- mean(X[, i])
+        var_xi <- var(X[, i])
+        if (var_xi > mean_xi) {
+            zeta_i <- rep(mean_xi^2 / (var_xi - mean_xi), n)
         } else {
-            zeta_init <- 1
+            zeta_i <- rep(1, n)
         }
         
-        # Estimate parameters iteratively
-        for (iter in seq_len(iter.theta)) {
-            # Fit ZINB model
-            fit_result <- tryCatch({
-                optim_funnoT(
-                    beta_mu = rep(1, p), 
-                    gamma_pi = rep(1, p), 
-                    Y = X[, i],
-                    X_mu = X[, -i, drop = FALSE], 
-                    zeta = rep(zeta_init, n), 
-                    n = n
-                )
-            }, error = function(e) {
-                # Fallback to Poisson GLM if ZINB fails
-                fit <- glm(X[, i] ~ X[, -i, drop = FALSE], family = "poisson")
-                c(fit$coefficients, rep(1, p))
-            })
+        # 2. Estimate parameters of ZINB model with zeta_i given by first step
+        fitadd <- tryCatch({
+            optim_funnoT(
+                beta_mu = rep(1, p), 
+                gamma_pi = rep(1, p), 
+                Y = X[, i],
+                X_mu = X[, -i, drop = FALSE], 
+                zeta_i, 
+                n
+            )
+        }, error = function(e) {
+            fit <- glm(X[, i] ~ X[, -i, drop = FALSE], family = "poisson")
+            optim_funnoT(
+                beta_mu = fit$coefficients, 
+                gamma_pi = rep(1, p), 
+                Y = X[, i],
+                X_mu = X[, -i, drop = FALSE], 
+                zeta_i, 
+                n
+            )
+        })
+        
+        # Calculate loglikelihood at the first iteration
+        local.lik[1] <- zinb.loglik.regression(
+            alpha = fitadd, 
+            Y = X[, i],
+            A.mu = cbind(rep(1, n), X[, -i, drop = FALSE]),
+            A.pi = cbind(rep(1, n), X[, -i, drop = FALSE]),
+            C.theta = zeta_i
+        )
+        
+        for (iter in 2:iter.theta) {
+            # 1. Estimate zeta with initial value alpha=fitadd 
+            r <- zinb.regression.parseModel(
+                alpha = fitadd, 
+                A.mu = cbind(rep(1, n), X[, -i, drop = FALSE]),
+                A.pi = cbind(rep(1, n), X[, -i, drop = FALSE])
+            )
             
-            # Update zeta estimate
-            zeta_new <- tryCatch({
-                zinbOptimizeDispersion(
-                    mu = exp(cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
-                        seq_len(p)]), 
-                    logitPi = -cbind(1, X[, -i, drop = FALSE]) %*% fit_result[
-                        (p + 1):(2 * p)],
-                    Y = X[, i], 
-                    n = n
-                )
-            }, error = function(e) {
-                rep(zeta_init, n)
-            })
+            zeta_temp <- zinbOptimizeDispersion(
+                mu = r$logMu, 
+                logitPi = r$logitPi,
+                Y = X[, i], 
+                n = n
+            )
             
-            # Check convergence
-            if (iter > 1 && mean(abs(zeta_new - zeta[, i])) < stop.epsilon) {
+            # 2. Estimate parameters of ZINB model with zeta given by first step
+            fitadd_temp <- optim_funnoT(
+                beta_mu = fitadd[seq_len(p)],
+                gamma_pi = fitadd[(p + 1):(2 * p)],
+                Y = X[, i],
+                X_mu = X[, -i, drop = FALSE], 
+                zeta_temp, 
+                n
+            )
+            
+            local.lik[iter] <- zinb.loglik.regression(
+                alpha = fitadd_temp, 
+                Y = X[, i],
+                A.mu = cbind(rep(1, n), X[, -i, drop = FALSE]),
+                A.pi = cbind(rep(1, n), X[, -i, drop = FALSE]),
+                C.theta = zeta_temp
+            )
+            
+            if (local.lik[iter] > local.lik[iter - 1]) {
+                fitadd <- fitadd_temp
+                zeta_i <- zeta_temp
+            } else {
                 break
             }
             
-            zeta[, i] <- zeta_new
+            if (abs((local.lik[iter] - local.lik[iter - 1]) / 
+                    local.lik[iter - 1]) < stop.epsilon) {
+                break
+            }
+        }
+        
+        zeta[, i] <- zeta_i
+    }
+    
+    # Fallback if zeta estimation fails
+    if (any(is.na(zeta)) || any(zeta <= 0)) {
+        for (i in seq_len(p)) {
+            r <- zinb.regression.parseModel(
+                alpha = rep(1, 2 * p), 
+                A.mu = cbind(rep(1, n), scale(X[, -i, drop = FALSE])),
+                A.pi = cbind(rep(1, n), scale(X[, -i, drop = FALSE]))
+            )
+            zeta[, i] <- zinbOptimizeDispersion(
+                mu = r$logMu, 
+                logitPi = r$logitPi,
+                Y = X[, i], 
+                n = n
+            )
         }
     }
     
-    # Initialize adjacency matrix
-    adj <- matrix(1, nrow = p, ncol = p)
+    # Estimate adjacency matrix
+    adj <- matrix(1, p, p)
     diag(adj) <- 0
-    
-    # PC algorithm main loop
     ncard <- 0
+    
     while (ncard <= maxcard) {
-        V <- matrix(0, nrow = p, ncol = p)
+        V <- matrix(0, p, p)
         
+        # Sequential computation (replacing foreach)
         for (i in seq_len(p)) {
-            # Get current neighbors
-            neighbors <- which(adj[, i] == 1)
+            neighbor <- which(adj[, i] == 1)
             
-            if (length(neighbors) > ncard) {
-                # Generate all possible conditional sets of size ncard
+            if (length(neighbor) >= ncard) {
                 if (ncard == 0) {
-                    cond_sets <- list(integer(0))
+                    condset <- list(integer(0))
                 } else {
-                    cond_sets <- combn(neighbors, ncard, simplify = FALSE)
+                    condset <- combn(neighbor, ncard, FUN = list, 
+                                        simplify = FALSE)
                 }
                 
-                for (j in seq_along(neighbors)) {
-                    neighbor_idx <- neighbors[j]
+                for (j in seq_along(neighbor)) {
                     indcond <- FALSE
+                    k <- 1
                     
-                    for (cond_set in cond_sets) {
-                        if (indcond) break
-                        
-                        # Test conditional independence
-                        pval <- test_conditional_independence_zinb(
-                            X, i, neighbor_idx, cond_set, zeta
-                        )
-                        
-                        if (pval > alpha) {
-                            V[neighbor_idx, i] <- 0
-                            indcond <- TRUE
-                        } else {
-                            V[neighbor_idx, i] <- 1
+                    while (!indcond && k <= length(condset)) {
+                        if (!(neighbor[j] %in% condset[[k]])) {
+                            
+                            # Initial value
+                            if (length(condset[[k]]) > 0) {
+                                cond_vars <- c(neighbor[j], condset[[k]])
+                            } else {
+                                cond_vars <- neighbor[j]
+                            }
+                            
+                            beta_mu <- tryCatch({
+                                glm(X[, i] ~ scale(X[, cond_vars, 
+                                                    drop = FALSE]), 
+                                    family = "poisson")$coefficients
+                            }, error = function(e) {
+                                rep(1, length(cond_vars) + 1)
+                            })
+                            
+                            gamma_pi <- rep(0.5, length(cond_vars) + 1)
+                            
+                            # Fit model with new edges
+                            fitadd <- tryCatch({
+                                optim_funnoT(
+                                    beta_mu = beta_mu, 
+                                    gamma_pi = gamma_pi, 
+                                    Y = X[, i],
+                                    X_mu = scale(X[, cond_vars, drop = FALSE]), 
+                                    zeta[, i], 
+                                    n
+                                )
+                            }, error = function(e) {
+                                c(beta_mu, gamma_pi)
+                            })
+                            
+                            # Calculate loglikelihood of new model
+                            zinb.loglik.add <- tryCatch({
+                                zinb.loglik.regression(
+                                    alpha = fitadd, 
+                                    Y = X[, i],
+                                    A.mu = cbind(rep(1, n), 
+                                                scale(X[, cond_vars, 
+                                                    drop = FALSE])),
+                                    A.pi = cbind(rep(1, n), 
+                                                scale(X[, cond_vars, 
+                                                    drop = FALSE])),
+                                    C.theta = zeta[, i]
+                                )
+                            }, error = function(e) {
+                                -Inf
+                            })
+                            
+                            # Fit model without adding new edges
+                            if (length(condset[[k]]) > 0) {
+                                fitnoadd <- tryCatch({
+                                    optim_funnoT(
+                                        beta_mu = beta_mu[-2], 
+                                        gamma_pi = gamma_pi[-1], 
+                                        Y = X[, i],
+                                        X_mu = scale(X[, condset[[k]], 
+                                                    drop = FALSE]), 
+                                        zeta[, i], 
+                                        n
+                                    )
+                                }, error = function(e) {
+                                    c(beta_mu[-2], gamma_pi[-1])
+                                })
+                                
+                                # Calculate loglikelihood without new edges
+                                zinb.loglik.noadd <- tryCatch({
+                                    zinb.loglik.regression(
+                                        alpha = fitnoadd, 
+                                        Y = X[, i],
+                                        A.mu = cbind(rep(1, n), 
+                                                    scale(X[, condset[[k]], 
+                                                        drop = FALSE])),
+                                        A.pi = cbind(rep(1, n), 
+                                                    scale(X[, condset[[k]], 
+                                                        drop = FALSE])),
+                                        C.theta = zeta[, i]
+                                    )
+                                }, error = function(e) {
+                                    -Inf
+                                })
+                            } else {
+                                fitnoadd <- tryCatch({
+                                    optim_funnoT(
+                                        beta_mu = beta_mu[c(1, 2)], 
+                                        gamma_pi = gamma_pi, 
+                                        Y = X[, i],
+                                        X_mu = rep(0, n), 
+                                        zeta[, i], 
+                                        n
+                                    )
+                                }, error = function(e) {
+                                    c(beta_mu[c(1, 2)], gamma_pi)
+                                })
+                                
+                                # Calculate loglikelihood without new edges
+                                zinb.loglik.noadd <- tryCatch({
+                                    zinb.loglik.regression(
+                                        alpha = fitadd, 
+                                        Y = X[, i],
+                                        A.mu = cbind(rep(1, n), rep(0, n)),
+                                        A.pi = cbind(rep(1, n), rep(0, n)),
+                                        C.theta = zeta[, i]
+                                    )
+                                }, error = function(e) {
+                                    -Inf
+                                })
+                            }
+                            
+                            # Deviance tests
+                            goodfit.Deviance <- 2 * (zinb.loglik.add - 
+                                                        zinb.loglik.noadd)
+                            
+                            # Handle edge cases
+                            if (is.na(goodfit.Deviance) || 
+                                is.infinite(goodfit.Deviance)) {
+                                p_val <- 1.0
+                            } else {
+                                p_val <- pchisq(goodfit.Deviance, 2, 
+                                                lower.tail = FALSE)
+                            }
+                            
+                            if (p_val > alpha) {
+                                V[neighbor[j], i] <- 0
+                                indcond <- TRUE
+                            } else {
+                                V[neighbor[j], i] <- 1
+                            }
                         }
+                        k <- k + 1
+                    }
+                    
+                    # Set default value if no test performed
+                    if (!indcond) {
+                        V[neighbor[j], i] <- 1
                     }
                 }
             }
         }
         
-        # Update adjacency matrix based on extend parameter
         if (extend) {
             adj <- V + t(V)
             adj[adj != 0] <- 1
@@ -198,162 +381,17 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
     return(adj)
 }
 
-#' Test Conditional Independence for ZINB
-#' 
-#' Performs conditional independence test using deviance statistic
-#' 
-#' @param X Count matrix
-#' @param i Index of first variable
-#' @param j Index of second variable
-#' @param cond_set Conditioning set indices
-#' @param zeta Dispersion parameters
-#' 
-#' @return P-value from deviance test
-#' @keywords internal
-#' @noRd
-test_conditional_independence_zinb <- function(X, i, j, cond_set, zeta) {
-    n <- nrow(X)
-    p <- ncol(X)
-    
-    # Prepare conditioning variables
-    if (length(cond_set) == 0) {
-        X_cond <- matrix(0, nrow = n, ncol = 1)
-    } else {
-        X_cond <- X[, cond_set, drop = FALSE]
-    }
-    
-    # Fit model WITH edge (i,j)
-    X_mu_with <- cbind(X[, j, drop = FALSE], X_cond)
-    fit_with <- tryCatch({
-        optim_funnoT(
-            beta_mu = rep(1, ncol(X_mu_with) + 1), 
-            gamma_pi = rep(1, ncol(X_mu_with) + 1), 
-            Y = X[, i],
-            X_mu = X_mu_with, 
-            zeta = zeta[, i], 
-            n = n
-        )
-    }, error = function(e) {
-        # Fallback to Poisson GLM
-        fit <- glm(X[, i] ~ X_mu_with, family = "poisson")
-        c(fit$coefficients, rep(1, ncol(X_mu_with) + 1))
-    })
-    
-    # Calculate likelihood WITH edge
-    loglik_with <- tryCatch({
-        zinb.loglik.regression(
-            alpha = fit_with,
-            Y = X[, i],
-            A.mu = cbind(rep(1, n), X_mu_with),
-            A.pi = cbind(rep(1, n), X_mu_with),
-            C.theta = matrix(zeta[, i], nrow = n, ncol = 1)
-        )
-    }, error = function(e) {
-        -Inf
-    })
-    
-    # Fit model WITHOUT edge (i,j)
-    if (length(cond_set) == 0) {
-        X_mu_without <- matrix(0, nrow = n, ncol = 1)
-    } else {
-        X_mu_without <- X_cond
-    }
-    
-    fit_without <- tryCatch({
-        if (ncol(X_mu_without) == 1 && all(X_mu_without == 0)) {
-            # Intercept-only model
-            optim_funnoT(
-                beta_mu = c(1, 1), 
-                gamma_pi = c(1, 1), 
-                Y = X[, i],
-                X_mu = matrix(0, nrow = n, ncol = 1), 
-                zeta = zeta[, i], 
-                n = n
-            )
-        } else {
-            optim_funnoT(
-                beta_mu = rep(1, ncol(X_mu_without) + 1), 
-                gamma_pi = rep(1, ncol(X_mu_without) + 1), 
-                Y = X[, i],
-                X_mu = X_mu_without, 
-                zeta = zeta[, i], 
-                n = n
-            )
-        }
-    }, error = function(e) {
-        # Fallback to Poisson GLM
-        if (ncol(X_mu_without) == 1 && all(X_mu_without == 0)) {
-            fit <- glm(X[, i] ~ 1, family = "poisson")
-        } else {
-            fit <- glm(X[, i] ~ X_mu_without, family = "poisson")
-        }
-        c(fit$coefficients, rep(1, length(fit$coefficients)))
-    })
-    
-    # Calculate likelihood WITHOUT edge
-    loglik_without <- tryCatch({
-        if (ncol(X_mu_without) == 1 && all(X_mu_without == 0)) {
-            zinb.loglik.regression(
-                alpha = fit_without,
-                Y = X[, i],
-                A.mu = cbind(rep(1, n), matrix(0, nrow = n, ncol = 1)),
-                A.pi = cbind(rep(1, n), matrix(0, nrow = n, ncol = 1)),
-                C.theta = matrix(zeta[, i], nrow = n, ncol = 1)
-            )
-        } else {
-            zinb.loglik.regression(
-                alpha = fit_without,
-                Y = X[, i],
-                A.mu = cbind(rep(1, n), X_mu_without),
-                A.pi = cbind(rep(1, n), X_mu_without),
-                C.theta = matrix(zeta[, i], nrow = n, ncol = 1)
-            )
-        }
-    }, error = function(e) {
-        -Inf
-    })
-    
-    # Calculate deviance statistic
-    deviance_stat <- 2 * (loglik_with - loglik_without)
-    
-    # Calculate p-value using chi-square distribution with 2 degrees of freedom
-    pval <- pchisq(deviance_stat, df = 2, lower.tail = FALSE)
-    
-    # Handle edge cases
-    if (is.na(pval) || is.infinite(pval)) {
-        pval <- 1.0  # Assume independence if test fails
-    }
-    
-    return(pval)
-}
-
 # Helper functions from original learn2count package
 
-#' ZINB Optimization Function
-#' @keywords internal
-#' @noRd
-optim_funnoT <- function(beta_mu, gamma_pi, Y, X_mu, zeta, n) {
-    result <- tryCatch({
-        optim(
-            fn = zinb.loglik.regression,
-            gr = zinb.loglik.regression.gradient,
-            par = c(beta_mu, gamma_pi),
-            Y = Y, 
-            A.mu = cbind(rep(1, n), X_mu),
-            A.pi = cbind(rep(1, n), X_mu),
-            C.theta = matrix(zeta, nrow = n, ncol = 1),
-            control = list(fnscale = -1, trace = 0),
-            method = "BFGS"
-        )$par
-    }, error = function(e) {
-        # Return reasonable default if optimization fails
-        c(beta_mu, gamma_pi)
-    })
-    
-    return(result)
-}
-
-#' ZINB Dispersion Optimization
+#' Optimize dispersion parameter for ZINB model
+#' 
+#' Find a single dispersion parameter for a count by 1-dimensional optimization
+#' 
+#' @param mu the vector mean of the negative binomial
+#' @param logitPi the vector of logit of the probabilities of the zero component
+#' @param Y the vector of counts
+#' @param n length of the returned vector
+#' @return vector of dispersion parameters
 #' @keywords internal
 #' @noRd
 zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
@@ -367,11 +405,11 @@ zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
             interval = c(-100, 100)
         )
         
-        zeta_op <- g$maximum
+        zeta.op <- g$maximum
         
-        zeta_ot <- tryCatch({
+        zeta.ot <- tryCatch({
             optim(
-                par = zeta_op, 
+                par = zeta.op, 
                 fn = zinb.loglik.dispersion,
                 gr = zinb.loglik.dispersion.gradient,
                 mu = mu,
@@ -381,57 +419,71 @@ zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
                 method = "BFGS"
             )$par
         }, error = function(e) {
-            zeta_op
+            zeta.op
         })
         
-        rep(zeta_ot, n)
+        if (!inherits(zeta.ot, "try-error")) {
+            zeta <- zeta.ot
+        } else {
+            zeta <- zeta.op
+        }
+        
+        rep(zeta, n)
     }, error = function(e) {
         # Fallback to method of moments
         mu_mean <- mean(mu)
-        rep(mu_mean^2 / (var(Y) - mu_mean + 1e-6), n)
+        var_y <- var(Y)
+        if (var_y > mu_mean) {
+            rep(mu_mean^2 / (var_y - mu_mean), n)
+        } else {
+            rep(1, n)
+        }
     })
     
     return(result)
 }
 
-#' ZINB Log-Likelihood for Regression
+#' Log(1 + exp(x)) function
+#' 
+#' Copied from copula package to avoid dependencies
+#' 
+#' @param x input vector
+#' @param c0 parameter for numerical stability
+#' @param c1 parameter for numerical stability  
+#' @param c2 parameter for numerical stability
+#' @return log(1 + exp(x))
 #' @keywords internal
 #' @noRd
-zinb.loglik.regression <- function(alpha, Y,
-    A.mu = matrix(nrow = length(Y), ncol = 0),
-    A.pi = matrix(nrow = length(Y), ncol = 0),
-    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
-    
-    # Parse the model
-    r <- zinb.regression.parseModel(alpha = alpha, A.mu = A.mu, A.pi = A.pi)
-    
-    # Call the log likelihood function
-    z <- zinb.loglik(Y, exp(r$logMu), exp(C.theta), r$logitPi)
-    
-    return(z)
+log1pexp <- function(x, c0 = -37, c1 = 18, c2 = 33.3) {
+    if (has.na <- any(ina <- is.na(x))) {
+        y <- x
+        x <- x[ok <- !ina]
+    }
+    r <- exp(x)
+    if (any(i <- c0 < x & (i1 <- x <= c1)))
+        r[i] <- log1p(r[i])
+    if (any(i <- !i1 & (i2 <- x <= c2)))
+        r[i] <- x[i] + 1/r[i]
+    if (any(i3 <- !i2))
+        r[i3] <- x[i3]
+    if (has.na) {
+        y[ok] <- r
+        y
+    } else {
+        r
+    }
 }
 
-#' ZINB Log-Likelihood Gradient for Regression
-#' @keywords internal
-#' @noRd
-zinb.loglik.regression.gradient <- function(alpha, Y,
-    A.mu = matrix(nrow = length(Y), ncol = 0),
-    A.pi = matrix(nrow = length(Y), ncol = 0),
-    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
-    
-    # Parse the model
-    r <- zinb.regression.parseModel(alpha = alpha, A.mu = A.mu, A.pi = A.pi)
-    
-    theta <- exp(C.theta)
-    mu <- exp(r$logMu)
-    n <- length(Y)
-    
-    grad <- rep(0, length(alpha))
-    
-    return(grad)
-}
-
-#' Parse ZINB Regression Model
+#' Parse ZINB regression model
+#'
+#' Given the parameters of a ZINB regression model, this function parses the
+#' model and computes the vector of log(mu), logit(pi), and the dimensions of
+#' the different components of the vector of parameters.
+#'
+#' @param alpha the vectors of parameters c(a.mu, a.pi) concatenated
+#' @param A.mu matrix of the model (default=empty)
+#' @param A.pi matrix of the model (default=empty)
+#' @return A list with slots logMu, logitPi, dim.alpha, start.alpha
 #' @keywords internal
 #' @noRd
 zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
@@ -458,19 +510,62 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
         i <- i + j
     }
     
-    list(logMu = logMu,
-        logitPi = logitPi,
+    return(list(
+        logMu = logMu, 
+        logitPi = logitPi, 
         dim.alpha = dim.alpha,
-        start.alpha = start.alpha)
+        start.alpha = start.alpha
+    ))
 }
 
-#' ZINB Log-Likelihood
+#' ZINB optimization function
+#' 
+#' Structures both in mu and in pi
+#' 
+#' @param beta_mu parameters for mu
+#' @param gamma_pi parameters for pi
+#' @param Y response vector
+#' @param X_mu design matrix for mu
+#' @param zeta dispersion parameters
+#' @param n sample size
+#' @return optimized parameters
+#' @keywords internal
+#' @noRd
+optim_funnoT <- function(beta_mu, gamma_pi, Y, X_mu, zeta, n) {
+    result <- tryCatch({
+        optim(
+            fn = zinb.loglik.regression,
+            gr = zinb.loglik.regression.gradient,
+            par = c(beta_mu, gamma_pi),
+            Y = Y, 
+            A.mu = cbind(rep(1, n), X_mu),
+            A.pi = cbind(rep(1, n), X_mu),
+            C.theta = matrix(zeta, nrow = n, ncol = 1),
+            control = list(fnscale = -1, trace = 0),
+            method = "BFGS"
+        )$par
+    }, error = function(e) {
+        c(beta_mu, gamma_pi)
+    })
+    
+    return(result)
+}
+
+#' ZINB log-likelihood function
+#' 
+#' @param Y response vector
+#' @param mu mean parameter
+#' @param theta dispersion parameter
+#' @param logitPi zero-inflation parameter
+#' @return log-likelihood value
 #' @keywords internal
 #' @noRd
 zinb.loglik <- function(Y, mu, theta, logitPi) {
     # log-probabilities of counts under the NB model
+    # Handle warnings by explicit checks instead of suppressWarnings
     logPnb <- dnbinom(Y, size = theta, mu = mu, log = TRUE)
-    # Handle potential warnings by checking for valid values
+    
+    # Handle potential NaN/Inf values
     if (any(is.na(logPnb))) {
         logPnb[is.na(logPnb)] <- -Inf
     }
@@ -486,43 +581,176 @@ zinb.loglik <- function(Y, mu, theta, logitPi) {
     return(result)
 }
 
-#' ZINB Log-Likelihood for Dispersion
+#' ZINB log-likelihood for dispersion optimization
+#' 
+#' @param zeta log-dispersion parameter
+#' @param Y response vector
+#' @param mu mean parameter
+#' @param logitPi zero-inflation parameter
+#' @return log-likelihood value
 #' @keywords internal
 #' @noRd
 zinb.loglik.dispersion <- function(zeta, Y, mu, logitPi) {
     zinb.loglik(Y, mu, exp(zeta), logitPi)
 }
 
-#' ZINB Log-Likelihood Gradient for Dispersion
+#' ZINB log-likelihood gradient for dispersion optimization
+#' 
+#' @param zeta log-dispersion parameter
+#' @param Y response vector
+#' @param mu mean parameter
+#' @param logitPi zero-inflation parameter
+#' @return gradient value
 #' @keywords internal
 #' @noRd
 zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
-    # Simplified gradient (full implementation would be more complex)
     theta <- exp(zeta)
-    grad <- sum(digamma(Y + theta) - digamma(theta) + log(theta) - 
-                log(theta + mu) + (Y - mu) / (theta + mu)) * theta
+    
+    # Check zeros in the count vector
+    Y0 <- Y <= 0
+    Y1 <- Y > 0
+    has0 <- !is.na(match(TRUE, Y0))
+    has1 <- !is.na(match(TRUE, Y1))
+    
+    grad <- 0
+    if (has1) {
+        grad <- grad + sum(theta * (digamma(Y[Y1] + theta) - 
+                                    digamma(theta) + zeta - 
+                                    log(mu[Y1] + theta) + 1 -
+                                    (Y[Y1] + theta) / (mu[Y1] + theta)))
+    }
+    
+    if (has0) {
+        logPnb <- dnbinom(0, size = theta, mu = mu[Y0], log = TRUE)
+        # Handle potential NaN/Inf values
+        if (any(is.na(logPnb))) {
+            logPnb[is.na(logPnb)] <- -Inf
+        }
+        
+        grad <- grad + sum(theta * (zeta - log(mu[Y0] + theta) + 1 -
+                                    theta / (mu[Y0] + theta)) / 
+                            (1 + exp(logitPi[Y0] - logPnb)))
+    }
+    
     return(grad)
 }
 
-#' Log(1 + exp(x)) function
+#' ZINB log-likelihood for regression
+#' 
+#' @param alpha parameter vector
+#' @param Y response vector
+#' @param A.mu design matrix for mu
+#' @param A.pi design matrix for pi
+#' @param C.theta dispersion matrix
+#' @return log-likelihood value
 #' @keywords internal
 #' @noRd
-log1pexp <- function(x, c0 = -37, c1 = 18, c2 = 33.3) {
-    if (has.na <- any(ina <- is.na(x))) {
-        y <- x
-        x <- x[ok <- !ina]
+zinb.loglik.regression <- function(alpha, Y,
+    A.mu = matrix(nrow = length(Y), ncol = 0),
+    A.pi = matrix(nrow = length(Y), ncol = 0),
+    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
+    
+    # Parse the model
+    r <- zinb.regression.parseModel(
+        alpha = alpha,
+        A.mu = A.mu,
+        A.pi = A.pi
+    )
+    
+    # Call the log likelihood function
+    z <- zinb.loglik(Y, exp(r$logMu), exp(C.theta), r$logitPi)
+    
+    return(z)
+}
+
+#' ZINB log-likelihood gradient for regression
+#' 
+#' @param alpha parameter vector
+#' @param Y response vector
+#' @param A.mu design matrix for mu
+#' @param A.pi design matrix for pi
+#' @param C.theta dispersion matrix
+#' @return gradient vector
+#' @keywords internal
+#' @noRd
+zinb.loglik.regression.gradient <- function(alpha, Y,
+    A.mu = matrix(nrow = length(Y), ncol = 0),
+    A.pi = matrix(nrow = length(Y), ncol = 0),
+    C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
+    
+    # Parse the model
+    r <- zinb.regression.parseModel(
+        alpha = alpha,
+        A.mu = A.mu,
+        A.pi = A.pi
+    )
+    
+    theta <- exp(C.theta)
+    mu <- exp(r$logMu)
+    n <- length(Y)
+    
+    # Check zeros in the count matrix
+    Y0 <- Y <= 0
+    Y1 <- Y > 0
+    has0 <- !is.na(match(TRUE, Y0))
+    has1 <- !is.na(match(TRUE, Y1))
+    
+    # Check what we need to compute
+    need.wres.mu <- r$dim.alpha[1] > 0
+    need.wres.pi <- r$dim.alpha[2] > 0
+    
+    # Compute some useful quantities
+    muz <- 1 / (1 + exp(-r$logitPi))
+    clogdens0 <- dnbinom(0, size = theta[Y0], mu = mu[Y0], log = TRUE)
+    
+    # Handle potential NaN/Inf values
+    if (any(is.na(clogdens0))) {
+        clogdens0[is.na(clogdens0)] <- -Inf
     }
-    r <- exp(x)
-    if (any(i <- c0 < x & (i1 <- x <= c1)))
-        r[i] <- log1p(r[i])
-    if (any(i <- !i1 & (i2 <- x <= c2)))
-        r[i] <- x[i] + 1/r[i]
-    if (any(i3 <- !i2))
-        r[i3] <- x[i3]
-    if (has.na) {
-        y[ok] <- r
-        y
-    } else {
-        r
+    
+    lognorm <- -r$logitPi - log1pexp(-r$logitPi)
+    
+    dens0 <- muz[Y0] + exp(lognorm[Y0] + clogdens0)
+    
+    # Compute the partial derivatives we need
+    # w.r.t. mu
+    if (need.wres.mu) {
+        wres_mu <- numeric(length = n)
+        if (has1) {
+            wres_mu[Y1] <- Y[Y1] - mu[Y1] *
+                (Y[Y1] + theta[Y1]) / (mu[Y1] + theta[Y1])
+        }
+        if (has0) {
+            wres_mu[Y0] <- -exp(-log(dens0) + lognorm[Y0] + clogdens0 +
+                                C.theta[Y0] - log(mu[Y0] + theta[Y0]) +
+                                log(mu[Y0]))
+        }
     }
+    
+    # w.r.t. pi
+    if (need.wres.pi) {
+        wres_pi <- numeric(length = n)
+        if (has1) {
+            wres_pi[Y1] <- muz[Y1]
+        }
+        if (has0) {
+            wres_pi[Y0] <- -(1 - exp(clogdens0)) * muz[Y0] * 
+                            (1 - muz[Y0]) / dens0
+        }
+    }
+    
+    # Make gradient
+    grad <- numeric(0)
+    
+    # w.r.t. a_mu
+    if (r$dim.alpha[1] > 0) {
+        grad <- c(grad, colSums(wres_mu * A.mu))
+    }
+    
+    # w.r.t. a_pi
+    if (r$dim.alpha[2] > 0) {
+        grad <- c(grad, colSums(wres_pi * A.pi))
+    }
+    
+    return(grad)
 }

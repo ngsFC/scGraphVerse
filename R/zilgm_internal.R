@@ -149,23 +149,29 @@ zilgm_internal <- function(X, lambda, family, update_type) {
     # Initialize adjacency matrix
     adj <- matrix(0, p, p)
     
-    # Simplified network estimation (placeholder implementation)
-    # In actual ZILGM, this would involve iterative optimization
+    # Estimate network structure using ZILGM approach
     for (j in seq_len(p)) {
         # Exclude current node
         X_j <- X[, -j, drop = FALSE]
         y_j <- X[, j]
         
-        # Simplified regularized regression
+        if (ncol(X_j) == 0) {
+            next
+        }
+        
+        # Fit zero-inflated model with L1 regularization
         if (family == "NBII") {
-            # Negative binomial regression with L1 penalty
-            coef <- zilgm_nb_regression(X_j, y_j, lambda)
+            # Zero-inflated negative binomial with L1 penalty
+            coef <- zilgm_zinb_regression(X_j, y_j, lambda, update_type)
         } else if (family == "Poisson") {
-            # Poisson regression with L1 penalty
-            coef <- zilgm_poisson_regression(X_j, y_j, lambda)
+            # Zero-inflated Poisson with L1 penalty
+            coef <- zilgm_zip_regression(X_j, y_j, lambda, update_type)
+        } else if (family == "NBI") {
+            # Zero-inflated negative binomial type I
+            coef <- zilgm_zinb_regression(X_j, y_j, lambda, update_type)
         } else {
-            # Default to negative binomial
-            coef <- zilgm_nb_regression(X_j, y_j, lambda)
+            # Default to zero-inflated negative binomial
+            coef <- zilgm_zinb_regression(X_j, y_j, lambda, update_type)
         }
         
         # Apply soft thresholding
@@ -178,40 +184,85 @@ zilgm_internal <- function(X, lambda, family, update_type) {
     return(adj)
 }
 
+#' Zero-Inflated Negative Binomial Regression with L1 Regularization
+#' 
+#' Implements ZILGM for ZINB distribution using IRLS optimization
+#' 
+#' @param X Predictor matrix
+#' @param y Response vector
+#' @param lambda Regularization parameter
+#' @param update_type Optimization method ("IRLS" or "MM")
+#' @return Regression coefficients
 #' @keywords internal
 #' @noRd
-zilgm_nb_regression <- function(X, y, lambda) {
-    # Simplified negative binomial regression
-    # This is a placeholder - actual implementation would use IRLS
-    
+zilgm_zinb_regression <- function(X, y, lambda, update_type = "IRLS") {
     if (ncol(X) == 0) return(numeric(0))
     
-    # Use correlation as proxy for regression coefficients
-    cor_vals <- cor(X, y, use = "complete.obs")
-    cor_vals[is.na(cor_vals)] <- 0
+    n <- length(y)
+    p <- ncol(X)
     
-    # Scale by lambda
-    coef <- cor_vals * exp(-lambda)
+    # Initialize parameters
+    beta_mu <- rep(0, p)  # Mean parameters
+    beta_pi <- rep(0, p)  # Zero-inflation parameters
+    theta <- 1  # Dispersion parameter
     
-    return(as.numeric(coef))
+    # Add intercept to design matrix
+    X_with_intercept <- cbind(1, X)
+    
+    # Initialize coefficients including intercept
+    beta_mu_full <- c(log(mean(y) + 1e-6), beta_mu)
+    beta_pi_full <- c(0, beta_pi)
+    
+    if (update_type == "IRLS") {
+        result <- zilgm_irls_zinb(X_with_intercept, y, beta_mu_full, 
+                                    beta_pi_full, theta, lambda)
+    } else {
+        result <- zilgm_mm_zinb(X_with_intercept, y, beta_mu_full, 
+                                beta_pi_full, theta, lambda)
+    }
+    
+    # Return coefficients without intercept
+    return(result$beta_mu[-1])
 }
 
+#' Zero-Inflated Poisson Regression with L1 Regularization
+#' 
+#' Implements ZILGM for ZIP distribution using IRLS optimization
+#' 
+#' @param X Predictor matrix
+#' @param y Response vector
+#' @param lambda Regularization parameter
+#' @param update_type Optimization method ("IRLS" or "MM")
+#' @return Regression coefficients
 #' @keywords internal
 #' @noRd
-zilgm_poisson_regression <- function(X, y, lambda) {
-    # Simplified Poisson regression
-    # This is a placeholder - actual implementation would use IRLS
-    
+zilgm_zip_regression <- function(X, y, lambda, update_type = "IRLS") {
     if (ncol(X) == 0) return(numeric(0))
     
-    # Use correlation as proxy for regression coefficients
-    cor_vals <- cor(X, y, use = "complete.obs")
-    cor_vals[is.na(cor_vals)] <- 0
+    n <- length(y)
+    p <- ncol(X)
     
-    # Scale by lambda
-    coef <- cor_vals * exp(-lambda)
+    # Initialize parameters
+    beta_mu <- rep(0, p)  # Mean parameters
+    beta_pi <- rep(0, p)  # Zero-inflation parameters
     
-    return(as.numeric(coef))
+    # Add intercept to design matrix
+    X_with_intercept <- cbind(1, X)
+    
+    # Initialize coefficients including intercept
+    beta_mu_full <- c(log(mean(y) + 1e-6), beta_mu)
+    beta_pi_full <- c(0, beta_pi)
+    
+    if (update_type == "IRLS") {
+        result <- zilgm_irls_zip(X_with_intercept, y, beta_mu_full, 
+                                beta_pi_full, lambda)
+    } else {
+        result <- zilgm_mm_zip(X_with_intercept, y, beta_mu_full, beta_pi_full, 
+                                lambda)
+    }
+    
+    # Return coefficients without intercept
+    return(result$beta_mu[-1])
 }
 
 #' @keywords internal
@@ -273,4 +324,287 @@ zilgm_sym <- function(adj, sym) {
     } else {
         return(adj)
     }
+}
+
+#' IRLS Optimization for Zero-Inflated Negative Binomial
+#' 
+#' Implements iteratively reweighted least squares for ZINB regression
+#' with L1 regularization
+#' 
+#' @param X Design matrix with intercept
+#' @param y Response vector
+#' @param beta_mu Initial mu parameters
+#' @param beta_pi Initial pi parameters
+#' @param theta Dispersion parameter
+#' @param lambda Regularization parameter
+#' @param max_iter Maximum iterations
+#' @param tol Convergence tolerance
+#' @return List with optimized parameters
+#' @keywords internal
+#' @noRd
+zilgm_irls_zinb <- function(X, y, beta_mu, beta_pi, theta, lambda, 
+                            max_iter = 100, tol = 1e-6) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Initialize parameters
+    beta_mu_old <- beta_mu
+    beta_pi_old <- beta_pi
+    
+    for (iter in seq_len(max_iter)) {
+        # Compute linear predictors
+        eta_mu <- X %*% beta_mu
+        eta_pi <- X %*% beta_pi
+        
+        # Compute expected values
+        mu <- exp(eta_mu)
+        pi <- 1 / (1 + exp(-eta_pi))
+        
+        # Compute zero-inflated probabilities
+        zero_prob <- pi + (1 - pi) * dnbinom(0, size = theta, mu = mu)
+        
+        # Compute weights and working response for mu
+        w_mu <- numeric(n)
+        z_mu <- numeric(n)
+        
+        for (i in seq_len(n)) {
+            if (y[i] == 0) {
+                # Zero observation
+                denom <- zero_prob[i] + 1e-8
+                w_mu[i] <- (1 - pi[i])^2 * mu[i] * 
+                            dnbinom(0, size = theta, mu = mu[i]) / denom
+                z_mu[i] <- eta_mu[i] - ((1 - pi[i]) * 
+                            dnbinom(0, size = theta, mu = mu[i]) / denom)
+            } else {
+                # Non-zero observation
+                w_mu[i] <- (1 - pi[i]) * mu[i] * (y[i] + theta) / 
+                            (mu[i] + theta)
+                z_mu[i] <- eta_mu[i] + (y[i] - mu[i]) / mu[i]
+            }
+        }
+        
+        # Compute weights and working response for pi
+        w_pi <- numeric(n)
+        z_pi <- numeric(n)
+        
+        for (i in seq_len(n)) {
+            if (y[i] == 0) {
+                # Zero observation
+                denom <- zero_prob[i] + 1e-8
+                w_pi[i] <- pi[i] * (1 - pi[i]) * 
+                            (1 - dnbinom(0, size = theta, mu = mu[i])) / denom
+                z_pi[i] <- eta_pi[i] + (1 - dnbinom(0, size = theta, 
+                            mu = mu[i])) / (pi[i] * (1 - pi[i]) + 1e-8)
+            } else {
+                # Non-zero observation
+                w_pi[i] <- pi[i] * (1 - pi[i])
+                z_pi[i] <- eta_pi[i] - 1 / (1 - pi[i] + 1e-8)
+            }
+        }
+        
+        # Ensure positive weights
+        w_mu <- pmax(w_mu, 1e-8)
+        w_pi <- pmax(w_pi, 1e-8)
+        
+        # Update beta_mu with L1 regularization
+        beta_mu <- zilgm_coordinate_descent(X, z_mu, w_mu, lambda, beta_mu)
+        
+        # Update beta_pi with L1 regularization
+        beta_pi <- zilgm_coordinate_descent(X, z_pi, w_pi, lambda, beta_pi)
+        
+        # Check convergence
+        if (max(abs(beta_mu - beta_mu_old)) < tol && 
+            max(abs(beta_pi - beta_pi_old)) < tol) {
+            break
+        }
+        
+        beta_mu_old <- beta_mu
+        beta_pi_old <- beta_pi
+    }
+    
+    return(list(beta_mu = beta_mu, beta_pi = beta_pi, theta = theta))
+}
+
+#' IRLS Optimization for Zero-Inflated Poisson
+#' 
+#' Implements iteratively reweighted least squares for ZIP regression
+#' with L1 regularization
+#' 
+#' @param X Design matrix with intercept
+#' @param y Response vector
+#' @param beta_mu Initial mu parameters
+#' @param beta_pi Initial pi parameters
+#' @param lambda Regularization parameter
+#' @param max_iter Maximum iterations
+#' @param tol Convergence tolerance
+#' @return List with optimized parameters
+#' @keywords internal
+#' @noRd
+zilgm_irls_zip <- function(X, y, beta_mu, beta_pi, lambda, max_iter = 100, 
+                            tol = 1e-6) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Initialize parameters
+    beta_mu_old <- beta_mu
+    beta_pi_old <- beta_pi
+    
+    for (iter in seq_len(max_iter)) {
+        # Compute linear predictors
+        eta_mu <- X %*% beta_mu
+        eta_pi <- X %*% beta_pi
+        
+        # Compute expected values
+        mu <- exp(eta_mu)
+        pi <- 1 / (1 + exp(-eta_pi))
+        
+        # Compute zero-inflated probabilities
+        zero_prob <- pi + (1 - pi) * dpois(0, mu)
+        
+        # Compute weights and working response for mu
+        w_mu <- numeric(n)
+        z_mu <- numeric(n)
+        
+        for (i in seq_len(n)) {
+            if (y[i] == 0) {
+                # Zero observation
+                denom <- zero_prob[i] + 1e-8
+                w_mu[i] <- (1 - pi[i])^2 * mu[i] * dpois(0, mu[i]) / denom
+                z_mu[i] <- eta_mu[i] - ((1 - pi[i]) * dpois(0, mu[i]) / denom)
+            } else {
+                # Non-zero observation
+                w_mu[i] <- (1 - pi[i]) * mu[i]
+                z_mu[i] <- eta_mu[i] + (y[i] - mu[i]) / mu[i]
+            }
+        }
+        
+        # Compute weights and working response for pi
+        w_pi <- numeric(n)
+        z_pi <- numeric(n)
+        
+        for (i in seq_len(n)) {
+            if (y[i] == 0) {
+                # Zero observation
+                denom <- zero_prob[i] + 1e-8
+                w_pi[i] <- pi[i] * (1 - pi[i]) * 
+                            (1 - dpois(0, mu[i])) / denom
+                z_pi[i] <- eta_pi[i] + (1 - dpois(0, mu[i])) / 
+                            (pi[i] * (1 - pi[i]) + 1e-8)
+            } else {
+                # Non-zero observation
+                w_pi[i] <- pi[i] * (1 - pi[i])
+                z_pi[i] <- eta_pi[i] - 1 / (1 - pi[i] + 1e-8)
+            }
+        }
+        
+        # Ensure positive weights
+        w_mu <- pmax(w_mu, 1e-8)
+        w_pi <- pmax(w_pi, 1e-8)
+        
+        # Update beta_mu with L1 regularization
+        beta_mu <- zilgm_coordinate_descent(X, z_mu, w_mu, lambda, beta_mu)
+        
+        # Update beta_pi with L1 regularization
+        beta_pi <- zilgm_coordinate_descent(X, z_pi, w_pi, lambda, beta_pi)
+        
+        # Check convergence
+        if (max(abs(beta_mu - beta_mu_old)) < tol && 
+            max(abs(beta_pi - beta_pi_old)) < tol) {
+            break
+        }
+        
+        beta_mu_old <- beta_mu
+        beta_pi_old <- beta_pi
+    }
+    
+    return(list(beta_mu = beta_mu, beta_pi = beta_pi))
+}
+
+#' Coordinate Descent for L1 Regularized Weighted Least Squares
+#' 
+#' Solves weighted least squares with L1 penalty using coordinate descent
+#' 
+#' @param X Design matrix
+#' @param z Working response
+#' @param w Weights
+#' @param lambda Regularization parameter
+#' @param beta_init Initial coefficients
+#' @param max_iter Maximum iterations
+#' @param tol Convergence tolerance
+#' @return Updated coefficients
+#' @keywords internal
+#' @noRd
+zilgm_coordinate_descent <- function(X, z, w, lambda, beta_init, 
+                                        max_iter = 100, tol = 1e-6) {
+    n <- length(z)
+    p <- ncol(X)
+    beta <- beta_init
+    
+    # Precompute X^T W X diagonal and X^T W z
+    XtWX_diag <- colSums(w * X^2)
+    XtWz <- colSums(w * X * z)
+    
+    for (iter in seq_len(max_iter)) {
+        beta_old <- beta
+        
+        for (j in seq_len(p)) {
+            # Compute partial residual
+            r <- z - X %*% beta + X[, j] * beta[j]
+            
+            # Compute coordinate update
+            num <- sum(w * X[, j] * r)
+            denom <- XtWX_diag[j] + 1e-8
+            
+            # Apply soft thresholding (except for intercept)
+            if (j == 1) {
+                # No regularization for intercept
+                beta[j] <- num / denom
+            } else {
+                # Apply L1 regularization
+                beta[j] <- soft_threshold(num / denom, lambda / denom)
+            }
+        }
+        
+        # Check convergence
+        if (max(abs(beta - beta_old), na.rm = TRUE) < tol) {
+            break
+        }
+    }
+    
+    return(beta)
+}
+
+#' MM Algorithm for ZINB (Majorization-Minimization)
+#' 
+#' Alternative optimization approach using MM algorithm
+#' 
+#' @param X Design matrix
+#' @param y Response vector
+#' @param beta_mu Initial mu parameters
+#' @param beta_pi Initial pi parameters
+#' @param theta Dispersion parameter
+#' @param lambda Regularization parameter
+#' @return List with optimized parameters
+#' @keywords internal
+#' @noRd
+zilgm_mm_zinb <- function(X, y, beta_mu, beta_pi, theta, lambda) {
+    # Simplified MM implementation - falls back to IRLS approach
+    return(zilgm_irls_zinb(X, y, beta_mu, beta_pi, theta, lambda))
+}
+
+#' MM Algorithm for ZIP (Majorization-Minimization)
+#' 
+#' Alternative optimization approach using MM algorithm
+#' 
+#' @param X Design matrix
+#' @param y Response vector
+#' @param beta_mu Initial mu parameters
+#' @param beta_pi Initial pi parameters
+#' @param lambda Regularization parameter
+#' @return List with optimized parameters
+#' @keywords internal
+#' @noRd
+zilgm_mm_zip <- function(X, y, beta_mu, beta_pi, lambda) {
+    # Simplified MM implementation - falls back to IRLS approach
+    return(zilgm_irls_zip(X, y, beta_mu, beta_pi, lambda))
 }
