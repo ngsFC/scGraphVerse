@@ -101,7 +101,7 @@ citation("scGraphVerse")  # 🎓 Academic credit
 | **JRF** 🌲 | Petralia et al. (2015) | *Journal of Proteome Research* 31(12):i197-i205 |
 | **PCzinb** 🔗 | Nguyen et al. (2023) | *Ann. Appl. Stat.* 17(3):2555-73 |
 | **INet-Tool** 🔧 | Policastro et al. (2025) | *Comput Stat* 40, 1517–1539 |
-| **Robin** 🎯 | Policastro (2021) | *The R Journal* 13(1):292-309 |
+| **Robin** 🎯 | Policastro et al. (2021) | *The R Journal* 13(1):292-309 |
 
 </div>
 
