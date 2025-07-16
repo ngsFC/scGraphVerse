@@ -64,10 +64,11 @@ stringdb_adjacency <- function(
     genes,
     species = 9606,
     required_score = 400,
-    keep_all_genes = TRUE,
-    verbose = TRUE) {
+    keep_all_genes = TRUE, 
+    verbose = TRUE
+) {
     if (!requireNamespace("STRINGdb", quietly = TRUE)) {
-        stop("Package 'STRINGdb' is required. Install via Bioconductor.")
+        stop("Package 'STRINGdb' is required. Please install it via Bioconductor.")
     }
     if (!requireNamespace("httr", quietly = TRUE)) {
         stop("Package 'httr' is required. Please install it.")
@@ -75,271 +76,130 @@ stringdb_adjacency <- function(
     if (!requireNamespace("jsonlite", quietly = TRUE)) {
         stop("Package 'jsonlite' is required. Please install it.")
     }
+    
     if (length(genes) == 0) {
         stop("Please provide at least one gene in 'genes'.")
     }
+    
+    if (verbose) message("Initializing STRINGdb...")
+    
+    string_db <- STRINGdb$new(
+        version = "11.5",
+        species = species,
+        score_threshold = required_score,
+        input_directory = ""
+    )
+    
+    # Map gene symbols to STRING IDs
+    if (verbose) message("Mapping genes to STRING IDs...")
+    mapped_genes <- string_db$map(
+        data.frame(genes, stringsAsFactors = FALSE), "genes", 
+        removeUnmappedRows = FALSE
+    )
+    
+    # Extract mapped and unmapped genes
+    mapped_genes <- mapped_genes[!is.na(mapped_genes$STRING_id), ]
+    unmapped_genes <- setdiff(genes, mapped_genes$genes)
+    
     if (verbose) {
-        message("Initializing STRINGdb...")
-    }
-
-    # Alternative approach: Try to use a direct API method without STRINGdb initialization
-    if (verbose) {
-        message("Attempting direct STRING API access to bypass SSL initialization issues...")
-    }
-    
-    # Try direct API call first
-    direct_result <- tryCatch({
-        .direct_string_api_call(genes, species, required_score, verbose, keep_all_genes)
-    }, error = function(e) {
-        if (verbose) message("Direct API approach failed, trying STRINGdb initialization...")
-        NULL
-    })
-    
-    if (!is.null(direct_result)) {
-        return(direct_result)
-    }
-    
-    # Fallback to STRINGdb initialization with SSL workarounds
-    old_method <- getOption("download.file.method")
-    old_extra <- getOption("download.file.extra")
-    old_curl_bundle <- Sys.getenv("CURL_CA_BUNDLE")
-    old_curl_opts <- getOption("RCurlOptions")
-    
-    on.exit({
-        options(download.file.method = old_method)
-        options(download.file.extra = old_extra)
-        Sys.setenv(CURL_CA_BUNDLE = old_curl_bundle)
-        options(RCurlOptions = old_curl_opts)
-    })
-    
-    # Configure SSL bypass methods
-    options(download.file.method = "libcurl")
-    options(download.file.extra = c("-k", "--insecure"))
-    Sys.setenv(CURL_CA_BUNDLE = "")
-    Sys.setenv(CURL_INSECURE = "1")
-    options(RCurlOptions = list(ssl.verifypeer = FALSE, ssl.verifyhost = FALSE))
-    
-    string_db <- tryCatch({
-        STRINGdb$new(
-            version         = "11.5",
-            species         = species,
-            score_threshold = required_score,
-            input_directory = ""
-        )
-    }, error = function(e1) {
-        if (verbose) message("LibCurl failed, trying alternative methods...")
-        
-        # Try with internal method override
-        Sys.setenv(DOWNLOAD_FILE_METHOD = "internal")
-        options(download.file.method = "internal")
-        
-        tryCatch({
-            STRINGdb$new(
-                version         = "11.5",
-                species         = species,
-                score_threshold = required_score,
-                input_directory = ""
-            )
-        }, error = function(e2) {
-            if (verbose) {
-                message("STRINGdb initialization failed due to SSL certificate issues.")
-                message("Error: ", e1$message)
-                message("This is a known issue with some network configurations.")
-                message("Workaround: Use pre-downloaded STRING data or alternative networks.")
-            }
-            stop("Unable to initialize STRINGdb. SSL certificate verification failed. ",
-                 "Consider using cached data or alternative protein interaction databases.")
-        })
-    })
-
-    if (verbose) {
-        message("Mapping genes to STRING IDs...")
-    }
-    mapping <- .map_genes_to_string(string_db, genes)
-    mapped_genes <- mapping$mapped
-    unmapped_genes <- mapping$unmapped
-
-    if (verbose) {
-        message(
-            "Mapped ", nrow(mapped_genes),
-            " genes to STRING IDs."
-        )
+        message("Mapped ", nrow(mapped_genes), " genes to STRING IDs.")
         if (length(unmapped_genes) > 0 && keep_all_genes) {
-            message(
-                length(unmapped_genes),
-                " genes not found in STRING; included as zero rows/cols."
-            )
+            message(length(unmapped_genes), 
+                    " genes were not found in STRING but will be included as ",
+                    "zero rows/columns.")
         }
     }
+    
     if (nrow(mapped_genes) == 0) {
         stop("No valid STRING IDs found for the provided genes.")
     }
+    
+    # Prepare API request using STRING IDs
     if (verbose) {
-        message("Retrieving physical interactions from STRING API...")
+        message("Retrieving **physical** interactions from STRING API...")
     }
-    interactions <- .query_string_api(
-        mapped_genes$STRING_id,
-        species,
-        required_score
+    
+    base_url <- "https://string-db.org/api/json/network"
+    identifiers_str <- paste(mapped_genes$STRING_id, collapse = "\n")
+    
+    res <- httr::POST(
+        url = base_url,
+        body = list(
+            identifiers    = identifiers_str,
+            species        = species,
+            required_score = required_score,
+            network_type   = "physical"
+        ),
+        encode = "form"
     )
+    
+    if (res$status_code != 200) {
+        stop("STRING API query failed. Status code: ", res$status_code)
+    }
+    
+    # Parse JSON response
+    interactions <- jsonlite::fromJSON(
+        httr::content(res, "text", encoding = "UTF-8")
+    )
+    
     if (!is.data.frame(interactions) || nrow(interactions) == 0) {
-        if (verbose) {
-            message("No STRING physical interactions found.")
-        }
-        return(.zero_matrix_result(genes))
+        if (verbose) message("No STRING physical interactions found.")
+        return(list(
+            weighted = matrix(0, length(genes), length(genes), 
+                              dimnames = list(genes, genes)),
+            binary = matrix(0, length(genes), length(genes), 
+                            dimnames = list(genes, genes))
+        ))
     }
+    
     if (verbose) {
-        message(
-            "Found ", nrow(interactions),
-            " STRING physical interactions."
-        )
-    }
-
-    matrices <- .build_adjacency_matrices(
-        interactions,
-        mapped_genes,
-        genes,
-        keep_all_genes
-    )
-    if (verbose) {
-        message("Adjacency matrices constructed successfully.")
-    }
-
-    return(matrices)
-}
-
-# Direct STRING API call that bypasses STRINGdb R package initialization
-.direct_string_api_call <- function(genes, species, required_score, verbose, keep_all_genes = TRUE) {
-    if (verbose) {
-        message("Using direct STRING API approach...")
+        message("Found ", nrow(interactions), " STRING physical interactions.")
     }
     
-    # First, try to get STRING IDs using direct API
-    mapping_url <- "https://string-db.org/api/json/get_string_ids"
+    # Ensure we use "score" instead of "combined_score"
+    interactions$interaction_score <- interactions$score  # Rename for clarity
     
-    # Prepare gene list for POST request
-    gene_list <- paste(genes, collapse = "\n")
+    # Map STRING IDs to Gene Names
+    id_to_gene <- setNames(mapped_genes$genes, mapped_genes$STRING_id)
     
-    # Try to get STRING IDs
-    string_ids <- tryCatch({
-        if (verbose) message("Mapping genes to STRING IDs via direct API...")
-        
-        response <- httr::POST(
-            url = mapping_url,
-            body = list(
-                identifiers = gene_list,
-                species = species,
-                limit = 1,
-                echo_query = 1,
-                caller_identity = "scGraphVerse"
-            ),
-            encode = "form",
-            httr::config(ssl_verifypeer = FALSE, ssl_verifyhost = FALSE)
-        )
-        
-        if (httr::status_code(response) != 200) {
-            stop("STRING API request failed with status: ", httr::status_code(response))
-        }
-        
-        result <- httr::content(response, as = "text", encoding = "UTF-8")
-        jsonlite::fromJSON(result)
-    }, error = function(e) {
-        if (verbose) message("Direct STRING ID mapping failed: ", e$message)
-        return(NULL)
-    })
+    # Convert STRING IDs in interaction table to Gene Names
+    interactions$gene_A <- id_to_gene[interactions$stringId_A]
+    interactions$gene_B <- id_to_gene[interactions$stringId_B]
     
-    if (is.null(string_ids) || nrow(string_ids) == 0) {
-        if (verbose) message("No STRING IDs obtained via direct API")
-        return(NULL)
-    }
+    # Remove interactions where gene names couldn't be mapped
+    interactions <- interactions[!is.na(interactions$gene_A) & 
+                                !is.na(interactions$gene_B), ]
     
-    # Get interactions using direct API
-    interactions <- tryCatch({
-        if (verbose) message("Retrieving interactions via direct API...")
-        
-        string_protein_ids <- unique(string_ids$stringId)
-        protein_list <- paste(string_protein_ids, collapse = "%0d")
-        
-        interaction_url <- "https://string-db.org/api/json/network"
-        
-        response <- httr::POST(
-            url = interaction_url,
-            body = list(
-                identifiers = protein_list,
-                species = species,
-                required_score = required_score,
-                add_white_nodes = 0,
-                caller_identity = "scGraphVerse"
-            ),
-            encode = "form",
-            httr::config(ssl_verifypeer = FALSE, ssl_verifyhost = FALSE)
-        )
-        
-        if (httr::status_code(response) != 200) {
-            stop("STRING interaction API request failed with status: ", httr::status_code(response))
-        }
-        
-        result <- httr::content(response, as = "text", encoding = "UTF-8")
-        jsonlite::fromJSON(result)
-    }, error = function(e) {
-        if (verbose) message("Direct STRING interaction retrieval failed: ", e$message)
-        return(NULL)
-    })
-    
-    if (is.null(interactions) || nrow(interactions) == 0) {
-        if (verbose) message("No interactions obtained via direct API")
-        return(.zero_matrix_result(genes))
-    }
-    
-    # Convert STRING IDs back to gene names and build matrices
-    # Create mapping from STRING ID to gene name
-    id_to_gene <- setNames(string_ids$queryItem, string_ids$stringId)
-    
-    # Map interaction partners to gene names
-    interactions$gene1 <- id_to_gene[interactions$stringId_A]
-    interactions$gene2 <- id_to_gene[interactions$stringId_B]
-    
-    # Remove rows where genes couldn't be mapped back
-    interactions <- interactions[!is.na(interactions$gene1) & !is.na(interactions$gene2), ]
-    
-    if (nrow(interactions) == 0) {
-        if (verbose) message("No valid gene mappings for interactions")
-        return(.zero_matrix_result(genes))
-    }
-    
-    # Build adjacency matrices directly
-    all_genes <- unique(c(interactions$gene1, interactions$gene2))
+    # Select genes to include in the adjacency matrix
     if (keep_all_genes) {
-        missing_genes <- setdiff(genes, all_genes)
-        all_genes <- c(all_genes, missing_genes)
+        final_gene_list <- genes
+    } else {
+        final_gene_list <- unique(c(interactions$gene_A, interactions$gene_B)) 
     }
-    all_genes <- sort(all_genes)
     
-    n_genes <- length(all_genes)
-    weighted_adj <- matrix(0, nrow = n_genes, ncol = n_genes)
-    rownames(weighted_adj) <- colnames(weighted_adj) <- all_genes
+    # Initialize p×p matrices (filled with 0s)
+    p <- length(final_gene_list)
+    weighted_mat <- matrix(0, nrow = p, ncol = p, 
+                           dimnames = list(final_gene_list, final_gene_list))
     
-    # Fill in the weights (use combined_score)
-    for (i in seq_len(nrow(interactions))) {
-        g1 <- interactions$gene1[i]
-        g2 <- interactions$gene2[i]
-        score <- as.numeric(interactions$score[i])
-        
-        if (g1 %in% all_genes && g2 %in% all_genes) {
-            weighted_adj[g1, g2] <- score
-            weighted_adj[g2, g1] <- score  # Make symmetric
+    # Populate adjacency matrix with STRING interaction data
+    if (nrow(interactions) > 0) {
+        for (i in seq_len(nrow(interactions))) {
+            a <- interactions$gene_A[i]
+            b <- interactions$gene_B[i]
+            s <- interactions$interaction_score[i]  
+            
+            if (!is.na(a) && !is.na(b) && a %in% final_gene_list && 
+                b %in% final_gene_list) {
+                weighted_mat[a, b] <- s
+                weighted_mat[b, a] <- s
+            }
         }
     }
     
-    # Create binary matrix
-    binary_adj <- (weighted_adj > 0) * 1
+    binary_mat <- ifelse(weighted_mat > 0, 1, 0)
     
-    if (verbose) {
-        message("Direct API approach successful: ", nrow(interactions), " interactions found")
-    }
+    if (verbose) message("Adjacency matrices constructed successfully.")
     
-    return(list(
-        weighted = weighted_adj,
-        binary = binary_adj
-    ))
+    list(weighted = weighted_mat, binary = binary_mat)
 }

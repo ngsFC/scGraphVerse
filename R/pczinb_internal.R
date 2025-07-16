@@ -38,7 +38,7 @@
 #' @keywords internal
 #' @noRd
 PCzinb_internal <- function(X, method = "zinb1", maxcard = 2, alpha = 0.05, 
-                           extend = TRUE, max_iter = 100, tol = 1e-6) {
+                            extend = TRUE, max_iter = 100, tol = 1e-6) {
     
     # Input validation
     if (!is.matrix(X)) {

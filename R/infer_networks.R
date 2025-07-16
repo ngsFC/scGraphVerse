@@ -189,7 +189,8 @@ infer_networks <- function(
                 "Python is not available or not properly configured.\n",
                 "Please ensure Python is installed and accessible.\n",
                 "You may need to restart R after installing Python.\n",
-                "For setup help, see: vignette('python-setup', package = 'scGraphVerse')",
+                "For setup help, see: ",
+                "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
             )
         }
@@ -206,7 +207,8 @@ infer_networks <- function(
                 "  2. Manual pip: pip install arboreto\n",
                 "  3. Manual conda: conda install -c bioconda arboreto\n",
                 "  4. From R: reticulate::py_install('arboreto')\n",
-                "For detailed setup instructions, see: vignette('python-setup', package = 'scGraphVerse')",
+                "For detailed setup instructions, see: ",
+                "vignette('python-setup', package = 'scGraphVerse'),"
                 call. = FALSE
             )
         }

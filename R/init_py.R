@@ -76,7 +76,9 @@ init_py <- function(
                 message("Installation failed: ", e$message)
                 message("Try manual installation: pip install arboreto")
             }
-            if (required) stop("Failed to install required Python package 'arboreto'.")
+            if (required) {
+                stop("Failed to install required Python package 'arboreto'.")
+            }
         })
     }
 
