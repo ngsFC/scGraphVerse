@@ -208,7 +208,7 @@ infer_networks <- function(
                 "  3. Manual conda: conda install -c bioconda arboreto\n",
                 "  4. From R: reticulate::py_install('arboreto')\n",
                 "For detailed setup instructions, see: ",
-                "vignette('python-setup', package = 'scGraphVerse'),"
+                "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
             )
         }

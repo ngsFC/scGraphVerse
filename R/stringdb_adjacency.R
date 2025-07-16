@@ -68,7 +68,7 @@ stringdb_adjacency <- function(
     verbose = TRUE
 ) {
     if (!requireNamespace("STRINGdb", quietly = TRUE)) {
-        stop("Package 'STRINGdb' is required. Please install it via Bioconductor.")
+        stop("Package 'STRINGdb' is required. Please install it.")
     }
     if (!requireNamespace("httr", quietly = TRUE)) {
         stop("Package 'httr' is required. Please install it.")
@@ -146,7 +146,7 @@ stringdb_adjacency <- function(
         if (verbose) message("No STRING physical interactions found.")
         return(list(
             weighted = matrix(0, length(genes), length(genes), 
-                              dimnames = list(genes, genes)),
+                                dimnames = list(genes, genes)),
             binary = matrix(0, length(genes), length(genes), 
                             dimnames = list(genes, genes))
         ))
@@ -180,7 +180,8 @@ stringdb_adjacency <- function(
     # Initialize p×p matrices (filled with 0s)
     p <- length(final_gene_list)
     weighted_mat <- matrix(0, nrow = p, ncol = p, 
-                           dimnames = list(final_gene_list, final_gene_list))
+                            dimnames = list(final_gene_list, 
+                                            final_gene_list))
     
     # Populate adjacency matrix with STRING interaction data
     if (nrow(interactions) > 0) {

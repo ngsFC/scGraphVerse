@@ -28,7 +28,8 @@
 #' \code{install_missing = TRUE}, automatically installs the 'arboreto'
 #' package using the specified method if not found.
 #'
-#' @importFrom reticulate use_python import py_module_available py_install conda_install
+#' @importFrom reticulate use_python import py_module_available py_install 
+#'   conda_install
 #' @export
 #'
 #' @examples

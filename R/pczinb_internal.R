@@ -23,7 +23,8 @@
 
 #' Internal PCzinb Function
 #' 
-#' This function implements PC algorithm for Zero-Inflated Negative Binomial data
+#' This function implements PC algorithm for 
+#' Zero-Inflated Negative Binomial data
 #' Adapted from learn2count package
 #' 
 #' @param X Count matrix (samples x genes)
@@ -126,7 +127,7 @@ zinb1_noT <- function(X, maxcard, alpha, extend) {
                 for (cond_set in cond_sets) {
                     
                     # Test conditional independence
-                    pval <- test_conditional_independence_zinb(
+                    pval <- t_conditional_independence_zinb(
                         X, x_idx, y_idx, cond_set, zeta
                     )
                     
@@ -217,7 +218,7 @@ estimate_dispersion_zinb <- function(y, max_iter = 50) {
 #' 
 #' @keywords internal
 #' @noRd
-test_conditional_independence_zinb <- function(X, x_idx, y_idx, cond_set, zeta) {
+t_conditional_independence_zinb <- function(X, x_idx, y_idx, cond_set, zeta) {
     
     n <- nrow(X)
     
@@ -247,7 +248,7 @@ test_conditional_independence_zinb <- function(X, x_idx, y_idx, cond_set, zeta) 
             r_xz <- cor_mat[1, 3]
             r_yz <- cor_mat[2, 3]
             
-            partial_cor <- (r_xy - r_xz * r_yz) / sqrt((1 - r_xz^2) * (1 - r_yz^2))
+            p_cor <- (r_xy - r_xz * r_yz) / sqrt((1 - r_xz^2) * (1 - r_yz^2))
         } else {
             # For multiple conditioning variables, use matrix inversion
             inv_cor <- tryCatch({
@@ -260,12 +261,12 @@ test_conditional_independence_zinb <- function(X, x_idx, y_idx, cond_set, zeta) 
                 return(1.0)  # Cannot test, assume independence
             }
             
-            partial_cor <- -inv_cor[1, 2] / sqrt(inv_cor[1, 1] * inv_cor[2, 2])
+            p_cor <- -inv_cor[1, 2] / sqrt(inv_cor[1, 1] * inv_cor[2, 2])
         }
         
         # Test statistic
-        test_stat <- abs(partial_cor) * sqrt(n - length(cond_set) - 2) / 
-                    sqrt(1 - partial_cor^2)
+        test_stat <- abs(p_cor) * sqrt(n - length(cond_set) - 2) / 
+                    sqrt(1 - p_cor^2)
         pval <- 2 * (1 - pt(abs(test_stat), df = n - length(cond_set) - 2))
     }
     
