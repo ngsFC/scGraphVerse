@@ -198,6 +198,10 @@
         stats_df[, metric_cols, drop = FALSE],
         function(x) as.numeric(as.character(x))
     ))
+    # Transform FPR to (1-FPR) for visualization only
+    if ("FPR" %in% names(sd)) {
+        sd$FPR <- 1 - sd$FPR
+    }
     if ("MCC" %in% names(sd)) {
         neg <- which(sd$MCC < 0)
         if (length(neg)) {
@@ -621,6 +625,31 @@
         df
     })
 }
+
+#' @keywords internal
+#' @noRd
+.run_pczinb <- function(mat, adjm, params = list()) {
+    pczinb_args <- modifyList(list(
+        X = t(mat),
+        method = "zinb1",
+        maxcard = 2,
+        alpha = 0.05,
+        extend = TRUE,
+        max_iter = 100,
+        tol = 1e-6
+    ), params)
+    
+    adj <- do.call(PCzinb_internal, pczinb_args)
+    
+    # Format output matrix
+    dimnames(adj) <- if (is.null(adjm)) {
+        list(rownames(mat), rownames(mat))
+    } else {
+        dimnames(adjm)
+    }
+    adj
+}
+
 #' @keywords internal
 #' @noRd
 
@@ -659,20 +688,7 @@
                 }
                 return(result_r)
             } else if (method == "PCzinb") {
-                adj <- learn2count::PCzinb(
-                    t(mat),
-                    method  = "zinb1",
-                    maxcard = 2
-                )
-                dimnames(adj) <- if (is.null(adjm)) {
-                    list(
-                        rownames(mat),
-                        rownames(mat)
-                    )
-                } else {
-                    dimnames(adjm)
-                }
-                return(adj)
+                return(.run_pczinb(mat, adjm, params))
             }
         },
         BPPARAM = param_outer
@@ -1082,10 +1098,12 @@
 
 .merge_pczinb_params <- function(user_params) {
     defaults <- list(
-        gamma = 0.1,
-        beta = 0.1,
+        method = "zinb1",
+        maxcard = 2,
+        alpha = 0.05,
+        extend = TRUE,
         max_iter = 100,
-        tol = 1e-4
+        tol = 1e-6
     )
     modifyList(defaults, user_params)
 }

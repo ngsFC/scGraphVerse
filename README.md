@@ -101,6 +101,7 @@ citation("scGraphVerse")  # 🎓 Academic credit
 | **JRF** 🌲 | Petralia et al. (2015) | *Journal of Proteome Research* 31(12):i197-i205 |
 | **PCzinb** 🔗 | Nguyen et al. (2023) | *Ann. Appl. Stat.* 17(3):2555-73 |
 | **INet-Tool** 🔧 | Policastro et al. (2025) | *Comput Stat* 40, 1517–1539 |
+| **Robin** 🎯 | Policastro (2021) | *The R Journal* 13(1):292-309 |
 
 </div>
 
@@ -113,6 +114,7 @@ citation("scGraphVerse")  # 🎓 Academic credit
 This package includes adapted functions from:
 - **ZILGM** (Park et al., 2021) - GPL-2 license
 - **JRF** (Petralia et al., 2015) - GPL (≥ 2) license
+- **learn2count** (Nguyen et al. 2023) - for the PCzinb implementation
 
 All integrated code maintains proper attribution and copyright notices.
 

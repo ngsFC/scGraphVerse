@@ -12,8 +12,8 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     building across methods or datasets, and provides tools for evaluating regulatory 
     structure and community similarity. GRNBoost2 requires Python package 'arboreto' 
     which can be installed using init_py(install_missing = TRUE). This package 
-    includes adapted functions from ZILGM (Park et al., 2021) and JRF (Petralia et al., 2015) 
-    packages with proper attribution under GPL-2 license.
+    includes adapted functions from ZILGM (Park et al., 2021), JRF (Petralia et al., 2015), 
+    and learn2count (Risso & Romualdi, 2021) packages with proper attribution under GPL-2 license.
 License: GPL-3
 License_file: LICENSE
 Encoding: UTF-8
@@ -66,7 +66,6 @@ Suggests:
     rmarkdown,
     tidyverse,
     magick,
-    learn2count,
     celldex,
     SingleR,
     TENxPBMCData,

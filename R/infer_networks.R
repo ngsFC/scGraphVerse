@@ -222,13 +222,6 @@ infer_networks <- function(
     }
 
     if (method == "PCzinb") {
-        if (!requireNamespace("learn2count", quietly = TRUE)) {
-            stop(
-                "Package 'learn2count' is required for method = 'PCzinb'.\n",
-                "Please install it: BiocManager::install('drisso/learn2count')",
-                call. = FALSE
-            )
-        }
         if (verbose) message("Running PCzinb on ", n_matrices, " matrices")
         return(.run_parallel_networks(
             count_matrices_list,
