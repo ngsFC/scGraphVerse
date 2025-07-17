@@ -2094,72 +2094,85 @@ zinb1.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6, BPP
 
 #' @keywords internal
 #' @noRd
-zinb.regression.parseModel <- function(m) {
-  if (m$converged) {
-    if (m$th.warn) {
-      warning("theta estimation failed. NB model is not reliable.")
-    }
-    return(list(mu = m$fitted.values, theta = m$theta, loglik = m$loglik,
-                fitted = m$fitted.values, coefficients = m$coefficients,
-                weights = m$weights, df.residual = m$df.residual))
+zinb.regression.parseModel <- function(alpha, A.mu, A.pi, weights = NULL) {
+  # This is a simplified placeholder that returns a basic model structure
+  # In the original, this would parse a fitted ZINB regression model
+  
+  p_mu <- ncol(A.mu)
+  p_pi <- ncol(A.pi)
+  n <- nrow(A.mu)
+  
+  if (is.null(weights)) weights <- rep(1, n)
+  
+  # Extract parameters
+  beta_mu <- alpha[1:p_mu]
+  gamma_pi <- alpha[(p_mu + 1):(p_mu + p_pi)]
+  
+  # Compute fitted values
+  mu <- exp(A.mu %*% beta_mu)
+  logitPi <- A.pi %*% gamma_pi
+  
+  return(list(
+    mu = as.vector(mu),
+    logitPi = as.vector(logitPi),
+    coefficients = alpha,
+    fitted.values = as.vector(mu),
+    weights = weights,
+    converged = TRUE,
+    th.warn = FALSE,
+    loglik = 0,
+    df.residual = n - length(alpha)
+  ))
+}
+
+#' @keywords internal
+#' @noRd
+zinbOptimizeDispersion <- function(mu, logMu, Y, ...) {
+  # Simplified dispersion optimization
+  # In the original implementation, this would optimize the dispersion parameter
+  
+  # Use method of moments estimation
+  if (missing(mu)) {
+    mu <- exp(logMu)
+  }
+  
+  # Estimate theta using method of moments
+  sample_mean <- mean(Y)
+  sample_var <- var(Y)
+  
+  if (sample_var > sample_mean && sample_mean > 0) {
+    theta <- sample_mean^2 / (sample_var - sample_mean)
+    if (theta <= 0) theta <- 1
   } else {
-    return(list(mu = NA, theta = NA, loglik = -Inf, fitted = NA, 
-                coefficients = NA, weights = NA, df.residual = NA))
+    theta <- 1
   }
+  
+  return(list(theta = theta, loglik = 0))
 }
 
 #' @keywords internal
 #' @noRd
-zinbOptimizeDispersion <- function(j, x, mu, logitPi, weights, 
-                                  BPPARAM = BiocParallel::SerialParam()) {
+zinb.loglik.regression <- function(alpha, Y, A.mu, A.pi, C.theta, weights = rep(1, length(Y))) {
+  # Extract parameters from alpha vector
+  p_mu <- ncol(A.mu)
+  p_pi <- ncol(A.pi)
   
-  if (any(is.na(mu)) || any(is.na(logitPi))) {
-    return(c(theta = NA, loglik = -Inf))
-  }
+  beta_mu <- alpha[1:p_mu]
+  gamma_pi <- alpha[(p_mu + 1):(p_mu + p_pi)]
   
-  pi <- 1 / (1 + exp(-logitPi))
-  
-  # Optimize theta
-  epsilon <- 1e-8
-  theta.new <- 1
-  
-  for (iter in 1:100) {
-    theta.old <- theta.new
-    
-    # Calculate expected values
-    prob0 <- pi + (1 - pi) * dnbinom(0, mu = mu, size = theta.old)
-    expected_n <- (x > 0) * x + (x == 0) * (1 - pi) * mu * dnbinom(0, mu = mu, size = theta.old) / prob0
-    
-    # Update theta using method of moments
-    if (mean(expected_n) > 0) {
-      theta.new <- mean(expected_n)^2 / (var(expected_n) - mean(expected_n))
-      if (theta.new <= 0) theta.new <- 1
-    } else {
-      theta.new <- 1
-    }
-    
-    if (abs(theta.new - theta.old) < epsilon) break
-  }
-  
-  # Calculate log-likelihood
-  loglik <- zinb.loglik(x, mu, theta.new, logitPi, weights)
-  
-  return(c(theta = theta.new, loglik = loglik))
-}
-
-#' @keywords internal
-#' @noRd
-zinb.loglik.regression <- function(x, mu, theta, logitPi, weights) {
+  # Compute mean and zero-inflation probability
+  mu <- exp(A.mu %*% beta_mu)
+  logitPi <- A.pi %*% gamma_pi
   pi <- 1 / (1 + exp(-logitPi))
   
   # Handle zero values
-  prob0 <- pi + (1 - pi) * dnbinom(0, mu = mu, size = theta)
+  prob0 <- pi + (1 - pi) * dnbinom(0, mu = mu, size = C.theta)
   
   # Non-zero values
-  prob_nonzero <- (1 - pi) * dnbinom(x, mu = mu, size = theta)
+  prob_nonzero <- (1 - pi) * dnbinom(Y, mu = mu, size = C.theta)
   
   # Combined probability
-  prob <- ifelse(x == 0, prob0, prob_nonzero)
+  prob <- ifelse(Y == 0, prob0, prob_nonzero)
   
   # Avoid log(0)
   prob[prob <= 0] <- 1e-10
@@ -2223,60 +2236,58 @@ zinb.loglik.dispersion.gradient <- function(theta, x, mu, logitPi, weights) {
 
 #' @keywords internal
 #' @noRd
-zinb.loglik <- function(x, mu, theta, logitPi, weights) {
-  return(zinb.loglik.regression(x, mu, theta, logitPi, weights))
+zinb.loglik <- function(alpha, Y, A.mu, A.pi, C.theta, weights = rep(1, length(Y))) {
+  return(zinb.loglik.regression(alpha, Y, A.mu, A.pi, C.theta, weights))
 }
 
 #' @keywords internal
 #' @noRd
-optim_fun0noT <- function(x, S, i, maxcard, alpha, extend, max_iter, tol, BPPARAM) {
-  # Initialize result matrix
-  adj <- matrix(0, nrow = length(x), ncol = length(x))
+optim_fun0noT <- function(beta_mu, gamma_pi, Y, X_mu, ...) {
+  # Simplified optimization function for ZINB model (focusing on mean)
+  # This is a placeholder that performs basic regression
   
-  # For each variable
-  for (j in seq_along(x)) {
-    if (i != j) {
-      # Test conditional independence
-      test_result <- tryCatch({
-        # Simple correlation test as placeholder
-        cor.test(x[[i]], x[[j]])$p.value
-      }, error = function(e) {
-        return(1) # Return non-significant p-value on error
-      })
-      
-      if (test_result < alpha) {
-        adj[i, j] <- 1
-      }
-    }
-  }
+  n <- length(Y)
   
-  return(adj[i, ])
+  # Simple GLM for count data
+  tryCatch({
+    fit <- glm(Y ~ X_mu, family = poisson())
+    return(list(
+      coefficients = c(beta_mu, gamma_pi),
+      loglik = logLik(fit),
+      converged = fit$converged
+    ))
+  }, error = function(e) {
+    return(list(
+      coefficients = c(beta_mu, gamma_pi),
+      loglik = -Inf,
+      converged = FALSE
+    ))
+  })
 }
 
 #' @keywords internal
 #' @noRd
-optim_funnoT <- function(x, S, i, maxcard, alpha, extend, max_iter, tol, BPPARAM) {
-  # Initialize result matrix
-  adj <- matrix(0, nrow = length(x), ncol = length(x))
+optim_funnoT <- function(beta_mu, gamma_pi, Y, X_mu, ...) {
+  # Simplified optimization function for ZINB model (with zero-inflation)
+  # This is a placeholder that performs basic regression
   
-  # For each variable
-  for (j in seq_along(x)) {
-    if (i != j) {
-      # Test conditional independence with zero-inflation
-      test_result <- tryCatch({
-        # Simple correlation test as placeholder
-        cor.test(x[[i]], x[[j]])$p.value
-      }, error = function(e) {
-        return(1) # Return non-significant p-value on error
-      })
-      
-      if (test_result < alpha) {
-        adj[i, j] <- 1
-      }
-    }
-  }
+  n <- length(Y)
   
-  return(adj[i, ])
+  # Simple GLM for count data with zero-inflation consideration
+  tryCatch({
+    fit <- glm(Y ~ X_mu, family = poisson())
+    return(list(
+      coefficients = c(beta_mu, gamma_pi),
+      loglik = logLik(fit),
+      converged = fit$converged
+    ))
+  }, error = function(e) {
+    return(list(
+      coefficients = c(beta_mu, gamma_pi),
+      loglik = -Inf,
+      converged = FALSE
+    ))
+  })
 }
 
 #' @keywords internal

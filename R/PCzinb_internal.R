@@ -66,6 +66,7 @@ PCzinb_internal <- function(X,
     }
     
     # Setup BiocParallel backend
+    nCores <- as.integer(nCores[1])  # Ensure single value
     if (nCores == 1) {
         BPPARAM <- BiocParallel::SerialParam()
     } else {
