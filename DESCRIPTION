@@ -37,7 +37,6 @@ Imports:
     SummarizedExperiment,
     clusterProfiler,
     distributions3,
-    doParallel,
     dplyr,
     fmsb,
     ggraph,
@@ -62,8 +61,9 @@ Imports:
     INetTool,
     randomForest,
     glmnet,
-    foreach,
-    MASS
+    MASS,
+    utils,
+    stats
 Suggests:
     testthat (>= 3.0.0),
     knitr,
