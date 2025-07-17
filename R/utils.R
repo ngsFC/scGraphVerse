@@ -2235,7 +2235,7 @@ optim_fun0noT <- function(x, S, i, maxcard, alpha, extend, max_iter, tol, BPPARA
   
   # For each variable
   for (j in seq_along(x)) {
-    if (i \!= j) {
+    if (i != j) {
       # Test conditional independence
       test_result <- tryCatch({
         # Simple correlation test as placeholder
@@ -2261,7 +2261,7 @@ optim_funnoT <- function(x, S, i, maxcard, alpha, extend, max_iter, tol, BPPARAM
   
   # For each variable
   for (j in seq_along(x)) {
-    if (i \!= j) {
+    if (i != j) {
       # Test conditional independence with zero-inflation
       test_result <- tryCatch({
         # Simple correlation test as placeholder
