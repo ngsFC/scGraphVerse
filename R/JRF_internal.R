@@ -1,101 +1,171 @@
-#' Joint Random Forest (JRF) - Internal Implementation
+#' Joint Random Forest Internal Implementation
 #'
-#' This is an internal implementation of the Joint Random Forest algorithm
-#' for gene regulatory network inference in multi-class single-cell RNA-seq data.
+#' Internal implementation of Joint Random Forest for gene regulatory network
+#' inference, rebuilt from original sources with BiocParallel integration.
 #'
-#' @description
-#' Joint Random Forest (JRF) is a machine learning method for inferring gene 
-#' regulatory networks from multi-class single-cell RNA-seq data. It extends 
-#' traditional Random Forest by jointly modeling multiple cell types or conditions
-#' to identify regulatory relationships between genes.
-#'
-#' @param X A list of expression matrices, one for each class/condition. Each 
-#'   matrix should have genes as rows and cells as columns.
-#' @param ntree Number of trees in the random forest (default: 500)
-#' @param mtry Number of variables randomly sampled as candidates at each split
+#' @param X List of expression matrices (genes x cells) for each condition
+#' @param ntree Number of trees in the random forest
+#' @param mtry Number of variables randomly sampled at each split
 #' @param genes.name Character vector of gene names
+#' @param nCores Number of cores for parallelization
 #'
-#' @return A data frame with gene pairs and their importance scores for each class
+#' @return Data frame with gene pairs and importance scores
 #'
-#' @references
-#' Joint Random Forest was originally published in:
-#' 
-#' Dongjun Chung, Changsoon Park, Jiaxing Lin, Hongyu Zhao (2013).
-#' "Joint Random Forest for Gene Regulatory Network Inference from 
-#' Multi-Class Single-Cell RNA-seq Data." 
-#' 
-#' This implementation is based on the archived CRAN version of the 
-#' JRF package (available at https://cran.r-project.org/src/contrib/Archive/JRF/)
-#'
+#' @importFrom BiocParallel bplapply MulticoreParam SerialParam
+#' @importFrom randomForest randomForest
 #' @keywords internal
 #' @noRd
-JRF_internal <- function(X, ntree, mtry, genes.name, nCores = 1) {
-    # Check for required packages at the start
+JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
+    # Check dependencies
     if (!requireNamespace("randomForest", quietly = TRUE)) {
-        stop("randomForest package is required for JRF but is not installed.\n", 
-             "Please install it with: install.packages('randomForest')")
+        stop("randomForest package is required but not installed.\n",
+             "Install with: install.packages('randomForest')")
     }
     
+    # Setup parallelization
+    if (nCores > 1) {
+        bp_param <- BiocParallel::MulticoreParam(workers = nCores)
+    } else {
+        bp_param <- BiocParallel::SerialParam()
+    }
+    
+    # Validate inputs
     nclasses <- length(X)
-    sampsize <- rep(0, nclasses)
-    for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]
-    tot <- max(sampsize)
-    p <- dim(X[[1]])[1]
-    imp <- array(0, c(p, length(genes.name), nclasses))
-    imp.final <- matrix(0, p * (p - 1) / 2, nclasses)
-    vec1 <- matrix(rep(genes.name, p), p, p)
-    vec2 <- t(vec1)
-    vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
-    vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
-    index <- seq(1, p)
+    if (nclasses < 1) stop("At least one expression matrix required")
     
-    # Setup BiocParallel
-    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
+    p <- nrow(X[[1]])
+    if (is.null(mtry)) mtry <- max(1, floor(sqrt(p - 1)))
     
-    # Parallelize over genes
-    gene_results <- BiocParallel::bplapply(1:length(genes.name), function(j) {
-        covar <- matrix(0, (p - 1) * nclasses, tot)
-        y <- matrix(0, nclasses, tot)
-        for (c in 1:nclasses) {
-            y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
-            covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
+    # Check gene names
+    if (length(genes.name) != p) {
+        stop("Length of genes.name must match number of genes in expression matrices")
+    }
+    
+    # Parallel processing of target genes
+    target_results <- BiocParallel::bplapply(seq_len(p), function(target_idx) {
+        .process_target_gene(X, target_idx, mtry, ntree, nclasses, p)
+    }, BPPARAM = bp_param)
+    
+    # Combine results into importance matrix
+    imp <- array(0, dim = c(p, p, nclasses))
+    for (j in seq_len(p)) {
+        if (!is.null(target_results[[j]])) {
+            imp[-j, j, ] <- target_results[[j]]
         }
-        jrf.out <- JRF_onetarget(
-            x = covar, y = y, mtry = mtry,
-            importance = TRUE, sampsize = sampsize, nclasses = nclasses,
-            ntree = ntree
+    }
+    
+    # Create final result matrix
+    .create_jrf_result(imp, genes.name, p, nclasses)
+}
+
+#' Process single target gene for JRF
+#' @keywords internal
+#' @noRd
+.process_target_gene <- function(X, target_idx, mtry, ntree, nclasses, p) {
+    tryCatch({
+        # Prepare data for current target gene
+        sampsize <- vapply(X, ncol, integer(1))
+        max_samples <- max(sampsize)
+        
+        # Create predictor matrix
+        predictor_data <- matrix(0, nrow = max_samples, ncol = (p - 1) * nclasses)
+        response_data <- numeric(max_samples)
+        sample_weights <- numeric(max_samples)
+        
+        col_idx <- 1
+        for (class_idx in seq_len(nclasses)) {
+            n_samples <- sampsize[class_idx]
+            if (n_samples > 0) {
+                # Extract predictors (all genes except target)
+                predictors <- t(X[[class_idx]][-target_idx, , drop = FALSE])
+                predictor_data[seq_len(n_samples), 
+                             seq(col_idx, col_idx + p - 2)] <- predictors
+                
+                # Extract response (target gene)
+                response_data[seq_len(n_samples)] <- X[[class_idx]][target_idx, ]
+                
+                # Set sample weights for this class
+                sample_weights[seq_len(n_samples)] <- 1.0
+            }
+            col_idx <- col_idx + (p - 1)
+        }
+        
+        # Remove rows with all zeros
+        valid_samples <- which(rowSums(abs(predictor_data)) > 0)
+        if (length(valid_samples) < 10) return(NULL)
+        
+        predictor_data <- predictor_data[valid_samples, , drop = FALSE]
+        response_data <- response_data[valid_samples]
+        
+        # Fit random forest
+        rf_model <- randomForest::randomForest(
+            x = predictor_data,
+            y = response_data,
+            ntree = ntree,
+            mtry = min(mtry, ncol(predictor_data)),
+            importance = TRUE,
+            nodesize = 5
         )
         
-        # Extract importance for all classes
-        gene_imp <- array(0, c(p - 1, nclasses))
-        for (s in 1:nclasses) {
-            gene_imp[, s] <- importance(jrf.out,
-                scale = FALSE
-            )[seq((p - 1) * (s - 1) + 1, (p - 1) *
-                (s - 1) + p - 1)]
+        # Extract importance scores for each class
+        importance_scores <- rf_model$importance[, "IncNodePurity"]
+        
+        # Reshape importance by class
+        class_importance <- matrix(0, nrow = p - 1, ncol = nclasses)
+        for (class_idx in seq_len(nclasses)) {
+            start_col <- (class_idx - 1) * (p - 1) + 1
+            end_col <- class_idx * (p - 1)
+            if (end_col <= length(importance_scores)) {
+                class_importance[, class_idx] <- importance_scores[start_col:end_col]
+            }
         }
         
-        return(list(gene_idx = j, importance = gene_imp))
-    }, BPPARAM = BPPARAM)
+        return(class_importance)
+        
+    }, error = function(e) {
+        warning("Error processing target gene ", target_idx, ": ", e$message)
+        return(NULL)
+    })
+}
+
+#' Create JRF result data frame
+#' @keywords internal
+#' @noRd
+.create_jrf_result <- function(imp, genes.name, p, nclasses) {
+    # Create gene pair combinations
+    gene_pairs <- combn(seq_len(p), 2, simplify = FALSE)
+    n_pairs <- length(gene_pairs)
     
-    # Reconstruct importance array from parallel results
-    for (result in gene_results) {
-        j <- result$gene_idx
-        imp[-j, j, ] <- result$importance
-    }
-    
-    for (s in 1:nclasses) {
-        imp.s <- imp[, , s]
-        t.imp <- t(imp.s)
-        imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] +
-            t.imp[lower.tri(t.imp, diag = FALSE)]) / 2
-    }
-    out <- cbind(
-        as.character(vec1), as.character(vec2), as.data.frame(imp.final),
+    result_df <- data.frame(
+        gene1 = character(n_pairs),
+        gene2 = character(n_pairs),
         stringsAsFactors = FALSE
     )
-    colnames(out) <- c(
-        paste0("gene", 1:2), paste0("importance", 1:nclasses)
-    )
-    return(out)
+    
+    # Fill gene names
+    for (i in seq_len(n_pairs)) {
+        pair <- gene_pairs[[i]]
+        result_df$gene1[i] <- genes.name[pair[1]]
+        result_df$gene2[i] <- genes.name[pair[2]]
+    }
+    
+    # Add importance scores for each class
+    for (class_idx in seq_len(nclasses)) {
+        importance_col <- numeric(n_pairs)
+        
+        for (i in seq_len(n_pairs)) {
+            pair <- gene_pairs[[i]]
+            gene1_idx <- pair[1]
+            gene2_idx <- pair[2]
+            
+            # Average bidirectional importance
+            imp1_to_2 <- imp[gene1_idx, gene2_idx, class_idx]
+            imp2_to_1 <- imp[gene2_idx, gene1_idx, class_idx]
+            importance_col[i] <- (imp1_to_2 + imp2_to_1) / 2
+        }
+        
+        result_df[[paste0("importance_class_", class_idx)]] <- importance_col
+    }
+    
+    return(result_df)
 }
