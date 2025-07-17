@@ -30,6 +30,12 @@
 #' @keywords internal
 #' @noRd
 JRF_internal <- function(X, ntree, mtry, genes.name, nCores = 1) {
+    # Check for required packages at the start
+    if (!requireNamespace("randomForest", quietly = TRUE)) {
+        stop("randomForest package is required for JRF but is not installed.\n", 
+             "Please install it with: install.packages('randomForest')")
+    }
+    
     nclasses <- length(X)
     sampsize <- rep(0, nclasses)
     for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]

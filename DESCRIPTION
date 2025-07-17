@@ -59,7 +59,11 @@ Imports:
     scales,
     tidyr,
     cli,
-    INetTool
+    INetTool,
+    randomForest,
+    glmnet,
+    foreach,
+    MASS
 Suggests:
     testthat (>= 3.0.0),
     knitr,
