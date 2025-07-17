@@ -583,7 +583,7 @@
         sym = "OR", nCores = nCores
     ), params)
     
-    fit <- do.call(zilgm, zilgm_args)
+    fit <- do.call(zilgm_internal, zilgm_args)
     adj <- fit$network[[fit$opt_index]]
     adj <- adj * 1
     dimnames(adj) <- if (is.null(adjm)) {
@@ -600,23 +600,20 @@
 #' @noRd
 
 .run_jrf <- function(norm_list, nCores, params = list()) {
-    clust <- parallel::makeCluster(nCores)
-    on.exit(parallel::stopCluster(clust), add = TRUE)
-    doParallel::registerDoParallel(clust)
-
     jrf_args <- modifyList(list(
         X = norm_list,
         genes.name = rownames(norm_list[[1]]),
         ntree = 500,
-        mtry = round(sqrt(nrow(norm_list[[1]]) - 1))
+        mtry = round(sqrt(nrow(norm_list[[1]]) - 1)),
+        nCores = nCores
     ), params)
     
-    # Filter out unsupported parameters for JRF_simplified
-    supported_params <- c("X", "ntree", "mtry", "genes.name")
+    # Filter out unsupported parameters for JRF_internal
+    supported_params <- c("X", "ntree", "mtry", "genes.name", "nCores")
     jrf_args <- jrf_args[names(jrf_args) %in% supported_params]
     
-    # Use internal JRF implementation
-    rf <- do.call(JRF_simplified, jrf_args)
+    # Use internal JRF implementation with BiocParallel
+    rf <- do.call(JRF_internal, jrf_args)
 
     importance_columns <- grep("importance", names(rf), value = TRUE)
     lapply(importance_columns, function(col) {
@@ -1277,3 +1274,371 @@
 
 # Define global variables to avoid R CMD check NOTEs for ggplot2 aes() usage
 utils::globalVariables(c("FPR", "TPR", "community"))
+
+# JRF supporting functions
+#' @keywords internal
+#' @noRd
+JRF_onetarget <- function(x, y, mtry, importance, sampsize, nclasses, ntree) {
+    # Check if randomForest is available
+    if (!requireNamespace("randomForest", quietly = TRUE)) {
+        stop("randomForest package is required for JRF but is not installed.")
+    }
+    
+    # Prepare data for random forest
+    # x: covariates matrix ((p-1) * nclasses) x max(sampsize)
+    # y: response matrix nclasses x max(sampsize)
+    
+    # Create training data
+    train_data <- list()
+    for (class_idx in 1:nclasses) {
+        n_samples <- sampsize[class_idx]
+        if (n_samples > 0) {
+            # Get response for this class
+            y_class <- y[class_idx, 1:n_samples]
+            
+            # Get covariates for this class
+            start_idx <- (class_idx - 1) * (nrow(x) / nclasses) + 1
+            end_idx <- class_idx * (nrow(x) / nclasses)
+            x_class <- x[start_idx:end_idx, 1:n_samples]
+            
+            # Create data frame for this class
+            df_class <- data.frame(
+                response = y_class,
+                t(x_class)
+            )
+            train_data[[class_idx]] <- df_class
+        }
+    }
+    
+    # Combine all class data
+    combined_data <- do.call(rbind, train_data)
+    
+    # Fit random forest
+    rf_model <- randomForest::randomForest(
+        response ~ .,
+        data = combined_data,
+        ntree = ntree,
+        mtry = mtry,
+        importance = importance,
+        keep.forest = TRUE
+    )
+    
+    return(rf_model)
+}
+
+#' @keywords internal
+#' @noRd
+importance <- function(rf_model, scale = TRUE) {
+    if (!requireNamespace("randomForest", quietly = TRUE)) {
+        stop("randomForest package is required for importance function.")
+    }
+    
+    # Extract importance from the random forest model
+    imp_matrix <- randomForest::importance(rf_model, scale = scale)
+    
+    # Return importance scores
+    if (ncol(imp_matrix) == 1) {
+        return(as.vector(imp_matrix))
+    } else {
+        # For multi-class, return the mean decrease in accuracy
+        return(imp_matrix[, "MeanDecreaseAccuracy"])
+    }
+}
+
+# ZILGM supporting functions
+#' @keywords internal
+#' @noRd
+find_lammax <- function(X) {
+    tmp <- t(X) %*% X
+    lammax <- 1/nrow(X) * max(abs(tmp[upper.tri(tmp)]))
+    return(lammax)
+}
+
+#' @keywords internal
+#' @noRd
+hat_net <- function(coef_mat, thresh = 1e-6, type = c("AND", "OR")) {
+    type <- match.arg(type)
+    
+    tmp_mat <- abs(coef_mat) > thresh
+    
+    if (type == "AND") {
+        res_mat <- tmp_mat * t(tmp_mat)
+    }
+    
+    if (type == "OR") {
+        res_mat <- (tmp_mat + t(tmp_mat) > 0) * 1
+    }
+    return(res_mat)
+}
+
+#' @keywords internal
+#' @noRd
+zigm_network <- function(X, lambda = NULL, family = c("Poisson", "NBI", "NBII"), 
+                        update_type = c("IRLS", "MM"), sym = c("AND", "OR"), theta = NULL,
+                        thresh = 1e-6, weights_mat = NULL, penalty_mat = NULL, 
+                        init_select = FALSE, nCores = 1, n, p, verbose = 0, ...) {
+    
+    family <- match.arg(family)
+    update_type <- match.arg(update_type)
+    sym <- match.arg(sym)
+    
+    coord_fun <- switch(family,
+                       Poisson = zilgm_poisson,
+                       NBI = zilgm_negbin,
+                       NBII = zilgm_negbin2)
+    
+    nlambda <- length(lambda)
+    coef_mat <- array(dim = c(p, p, nlambda))
+    
+    if (is.null(weights_mat)) {
+        weights_mat <- matrix(1, n, p)
+    }
+    
+    if (any(weights_mat < 0)) {
+        stop("The elements in weights_mat must have non-negative values")
+    }
+    if ((NROW(weights_mat) != n) | (NCOL(weights_mat) != p)) {
+        stop("The number of elements in weights_mat not equal to the number of rows and columns on X")
+    }
+    
+    if (is.null(penalty_mat)) {
+        penalty_mat <- matrix(1, p, p)
+    }
+    
+    coef_tmp <- parallel::mclapply(1:p, FUN = function(j) {
+        zigm_wrapper(jth = j, X = X, lambda = lambda, family = family, 
+                    update_type = update_type, theta = theta, thresh = thresh, 
+                    weights = weights_mat[, j], penalty.factor = penalty_mat[, j],
+                    init_select = init_select, fun = coord_fun, n = n, p = p, 
+                    nlambda = nlambda, verbose = verbose, ...)
+    }, mc.cores = nCores, mc.preschedule = FALSE)
+    
+    for (j in 1:p) {
+        coef_mat[, j, ] <- as.matrix(coef_tmp[[j]]$Bmat)
+    }
+    
+    ghat <- lapply(1:nlambda, FUN = function(l) hat_net(coef_mat[, , l], thresh = thresh, type = sym))
+    gs <- lapply(1:nlambda, FUN = function(l) Matrix::Matrix(ghat[[l]]))
+    
+    return(list(hat_net = gs, coef_net = coef_mat))
+}
+
+#' @keywords internal
+#' @noRd
+zigm_wrapper <- function(jth, X, lambda, family, update_type, theta, weights, penalty.factor, 
+                        init_select, fun, n, p, nlambda, thresh, verbose = 0, ...) {
+    
+    seqP <- 1:p
+    Bmat <- Matrix::Matrix(0, p, nlambda, sparse = TRUE)
+    b0 <- rep(0, nlambda)
+    
+    if (init_select) {
+        if (!requireNamespace("glmnet", quietly = TRUE)) {
+            stop("glmnet package is required for init_select=TRUE")
+        }
+        
+        fit0 <- glmnet::glmnet(x = X[, -jth, drop = FALSE], y = X[, jth], 
+                              standardize = FALSE, family = "poisson", 
+                              nlambda = 100, dfmax = p)
+        bic <- (1 - fit0$dev.ratio) * fit0$nulldev + 2 * fit0$df
+        p0.b <- which.min(bic[-1])
+        lam_ind <- p0.b
+        coeff <- drop(predict(fit0, s = fit0$lambda[lam_ind], type = "coefficients"))
+        nset <- seqP[-jth][which(abs(coeff[-1]) > (thresh / 100))]
+        
+        wthres <- thresh / 100
+        for (init_iter in 1:100) {
+            if (length(nset) == 0) {
+                wthres <- wthres/10
+                nset <- seqP[-jth][which(abs(coeff[-1]) > wthres)]
+            } else {
+                break
+            }
+        }
+    } else {
+        nset <- seqP[-jth]
+    }
+    
+    if (length(nset) == 0) {
+        Bmat <- Bmat
+        b0 <- b0
+    } else {
+        for (iter in 1:nlambda) {
+            if (verbose == 1) {
+                cat("lambda = ", lambda[iter], ", ", jth, "/", p, "th node learning \n", sep = "")
+            }
+            coef_res <- fun(x = X[, nset, drop = FALSE], y = X[, jth], lambda = lambda[iter], 
+                           theta = theta, weights = weights, update_type = update_type, 
+                           penalty.factor = penalty.factor, thresh = thresh, ...)
+            
+            Bmat[nset, iter] <- coef_res$bvec[-1]
+            b0[iter] <- coef_res$bvec[1]
+        }
+    }
+    return(list(b0 = b0, Bmat = Bmat))
+}
+
+#' @keywords internal
+#' @noRd
+zilgm_poisson <- function(y, x, lambda, weights = NULL, update_type = c("IRLS", "MM"), 
+                         penalty.factor = NULL, thresh = 1e-6, ...) {
+    # Placeholder for zero-inflated Poisson regression
+    # This is a simplified version - the full implementation would include
+    # EM algorithm for zero-inflation and coordinate descent
+    stop("zilgm_poisson function needs full implementation from ZILGM repository")
+}
+
+#' @keywords internal
+#' @noRd
+zilgm_negbin <- function(y, x, lambda, weights = NULL, update_type = c("IRLS", "MM"), 
+                        penalty.factor = NULL, thresh = 1e-6, theta = NULL, ...) {
+    # Placeholder for zero-inflated negative binomial regression (Type I)
+    # This is a simplified version - the full implementation would include
+    # EM algorithm for zero-inflation and coordinate descent
+    stop("zilgm_negbin function needs full implementation from ZILGM repository")
+}
+
+#' @keywords internal
+#' @noRd
+zilgm_negbin2 <- function(y, x, lambda, weights = NULL, update_type = c("IRLS", "MM"), 
+                         penalty.factor = NULL, thresh = 1e-6, theta = NULL, ...) {
+    # Placeholder for zero-inflated negative binomial regression (Type II)
+    # This is a simplified version - the full implementation would include
+    # EM algorithm for zero-inflation and coordinate descent
+    stop("zilgm_negbin2 function needs full implementation from ZILGM repository")
+}
+
+# PCzinb supporting functions
+#' @keywords internal
+#' @noRd
+pois.wald <- function(X, maxcard, alpha, extend) {
+    p <- ncol(X)
+    n <- nrow(X)
+    adj <- matrix(1, p, p)
+    diag(adj) <- 0
+    ncard <- 0
+    
+    # Check if foreach is available
+    if (!requireNamespace("foreach", quietly = TRUE)) {
+        stop("foreach package is required for pois.wald function")
+    }
+    if (!requireNamespace("doParallel", quietly = TRUE)) {
+        stop("doParallel package is required for pois.wald function")
+    }
+    
+    while (ncard <= maxcard) {
+        V <- foreach::foreach(i = 1:p, .combine = "cbind") %dopar% {
+            neighbor <- which(adj[, i] == 1)
+            if (length(neighbor) >= ncard) {
+                condset <- utils::combn(neighbor, ncard, FUN = list)
+                for (j in 1:length(neighbor)) {
+                    condset.temp <- condset
+                    indcond <- FALSE
+                    k <- 1
+                    while (!indcond & k <= length(condset.temp)) {
+                        if (!(neighbor[j] %in% condset.temp[[k]])) {
+                            fit <- stats::glm(X[, i] ~ scale(X[, c(neighbor[j], condset.temp[[k]])]),
+                                            family = "poisson")
+                            if (stats::coefficients(summary(fit))[2, 4] > alpha) {
+                                adj[neighbor[j], i] <- 0
+                                indcond <- TRUE
+                            }
+                        }
+                        k <- k + 1
+                    }
+                }
+            }
+            return(adj[, i])
+        }
+        
+        if (extend == TRUE) {
+            adj <- V + t(V)
+            adj[which(adj != 0)] <- 1
+        } else {
+            adj <- V * t(V)
+        }
+        
+        ncard <- ncard + 1
+    }
+    return(adj)
+}
+
+#' @keywords internal
+#' @noRd
+nb.wald <- function(X, maxcard, alpha, extend) {
+    p <- ncol(X)
+    n <- nrow(X)
+    adj <- matrix(1, p, p)
+    diag(adj) <- 0
+    ncard <- 0
+    
+    # Check if required packages are available
+    if (!requireNamespace("foreach", quietly = TRUE)) {
+        stop("foreach package is required for nb.wald function")
+    }
+    if (!requireNamespace("doParallel", quietly = TRUE)) {
+        stop("doParallel package is required for nb.wald function")
+    }
+    if (!requireNamespace("MASS", quietly = TRUE)) {
+        stop("MASS package is required for nb.wald function")
+    }
+    
+    while (ncard <= maxcard) {
+        adj.est <- foreach::foreach(i = 1:p, .combine = "cbind", .packages = c("MASS")) %dopar% {
+            neighbor <- which(adj[, i] == 1)
+            if (length(neighbor) >= ncard) {
+                condset <- utils::combn(neighbor, ncard, FUN = list)
+                for (j in 1:length(neighbor)) {
+                    condset.temp <- condset
+                    indcond <- FALSE
+                    k <- 1
+                    while (!indcond & k <= length(condset.temp)) {
+                        if (!(neighbor[j] %in% condset.temp[[k]])) {
+                            X_new <- scale(as.matrix(cbind(X[, c(neighbor[j], condset.temp[[k]])]),
+                                                   nrow = n, ncol = ncard + 1))
+                            data <- data.frame(cbind(X[, i], X_new))
+                            colnames(data) <- paste("V", 1:(ncard + 2), sep = "")
+                            fmla <- stats::as.formula(paste("V1 ~ ", paste(colnames(data)[-1], collapse = "+")))
+                            fitadd <- try(MASS::glm.nb(fmla, data = data, link = "log"), silent = TRUE)
+                            if (is(fitadd, "try-error")) {
+                                fitadd <- stats::glm(X[, i] ~ scale(X_new), family = MASS::negative.binomial(theta = 1))
+                            }
+                            
+                            if (summary(fitadd)$coefficients[2, 4] > alpha) {
+                                adj[neighbor[j], i] <- 0
+                                indcond <- TRUE
+                            }
+                        }
+                        k <- k + 1
+                    }
+                }
+            }
+            return(adj[, i])
+        }
+        
+        if (extend == TRUE) {
+            adj <- adj.est + t(adj.est)
+            adj[which(adj != 0)] <- 1
+        } else {
+            adj <- adj.est * t(adj.est)
+        }
+        ncard <- ncard + 1
+    }
+    return(adj)
+}
+
+#' @keywords internal
+#' @noRd
+zinb0.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6) {
+    # Placeholder for zero-inflated negative binomial structure learning (mean focus)
+    # This function requires complex dependencies from the learn2count package
+    stop("zinb0.noT function needs full implementation from learn2count repository including helper functions")
+}
+
+#' @keywords internal
+#' @noRd
+zinb1.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6) {
+    # Placeholder for zero-inflated negative binomial structure learning (with zero-inflation)
+    # This function requires complex dependencies from the learn2count package
+    stop("zinb1.noT function needs full implementation from learn2count repository including helper functions")
+}
