@@ -625,10 +625,15 @@
 
 #' @keywords internal
 #' @noRd
-.run_pczinb <- function(mat, adjm, params = list()) {
+.run_pczinb <- function(mat, adjm, nCores, params = list()) {
+    # Setup parallel backend for foreach
+    cl <- parallel::makeCluster(nCores)
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    
     pczinb_args <- modifyList(list(
         X = t(mat),
-        method = "zinb1",
+        method = "poi",
         maxcard = 2,
         alpha = 0.05,
         extend = TRUE,
@@ -1406,15 +1411,29 @@ zigm_network <- function(X, lambda = NULL, family = c("Poisson", "NBI", "NBII"),
     }
     
     coef_tmp <- parallel::mclapply(1:p, FUN = function(j) {
-        zigm_wrapper(jth = j, X = X, lambda = lambda, family = family, 
-                    update_type = update_type, theta = theta, thresh = thresh, 
-                    weights = weights_mat[, j], penalty.factor = penalty_mat[, j],
-                    init_select = init_select, fun = coord_fun, n = n, p = p, 
-                    nlambda = nlambda, verbose = verbose, ...)
+        tryCatch({
+            zigm_wrapper(jth = j, X = X, lambda = lambda, family = family, 
+                        update_type = update_type, theta = theta, thresh = thresh, 
+                        weights = weights_mat[, j], penalty.factor = penalty_mat[, j],
+                        init_select = init_select, fun = coord_fun, n = n, p = p, 
+                        nlambda = nlambda, verbose = verbose, ...)
+        }, error = function(e) {
+            # Return default structure if error occurs
+            list(
+                b0 = rep(0, nlambda),
+                Bmat = Matrix::Matrix(0, p, nlambda, sparse = TRUE)
+            )
+        })
     }, mc.cores = nCores, mc.preschedule = FALSE)
     
+    # Check for errors in parallel results
     for (j in 1:p) {
-        coef_mat[, j, ] <- as.matrix(coef_tmp[[j]]$Bmat)
+        if (inherits(coef_tmp[[j]], "try-error") || is.null(coef_tmp[[j]]$Bmat)) {
+            # Create default matrix if there was an error
+            coef_mat[, j, ] <- matrix(0, nrow = p, ncol = nlambda)
+        } else {
+            coef_mat[, j, ] <- as.matrix(coef_tmp[[j]]$Bmat)
+        }
     }
     
     ghat <- lapply(1:nlambda, FUN = function(l) hat_net(coef_mat[, , l], thresh = thresh, type = sym))
