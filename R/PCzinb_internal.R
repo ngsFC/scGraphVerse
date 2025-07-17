@@ -43,7 +43,8 @@ PCzinb_internal <- function(X,
                            maxcard = 2,
                            extend = TRUE,
                            max_iter = 100,
-                           tol = 1e-6) {
+                           tol = 1e-6,
+                           nCores = 1) {
     
     method <- match.arg(method)
     
@@ -64,10 +65,13 @@ PCzinb_internal <- function(X,
         stop("maxcard must be non-negative")
     }
     
+    # Setup BiocParallel backend
+    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
+    
     # Call appropriate method
     switch(method,
-           poi = pois.wald(X, maxcard, alpha, extend),
-           nb = nb.wald(X, maxcard, alpha, extend),
-           zinb0 = zinb0.noT(X, maxcard, alpha, extend, max_iter, tol),
-           zinb1 = zinb1.noT(X, maxcard, alpha, extend, max_iter, tol))
+           poi = pois.wald(X, maxcard, alpha, extend, BPPARAM),
+           nb = nb.wald(X, maxcard, alpha, extend, BPPARAM),
+           zinb0 = zinb0.noT(X, maxcard, alpha, extend, max_iter, tol, BPPARAM),
+           zinb1 = zinb1.noT(X, maxcard, alpha, extend, max_iter, tol, BPPARAM))
 }

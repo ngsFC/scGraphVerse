@@ -583,7 +583,7 @@
         sym = "OR", nCores = nCores
     ), params)
     
-    fit <- do.call(zilgm_internal, zilgm_args)
+    fit <- do.call(ZILGM_internal, zilgm_args)
     adj <- fit$network[[fit$opt_index]]
     adj <- adj * 1
     dimnames(adj) <- if (is.null(adjm)) {
@@ -626,11 +626,6 @@
 #' @keywords internal
 #' @noRd
 .run_pczinb <- function(mat, adjm, nCores, params = list()) {
-    # Setup parallel backend for foreach
-    cl <- parallel::makeCluster(nCores)
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-    
     pczinb_args <- modifyList(list(
         X = t(mat),
         method = "poi",
@@ -638,7 +633,8 @@
         alpha = 0.05,
         extend = TRUE,
         max_iter = 100,
-        tol = 1e-6
+        tol = 1e-6,
+        nCores = nCores
     ), params)
     
     adj <- do.call(PCzinb_internal, pczinb_args)
@@ -1345,8 +1341,15 @@ importance <- function(rf_model, scale = TRUE) {
     if (ncol(imp_matrix) == 1) {
         return(as.vector(imp_matrix))
     } else {
-        # For multi-class, return the mean decrease in accuracy
-        return(imp_matrix[, "MeanDecreaseAccuracy"])
+        # Check which importance measure is available
+        if ("MeanDecreaseAccuracy" %in% colnames(imp_matrix)) {
+            return(imp_matrix[, "MeanDecreaseAccuracy"])
+        } else if ("MeanDecreaseGini" %in% colnames(imp_matrix)) {
+            return(imp_matrix[, "MeanDecreaseGini"])
+        } else {
+            # Return first column if no standard names found
+            return(imp_matrix[, 1])
+        }
     }
 }
 
@@ -1410,7 +1413,10 @@ zigm_network <- function(X, lambda = NULL, family = c("Poisson", "NBI", "NBII"),
         penalty_mat <- matrix(1, p, p)
     }
     
-    coef_tmp <- parallel::mclapply(1:p, FUN = function(j) {
+    # Setup BiocParallel
+    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
+    
+    coef_tmp <- BiocParallel::bplapply(1:p, FUN = function(j) {
         tryCatch({
             zigm_wrapper(jth = j, X = X, lambda = lambda, family = family, 
                         update_type = update_type, theta = theta, thresh = thresh, 
@@ -1424,7 +1430,7 @@ zigm_network <- function(X, lambda = NULL, family = c("Poisson", "NBI", "NBII"),
                 Bmat = Matrix::Matrix(0, p, nlambda, sparse = TRUE)
             )
         })
-    }, mc.cores = nCores, mc.preschedule = FALSE)
+    }, BPPARAM = BPPARAM)
     
     # Check for errors in parallel results
     for (j in 1:p) {
@@ -1680,23 +1686,15 @@ zilgm_negbin2 <- function(y, x, lambda, weights = NULL, update_type = c("IRLS", 
 # PCzinb supporting functions
 #' @keywords internal
 #' @noRd
-pois.wald <- function(X, maxcard, alpha, extend) {
+pois.wald <- function(X, maxcard, alpha, extend, BPPARAM = BiocParallel::bpparam()) {
     p <- ncol(X)
     n <- nrow(X)
     adj <- matrix(1, p, p)
     diag(adj) <- 0
     ncard <- 0
     
-    # Check if foreach is available
-    if (!requireNamespace("foreach", quietly = TRUE)) {
-        stop("foreach package is required for pois.wald function")
-    }
-    if (!requireNamespace("doParallel", quietly = TRUE)) {
-        stop("doParallel package is required for pois.wald function")
-    }
-    
     while (ncard <= maxcard) {
-        V <- foreach::foreach(i = 1:p, .combine = "cbind") %dopar% {
+        V <- BiocParallel::bplapply(1:p, function(i) {
             neighbor <- which(adj[, i] == 1)
             if (length(neighbor) >= ncard) {
                 condset <- utils::combn(neighbor, ncard, FUN = list)
@@ -1718,7 +1716,10 @@ pois.wald <- function(X, maxcard, alpha, extend) {
                 }
             }
             return(adj[, i])
-        }
+        }, BPPARAM = BPPARAM)
+        
+        # Convert list result to matrix
+        V <- do.call(cbind, V)
         
         if (extend == TRUE) {
             adj <- V + t(V)
@@ -1734,7 +1735,7 @@ pois.wald <- function(X, maxcard, alpha, extend) {
 
 #' @keywords internal
 #' @noRd
-nb.wald <- function(X, maxcard, alpha, extend) {
+nb.wald <- function(X, maxcard, alpha, extend, BPPARAM = BiocParallel::bpparam()) {
     p <- ncol(X)
     n <- nrow(X)
     adj <- matrix(1, p, p)
@@ -1742,18 +1743,12 @@ nb.wald <- function(X, maxcard, alpha, extend) {
     ncard <- 0
     
     # Check if required packages are available
-    if (!requireNamespace("foreach", quietly = TRUE)) {
-        stop("foreach package is required for nb.wald function")
-    }
-    if (!requireNamespace("doParallel", quietly = TRUE)) {
-        stop("doParallel package is required for nb.wald function")
-    }
     if (!requireNamespace("MASS", quietly = TRUE)) {
         stop("MASS package is required for nb.wald function")
     }
     
     while (ncard <= maxcard) {
-        adj.est <- foreach::foreach(i = 1:p, .combine = "cbind", .packages = c("MASS")) %dopar% {
+        adj.est <- BiocParallel::bplapply(1:p, function(i) {
             neighbor <- which(adj[, i] == 1)
             if (length(neighbor) >= ncard) {
                 condset <- utils::combn(neighbor, ncard, FUN = list)
@@ -1783,7 +1778,10 @@ nb.wald <- function(X, maxcard, alpha, extend) {
                 }
             }
             return(adj[, i])
-        }
+        }, BPPARAM = BPPARAM)
+        
+        # Convert list result to matrix
+        adj.est <- do.call(cbind, adj.est)
         
         if (extend == TRUE) {
             adj <- adj.est + t(adj.est)
@@ -1798,16 +1796,284 @@ nb.wald <- function(X, maxcard, alpha, extend) {
 
 #' @keywords internal
 #' @noRd
-zinb0.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6) {
-    # Placeholder for zero-inflated negative binomial structure learning (mean focus)
-    # This function requires complex dependencies from the learn2count package
-    stop("zinb0.noT function needs full implementation from learn2count repository including helper functions")
-}
+zinb0.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6, BPPARAM = BiocParallel::bpparam()) {
+  p <- ncol(X)
+  n <- nrow(X)
+  ######estimate dispersion parameter
+  iter.theta <- 2
+  stop.epsilon <- .0001
+  zeta <- try(BiocParallel::bplapply(1:p, function(i) {
+          iter <- 1
+          local.lik <- rep(NA,iter.theta)
+          zeta.i <- rep(mean(X[,i])^2/(var(X[,i])-mean(X[,i])),n)
+          #2. Estimate parameters of ZINB model with zeta.i given by the first step
+          fitadd <- try(fitadd <- optim_fun0noT (beta_mu= rep(1,p), gamma_pi=1, Y=X[,i],
+                                                X_mu=X[,-i], zeta.i, n),silent = TRUE)
+          if(is(fitadd, "try-error")){
+             fit <- glm(X[,i]~X[,-i],family = "poisson")
+             fitadd <- optim_fun0noT (beta_mu= fit$coefficients, gamma_pi=1, Y=X[,i],
+                                    X_mu=X[,-i], zeta.i, n)
+            }
+          ####### Calculate loglikelihood at the first iteration with
+          #    alpha=fitadd, and C.theta = zeta.i obtained from the above step
 
+            local.lik[1] <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                   A.mu = cbind(rep(1,n),X_mu=X[, -i]),
+                                                    A.pi= matrix(rep(1,n),n,1),
+                                                    C.theta = zeta.i)
+            for (iter in 2:iter.theta) {
+                #1. Estimate zeta with initial value alpha=fitadd given by previuous iteration
+                r <- zinb.regression.parseModel (alpha=fitadd, A.mu=cbind(rep(1,n),X[,-i]),
+                                                 A.pi= matrix(rep(1,n),n,1))
+                zeta.temp <- zinbOptimizeDispersion ( mu=r$logMu, logitPi=r$logitPi,Y=X[,i],n)
+               #2. Estimate parameters of ZINB model with zeta given by the first step
+                fitadd.temp <- optim_fun0noT (beta_mu=fitadd[1:p],
+                                            gamma_pi=fitadd[(p+1)],Y=X[,i],
+                                            X_mu=X[,-i], zeta.temp, n)
+                local.lik[iter] <- zinb.loglik.regression (alpha=fitadd.temp, Y=X[,i],
+                                                           A.mu = cbind(rep(1,n),X_mu=X[,-i]),
+                                                           A.pi= matrix(rep(1,n),n,1),
+                                                           C.theta = zeta.temp)
+
+                if (local.lik[iter] > local.lik[iter-1]){
+                   fitadd <- fitadd.temp
+                   zeta.i <- zeta.temp
+                  }else break
+                if(abs((local.lik[iter]-local.lik[iter-1]) /local.lik[iter-1])< stop.epsilon)
+                   break
+
+                iter <- iter+1
+                 }
+
+             return(zeta.i)
+        }, BPPARAM = BPPARAM), silent = TRUE)
+
+  if (!is.matrix(zeta)){
+    zeta_list <- BiocParallel::bplapply(1:p, function(i) {
+      r <- zinb.regression.parseModel (alpha=rep(1,2*p), A.mu=cbind(rep(1,n),scale(X[,-i])),
+                                       A.pi= matrix(rep(1,n),n,1))
+      zeta.i <- zinbOptimizeDispersion ( mu=r$logMu, logitPi=r$logitPi,Y=X[,i],n)
+      return(zeta.i)
+    }, BPPARAM = BPPARAM)
+    zeta <- do.call(cbind, zeta_list)
+  }
+  ############### Estimate adjacency matrix
+
+  adj <- matrix(1,p,p)
+  diag(adj) <- 0
+
+  ncard <- 0
+  while (ncard <= maxcard) {
+    V_list <- BiocParallel::bplapply(1:p, function(i) {
+
+    neighbor <- which (adj[, i] == 1)
+    if (length(neighbor) >= ncard){
+      condset <- combn(neighbor, ncard, FUN = list)
+      for (j in 1: length(neighbor)){
+        condset.temp <- condset
+        indcond <- FALSE
+        k <- 1
+        while (!indcond & k <= length(condset.temp)){
+           if (!(neighbor[j] %in% condset.temp[[k]])){
+
+             # initial value
+             beta_mu <- c(glm(X[,i]~scale(X[,c(neighbor[j], condset.temp[[k]])])
+                              ,family = "poisson")$coefficients)
+             gamma_pi <- 0.5
+
+             # fit model with new edges
+               fitadd <- optim_fun0noT (beta_mu=beta_mu, gamma_pi, Y=X[,i],
+                                    X_mu=scale(X[,c(neighbor[j], condset.temp[[k]])]), zeta[,i], n)
+                # calculate loglikelihood of new model
+                zinb.loglik.add <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                          A.mu = cbind(rep(1,n),X_mu=scale(X[,c(neighbor[j], condset.temp[[k]])])),
+                                                          A.pi= matrix(rep(1,n),n,1),
+                                                          C.theta = zeta[,i])
+                # fit model without adding new edges
+                if (length(condset.temp[[k]])>0){
+                    fitnoadd <- optim_fun0noT (beta_mu=beta_mu[-2], gamma_pi, Y=X[,i],
+                                           X_mu=scale(X[, condset.temp[[k]]]), zeta[,i], n)
+                    # calculate loglikelihood of model without adding new edges
+                    zinb.loglik.noadd <- zinb.loglik.regression (alpha=fitnoadd, Y=X[,i],
+                                                                A.mu = cbind(rep(1,n),X_mu=scale(X[, condset.temp[[k]]])),
+                                                                A.pi= matrix(rep(1,n),n,1),
+                                                                C.theta = zeta[,i])
+                     }else{
+                          fitnoadd <- optim_fun0noT (beta_mu=beta_mu[c(1,2)], gamma_pi, Y=X[,i],
+                                                 X_mu=rep(0,n), zeta[,i], n)
+                          # calculate loglikelihood of model without adding new edges
+                          zinb.loglik.noadd <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                                       A.mu = cbind(rep(1,n),rep(0,n)),
+                                                                       A.pi= matrix(rep(1,n),n,1),
+                                                                       C.theta = zeta[,i])
+                        }
+
+                      goodfit.Deviance <- 2*abs(zinb.loglik.noadd -zinb.loglik.add )
+
+                      if (1-pchisq(goodfit.Deviance,1) > alpha){
+                          adj[neighbor[j], i] <- 0
+                          indcond <- TRUE
+                        }
+                      }
+                      k <- k+1
+                    }
+                  }
+                }
+              return(adj[,i])
+              }, BPPARAM = BPPARAM)
+    
+    # Convert list result to matrix
+    V <- do.call(cbind, V_list)
+    
+    if (extend){
+      adj <- V + t(V)
+      adj[which(adj != 0)] <-1
+    }else
+      adj <- V * t(V)
+
+    ncard <- ncard + 1
+  }
+  return(adj)
+}
 #' @keywords internal
 #' @noRd
-zinb1.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6) {
-    # Placeholder for zero-inflated negative binomial structure learning (with zero-inflation)
-    # This function requires complex dependencies from the learn2count package
-    stop("zinb1.noT function needs full implementation from learn2count repository including helper functions")
+zinb1.noT <- function(X, maxcard, alpha, extend, max_iter = 100, tol = 1e-6, BPPARAM = BiocParallel::bpparam()) {
+  p <- ncol(X)
+  n <- nrow(X)
+  ###### Estimate dispersion parameter
+  iter.theta <- 2
+  stop.epsilon <- .0001
+  zeta <- try(BiocParallel::bplapply(1:p, function(i) {
+          iter <- 1
+          local.lik <- rep(NA,iter.theta)
+          #1. Estimate zeta
+          zeta.i <- rep(mean(X[,i])^2/(var(X[,i])-mean(X[,i])),n)
+          #2. Estimate parameters of ZINB model with zeta.i given by the first step
+          fitadd <- try(fitadd <- optim_funnoT (beta_mu= rep(1,p), gamma_pi=rep(1,p), Y=X[,i],
+                                                X_mu=X[,-i], zeta.i, n),silent = TRUE)
+          if(is(fitadd, "try-error")){
+             fit <- glm(X[,i]~X[,-i],family = "poisson")
+             fitadd <- optim_funnoT (beta_mu= fit$coefficients, gamma_pi=rep(1,p), Y=X[,i],
+                                    X_mu=X[,-i], zeta.i, n)
+            }
+          ####### Calculate loglikelihood at the first iteration with
+          #    alpha=fitadd, and C.theta = zeta.i obtained from the above step
+
+            local.lik[1] <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                   A.mu = cbind(rep(1,n),X_mu=X[, -i]),
+                                                    A.pi = cbind(rep(1,n),X_mu=X[, -i]),
+                                                    C.theta = zeta.i)
+            for (iter in 2:iter.theta) {
+                #1. Estimate zeta with initial value alpha=fitadd given by previuous iteration
+                r <- zinb.regression.parseModel (alpha=fitadd, A.mu=cbind(rep(1,n),X[,-i]),
+                                                 A.pi=cbind(rep(1,n),X_mu=X[, -i]))
+                zeta.temp <- zinbOptimizeDispersion ( mu=r$logMu, logitPi=r$logitPi,Y=X[,i],n)
+               #2. Estimate parameters of ZINB model with zeta given by the first step
+                fitadd.temp <- optim_funnoT (beta_mu=fitadd[1:p],
+                                            gamma_pi=fitadd[(p+1):(2*p)],Y=X[,i],
+                                            X_mu=X[,-i], zeta.temp, n)
+                local.lik[iter] <- zinb.loglik.regression (alpha=fitadd.temp, Y=X[,i],
+                                                           A.mu = cbind(rep(1,n),X_mu=X[,-i]),
+                                                           A.pi = cbind(rep(1,n),X_mu=X[, -i]),
+                                                           C.theta = zeta.temp)
+
+                if (local.lik[iter] > local.lik[iter-1]){
+                   fitadd <- fitadd.temp
+                   zeta.i <- zeta.temp
+                  }else break
+                if(abs((local.lik[iter]-local.lik[iter-1]) /local.lik[iter-1])< stop.epsilon)
+                   break
+
+                iter <- iter+1
+                 }
+
+             return(zeta.i)
+        }, BPPARAM = BPPARAM), silent = TRUE)
+  #)
+  if (!is.matrix(zeta)){
+    zeta_list <- BiocParallel::bplapply(1:p, function(i) {
+      r <- zinb.regression.parseModel (alpha=rep(1,2*p), A.mu=cbind(rep(1,n),scale(X[,-i])),
+                                          A.pi=cbind(rep(1,n),scale(X[,-i])))
+      zeta.i <- zinbOptimizeDispersion ( mu=r$logMu, logitPi=r$logitPi,Y=X[,i],n)
+      return(zeta.i)
+    }, BPPARAM = BPPARAM)
+    zeta <- do.call(cbind, zeta_list)
+  }
+
+  ############### Estimate adjacency matrix
+
+  adj <- matrix(1,p,p)
+  diag(adj) <- 0
+  ncard <- 0
+  while (ncard <= maxcard) {
+    V_list <- BiocParallel::bplapply(1:p, function(i) {
+
+    neighbor <- which (adj[, i] == 1)
+    if (length(neighbor) >= ncard){
+      condset <- combn(neighbor, ncard, FUN = list)
+      for (j in 1: length(neighbor)){
+        condset.temp <- condset
+        indcond <- FALSE
+        k <- 1
+        while (!indcond & k <= length(condset.temp)){
+           if (!(neighbor[j] %in% condset.temp[[k]])){
+
+             # initial value
+             beta_mu <- c(glm(X[,i]~scale(X[,c(neighbor[j], condset.temp[[k]])])
+                              ,family = "poisson")$coefficients)
+             gamma_pi <- rep(0.5,2+ncard)
+
+             # fit model with new edges
+               fitadd <- optim_funnoT (beta_mu=beta_mu, gamma_pi, Y=X[,i],
+                                    X_mu=scale(X[,c(neighbor[j], condset.temp[[k]])]), zeta[,i], n)
+                # calculate loglikelihood of new model
+                zinb.loglik.add <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                          A.mu = cbind(rep(1,n),X_mu=scale(X[,c(neighbor[j], condset.temp[[k]])])),
+                                                          A.pi = cbind(rep(1,n),X_mu=scale(X[,c(neighbor[j], condset.temp[[k]])])),
+                                                          C.theta = zeta[,i])
+                # fit model without adding new edges
+                if (length(condset.temp[[k]])>0){
+                    fitnoadd <- optim_funnoT (beta_mu=beta_mu[-2], gamma_pi[-1], Y=X[,i],
+                                           X_mu=scale(X[, condset.temp[[k]]]), zeta[,i], n)
+                    # calculate loglikelihood of model without adding new edges
+                    zinb.loglik.noadd <- zinb.loglik.regression (alpha=fitnoadd, Y=X[,i],
+                                                                A.mu = cbind(rep(1,n),X_mu=scale(X[, condset.temp[[k]]])),
+                                                                A.pi = cbind(rep(1,n),X_mu=scale(X[, condset.temp[[k]]])),
+                                                                C.theta = zeta[,i])
+                     }else{
+                          fitnoadd <- optim_funnoT (beta_mu=beta_mu[c(1,2)], gamma_pi, Y=X[,i],
+                                                 X_mu=rep(0,n), zeta[,i], n)
+                          # calculate loglikelihood of model without adding new edges
+                          zinb.loglik.noadd <- zinb.loglik.regression (alpha=fitadd, Y=X[,i],
+                                                                       A.mu = cbind(rep(1,n),rep(0,n)),
+                                                                       A.pi = cbind(rep(1,n),rep(0,n)),
+                                                                       C.theta = zeta[,i])
+                        }
+                        ### Deviance tests
+                      goodfit.Deviance <- 2*(zinb.loglik.add-zinb.loglik.noadd  )
+
+                      if (pchisq(goodfit.Deviance,2,lower.tail=FALSE) > alpha){
+                          adj[neighbor[j], i] <- 0
+                          indcond <- TRUE
+                        }
+                      }
+                      k <- k+1
+                    }
+                  }
+                }
+              return(adj[,i])
+              }, BPPARAM = BPPARAM)
+    
+    # Convert list result to matrix
+    V <- do.call(cbind, V_list)
+    
+    if (extend){
+      adj <- V + t(V)
+      adj[which(adj != 0)] <-1
+    }else
+      adj <- V * t(V)
+
+    ncard <- ncard + 1
+  }
+  return(adj)
 }
