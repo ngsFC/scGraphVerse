@@ -2285,4 +2285,3 @@ log1pexp <- function(x) {
   # Numerically stable computation of log(1 + exp(x))
   ifelse(x > 30, x, log1p(exp(x)))
 }
-EOF < /dev/null
