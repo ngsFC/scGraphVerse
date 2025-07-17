@@ -53,7 +53,7 @@ JRF_internal <- function(X, ntree, mtry, genes.name, nCores = 1) {
     BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
     
     # Parallelize over genes
-    gene_results <- BiocParallel::bplapply(1:length(genes.name), function(j) {
+    gene_results <- BiocParallel::bplapply(1:length(genes.name), function(j, X, mtry, sampsize, nclasses, ntree, p, tot) {
         covar <- matrix(0, (p - 1) * nclasses, tot)
         y <- matrix(0, nclasses, tot)
         for (c in 1:nclasses) {
@@ -76,7 +76,7 @@ JRF_internal <- function(X, ntree, mtry, genes.name, nCores = 1) {
         }
         
         return(list(gene_idx = j, importance = gene_imp))
-    }, BPPARAM = BPPARAM)
+    }, X = X, mtry = mtry, sampsize = sampsize, nclasses = nclasses, ntree = ntree, p = p, tot = tot, BPPARAM = BPPARAM)
     
     # Reconstruct importance array from parallel results
     for (result in gene_results) {

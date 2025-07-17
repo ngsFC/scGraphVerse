@@ -583,7 +583,7 @@
         sym = "OR", nCores = nCores
     ), params)
     
-    fit <- do.call(ZILGM_internal, zilgm_args)
+    fit <- do.call(zilgm_internal, zilgm_args)
     adj <- fit$network[[fit$opt_index]]
     adj <- adj * 1
     dimnames(adj) <- if (is.null(adjm)) {

@@ -66,7 +66,11 @@ PCzinb_internal <- function(X,
     }
     
     # Setup BiocParallel backend
-    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
+    if (nCores == 1) {
+        BPPARAM <- BiocParallel::SerialParam()
+    } else {
+        BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
+    }
     
     # Call appropriate method
     switch(method,
