@@ -51,8 +51,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
         .estimate_gene_network(X, gene_idx, lambda, family)
     }, BPPARAM = bp_param)
     
-    # Combine results
-    .combine_zilgm_results(gene_results, lambda, p_genes, colnames(X))
+    # Combine results and perform lambda selection
+    .combine_zilgm_results(gene_results, lambda, p_genes, colnames(X), X)
 }
 
 #' Estimate lambda max for ZILGM
@@ -132,7 +132,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
 #' Combine ZILGM results into final format
 #' @keywords internal
 #' @noRd
-.combine_zilgm_results <- function(gene_results, lambda, p_genes, gene_names) {
+.combine_zilgm_results <- function(gene_results, lambda, p_genes, gene_names, X) {
     n_lambda <- length(lambda)
     
     # Initialize coefficient array
@@ -173,10 +173,83 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
         networks[[i]] <- adj_matrix
     }
     
+    # Optimal lambda selection using stability-based criterion
+    opt_index <- .select_optimal_lambda(networks, X, gene_results)
+    
+    # Create binary adjacency matrix from optimal lambda
+    optimal_network <- networks[[opt_index]]
+    
+    # Convert to binary matrix using adaptive threshold
+    threshold <- .adaptive_threshold(optimal_network)
+    binary_network <- (optimal_network > threshold) * 1
+    
+    # Ensure symmetric binary matrix
+    binary_network <- pmax(binary_network, t(binary_network))
+    
     return(list(
         network = networks,
         coef_network = coef_array,
         lambda = lambda,
+        opt_index = opt_index,
+        opt_lambda = lambda[opt_index],
+        binary_network = binary_network,
         call = match.call()
     ))
+}
+
+#' Select optimal lambda using stability criterion
+#' @keywords internal
+#' @noRd
+.select_optimal_lambda <- function(networks, X, gene_results) {
+    n_lambda <- length(networks)
+    
+    # If only one lambda, return it
+    if (n_lambda == 1) return(1)
+    
+    # Calculate stability score for each lambda
+    stability_scores <- vapply(seq_len(n_lambda), function(i) {
+        network <- networks[[i]]
+        
+        # Count non-zero edges
+        n_edges <- sum(network > 0) / 2  # Divide by 2 for symmetric matrix
+        
+        # Penalize very sparse or very dense networks
+        p <- nrow(network)
+        max_edges <- p * (p - 1) / 2
+        sparsity <- n_edges / max_edges
+        
+        # Optimal sparsity around 0.1-0.3 for biological networks
+        sparsity_score <- exp(-abs(sparsity - 0.2) / 0.1)
+        
+        # Stability based on coefficient magnitudes
+        coef_stability <- mean(network[network > 0])
+        
+        return(sparsity_score * coef_stability)
+    }, numeric(1))
+    
+    # Return index of maximum stability
+    which.max(stability_scores)
+}
+
+#' Adaptive threshold for binary conversion
+#' @keywords internal
+#' @noRd
+.adaptive_threshold <- function(network) {
+    # Remove zeros and diagonal
+    values <- network[network > 0 & !diag(nrow(network))]
+    
+    if (length(values) == 0) return(0)
+    
+    # Use median as adaptive threshold for robustness
+    threshold <- median(values)
+    
+    # Ensure reasonable threshold bounds
+    max_val <- max(values)
+    min_threshold <- max_val * 0.01  # At least 1% of max
+    max_threshold <- max_val * 0.5   # At most 50% of max
+    
+    threshold <- pmax(threshold, min_threshold)
+    threshold <- pmin(threshold, max_threshold)
+    
+    return(threshold)
 }
