@@ -38,9 +38,9 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     
     method <- match.arg(method, c("poi", "nb", "zinb0", "zinb1"))
     
-    # Set default alpha if not provided (more liberal for network discovery)
+    # Set default alpha if not provided (original formula from drisso/learn2count)
     if (is.null(alpha)) {
-        alpha <- 0.05  # Standard significance level
+        alpha <- 2 * pnorm(n_samples^0.2, lower.tail = FALSE)
     }
     
     # Initialize complete graph
