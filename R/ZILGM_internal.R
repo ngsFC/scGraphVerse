@@ -60,21 +60,23 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Create adjacency networks with proper symmetrization
     adj_networks <- .create_adjacency_networks(coef_networks, sym)
     
-    # Bootstrap selection if requested
+    # Enhanced lambda selection with stability criteria
     if (do_boot) {
         boot_results <- tryCatch({
-            .bootstrap_lambda_selection(X, lambda, family, update_type, 
-                                       theta, thresh, boot_num, beta, bp_param)
+            .bootstrap_lambda_selection_stability(X, lambda, family, update_type, 
+                                                 theta, thresh, boot_num, beta, bp_param, adj_networks)
         }, error = function(e) {
-            # Return default values if bootstrap fails
-            list(opt_index = ceiling(nlambda / 2), variability = NULL)
+            # Fallback to sparsity-based selection if bootstrap fails
+            .select_lambda_by_sparsity(adj_networks, lambda)
         })
         
         opt_index <- boot_results$opt_index
         opt_lambda <- lambda[opt_index]
         variability <- boot_results$variability
     } else {
-        opt_index <- ceiling(nlambda / 2)  # Default to middle lambda
+        # Use sparsity-based selection instead of arbitrary middle choice
+        sparsity_results <- .select_lambda_by_sparsity(adj_networks, lambda)
+        opt_index <- sparsity_results$opt_index
         opt_lambda <- lambda[opt_index]
         variability <- NULL
     }
@@ -437,17 +439,21 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     
     for (j in seq_len(p_genes)) {
         beta_matrix <- gene_results[[j]]
-        if (!is.null(beta_matrix)) {
+        if (!is.null(beta_matrix) && !any(is.na(beta_matrix))) {
             # Map coefficients back to full gene indices
             predictor_indices <- setdiff(seq_len(p_genes), j)
-            coef_array[predictor_indices, j, ] <- beta_matrix
+            
+            # Ensure dimensions match
+            if (nrow(beta_matrix) == length(predictor_indices) && ncol(beta_matrix) == n_lambda) {
+                coef_array[predictor_indices, j, ] <- beta_matrix
+            }
         }
     }
     
     return(coef_array)
 }
 
-#' Create adjacency networks with proper symmetrization
+#' Create adjacency networks with regularization-induced sparsity
 #' @keywords internal
 #' @noRd
 .create_adjacency_networks <- function(coef_networks, sym) {
@@ -455,8 +461,20 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     networks <- vector("list", n_lambda)
     
     for (i in seq_len(n_lambda)) {
-        # Take absolute values of coefficients
-        adj_matrix <- abs(coef_networks[, , i])
+        # Get coefficient matrix for this lambda
+        coef_matrix <- coef_networks[, , i]
+        
+        # Handle NAs and Infs
+        coef_matrix[is.na(coef_matrix) | is.infinite(coef_matrix)] <- 0
+        
+        # Use regularization-induced sparsity: coefficients are exactly zero when regularized out
+        # No arbitrary thresholding - trust the LASSO/regularization process
+        adj_matrix <- abs(coef_matrix)
+        
+        # Apply tolerance for numerical precision (much smaller than arbitrary threshold)
+        # This handles floating point precision issues, not statistical significance
+        tolerance <- .Machine$double.eps * 100
+        adj_matrix[adj_matrix < tolerance] <- 0
         
         # Symmetrize according to method
         if (sym == "OR") {
@@ -467,8 +485,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             adj_matrix <- pmin(adj_matrix, t(adj_matrix))
         }
         
-        # Convert to binary adjacency matrix
-        adj_matrix <- (adj_matrix > 0) * 1
+        # Convert to binary adjacency matrix based on actual regularization-induced zeros
+        adj_matrix <- (adj_matrix > tolerance) * 1
         
         networks[[i]] <- adj_matrix
     }
@@ -476,56 +494,109 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     return(networks)
 }
 
-#' Bootstrap lambda selection (exact implementation)
+#' Bootstrap lambda selection with stability criteria (StARS-like approach)
 #' @keywords internal
 #' @noRd
-.bootstrap_lambda_selection <- function(X, lambda, family, update_type, theta, thresh, 
-                                       boot_num, beta, bp_param) {
+.bootstrap_lambda_selection_stability <- function(X, lambda, family, update_type, theta, thresh, 
+                                                 boot_num, beta, bp_param, full_networks) {
     n <- nrow(X)
     p <- ncol(X)
     n_lambda <- length(lambda)
     
-    # Bootstrap networks
+    # Subsample size for stability selection (typically 80% of samples)
+    subsample_size <- floor(0.8 * n)
+    
+    # Bootstrap networks with subsampling
     boot_networks <- BiocParallel::bplapply(seq_len(boot_num), function(b) {
-        # Bootstrap sample
-        boot_indices <- sample(seq_len(n), n, replace = TRUE)
-        X_boot <- X[boot_indices, , drop = FALSE]
+        # Subsample (not bootstrap - this is key for stability)
+        subsample_indices <- sample(seq_len(n), subsample_size, replace = FALSE)
+        X_sub <- X[subsample_indices, , drop = FALSE]
         
-        # Fit ZILGM on bootstrap sample (simplified)
-        boot_gene_results <- BiocParallel::bplapply(seq_len(ncol(X_boot)), function(j) {
-            .fit_zilgm_single_gene(X_boot, j, lambda, family, update_type, theta, thresh)
+        # Fit ZILGM on subsample
+        boot_gene_results <- BiocParallel::bplapply(seq_len(ncol(X_sub)), function(j) {
+            .fit_zilgm_single_gene(X_sub, j, lambda, family, update_type, theta, thresh)
         }, BPPARAM = BiocParallel::SerialParam())
         
-        # Create simple networks
-        boot_coef_networks <- .combine_coefficient_matrices(boot_gene_results, ncol(X_boot), lambda)
+        # Create networks
+        boot_coef_networks <- .combine_coefficient_matrices(boot_gene_results, ncol(X_sub), lambda)
         boot_adj_networks <- .create_adjacency_networks(boot_coef_networks, "OR")
         
-        boot_result <- list(network = boot_adj_networks)
-        
-        return(boot_result$network)
+        return(boot_adj_networks)
     }, BPPARAM = bp_param)
     
-    # Calculate variability for each lambda
-    variability <- numeric(n_lambda)
+    # Calculate stability for each lambda (StARS criterion)
+    stability <- numeric(n_lambda)
+    edge_variability <- numeric(n_lambda)
+    
     for (i in seq_len(n_lambda)) {
-        # Extract networks for this lambda across bootstrap samples
+        # Extract networks for this lambda across subsamples
         lambda_networks <- lapply(boot_networks, function(nets) nets[[i]])
         
-        # Calculate edge variability
+        # Calculate edge selection probabilities
         edge_probs <- Reduce("+", lambda_networks) / boot_num
-        variability[i] <- mean(edge_probs * (1 - edge_probs))
+        
+        # StARS instability measure: 2 * mean(p_ij * (1 - p_ij))
+        edge_instability <- 2 * edge_probs * (1 - edge_probs)
+        stability[i] <- mean(edge_instability)
+        
+        # Also track simple variability
+        edge_variability[i] <- mean(edge_probs * (1 - edge_probs))
     }
     
-    # Select lambda with minimum variability
-    opt_index <- which.min(variability)
+    # StARS selection: choose sparsest model with stability below threshold
+    stability_threshold <- 0.1  # Standard StARS threshold
+    valid_indices <- which(stability <= stability_threshold)
+    
+    if (length(valid_indices) > 0) {
+        # Among stable models, choose the sparsest (highest lambda)
+        opt_index <- min(valid_indices)
+    } else {
+        # Fallback: choose lambda with minimum stability
+        opt_index <- which.min(stability)
+    }
     
     # Ensure valid index
     if (length(opt_index) == 0 || is.na(opt_index) || opt_index < 1) {
-        opt_index <- 1  # Default to first lambda
+        opt_index <- .select_lambda_by_sparsity(full_networks, lambda)$opt_index
     }
     
     return(list(
         opt_index = opt_index,
-        variability = variability
+        variability = edge_variability,
+        stability = stability
+    ))
+}
+
+#' Select lambda based on network sparsity
+#' @keywords internal
+#' @noRd
+.select_lambda_by_sparsity <- function(networks, lambda) {
+    n_lambda <- length(lambda)
+    p <- nrow(networks[[1]])
+    max_edges <- p * (p - 1) / 2  # Maximum possible edges
+    
+    # Calculate sparsity for each lambda
+    sparsity <- numeric(n_lambda)
+    for (i in seq_len(n_lambda)) {
+        adj_matrix <- networks[[i]]
+        n_edges <- sum(adj_matrix[upper.tri(adj_matrix)])
+        sparsity[i] <- n_edges / max_edges
+    }
+    
+    # Select lambda that gives reasonable sparsity (between 1% and 30%)
+    target_sparsity_range <- c(0.01, 0.30)
+    valid_indices <- which(sparsity >= target_sparsity_range[1] & sparsity <= target_sparsity_range[2])
+    
+    if (length(valid_indices) > 0) {
+        # Among valid range, choose the sparsest (lowest sparsity)
+        opt_index <- valid_indices[which.min(sparsity[valid_indices])]
+    } else {
+        # Fallback: find closest to 10% sparsity
+        opt_index <- which.min(abs(sparsity - 0.10))
+    }
+    
+    return(list(
+        opt_index = opt_index,
+        sparsity = sparsity
     ))
 }
