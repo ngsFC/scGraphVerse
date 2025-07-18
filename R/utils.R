@@ -582,10 +582,10 @@
     fit <- do.call(zilgm_internal, zilgm_args)
     
     # Use optimal binary network from bootstrap selection
-    if (!is.null(fit$opt_index)) {
+    if (!is.null(fit$opt_index) && fit$opt_index > 0 && fit$opt_index <= length(fit$network)) {
         adj <- fit$network[[fit$opt_index]]
     } else {
-        # Fallback to first network if bootstrap failed
+        # Fallback to first network if bootstrap failed or invalid index
         adj <- fit$network[[1]]
     }
     
