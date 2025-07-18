@@ -38,9 +38,9 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     
     method <- match.arg(method, c("poi", "nb", "zinb0", "zinb1"))
     
-    # Set default alpha if not provided
+    # Set default alpha if not provided (more liberal for network discovery)
     if (is.null(alpha)) {
-        alpha <- 2 * pnorm(n_samples^0.2, lower.tail = FALSE)
+        alpha <- 0.05  # Standard significance level
     }
     
     # Initialize complete graph
@@ -231,12 +231,19 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
             X_null <- matrix(1, nrow = length(y), ncol = 1)
         }
         
-        # Fit ZINB models
+        # Fit ZINB models with fallback
         ll_full <- .fit_zinb_model(y, X_full, "zinb0")
         ll_null <- .fit_zinb_model(y, X_null, "zinb0")
         
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
         # Likelihood ratio test
         lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0  # Ensure non-negative
         p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
         
         return(p_value > alpha)
@@ -293,18 +300,37 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     # Combine parameters
     params_init <- c(beta_init, log(theta_init), qlogis(pi_init))
     
-    # Optimize ZINB likelihood
+    # Optimize ZINB likelihood with multiple attempts
     opt_result <- tryCatch({
         if (method == "zinb0") {
-            optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
-                  method = "BFGS", control = list(maxit = 100))
+            # Try BFGS first
+            result <- optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
+                           method = "BFGS", control = list(maxit = 50))
+            
+            # If BFGS fails, try Nelder-Mead
+            if (result$convergence != 0) {
+                result <- optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
+                               method = "Nelder-Mead", control = list(maxit = 100))
+            }
+            result
         } else {
-            optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
-                  method = "BFGS", control = list(maxit = 100))
+            result <- optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
+                           method = "BFGS", control = list(maxit = 50))
+            
+            if (result$convergence != 0) {
+                result <- optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
+                               method = "Nelder-Mead", control = list(maxit = 100))
+            }
+            result
         }
     }, error = function(e) {
-        list(value = 1e6)  # Return large negative log-likelihood on error
+        list(value = 1e6, convergence = 1)  # Return large negative log-likelihood on error
     })
+    
+    # Check if optimization succeeded
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)  # Return NA for failed optimization
+    }
     
     return(-opt_result$value)  # Return log-likelihood
 }
@@ -327,8 +353,13 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     eta <- as.numeric(X %*% beta)
     mu <- exp(eta)
     
-    # ZINB0 log-likelihood
+    # ZINB0 log-likelihood with numerical stability
     ll <- numeric(length(y))
+    
+    # Ensure parameters are in valid ranges
+    theta <- max(theta, 1e-8)
+    pi <- pmax(pmin(pi, 1 - 1e-8), 1e-8)
+    mu <- pmax(mu, 1e-8)
     
     for (i in seq_len(length(y))) {
         if (y[i] == 0) {
@@ -342,9 +373,19 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
                       y[i] * log(mu[i] / (theta + mu[i]))
             ll[i] <- log(1 - pi) + nb_prob
         }
+        
+        # Check for numerical issues
+        if (is.na(ll[i]) || is.infinite(ll[i])) {
+            ll[i] <- -1e6  # Large negative value
+        }
     }
     
-    return(-sum(ll))  # Return negative log-likelihood
+    total_ll <- sum(ll)
+    if (is.na(total_ll) || is.infinite(total_ll)) {
+        return(1e6)  # Return large positive value (since we're minimizing)
+    }
+    
+    return(-total_ll)  # Return negative log-likelihood
 }
 
 #' ZINB1 negative log-likelihood (zero-inflation on both mean and zero component)

@@ -133,8 +133,13 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     n <- length(y)
     p <- ncol(X_pred)
     
-    # Standardize predictors
+    # Standardize predictors with proper handling
     X_std <- scale(X_pred)
+    
+    # Handle cases where scaling fails
+    if (any(is.na(X_std))) {
+        X_std[is.na(X_std)] <- 0
+    }
     
     # Initialize coefficients
     beta_matrix <- matrix(0, nrow = p, ncol = length(lambda))
@@ -181,17 +186,22 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                                prob0 / (prob0 + (1 - prob0) * exp(-mu)),
                                0)
             
-            # Working response and weights
-            z <- eta + (y - mu) / mu
-            w <- mu * (1 - prob_zero)
+            # Working response and weights with numerical stability
+            z <- eta + (y - mu) / pmax(mu, 1e-8)
+            w <- pmax(mu * (1 - prob_zero), 1e-8)
             
             # Weighted coordinate descent with L1 penalty
             for (j in seq_len(p)) {
                 # Partial residual
                 r <- z - X[, -j, drop = FALSE] %*% beta[-j]
                 
-                # Soft thresholding
-                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+                # Soft thresholding with numerical stability
+                denom <- sum(w * X[, j]^2)
+                if (denom > 1e-8) {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                } else {
+                    beta[j] <- 0
+                }
             }
             
         } else {  # MM algorithm
@@ -199,19 +209,27 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             eta <- as.numeric(X %*% beta)
             mu <- exp(eta)
             
-            # MM quadratic approximation
+            # MM quadratic approximation with numerical stability
             for (j in seq_len(p)) {
                 # Compute gradient and Hessian approximation
                 grad <- sum(X[, j] * (y - mu))
-                hess <- sum(X[, j]^2 * mu)
+                hess <- sum(X[, j]^2 * pmax(mu, 1e-8))
                 
                 # MM update with soft thresholding
-                beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess) 
+                if (hess > 1e-8) {
+                    beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
+                } else {
+                    beta[j] <- 0
+                }
             }
         }
         
-        # Check convergence
-        if (max(abs(beta - beta_old)) < thresh) break
+        # Check convergence with proper NA handling
+        diff <- abs(beta - beta_old)
+        if (any(is.na(diff))) {
+            break  # Exit if NAs appear
+        }
+        if (max(diff) < thresh) break
     }
     
     return(beta)
@@ -248,14 +266,19 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # M-step: Update beta using IRLS or MM
         if (update_type == "IRLS") {
-            # IRLS for NB1
-            w <- mu * (1 - prob_zero) * (theta + mu) / (theta + mu)^2
-            z <- eta + (y - mu) / mu
+            # IRLS for NB1 with numerical stability
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / (theta + mu)^2, 1e-8)
+            z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent
             for (j in seq_len(p)) {
                 r <- z - X[, -j, drop = FALSE] %*% beta[-j]
-                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+                denom <- sum(w * X[, j]^2)
+                if (denom > 1e-8) {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                } else {
+                    beta[j] <- 0
+                }
             }
         } else {
             # MM update for NB1
@@ -268,8 +291,12 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             }
         }
         
-        # Check convergence
-        if (max(abs(beta - beta_old)) < thresh) break
+        # Check convergence with proper NA handling
+        diff <- abs(beta - beta_old)
+        if (any(is.na(diff))) {
+            break  # Exit if NAs appear
+        }
+        if (max(diff) < thresh) break
     }
     
     return(beta)
@@ -306,14 +333,19 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # M-step: Update beta
         if (update_type == "IRLS") {
-            # IRLS for NB2
-            w <- mu * (1 - prob_zero) * (theta + mu) / (1 + mu / theta)^2
-            z <- eta + (y - mu) / mu
+            # IRLS for NB2 with numerical stability
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / (1 + mu / theta)^2, 1e-8)
+            z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent
             for (j in seq_len(p)) {
                 r <- z - X[, -j, drop = FALSE] %*% beta[-j]
-                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+                denom <- sum(w * X[, j]^2)
+                if (denom > 1e-8) {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                } else {
+                    beta[j] <- 0
+                }
             }
         } else {
             # MM update for NB2
@@ -326,8 +358,12 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             }
         }
         
-        # Check convergence
-        if (max(abs(beta - beta_old)) < thresh) break
+        # Check convergence with proper NA handling
+        diff <- abs(beta - beta_old)
+        if (any(is.na(diff))) {
+            break  # Exit if NAs appear
+        }
+        if (max(diff) < thresh) break
     }
     
     return(beta)
