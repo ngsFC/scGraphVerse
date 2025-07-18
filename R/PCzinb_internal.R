@@ -69,9 +69,10 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
                     .simple_poisson_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
                 } else if (method == "nb") {
                     .simple_nb_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
-                } else {
-                    # For ZINB methods, fallback to Poisson to avoid complexity
-                    .simple_poisson_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                } else if (method == "zinb0") {
+                    .simple_zinb0_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                } else if (method == "zinb1") {
+                    .simple_zinb1_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
                 }
             }, error = function(e) {
                 # Return FALSE (assume dependence) on error
@@ -146,6 +147,226 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     } else {
         return(all(test_results))
     }
+}
+
+#' Simplified ZINB0 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb0_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB1 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb1_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB0 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB0 likelihood computation
+        ll_full <- .compute_zinb0_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb0_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB1 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB1 likelihood computation
+        ll_full <- .compute_zinb1_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb1_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB0 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb0_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    pi_init <- mean(y == 0)
+    beta_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, log(theta_init), qlogis(pi_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
+}
+
+#' Simplified ZINB1 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb1_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    beta_init <- rep(0, p)
+    beta_pi_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, beta_pi_init, log(theta_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
 }
 
 #' Exact Poisson independence test with proper likelihood
@@ -497,6 +718,226 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     }
 }
 
+#' Simplified ZINB0 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb0_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB1 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb1_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB0 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB0 likelihood computation
+        ll_full <- .compute_zinb0_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb0_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB1 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB1 likelihood computation
+        ll_full <- .compute_zinb1_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb1_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB0 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb0_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    pi_init <- mean(y == 0)
+    beta_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, log(theta_init), qlogis(pi_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
+}
+
+#' Simplified ZINB1 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb1_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    beta_init <- rep(0, p)
+    beta_pi_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, beta_pi_init, log(theta_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
+}
+
 #' Simplified NB test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
@@ -537,4 +978,224 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     } else {
         return(all(test_results))
     }
+}
+
+#' Simplified ZINB0 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb0_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB1 test for BiocParallel compatibility
+#' @keywords internal
+#' @noRd
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+    # Find conditioning sets
+    neighbors_i <- which(adj_matrix[gene_i, ] == 1)
+    neighbors_j <- which(adj_matrix[gene_j, ] == 1)
+    
+    neighbors_i <- setdiff(neighbors_i, gene_j)
+    neighbors_j <- setdiff(neighbors_j, gene_i)
+    
+    all_neighbors <- unique(c(neighbors_i, neighbors_j))
+    
+    if (length(all_neighbors) < card) {
+        return(FALSE)
+    }
+    
+    # Generate conditioning sets
+    if (card == 0) {
+        conditioning_sets <- list(integer(0))
+    } else {
+        if (length(all_neighbors) >= card) {
+            conditioning_sets <- combn(all_neighbors, card, simplify = FALSE)
+        } else {
+            return(FALSE)
+        }
+    }
+    
+    # Test independence for each conditioning set
+    test_results <- vapply(conditioning_sets, function(cond_set) {
+        .zinb1_independence_test_simple(X, gene_i, gene_j, cond_set, alpha)
+    }, logical(1))
+    
+    # Apply extend logic
+    if (extend) {
+        return(any(test_results))
+    } else {
+        return(all(test_results))
+    }
+}
+
+#' Simplified ZINB0 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB0 likelihood computation
+        ll_full <- .compute_zinb0_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb0_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB1 independence test (BiocParallel compatible)
+#' @keywords internal
+#' @noRd
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+    y <- X[, gene_i]
+    x_main <- X[, gene_j]
+    
+    tryCatch({
+        if (length(cond_set) > 0) {
+            x_cond <- X[, cond_set, drop = FALSE]
+            X_full <- cbind(x_main, x_cond)
+            X_null <- x_cond
+        } else {
+            X_full <- matrix(x_main, ncol = 1)
+            X_null <- matrix(1, nrow = length(y), ncol = 1)
+        }
+        
+        # Simplified ZINB1 likelihood computation
+        ll_full <- .compute_zinb1_loglik_simple(y, X_full)
+        ll_null <- .compute_zinb1_loglik_simple(y, X_null)
+        
+        # Check for numerical issues
+        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+            # Fallback to Poisson test
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (ll_full - ll_null)
+        if (lr_stat < 0) lr_stat <- 0
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(p_value > alpha)
+    }, error = function(e) {
+        # Fallback to Poisson test on error
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+    })
+}
+
+#' Simplified ZINB0 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb0_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    pi_init <- mean(y == 0)
+    beta_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, log(theta_init), qlogis(pi_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
+}
+
+#' Simplified ZINB1 log-likelihood computation
+#' @keywords internal
+#' @noRd
+.compute_zinb1_loglik_simple <- function(y, X) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Use moment estimation for initial parameters
+    theta_init <- .estimate_dispersion_parameter(y)
+    beta_init <- rep(0, p)
+    beta_pi_init <- rep(0, p)
+    
+    # Simple optimization with limited iterations
+    params_init <- c(beta_init, beta_pi_init, log(theta_init))
+    
+    # Quick optimization
+    opt_result <- tryCatch({
+        optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
+              method = "BFGS", control = list(maxit = 20))
+    }, error = function(e) {
+        list(value = 1e6, convergence = 1)
+    })
+    
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+        return(NA)
+    }
+    
+    return(-opt_result$value)
 }

@@ -13,14 +13,14 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     structure and community similarity. GRNBoost2 requires Python package 'arboreto' 
     which can be installed using init_py(install_missing = TRUE). This package 
     includes adapted functions from ZILGM (Park et al., 2021), JRF (Petralia et al., 2015), 
-    and learn2count (Risso & Romualdi, 2021) packages with proper attribution under GPL-2 license.
+    and learn2count (Nguyen et al. 2023) packages with proper attribution under GPL-2 license.
 License: GPL-3
 License_file: LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 biocViews: GeneRegulation, NetworkInference, SingleCell, RNASeq, Visualization, Software, GraphAndNetwork, GeneSetEnrichment, NetworkEnrichment, Pathways, Sequencing, Reactome, Network, KEGG
-URL: https://ngsFC.github.io/scGraphVerse, https://ngsfc.github.io/scGraphVerse/
+URL: https://ngsFC.github.io/scGraphVerse
 BugReports: https://github.com/ngsFC/scGraphVerse/issues
 Depends: 
     R (>= 4.4.0)
