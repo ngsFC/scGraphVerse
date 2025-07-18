@@ -581,8 +581,13 @@
     
     fit <- do.call(zilgm_internal, zilgm_args)
     
-    # Use optimal binary network
-    adj <- fit$binary_network
+    # Use optimal binary network from bootstrap selection
+    if (!is.null(fit$opt_index)) {
+        adj <- fit$network[[fit$opt_index]]
+    } else {
+        # Fallback to first network if bootstrap failed
+        adj <- fit$network[[1]]
+    }
     
     # Set proper dimensions
     dimnames(adj) <- if (is.null(adjm)) {

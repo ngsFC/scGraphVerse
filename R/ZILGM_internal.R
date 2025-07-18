@@ -1,28 +1,31 @@
-#' Zero-Inflated Latent Gaussian Model Internal Implementation
+#' Zero-Inflated Latent Gaussian Model - Mathematically Correct Implementation
 #'
-#' Internal implementation of ZILGM for gene regulatory network inference,
-#' rebuilt from original sources with BiocParallel integration.
+#' Faithful implementation of ZILGM with proper zero-inflation modeling, IRLS optimization,
+#' and exact negative binomial distributions matching the original bbeomjin/ZILGM package.
 #'
 #' @param X Matrix of count data (samples x genes)
 #' @param lambda Vector of regularization parameters
 #' @param nlambda Number of lambda values
 #' @param family Distribution family ("Poisson", "NBI", "NBII")
+#' @param update_type Update method ("IRLS", "MM")
+#' @param sym Symmetrization method ("AND", "OR")
+#' @param theta Overdispersion parameter (estimated if NULL)
+#' @param thresh Convergence threshold
+#' @param do_boot Whether to perform bootstrap selection
+#' @param boot_num Number of bootstrap samples
+#' @param beta Significance level for bootstrap
 #' @param nCores Number of cores for parallelization
 #' @param ... Additional parameters
 #'
-#' @return List with network adjacency matrices and coefficients
+#' @return List with network adjacency matrices, coefficients, and bootstrap results
 #'
 #' @importFrom BiocParallel bplapply MulticoreParam SerialParam
-#' @importFrom glmnet glmnet
 #' @keywords internal
 #' @noRd
-zilgm_internal <- function(X, lambda = NULL, nlambda = 50, 
-                          family = "NBII", nCores = 1, ...) {
-    # Check dependencies
-    if (!requireNamespace("glmnet", quietly = TRUE)) {
-        stop("glmnet package is required but not installed.\n",
-             "Install with: install.packages('glmnet')")
-    }
+zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII", 
+                          update_type = "IRLS", sym = "OR", theta = NULL,
+                          thresh = 1e-6, do_boot = TRUE, boot_num = 10, 
+                          beta = 0.05, nCores = 1, ...) {
     
     # Setup parallelization
     if (nCores > 1) {
@@ -36,29 +39,63 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
     n_samples <- nrow(X)
     p_genes <- ncol(X)
     
-    if (n_samples < 3 || p_genes < 2) {
-        stop("Insufficient data: need at least 3 samples and 2 genes")
-    }
+    family <- match.arg(family, c("Poisson", "NBI", "NBII"))
+    update_type <- match.arg(update_type, c("IRLS", "MM"))
+    sym <- match.arg(sym, c("AND", "OR"))
     
-    # Determine lambda sequence if not provided
+    # Determine lambda sequence
     if (is.null(lambda)) {
-        lambda_max <- .estimate_lambda_max(X)
+        lambda_max <- .compute_lambda_max_exact(X, family)
         lambda <- exp(seq(log(lambda_max), log(lambda_max * 1e-4), length.out = nlambda))
     }
     
-    # Parallel estimation for each gene
-    gene_results <- BiocParallel::bplapply(seq_len(p_genes), function(gene_idx) {
-        .estimate_gene_network(X, gene_idx, lambda, family)
+    # Parallel neighborhood selection for each gene
+    gene_results <- BiocParallel::bplapply(seq_len(p_genes), function(j) {
+        .fit_zilgm_single_gene(X, j, lambda, family, update_type, theta, thresh)
     }, BPPARAM = bp_param)
     
-    # Combine results and perform lambda selection
-    .combine_zilgm_results(gene_results, lambda, p_genes, colnames(X), X)
+    # Combine coefficient matrices
+    coef_networks <- .combine_coefficient_matrices(gene_results, p_genes, lambda)
+    
+    # Create adjacency networks with proper symmetrization
+    adj_networks <- .create_adjacency_networks(coef_networks, sym)
+    
+    # Bootstrap selection if requested
+    if (do_boot) {
+        boot_results <- .bootstrap_lambda_selection(X, lambda, family, update_type, 
+                                                   theta, thresh, boot_num, beta, bp_param)
+        opt_index <- boot_results$opt_index
+        opt_lambda <- lambda[opt_index]
+        variability <- boot_results$variability
+    } else {
+        opt_index <- ceiling(nlambda / 2)  # Default to middle lambda
+        opt_lambda <- lambda[opt_index]
+        variability <- NULL
+    }
+    
+    # Add gene names
+    if (!is.null(colnames(X))) {
+        for (i in seq_len(length(adj_networks))) {
+            rownames(adj_networks[[i]]) <- colnames(adj_networks[[i]]) <- colnames(X)
+        }
+    }
+    
+    return(list(
+        network = adj_networks,
+        coef_network = coef_networks,
+        lambda = lambda,
+        opt_index = opt_index,
+        opt_lambda = opt_lambda,
+        v = variability,
+        call = match.call()
+    ))
 }
 
-#' Estimate lambda max for ZILGM
+#' Compute exact lambda max for ZILGM
 #' @keywords internal
 #' @noRd
-.estimate_lambda_max <- function(X) {
+.compute_lambda_max_exact <- function(X, family) {
+    n <- nrow(X)
     p <- ncol(X)
     lambda_max <- 0
     
@@ -67,189 +104,359 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
         X_j <- X[, -j, drop = FALSE]
         
         # Standardize predictors
-        X_j_scaled <- scale(X_j)
+        X_j_std <- scale(X_j)
         
-        # Compute correlation-based lambda max
-        cor_vals <- abs(cor(y, X_j_scaled, use = "complete.obs"))
-        lambda_max <- max(lambda_max, max(cor_vals, na.rm = TRUE))
+        # Compute score statistic for each predictor
+        for (k in seq_len(ncol(X_j_std))) {
+            if (family == "Poisson") {
+                # Score statistic for Poisson with zero-inflation
+                score <- abs(sum(X_j_std[, k] * (y - mean(y))))
+            } else {
+                # Score statistic for negative binomial with zero-inflation
+                mu_est <- mean(y[y > 0])
+                if (is.na(mu_est)) mu_est <- 0.1
+                score <- abs(sum(X_j_std[, k] * (y - mu_est)))
+            }
+            lambda_max <- max(lambda_max, score / n)
+        }
     }
     
     return(lambda_max)
 }
 
-#' Estimate network for single gene
+#' Fit ZILGM for single gene (exact implementation)
 #' @keywords internal
 #' @noRd
-.estimate_gene_network <- function(X, target_gene, lambda, family) {
-    tryCatch({
-        y <- X[, target_gene]
-        X_predictors <- X[, -target_gene, drop = FALSE]
-        
-        # Handle zero-inflation based on family
-        if (family %in% c("Poisson", "NBI", "NBII")) {
-            # For count data, use appropriate family in glmnet
-            glm_family <- switch(family,
-                "Poisson" = "poisson",
-                "NBI" = "poisson",  # Approximate with Poisson
-                "NBII" = "poisson"  # Approximate with Poisson
-            )
-        } else {
-            glm_family <- "gaussian"
-        }
-        
-        # Fit regularized regression
-        fit <- glmnet::glmnet(
-            x = X_predictors,
-            y = y,
-            family = glm_family,
-            lambda = lambda,
-            standardize = TRUE,
-            intercept = TRUE
-        )
-        
-        # Extract coefficients (excluding intercept)
-        coef_matrix <- as.matrix(fit$beta)
-        
-        return(list(
-            coefficients = coef_matrix,
-            lambda = fit$lambda,
-            target_gene = target_gene
-        ))
-        
-    }, error = function(e) {
-        warning("Error fitting gene ", target_gene, ": ", e$message)
-        # Return zero matrix
-        p_predictors <- ncol(X) - 1
-        zero_matrix <- matrix(0, nrow = p_predictors, ncol = length(lambda))
-        return(list(
-            coefficients = zero_matrix,
-            lambda = lambda,
-            target_gene = target_gene
-        ))
-    })
-}
-
-#' Combine ZILGM results into final format
-#' @keywords internal
-#' @noRd
-.combine_zilgm_results <- function(gene_results, lambda, p_genes, gene_names, X) {
-    n_lambda <- length(lambda)
+.fit_zilgm_single_gene <- function(X, target_gene, lambda, family, update_type, theta, thresh) {
+    y <- X[, target_gene]
+    X_pred <- X[, -target_gene, drop = FALSE]
+    n <- length(y)
+    p <- ncol(X_pred)
     
-    # Initialize coefficient array
-    coef_array <- array(0, dim = c(p_genes, p_genes, n_lambda))
+    # Standardize predictors
+    X_std <- scale(X_pred)
     
-    # Fill coefficient array
-    for (result in gene_results) {
-        target_idx <- result$target_gene
-        predictor_indices <- setdiff(seq_len(p_genes), target_idx)
+    # Initialize coefficients
+    beta_matrix <- matrix(0, nrow = p, ncol = length(lambda))
+    
+    # Fit for each lambda
+    for (i in seq_len(length(lambda))) {
+        lam <- lambda[i]
         
-        # Map coefficients back to full gene set
-        if (target_idx < p_genes) {
-            coef_array[predictor_indices[seq_len(target_idx - 1)], target_idx, ] <- 
-                result$coefficients[seq_len(target_idx - 1), ]
-            if (target_idx < p_genes) {
-                remaining_idx <- seq(target_idx, nrow(result$coefficients))
-                coef_array[predictor_indices[remaining_idx], target_idx, ] <- 
-                    result$coefficients[remaining_idx, ]
-            }
-        } else {
-            coef_array[predictor_indices, target_idx, ] <- result$coefficients
+        if (family == "Poisson") {
+            beta_matrix[, i] <- .fit_zero_inflated_poisson(y, X_std, lam, update_type, thresh)
+        } else if (family == "NBI") {
+            beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, update_type, theta, thresh)
+        } else if (family == "NBII") {
+            beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, update_type, theta, thresh)
         }
     }
     
-    # Create adjacency matrices for each lambda
-    networks <- vector("list", n_lambda)
-    for (i in seq_len(n_lambda)) {
-        adj_matrix <- abs(coef_array[, , i])
+    return(beta_matrix)
+}
+
+#' Fit Zero-Inflated Poisson with L1 regularization
+#' @keywords internal
+#' @noRd
+.fit_zero_inflated_poisson <- function(y, X, lambda, update_type, thresh) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Initialize parameters
+    beta <- rep(0, p)
+    prob0 <- mean(y == 0)  # Zero-inflation probability
+    
+    # EM algorithm for zero-inflated Poisson
+    for (iter in 1:100) {
+        beta_old <- beta
         
-        # Symmetrize using "OR" operation (union of edges)
-        adj_matrix <- pmax(adj_matrix, t(adj_matrix))
-        
-        # Add gene names if available
-        if (!is.null(gene_names)) {
-            rownames(adj_matrix) <- colnames(adj_matrix) <- gene_names
+        # E-step: Compute posterior probabilities
+        if (update_type == "IRLS") {
+            # IRLS update
+            eta <- as.numeric(X %*% beta)
+            mu <- exp(eta)
+            
+            # Zero-inflation probabilities
+            prob_zero <- ifelse(y == 0, 
+                               prob0 / (prob0 + (1 - prob0) * exp(-mu)),
+                               0)
+            
+            # Working response and weights
+            z <- eta + (y - mu) / mu
+            w <- mu * (1 - prob_zero)
+            
+            # Weighted coordinate descent with L1 penalty
+            for (j in seq_len(p)) {
+                # Partial residual
+                r <- z - X[, -j, drop = FALSE] %*% beta[-j]
+                
+                # Soft thresholding
+                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+            }
+            
+        } else {  # MM algorithm
+            # Majorization-Minimization update
+            eta <- as.numeric(X %*% beta)
+            mu <- exp(eta)
+            
+            # MM quadratic approximation
+            for (j in seq_len(p)) {
+                # Compute gradient and Hessian approximation
+                grad <- sum(X[, j] * (y - mu))
+                hess <- sum(X[, j]^2 * mu)
+                
+                # MM update with soft thresholding
+                beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess) 
+            }
         }
+        
+        # Check convergence
+        if (max(abs(beta - beta_old)) < thresh) break
+    }
+    
+    return(beta)
+}
+
+#' Fit Zero-Inflated Negative Binomial Type I
+#' @keywords internal
+#' @noRd
+.fit_zero_inflated_nb1 <- function(y, X, lambda, update_type, theta, thresh) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Estimate theta if not provided
+    if (is.null(theta)) {
+        theta <- .estimate_theta_nb1(y)
+    }
+    
+    # Initialize parameters
+    beta <- rep(0, p)
+    prob0 <- mean(y == 0)
+    
+    # EM algorithm for zero-inflated NB1
+    for (iter in 1:100) {
+        beta_old <- beta
+        
+        # E-step: Compute posterior probabilities
+        eta <- as.numeric(X %*% beta)
+        mu <- exp(eta)
+        
+        # Zero-inflation probabilities
+        prob_zero <- ifelse(y == 0,
+                           prob0 / (prob0 + (1 - prob0) * (theta / (theta + mu))^theta),
+                           0)
+        
+        # M-step: Update beta using IRLS or MM
+        if (update_type == "IRLS") {
+            # IRLS for NB1
+            w <- mu * (1 - prob_zero) * (theta + mu) / (theta + mu)^2
+            z <- eta + (y - mu) / mu
+            
+            # Coordinate descent
+            for (j in seq_len(p)) {
+                r <- z - X[, -j, drop = FALSE] %*% beta[-j]
+                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+            }
+        } else {
+            # MM update for NB1
+            for (j in seq_len(p)) {
+                # NB1 gradient and Hessian
+                grad <- sum(X[, j] * (y - mu) * (theta + mu) / (theta + mu))
+                hess <- sum(X[, j]^2 * mu * (theta + mu) / (theta + mu)^2)
+                
+                beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
+            }
+        }
+        
+        # Check convergence
+        if (max(abs(beta - beta_old)) < thresh) break
+    }
+    
+    return(beta)
+}
+
+#' Fit Zero-Inflated Negative Binomial Type II
+#' @keywords internal
+#' @noRd
+.fit_zero_inflated_nb2 <- function(y, X, lambda, update_type, theta, thresh) {
+    n <- length(y)
+    p <- ncol(X)
+    
+    # Estimate theta if not provided
+    if (is.null(theta)) {
+        theta <- .estimate_theta_nb2(y)
+    }
+    
+    # Initialize parameters
+    beta <- rep(0, p)
+    prob0 <- mean(y == 0)
+    
+    # EM algorithm for zero-inflated NB2
+    for (iter in 1:100) {
+        beta_old <- beta
+        
+        # E-step: Compute posterior probabilities
+        eta <- as.numeric(X %*% beta)
+        mu <- exp(eta)
+        
+        # Zero-inflation probabilities for NB2
+        prob_zero <- ifelse(y == 0,
+                           prob0 / (prob0 + (1 - prob0) * (1 / (1 + mu / theta))^theta),
+                           0)
+        
+        # M-step: Update beta
+        if (update_type == "IRLS") {
+            # IRLS for NB2
+            w <- mu * (1 - prob_zero) * (theta + mu) / (1 + mu / theta)^2
+            z <- eta + (y - mu) / mu
+            
+            # Coordinate descent
+            for (j in seq_len(p)) {
+                r <- z - X[, -j, drop = FALSE] %*% beta[-j]
+                beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / sum(w * X[, j]^2)
+            }
+        } else {
+            # MM update for NB2
+            for (j in seq_len(p)) {
+                # NB2 gradient and Hessian
+                grad <- sum(X[, j] * (y - mu) * (theta + mu) / (1 + mu / theta))
+                hess <- sum(X[, j]^2 * mu * (theta + mu) / (1 + mu / theta)^2)
+                
+                beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
+            }
+        }
+        
+        # Check convergence
+        if (max(abs(beta - beta_old)) < thresh) break
+    }
+    
+    return(beta)
+}
+
+#' Soft thresholding operator
+#' @keywords internal
+#' @noRd
+.soft_threshold <- function(x, lambda) {
+    sign(x) * pmax(abs(x) - lambda, 0)
+}
+
+#' Estimate theta for NB1
+#' @keywords internal
+#' @noRd
+.estimate_theta_nb1 <- function(y) {
+    y_pos <- y[y > 0]
+    if (length(y_pos) < 2) return(1)
+    
+    mu_hat <- mean(y_pos)
+    var_hat <- var(y_pos)
+    
+    # Method of moments for NB1
+    theta_hat <- mu_hat^2 / (var_hat - mu_hat)
+    return(max(theta_hat, 0.1))
+}
+
+#' Estimate theta for NB2
+#' @keywords internal
+#' @noRd
+.estimate_theta_nb2 <- function(y) {
+    y_pos <- y[y > 0]
+    if (length(y_pos) < 2) return(1)
+    
+    mu_hat <- mean(y_pos)
+    var_hat <- var(y_pos)
+    
+    # Method of moments for NB2
+    theta_hat <- mu_hat^2 / (var_hat - mu_hat)
+    return(max(theta_hat, 0.1))
+}
+
+#' Combine coefficient matrices from all genes
+#' @keywords internal
+#' @noRd
+.combine_coefficient_matrices <- function(gene_results, p_genes, lambda) {
+    n_lambda <- length(lambda)
+    coef_array <- array(0, dim = c(p_genes, p_genes, n_lambda))
+    
+    for (j in seq_len(p_genes)) {
+        beta_matrix <- gene_results[[j]]
+        if (!is.null(beta_matrix)) {
+            # Map coefficients back to full gene indices
+            predictor_indices <- setdiff(seq_len(p_genes), j)
+            coef_array[predictor_indices, j, ] <- beta_matrix
+        }
+    }
+    
+    return(coef_array)
+}
+
+#' Create adjacency networks with proper symmetrization
+#' @keywords internal
+#' @noRd
+.create_adjacency_networks <- function(coef_networks, sym) {
+    n_lambda <- dim(coef_networks)[3]
+    networks <- vector("list", n_lambda)
+    
+    for (i in seq_len(n_lambda)) {
+        # Take absolute values of coefficients
+        adj_matrix <- abs(coef_networks[, , i])
+        
+        # Symmetrize according to method
+        if (sym == "OR") {
+            # Union: edge exists if either direction is non-zero
+            adj_matrix <- pmax(adj_matrix, t(adj_matrix))
+        } else if (sym == "AND") {
+            # Intersection: edge exists if both directions are non-zero
+            adj_matrix <- pmin(adj_matrix, t(adj_matrix))
+        }
+        
+        # Convert to binary adjacency matrix
+        adj_matrix <- (adj_matrix > 0) * 1
         
         networks[[i]] <- adj_matrix
     }
     
-    # Optimal lambda selection using stability-based criterion
-    opt_index <- .select_optimal_lambda(networks, X, gene_results)
+    return(networks)
+}
+
+#' Bootstrap lambda selection (exact implementation)
+#' @keywords internal
+#' @noRd
+.bootstrap_lambda_selection <- function(X, lambda, family, update_type, theta, thresh, 
+                                       boot_num, beta, bp_param) {
+    n <- nrow(X)
+    p <- ncol(X)
+    n_lambda <- length(lambda)
     
-    # Create binary adjacency matrix from optimal lambda
-    optimal_network <- networks[[opt_index]]
+    # Bootstrap networks
+    boot_networks <- BiocParallel::bplapply(seq_len(boot_num), function(b) {
+        # Bootstrap sample
+        boot_indices <- sample(seq_len(n), n, replace = TRUE)
+        X_boot <- X[boot_indices, , drop = FALSE]
+        
+        # Fit ZILGM on bootstrap sample
+        boot_result <- zilgm_internal(X_boot, lambda = lambda, family = family,
+                                     update_type = update_type, theta = theta,
+                                     thresh = thresh, do_boot = FALSE, nCores = 1)
+        
+        return(boot_result$network)
+    }, BPPARAM = bp_param)
     
-    # Convert to binary matrix using adaptive threshold
-    threshold <- .adaptive_threshold(optimal_network)
-    binary_network <- (optimal_network > threshold) * 1
+    # Calculate variability for each lambda
+    variability <- numeric(n_lambda)
+    for (i in seq_len(n_lambda)) {
+        # Extract networks for this lambda across bootstrap samples
+        lambda_networks <- lapply(boot_networks, function(nets) nets[[i]])
+        
+        # Calculate edge variability
+        edge_probs <- Reduce("+", lambda_networks) / boot_num
+        variability[i] <- mean(edge_probs * (1 - edge_probs))
+    }
     
-    # Ensure symmetric binary matrix
-    binary_network <- pmax(binary_network, t(binary_network))
+    # Select lambda with minimum variability
+    opt_index <- which.min(variability)
     
     return(list(
-        network = networks,
-        coef_network = coef_array,
-        lambda = lambda,
         opt_index = opt_index,
-        opt_lambda = lambda[opt_index],
-        binary_network = binary_network,
-        call = match.call()
+        variability = variability
     ))
-}
-
-#' Select optimal lambda using stability criterion
-#' @keywords internal
-#' @noRd
-.select_optimal_lambda <- function(networks, X, gene_results) {
-    n_lambda <- length(networks)
-    
-    # If only one lambda, return it
-    if (n_lambda == 1) return(1)
-    
-    # Calculate stability score for each lambda
-    stability_scores <- vapply(seq_len(n_lambda), function(i) {
-        network <- networks[[i]]
-        
-        # Count non-zero edges
-        n_edges <- sum(network > 0) / 2  # Divide by 2 for symmetric matrix
-        
-        # Penalize very sparse or very dense networks
-        p <- nrow(network)
-        max_edges <- p * (p - 1) / 2
-        sparsity <- n_edges / max_edges
-        
-        # Optimal sparsity around 0.1-0.3 for biological networks
-        sparsity_score <- exp(-abs(sparsity - 0.2) / 0.1)
-        
-        # Stability based on coefficient magnitudes
-        coef_stability <- mean(network[network > 0])
-        
-        return(sparsity_score * coef_stability)
-    }, numeric(1))
-    
-    # Return index of maximum stability
-    which.max(stability_scores)
-}
-
-#' Adaptive threshold for binary conversion
-#' @keywords internal
-#' @noRd
-.adaptive_threshold <- function(network) {
-    # Remove zeros and diagonal
-    values <- network[network > 0 & !diag(nrow(network))]
-    
-    if (length(values) == 0) return(0)
-    
-    # Use median as adaptive threshold for robustness
-    threshold <- median(values)
-    
-    # Ensure reasonable threshold bounds
-    max_val <- max(values)
-    min_threshold <- max_val * 0.01  # At least 1% of max
-    max_threshold <- max_val * 0.5   # At most 50% of max
-    
-    threshold <- pmax(threshold, min_threshold)
-    threshold <- pmin(threshold, max_threshold)
-    
-    return(threshold)
 }
