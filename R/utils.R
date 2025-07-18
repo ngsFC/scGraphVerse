@@ -683,7 +683,7 @@
                 }
                 return(result_r)
             } else if (method == "PCzinb") {
-                return(.run_pczinb(mat, adjm, params))
+                return(.run_pczinb(mat, adjm, nCores, params))
             }
         },
         BPPARAM = param_outer

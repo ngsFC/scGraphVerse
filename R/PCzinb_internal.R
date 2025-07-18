@@ -19,6 +19,10 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
                            extend = TRUE, nCores = 1, ...) {
     
     # Setup parallelization
+    # Ensure nCores is a single integer
+    nCores <- as.integer(nCores[1])
+    if (is.na(nCores) || nCores < 1) nCores <- 1
+    
     if (nCores > 1) {
         bp_param <- BiocParallel::MulticoreParam(workers = nCores)
     } else {
@@ -169,15 +173,32 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         x_null <- matrix(1, nrow = length(y), ncol = 1)  # Intercept only
     }
     
-    # Fit models
-    fit_full <- glm(y ~ x_full, family = poisson())
-    fit_null <- glm(y ~ x_null, family = poisson())
-    
-    # Likelihood ratio test
-    lr_stat <- 2 * (logLik(fit_full) - logLik(fit_null))
-    p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
-    
-    return(p_value)
+    # Fit models with error handling
+    tryCatch({
+        # Create data frame for cleaner GLM fitting
+        if (length(cond_set) > 0) {
+            data_df <- data.frame(
+                y = y,
+                x_main = x_main,
+                x_cond
+            )
+            fit_full <- glm(y ~ ., data = data_df, family = poisson())
+            fit_null <- glm(y ~ . -x_main, data = data_df, family = poisson())
+        } else {
+            data_df <- data.frame(y = y, x_main = x_main)
+            fit_full <- glm(y ~ x_main, data = data_df, family = poisson())
+            fit_null <- glm(y ~ 1, data = data_df, family = poisson())
+        }
+        
+        # Likelihood ratio test
+        lr_stat <- 2 * (logLik(fit_full) - logLik(fit_null))
+        p_value <- pchisq(lr_stat, df = 1, lower.tail = FALSE)
+        
+        return(as.numeric(p_value))
+    }, error = function(e) {
+        # If GLM fails, return small p-value (assume dependence)
+        return(0.001)
+    })
 }
 
 #' Negative binomial independence test
