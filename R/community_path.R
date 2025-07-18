@@ -65,7 +65,8 @@
 #' @importFrom ggplot2 aes scale_color_manual labs theme_minimal
 #'   theme element_text
 #' @importFrom RColorBrewer brewer.pal
-#' @importFrom grDevices colorRampPalette\n#' @importFrom BiocParallel bpparam
+#' @importFrom grDevices colorRampPalette
+#' @importFrom BiocParallel bpparam
 #' @export
 #'
 #' @examples

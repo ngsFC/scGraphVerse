@@ -16,7 +16,8 @@
     title <- paste(
         "Graph",
         index,
-        "\nNodes:",
+        "
+Nodes:",
         igraph::vcount(g),
         "Edges:",
         igraph::ecount(g)
@@ -57,7 +58,8 @@
         ggraph::geom_node_point(color = "steelblue", size = 1.5) +
         ggplot2::labs(
             title = paste(
-                "Reference Graph\n", TP_label, ":", sum(edge_colors == "red"),
+                "Reference Graph
+", TP_label, ":", sum(edge_colors == "red"),
                 FN_label, ":", sum(edge_colors == "blue")
             )
         ) +
@@ -582,7 +584,8 @@
     fit <- do.call(zilgm_internal, zilgm_args)
     
     # Use optimal binary network from bootstrap selection
-    if (!is.null(fit$opt_index) && fit$opt_index > 0 && \n        fit$opt_index <= length(fit$network)) {
+    if (!is.null(fit$opt_index) && fit$opt_index > 0 && 
+        fit$opt_index <= length(fit$network)) {
         adj <- fit$network[[fit$opt_index]]
     } else {
         # Fallback to first network if bootstrap failed or invalid index
@@ -764,7 +767,8 @@
             graphics::barplot(
                 height = c(control_topo[[metric]], pred_topo[[metric]]),
                 names.arg = c("Control", "Predicted"),
-                main = paste0(metric, " Comparison\n", pred_name),
+                main = paste0(metric, " Comparison
+", pred_name),
                 ylab = metric,
                 col = c("lightblue", "salmon")
             )
@@ -908,7 +912,8 @@
 
 .query_string_api <- function(mapped_ids, species, required_score) {
     base_url <- "https://string-db.org/api/json/network"
-    identifiers_str <- paste(mapped_ids, collapse = "\n")
+    identifiers_str <- paste(mapped_ids, collapse = "
+")
 
     res <- httr::POST(
         url = base_url,
@@ -1188,7 +1193,8 @@
     }
 
     plot_title <- paste0(
-        "Community Structure (", best_method, ")\nNodes: ",
+        "Community Structure (", best_method, ")
+Nodes: ",
         igraph::vcount(plot_graph), " Edges: ", igraph::ecount(plot_graph)
     )
 

@@ -181,10 +181,12 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                                                               update_type, thresh)
             } else if (family == "NBI") {
                 beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, 
-                                                          update_type, theta, \n                                          thresh)
+                                                          update_type, theta, 
+                                          thresh)
             } else if (family == "NBII") {
                 beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, 
-                                                          update_type, theta, \n                                          thresh)
+                                                          update_type, theta, 
+                                          thresh)
             }
         }
         
@@ -299,13 +301,15 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # Zero-inflation probabilities
         prob_zero <- ifelse(y == 0,
-                            prob0 / (prob0 + (1 - prob0) * \n                                      (theta / (theta + mu))^theta),
+                            prob0 / (prob0 + (1 - prob0) * 
+                                      (theta / (theta + mu))^theta),
                             0)
         
         # M-step: Update beta using IRLS or MM
         if (update_type == "IRLS") {
             # IRLS for NB1 with numerical stability
-            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / \n                      (theta + mu)^2, 1e-8)
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / 
+                      (theta + mu)^2, 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent
@@ -367,13 +371,15 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # Zero-inflation probabilities for NB2
         prob_zero <- ifelse(y == 0,
-                            prob0 / (prob0 + (1 - prob0) * \n                                      (1 / (1 + mu / theta))^theta),
+                            prob0 / (prob0 + (1 - prob0) * 
+                                      (1 / (1 + mu / theta))^theta),
                             0)
         
         # M-step: Update beta
         if (update_type == "IRLS") {
             # IRLS for NB2 with numerical stability
-            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / \n                      (1 + mu / theta)^2, 1e-8)
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / 
+                      (1 + mu / theta)^2, 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent

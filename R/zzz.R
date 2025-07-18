@@ -11,7 +11,8 @@
         "CUP: B93C22000620006",
         "",
         cli::rule(line = 2),
-        sep = "\n"
+        sep = "
+"
     )
     packageStartupMessage(msg)
 }

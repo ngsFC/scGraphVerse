@@ -120,7 +120,8 @@ stringdb_adjacency <- function(
     }
     
     base_url <- "https://string-db.org/api/json/network"
-    identifiers_str <- paste(mapped_genes$STRING_id, collapse = "\n")
+    identifiers_str <- paste(mapped_genes$STRING_id, collapse = "
+")
     
     res <- httr::POST(
         url = base_url,

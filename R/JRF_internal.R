@@ -18,7 +18,8 @@
 JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
     # Check dependencies
     if (!requireNamespace("randomForest", quietly = TRUE)) {
-        stop("randomForest package is required but not installed.\n",
+        stop("randomForest package is required but not installed.
+",
              "Install with: install.packages('randomForest')")
     }
     

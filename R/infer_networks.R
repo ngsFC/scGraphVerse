@@ -173,7 +173,8 @@ infer_networks <- function(
     if (method == "GRNBoost2") {
         if (!requireNamespace("reticulate", quietly = TRUE)) {
             stop(
-                "'reticulate' package is required for method = 'GRNBoost2'.\n",
+                "'reticulate' package is required for method = 'GRNBoost2'.
+",
                 "Install with: install.packages('reticulate')",
                 call. = FALSE
             )
@@ -186,9 +187,12 @@ infer_networks <- function(
         
         if (!python_available) {
             stop(
-                "Python is not available or not properly configured.\n",
-                "Please ensure Python is installed and accessible.\n",
-                "You may need to restart R after installing Python.\n",
+                "Python is not available or not properly configured.
+",
+                "Please ensure Python is installed and accessible.
+",
+                "You may need to restart R after installing Python.
+",
                 "For setup help, see: ",
                 "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
@@ -201,12 +205,18 @@ infer_networks <- function(
         
         if (!arboreto_available) {
             stop(
-                "Python package 'arboreto' is required for GRNBoost2.\n",
-                "Install options:\n",
-                "  1. Automatic: init_py(install_missing = TRUE)\n",
-                "  2. Manual pip: pip install arboreto\n",
-                "  3. Manual conda: conda install -c bioconda arboreto\n",
-                "  4. From R: reticulate::py_install('arboreto')\n",
+                "Python package 'arboreto' is required for GRNBoost2.
+",
+                "Install options:
+",
+                "  1. Automatic: init_py(install_missing = TRUE)
+",
+                "  2. Manual pip: pip install arboreto
+",
+                "  3. Manual conda: conda install -c bioconda arboreto
+",
+                "  4. From R: reticulate::py_install('arboreto')
+",
                 "For detailed setup instructions, see: ",
                 "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
