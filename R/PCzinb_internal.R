@@ -1,7 +1,10 @@
-#' PC Algorithm for Zero-Inflated Count Data - Mathematically Correct Implementation
+#' PC Algorithm for Zero-Inflated Count Data - Mathematically Correct 
+#' Implementation
 #'
-#' Faithful implementation of PCzinb algorithm with proper zero-inflated negative binomial
-#' likelihood, exact conditional independence testing, and dispersion parameter estimation
+#' Faithful implementation of PCzinb algorithm with proper zero-inflated 
+#' negative binomial
+#' likelihood, exact conditional independence testing, and dispersion 
+#' parameter estimation
 #' matching the original drisso/learn2count package.
 #'
 #' @param X Matrix of counts (samples x genes)
@@ -18,7 +21,7 @@
 #' @keywords internal
 #' @noRd
 PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2, 
-                           extend = TRUE, nCores = 1, ...) {
+                            extend = TRUE, nCores = 1, ...) {
     
     # Ensure nCores is a single integer
     nCores <- as.integer(nCores[1])
@@ -38,7 +41,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     
     method <- match.arg(method, c("poi", "nb", "zinb0", "zinb1"))
     
-    # Set default alpha if not provided (original formula from drisso/learn2count)
+    # Set default alpha if not provided 
+    # (original formula from drisso/learn2count)
     if (is.null(alpha)) {
         alpha <- 2 * pnorm(n_samples^0.2, lower.tail = FALSE)
     }
@@ -58,7 +62,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         if (nrow(edges) == 0) break
         
         # Test independence for each edge with simplified parallel execution
-        edge_results <- BiocParallel::bplapply(seq_len(nrow(edges)), function(i) {
+        edge_results <- BiocParallel::bplapply(seq_len(nrow(edges)), 
+                                                  function(i) {
             tryCatch({
                 edge <- edges[i, ]
                 gene_i <- edge[1]
@@ -66,13 +71,17 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
                 
                 # Simple independence test based on method
                 if (method == "poi") {
-                    .simple_poisson_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                    .simple_poisson_test(X, gene_i, gene_j, adj_matrix, 
+                                        card, alpha, extend)
                 } else if (method == "nb") {
-                    .simple_nb_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                    .simple_nb_test(X, gene_i, gene_j, adj_matrix, 
+                                   card, alpha, extend)
                 } else if (method == "zinb0") {
-                    .simple_zinb0_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                    .simple_zinb0_test(X, gene_i, gene_j, adj_matrix, 
+                                      card, alpha, extend)
                 } else if (method == "zinb1") {
-                    .simple_zinb1_test(X, gene_i, gene_j, adj_matrix, card, alpha, extend)
+                    .simple_zinb1_test(X, gene_i, gene_j, adj_matrix, 
+                                      card, alpha, extend)
                 }
             }, error = function(e) {
                 # Return FALSE (assume dependence) on error
@@ -152,7 +161,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -193,7 +203,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB1 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -234,7 +245,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -253,9 +265,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb0_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -266,14 +280,16 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
 #' Simplified ZINB1 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -292,9 +308,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb1_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -305,7 +323,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
@@ -329,10 +348,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     
@@ -359,10 +380,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     
@@ -372,7 +395,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Exact Poisson independence test with proper likelihood
 #' @keywords internal
 #' @noRd
-.poisson_independence_test_exact <- function(X, gene_i, gene_j, cond_set, alpha) {
+.poisson_independence_test_exact <- function(X, gene_i, gene_j, 
+                                            cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -440,7 +464,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
             return(p_value > alpha)
         } else {
             # Fallback to Poisson if MASS not available
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
     }, error = function(e) {
         return(FALSE)
@@ -469,9 +494,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .fit_zinb_model(y, X_null, "zinb0")
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -482,7 +509,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
@@ -514,7 +542,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
@@ -557,11 +586,13 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
             result
         }
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)  # Return large negative log-likelihood on error
+        list(value = 1e6, 
+             convergence = 1)  # Return large negative log-likelihood on error
     })
     
     # Check if optimization succeeded
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)  # Return NA for failed optimization
     }
     
@@ -575,7 +606,7 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     p <- ncol(X)
     
     # Extract parameters
-    beta <- params[1:p]
+    beta <- params[seq_len(p)]
     log_theta <- params[p + 1]
     logit_pi <- params[p + 2]
     
@@ -621,14 +652,15 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     return(-total_ll)  # Return negative log-likelihood
 }
 
-#' ZINB1 negative log-likelihood (zero-inflation on both mean and zero component)
+#' ZINB1 negative log-likelihood 
+#' (zero-inflation on both mean and zero component)
 #' @keywords internal
 #' @noRd
 .zinb1_neg_loglik <- function(params, y, X) {
     p <- ncol(X)
     
     # Extract parameters (beta for mean, beta_pi for zero-inflation)
-    beta <- params[1:p]
+    beta <- params[seq_len(p)]
     beta_pi <- params[(p + 1):(2 * p)]
     log_theta <- params[2 * p + 1]
     
@@ -680,7 +712,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified Poisson test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_poisson_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_poisson_test <- function(X, gene_i, gene_j, adj_matrix, 
+                                card, alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -721,7 +754,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -762,7 +796,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB1 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -803,7 +838,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -822,9 +858,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb0_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -835,14 +873,16 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
 #' Simplified ZINB1 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -861,9 +901,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb1_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -874,7 +916,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
@@ -898,10 +941,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     
@@ -928,10 +973,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     
@@ -941,7 +988,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified NB test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_nb_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_nb_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                           alpha, extend) {
     # Same logic as Poisson test but with NB distribution
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
@@ -983,7 +1031,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb0_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -1024,7 +1073,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB1 test for BiocParallel compatibility
 #' @keywords internal
 #' @noRd
-.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, alpha, extend) {
+.simple_zinb1_test <- function(X, gene_i, gene_j, adj_matrix, card, 
+                               alpha, extend) {
     # Find conditioning sets
     neighbors_i <- which(adj_matrix[gene_i, ] == 1)
     neighbors_j <- which(adj_matrix[gene_j, ] == 1)
@@ -1065,7 +1115,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
 #' Simplified ZINB0 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb0_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb0_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -1084,9 +1135,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb0_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -1097,14 +1150,16 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
 #' Simplified ZINB1 independence test (BiocParallel compatible)
 #' @keywords internal
 #' @noRd
-.zinb1_independence_test_simple <- function(X, gene_i, gene_j, cond_set, alpha) {
+.zinb1_independence_test_simple <- function(X, gene_i, gene_j, 
+                                           cond_set, alpha) {
     y <- X[, gene_i]
     x_main <- X[, gene_j]
     
@@ -1123,9 +1178,11 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         ll_null <- .compute_zinb1_loglik_simple(y, X_null)
         
         # Check for numerical issues
-        if (is.na(ll_full) || is.na(ll_null) || is.infinite(ll_full) || is.infinite(ll_null)) {
+        if (is.na(ll_full) || is.na(ll_null) || 
+            is.infinite(ll_full) || is.infinite(ll_null)) {
             # Fallback to Poisson test
-            return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+            return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                                   cond_set, alpha))
         }
         
         # Likelihood ratio test
@@ -1136,7 +1193,8 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         return(p_value > alpha)
     }, error = function(e) {
         # Fallback to Poisson test on error
-        return(.poisson_independence_test_exact(X, gene_i, gene_j, cond_set, alpha))
+        return(.poisson_independence_test_exact(X, gene_i, gene_j, 
+                                               cond_set, alpha))
     })
 }
 
@@ -1160,10 +1218,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb0_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     
@@ -1190,10 +1250,12 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
         optim(params_init, .zinb1_neg_loglik, y = y, X = X, 
               method = "BFGS", control = list(maxit = 20))
     }, error = function(e) {
-        list(value = 1e6, convergence = 1)
+        list(value = 1e6, 
+             convergence = 1)
     })
     
-    if (opt_result$convergence != 0 || is.na(opt_result$value) || is.infinite(opt_result$value)) {
+    if (opt_result$convergence != 0 || is.na(opt_result$value) || 
+        is.infinite(opt_result$value)) {
         return(NA)
     }
     

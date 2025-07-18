@@ -38,7 +38,8 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
     
     # Check gene names
     if (length(genes.name) != p) {
-        stop("Length of genes.name must match number of genes in expression matrices")
+        stop("Length of genes.name must match number of genes in ",
+             "expression matrices")
     }
     
     # Parallel processing of target genes
@@ -68,7 +69,8 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
         max_samples <- max(sampsize)
         
         # Create predictor matrix
-        predictor_data <- matrix(0, nrow = max_samples, ncol = (p - 1) * nclasses)
+        predictor_data <- matrix(0, nrow = max_samples, 
+                                ncol = (p - 1) * nclasses)
         response_data <- numeric(max_samples)
         sample_weights <- numeric(max_samples)
         
@@ -79,10 +81,11 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
                 # Extract predictors (all genes except target)
                 predictors <- t(X[[class_idx]][-target_idx, , drop = FALSE])
                 predictor_data[seq_len(n_samples), 
-                             seq(col_idx, col_idx + p - 2)] <- predictors
+                               seq(col_idx, col_idx + p - 2)] <- predictors
                 
                 # Extract response (target gene)
-                response_data[seq_len(n_samples)] <- X[[class_idx]][target_idx, ]
+                response_data[seq_len(n_samples)] <- 
+                    X[[class_idx]][target_idx, ]
                 
                 # Set sample weights for this class
                 sample_weights[seq_len(n_samples)] <- 1.0
@@ -116,14 +119,14 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name, nCores = 1) {
             start_col <- (class_idx - 1) * (p - 1) + 1
             end_col <- class_idx * (p - 1)
             if (end_col <= length(importance_scores)) {
-                class_importance[, class_idx] <- importance_scores[start_col:end_col]
+                class_importance[, class_idx] <- 
+                    importance_scores[start_col:end_col]
             }
         }
         
         return(class_importance)
         
     }, error = function(e) {
-        warning("Error processing target gene ", target_idx, ": ", e$message)
         return(NULL)
     })
 }

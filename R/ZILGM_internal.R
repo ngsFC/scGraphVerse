@@ -1,7 +1,9 @@
 #' Zero-Inflated Latent Gaussian Model - Mathematically Correct Implementation
 #'
-#' Faithful implementation of ZILGM with proper zero-inflation modeling, IRLS optimization,
-#' and exact negative binomial distributions matching the original bbeomjin/ZILGM package.
+#' Faithful implementation of ZILGM with proper zero-inflation modeling, 
+#' IRLS optimization,
+#' and exact negative binomial distributions matching the original 
+#' bbeomjin/ZILGM package.
 #'
 #' @param X Matrix of count data (samples x genes)
 #' @param lambda Vector of regularization parameters
@@ -17,15 +19,16 @@
 #' @param nCores Number of cores for parallelization
 #' @param ... Additional parameters
 #'
-#' @return List with network adjacency matrices, coefficients, and bootstrap results
+#' @return List with network adjacency matrices, coefficients, and 
+#' bootstrap results
 #'
 #' @importFrom BiocParallel bplapply MulticoreParam SerialParam
 #' @keywords internal
 #' @noRd
 zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII", 
-                          update_type = "IRLS", sym = "OR", theta = NULL,
-                          thresh = 1e-6, do_boot = FALSE, boot_num = 10, 
-                          beta = 0.05, nCores = 1, ...) {
+                           update_type = "IRLS", sym = "OR", theta = NULL,
+                           thresh = 1e-6, do_boot = FALSE, boot_num = 10, 
+                           beta = 0.05, nCores = 1, ...) {
     
     # Setup parallelization
     if (nCores > 1) {
@@ -46,7 +49,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Determine lambda sequence
     if (is.null(lambda)) {
         lambda_max <- .compute_lambda_max_exact(X, family)
-        lambda <- exp(seq(log(lambda_max), log(lambda_max * 1e-4), length.out = nlambda))
+        lambda <- exp(seq(log(lambda_max), log(lambda_max * 1e-4), 
+                          length.out = nlambda))
     }
     
     # Parallel neighborhood selection for each gene
@@ -55,7 +59,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     }, BPPARAM = bp_param)
     
     # Combine coefficient matrices
-    coef_networks <- .combine_coefficient_matrices(gene_results, p_genes, lambda)
+    coef_networks <- .combine_coefficient_matrices(gene_results, p_genes, 
+                                                   lambda)
     
     # Create adjacency networks with proper symmetrization
     adj_networks <- .create_adjacency_networks(coef_networks, sym)
@@ -63,8 +68,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Enhanced lambda selection with stability criteria
     if (do_boot) {
         boot_results <- tryCatch({
-            .bootstrap_lambda_selection_stability(X, lambda, family, update_type, 
-                                                 theta, thresh, boot_num, beta, bp_param, adj_networks)
+            .bootstrap_lambda_selection_stability(X, lambda, family, 
+                                                  update_type, theta, thresh, 
+                                                  boot_num, beta, bp_param, 
+                                                  adj_networks)
         }, error = function(e) {
             # Fallback to sparsity-based selection if bootstrap fails
             .select_lambda_by_sparsity(adj_networks, lambda)
@@ -84,7 +91,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     # Add gene names
     if (!is.null(colnames(X))) {
         for (i in seq_len(length(adj_networks))) {
-            rownames(adj_networks[[i]]) <- colnames(adj_networks[[i]]) <- colnames(X)
+            rownames(adj_networks[[i]]) <- colnames(adj_networks[[i]]) <- 
+                colnames(X)
         }
     }
     
@@ -135,7 +143,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 #' Fit ZILGM for single gene (exact implementation)
 #' @keywords internal
 #' @noRd
-.fit_zilgm_single_gene <- function(X, target_gene, lambda, family, update_type, theta, thresh) {
+.fit_zilgm_single_gene <- function(X, target_gene, lambda, family, 
+                                   update_type, theta, thresh) {
     tryCatch({
         y <- X[, target_gene]
         X_pred <- X[, -target_gene, drop = FALSE]
@@ -168,11 +177,14 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             lam <- lambda[i]
             
             if (family == "Poisson") {
-                beta_matrix[, i] <- .fit_zero_inflated_poisson(y, X_std, lam, update_type, thresh)
+                beta_matrix[, i] <- .fit_zero_inflated_poisson(y, X_std, lam, 
+                                                              update_type, thresh)
             } else if (family == "NBI") {
-                beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, update_type, theta, thresh)
+                beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, 
+                                                          update_type, theta, \n                                          thresh)
             } else if (family == "NBII") {
-                beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, update_type, theta, thresh)
+                beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, 
+                                                          update_type, theta, \n                                          thresh)
             }
         }
         
@@ -196,7 +208,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     prob0 <- mean(y == 0)  # Zero-inflation probability
     
     # EM algorithm for zero-inflated Poisson
-    for (iter in 1:100) {
+    for (iter in seq_len(100)) {
         beta_old <- beta
         
         # E-step: Compute posterior probabilities
@@ -207,8 +219,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             
             # Zero-inflation probabilities
             prob_zero <- ifelse(y == 0, 
-                               prob0 / (prob0 + (1 - prob0) * exp(-mu)),
-                               0)
+                                prob0 / (prob0 + (1 - prob0) * exp(-mu)),
+                                 0)
             
             # Working response and weights with numerical stability
             z <- eta + (y - mu) / pmax(mu, 1e-8)
@@ -224,7 +236,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
                 } else {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / 
+                               denom
                 }
             }
             
@@ -243,7 +256,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 if (is.na(hess) || is.nan(hess) || hess <= 1e-8) {
                     beta[j] <- 0
                 } else {
-                    beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
+                    beta[j] <- .soft_threshold(beta[j] + grad / hess, 
+                                               lambda / hess)
                 }
             }
         }
@@ -276,7 +290,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     prob0 <- mean(y == 0)
     
     # EM algorithm for zero-inflated NB1
-    for (iter in 1:100) {
+    for (iter in seq_len(100)) {
         beta_old <- beta
         
         # E-step: Compute posterior probabilities
@@ -285,13 +299,13 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # Zero-inflation probabilities
         prob_zero <- ifelse(y == 0,
-                           prob0 / (prob0 + (1 - prob0) * (theta / (theta + mu))^theta),
-                           0)
+                            prob0 / (prob0 + (1 - prob0) * \n                                      (theta / (theta + mu))^theta),
+                            0)
         
         # M-step: Update beta using IRLS or MM
         if (update_type == "IRLS") {
             # IRLS for NB1 with numerical stability
-            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / (theta + mu)^2, 1e-8)
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / \n                      (theta + mu)^2, 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent
@@ -301,7 +315,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
                 } else {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / 
+                               denom
                 }
             }
         } else {
@@ -343,7 +358,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     prob0 <- mean(y == 0)
     
     # EM algorithm for zero-inflated NB2
-    for (iter in 1:100) {
+    for (iter in seq_len(100)) {
         beta_old <- beta
         
         # E-step: Compute posterior probabilities
@@ -352,13 +367,13 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         
         # Zero-inflation probabilities for NB2
         prob_zero <- ifelse(y == 0,
-                           prob0 / (prob0 + (1 - prob0) * (1 / (1 + mu / theta))^theta),
-                           0)
+                            prob0 / (prob0 + (1 - prob0) * \n                                      (1 / (1 + mu / theta))^theta),
+                            0)
         
         # M-step: Update beta
         if (update_type == "IRLS") {
             # IRLS for NB2 with numerical stability
-            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / (1 + mu / theta)^2, 1e-8)
+            w <- pmax(mu * (1 - prob_zero) * (theta + mu) / \n                      (1 + mu / theta)^2, 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
             
             # Coordinate descent
@@ -368,7 +383,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
                 } else {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / 
+                               denom
                 }
             }
         } else {
@@ -444,7 +460,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             predictor_indices <- setdiff(seq_len(p_genes), j)
             
             # Ensure dimensions match
-            if (nrow(beta_matrix) == length(predictor_indices) && ncol(beta_matrix) == n_lambda) {
+            if (nrow(beta_matrix) == length(predictor_indices) && 
+                ncol(beta_matrix) == n_lambda) {
                 coef_array[predictor_indices, j, ] <- beta_matrix
             }
         }
@@ -467,12 +484,15 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         # Handle NAs and Infs
         coef_matrix[is.na(coef_matrix) | is.infinite(coef_matrix)] <- 0
         
-        # Use regularization-induced sparsity: coefficients are exactly zero when regularized out
+        # Use regularization-induced sparsity: coefficients are exactly 
+        # zero when regularized out
         # No arbitrary thresholding - trust the LASSO/regularization process
         adj_matrix <- abs(coef_matrix)
         
-        # Apply tolerance for numerical precision (much smaller than arbitrary threshold)
-        # This handles floating point precision issues, not statistical significance
+        # Apply tolerance for numerical precision 
+        # (much smaller than arbitrary threshold)
+        # This handles floating point precision issues, not statistical 
+        # significance
         tolerance <- .Machine$double.eps * 100
         adj_matrix[adj_matrix < tolerance] <- 0
         
@@ -485,7 +505,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             adj_matrix <- pmin(adj_matrix, t(adj_matrix))
         }
         
-        # Convert to binary adjacency matrix based on actual regularization-induced zeros
+        # Convert to binary adjacency matrix based on actual 
+        # regularization-induced zeros
         adj_matrix <- (adj_matrix > tolerance) * 1
         
         networks[[i]] <- adj_matrix
@@ -497,8 +518,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 #' Bootstrap lambda selection with stability criteria (StARS-like approach)
 #' @keywords internal
 #' @noRd
-.bootstrap_lambda_selection_stability <- function(X, lambda, family, update_type, theta, thresh, 
-                                                 boot_num, beta, bp_param, full_networks) {
+.bootstrap_lambda_selection_stability <- function(X, lambda, family, 
+                                                 update_type, theta, thresh, 
+                                                 boot_num, beta, bp_param, 
+                                                 full_networks) {
     n <- nrow(X)
     p <- ncol(X)
     n_lambda <- length(lambda)
@@ -513,13 +536,17 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
         X_sub <- X[subsample_indices, , drop = FALSE]
         
         # Fit ZILGM on subsample
-        boot_gene_results <- BiocParallel::bplapply(seq_len(ncol(X_sub)), function(j) {
-            .fit_zilgm_single_gene(X_sub, j, lambda, family, update_type, theta, thresh)
+        boot_gene_results <- BiocParallel::bplapply(seq_len(ncol(X_sub)), 
+                                                   function(j) {
+            .fit_zilgm_single_gene(X_sub, j, lambda, family, update_type, 
+                                 theta, thresh)
         }, BPPARAM = BiocParallel::SerialParam())
         
         # Create networks
-        boot_coef_networks <- .combine_coefficient_matrices(boot_gene_results, ncol(X_sub), lambda)
-        boot_adj_networks <- .create_adjacency_networks(boot_coef_networks, "OR")
+        boot_coef_networks <- .combine_coefficient_matrices(boot_gene_results, 
+                                                           ncol(X_sub), lambda)
+        boot_adj_networks <- .create_adjacency_networks(boot_coef_networks, 
+                                                       "OR")
         
         return(boot_adj_networks)
     }, BPPARAM = bp_param)
@@ -585,7 +612,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     
     # Select lambda that gives reasonable sparsity (between 1% and 30%)
     target_sparsity_range <- c(0.01, 0.30)
-    valid_indices <- which(sparsity >= target_sparsity_range[1] & sparsity <= target_sparsity_range[2])
+    valid_indices <- which(sparsity >= target_sparsity_range[1] & 
+                          sparsity <= target_sparsity_range[2])
     
     if (length(valid_indices) > 0) {
         # Among valid range, choose the sparsest (lowest sparsity)
