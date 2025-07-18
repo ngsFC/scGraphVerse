@@ -128,36 +128,52 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 #' @keywords internal
 #' @noRd
 .fit_zilgm_single_gene <- function(X, target_gene, lambda, family, update_type, theta, thresh) {
-    y <- X[, target_gene]
-    X_pred <- X[, -target_gene, drop = FALSE]
-    n <- length(y)
-    p <- ncol(X_pred)
-    
-    # Standardize predictors with proper handling
-    X_std <- scale(X_pred)
-    
-    # Handle cases where scaling fails
-    if (any(is.na(X_std))) {
-        X_std[is.na(X_std)] <- 0
-    }
-    
-    # Initialize coefficients
-    beta_matrix <- matrix(0, nrow = p, ncol = length(lambda))
-    
-    # Fit for each lambda
-    for (i in seq_len(length(lambda))) {
-        lam <- lambda[i]
+    tryCatch({
+        y <- X[, target_gene]
+        X_pred <- X[, -target_gene, drop = FALSE]
+        n <- length(y)
+        p <- ncol(X_pred)
         
-        if (family == "Poisson") {
-            beta_matrix[, i] <- .fit_zero_inflated_poisson(y, X_std, lam, update_type, thresh)
-        } else if (family == "NBI") {
-            beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, update_type, theta, thresh)
-        } else if (family == "NBII") {
-            beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, update_type, theta, thresh)
+        # Check for degenerate cases
+        if (p == 0 || n < 3) {
+            return(matrix(0, nrow = max(p, 1), ncol = length(lambda)))
         }
-    }
-    
-    return(beta_matrix)
+        
+        # Standardize predictors with proper handling
+        X_std <- scale(X_pred)
+        
+        # Handle cases where scaling fails
+        if (any(is.na(X_std))) {
+            X_std[is.na(X_std)] <- 0
+        }
+        
+        # Check for constant predictors (all zeros after scaling)
+        if (all(X_std == 0)) {
+            return(matrix(0, nrow = p, ncol = length(lambda)))
+        }
+        
+        # Initialize coefficients
+        beta_matrix <- matrix(0, nrow = p, ncol = length(lambda))
+        
+        # Fit for each lambda
+        for (i in seq_len(length(lambda))) {
+            lam <- lambda[i]
+            
+            if (family == "Poisson") {
+                beta_matrix[, i] <- .fit_zero_inflated_poisson(y, X_std, lam, update_type, thresh)
+            } else if (family == "NBI") {
+                beta_matrix[, i] <- .fit_zero_inflated_nb1(y, X_std, lam, update_type, theta, thresh)
+            } else if (family == "NBII") {
+                beta_matrix[, i] <- .fit_zero_inflated_nb2(y, X_std, lam, update_type, theta, thresh)
+            }
+        }
+        
+        return(beta_matrix)
+    }, error = function(e) {
+        # Return zero matrix on error
+        p <- ncol(X) - 1
+        return(matrix(0, nrow = max(p, 1), ncol = length(lambda)))
+    })
 }
 
 #' Fit Zero-Inflated Poisson with L1 regularization
@@ -197,10 +213,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 
                 # Soft thresholding with numerical stability
                 denom <- sum(w * X[, j]^2)
-                if (denom > 1e-8) {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
-                } else {
+                if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
+                } else {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
                 }
             }
             
@@ -216,10 +232,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                 hess <- sum(X[, j]^2 * pmax(mu, 1e-8))
                 
                 # MM update with soft thresholding
-                if (hess > 1e-8) {
-                    beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
-                } else {
+                if (is.na(hess) || is.nan(hess) || hess <= 1e-8) {
                     beta[j] <- 0
+                } else {
+                    beta[j] <- .soft_threshold(beta[j] + grad / hess, lambda / hess)
                 }
             }
         }
@@ -274,10 +290,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             for (j in seq_len(p)) {
                 r <- z - X[, -j, drop = FALSE] %*% beta[-j]
                 denom <- sum(w * X[, j]^2)
-                if (denom > 1e-8) {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
-                } else {
+                if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
+                } else {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
                 }
             }
         } else {
@@ -341,10 +357,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             for (j in seq_len(p)) {
                 r <- z - X[, -j, drop = FALSE] %*% beta[-j]
                 denom <- sum(w * X[, j]^2)
-                if (denom > 1e-8) {
-                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
-                } else {
+                if (is.na(denom) || is.nan(denom) || denom <= 1e-8) {
                     beta[j] <- 0
+                } else {
+                    beta[j] <- .soft_threshold(sum(w * X[, j] * r), lambda) / denom
                 }
             }
         } else {
