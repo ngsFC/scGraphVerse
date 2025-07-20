@@ -36,17 +36,15 @@ parallelization. Defaults to the number of workers in the current
 \pkg{BiocParallel} backend.}
 
 \item{grnboost_modules}{Python modules required for \code{GRNBoost2}
-(created via \pkg{reticulate}). Use \code{init_py()} to create this object,
-or NULL to auto-detect. Use \code{init_py(install_missing = TRUE)} for automated
-dependency installation.}
+(created via \pkg{reticulate}).}
 
 \item{genie3_params}{List of parameters for GENIE3 method:
 \itemize{
 \item \code{regulators}: Vector of regulator gene names (default: all)
 \item \code{targets}: Vector of target gene names (default: all genes)
-\item \code{tree.method}: "RF" or "ET" (default: "RF")
+\item \code{treeMethod}: "RF" or "ET" (default: "RF")
 \item \code{K}: Number of candidate regulators (default: "sqrt")
-\item \code{nb.trees}: Number of trees per ensemble (default: 1000)
+\item \code{nTrees}: Number of trees per ensemble (default: 1000)
 \item \code{seed}: Random seed for reproducibility (default: NULL)
 }}
 
@@ -125,8 +123,7 @@ Methods are based on:
 \item \strong{GENIE3}: Random Forest-based inference (Huynh-Thu et
 al., 2010).
 \item \strong{GRNBoost2}: Gradient boosting trees using arboreto
-(Moerman et al., 2019). \strong{Requires Python package 'arboreto'}.
-Use \code{init_py(install_missing = TRUE)} for automated installation.
+(Moerman et al., 2019).
 \item \strong{ZILGM}: Zero-Inflated Graphical Models for scRNA-seq
 (Zhang et al., 2021).
 \item \strong{JRF}: Joint Random Forests across multiple conditions
@@ -138,15 +135,10 @@ Use \code{init_py(install_missing = TRUE)} for automated installation.
 \examples{
 data("count_matrices")
 
-# Using GENIE3 (recommended for examples - no external dependencies)
 networks <- infer_networks(
     count_matrices_list = count_matrices,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
-
-# For GRNBoost2 usage (requires Python setup):
-# 1. Install dependencies: init_py(install_missing = TRUE)
-# 2. Run: infer_networks(count_matrices, method = "GRNBoost2")
 }

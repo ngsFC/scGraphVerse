@@ -44,7 +44,7 @@
 #' \code{MT-ND1}, \code{RPL13A}, \code{RPS6}).
 #'
 #' @examples
-#' 
+#'
 #' data(count_matrices)
 #' genes <- selgene(
 #'     object = count_matrices[[1]],

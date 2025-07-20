@@ -58,8 +58,8 @@ sims <- zinb_simdata(
 
 count_matrices <- lapply(sims, t)
 count_matrices <- lapply(count_matrices, function(mat) {
-  col_data <- DataFrame(CELL_TYPE = rep("T_cells", ncol(mat)))
-  SingleCellExperiment(assays = list(counts = mat), colData = col_data)
+    col_data <- DataFrame(CELL_TYPE = rep("T_cells", ncol(mat)))
+    SingleCellExperiment(assays = list(counts = mat), colData = col_data)
 })
 
 usethis::use_data(count_matrices, overwrite = TRUE)

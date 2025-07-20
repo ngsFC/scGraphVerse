@@ -580,25 +580,25 @@ Nodes:",
         nlambda = 50,
         nCores = nCores
     ), params)
-    
+
     fit <- do.call(zilgm_internal, zilgm_args)
-    
+
     # Use optimal binary network from bootstrap selection
-    if (!is.null(fit$opt_index) && fit$opt_index > 0 && 
+    if (!is.null(fit$opt_index) && fit$opt_index > 0 &&
         fit$opt_index <= length(fit$network)) {
         adj <- fit$network[[fit$opt_index]]
     } else {
         # Fallback to first network if bootstrap failed or invalid index
         adj <- fit$network[[1]]
     }
-    
+
     # Set proper dimensions
     dimnames(adj) <- if (is.null(adjm)) {
         list(rownames(mat), rownames(mat))
     } else {
         dimnames(adjm)
     }
-    
+
     adj
 }
 #' @keywords internal
@@ -612,11 +612,11 @@ Nodes:",
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1)),
         nCores = nCores
     ), params)
-    
+
     # Filter out unsupported parameters for JRF_internal
     supported_params <- c("X", "ntree", "mtry", "genes.name", "nCores")
     jrf_args <- jrf_args[names(jrf_args) %in% supported_params]
-    
+
     # Use internal JRF implementation with BiocParallel
     rf <- do.call(JRF_internal, jrf_args)
 
@@ -641,9 +641,9 @@ Nodes:",
         tol = 1e-6,
         nCores = nCores
     ), params)
-    
+
     adj <- do.call(PCzinb_internal, pczinb_args)
-    
+
     # Format output matrix
     dimnames(adj) <- if (is.null(adjm)) {
         list(rownames(mat), rownames(mat))
@@ -709,7 +709,7 @@ Nodes:",
         Communities  = length(unique(comm)),
         Density      = igraph::edge_density(graph),
         Transitivity = igraph::transitivity(graph, type = "global")
-        )
+    )
     metrics[is.na(metrics)] <- 0
     metrics
 }
@@ -1004,12 +1004,12 @@ Nodes:",
 
 .prepare_method_args <- function(method, method_params) {
     method_args <- list()
-    
+
     # Extract method-specific parameters
     if (method == "louvain" && !is.null(method_params$resolution)) {
         method_args$resolution <- method_params$resolution
     }
-    
+
     if (method == "leiden") {
         if (!is.null(method_params$resolution)) {
             method_args$resolution <- method_params$resolution
@@ -1024,13 +1024,13 @@ Nodes:",
             method_args$n_iterations <- method_params$n_iterations
         }
     }
-    
+
     if (method == "walktrap") {
         if (!is.null(method_params$steps)) {
             method_args$steps <- method_params$steps
         }
     }
-    
+
     if (method == "spinglass") {
         if (!is.null(method_params$spins)) {
             method_args$spins <- method_params$spins
@@ -1048,13 +1048,13 @@ Nodes:",
             method_args$gamma <- method_params$gamma
         }
     }
-    
+
     if (method == "infomap") {
         if (!is.null(method_params$nb.trials)) {
             method_args$nb.trials <- method_params$nb.trials
         }
     }
-    
+
     return(method_args)
 }
 
@@ -1113,10 +1113,9 @@ Nodes:",
     modifyList(defaults, user_params)
 }
 
-.detect_communities <- function(graph, methods, method_params = list(), 
-                                comparison_params = list(), 
+.detect_communities <- function(graph, methods, method_params = list(),
+                                comparison_params = list(),
                                 BPPARAM = BiocParallel::bpparam()) {
-    
     # Merge default comparison parameters
     comparison_defaults <- list(
         measure = "vi",
@@ -1125,28 +1124,32 @@ Nodes:",
         verbose = TRUE
     )
     comparison_params <- modifyList(comparison_defaults, comparison_params)
-    
+
     if (length(methods) == 1) {
         best_method <- methods[1]
-        
+
         # Prepare method-specific parameters
         method_args <- .prepare_method_args(best_method, method_params)
-        
-        best_communities <- do.call(robin::membershipCommunities, 
-            c(list(graph = graph, method = best_method), method_args))
+
+        best_communities <- do.call(
+            robin::membershipCommunities,
+            c(list(graph = graph, method = best_method), method_args)
+        )
     } else if (length(methods) == 2) {
         # Prepare method-specific parameters for both methods
         args1 <- .prepare_method_args(methods[1], method_params)
         args2 <- .prepare_method_args(methods[2], method_params)
-        
+
         res <- tryCatch(
             do.call(robin::robinCompare, c(
-                list(graph = graph,
+                list(
+                    graph = graph,
                     method1 = methods[1],
                     method2 = methods[2],
                     args1 = args1,
                     args2 = args2,
-                    BPPARAM = BPPARAM),
+                    BPPARAM = BPPARAM
+                ),
                 comparison_params
             )),
             error = function(e) {

@@ -15,7 +15,6 @@ Description: A package for inferring, comparing, and visualizing gene regulatory
     includes adapted functions from ZILGM (Park et al., 2021), JRF (Petralia et al., 2015), 
     and learn2count (Nguyen et al. 2023) packages with proper attribution under GPL-2 license.
 License: GPL-3
-License_file: LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -27,6 +26,7 @@ Depends:
 Imports:
     AnnotationDbi,
     BiocParallel (>= 1.30.0),
+    doParallel,
     GENIE3,
     Matrix,
     RColorBrewer,
@@ -58,9 +58,9 @@ Imports:
     scales,
     tidyr,
     cli,
+    glmnet,
     INetTool,
     randomForest,
-    glmnet,
     MASS,
     utils,
     stats

@@ -44,7 +44,7 @@
 #' @param jrf_params List of parameters for JRF method:
 #'   \itemize{
 #'     \item \code{ntree}: Number of trees (default: 500)
-#'     \item \code{mtry}: Number of variables to sample at each split 
+#'     \item \code{mtry}: Number of variables to sample at each split
 #'     (default: sqrt(p))
 #'     \item \code{nodesize}: Minimum node size (default: 5)
 #'     \item \code{maxnodes}: Maximum number of nodes (default: NULL)
@@ -131,10 +131,10 @@ infer_networks <- function(
     method <- match.arg(method)
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
-    
+
     # Note: Seed handling is method-specific and implemented within each method
     # to comply with Bioconductor guidelines
-    
+
     # Merge method-specific parameters with defaults
     genie3_params <- .merge_genie3_params(genie3_params)
     grnboost2_params <- .merge_grnboost2_params(grnboost2_params)
@@ -179,12 +179,15 @@ infer_networks <- function(
                 call. = FALSE
             )
         }
-        
+
         # Check if Python and arboreto are available
-        python_available <- tryCatch({
-            reticulate::py_available(initialize = TRUE)
-        }, error = function(e) FALSE)
-        
+        python_available <- tryCatch(
+            {
+                reticulate::py_available(initialize = TRUE)
+            },
+            error = function(e) FALSE
+        )
+
         if (!python_available) {
             stop(
                 "Python is not available or not properly configured.
@@ -198,11 +201,14 @@ infer_networks <- function(
                 call. = FALSE
             )
         }
-        
-        arboreto_available <- tryCatch({
-            reticulate::py_module_available("arboreto")
-        }, error = function(e) FALSE)
-        
+
+        arboreto_available <- tryCatch(
+            {
+                reticulate::py_module_available("arboreto")
+            },
+            error = function(e) FALSE
+        )
+
         if (!arboreto_available) {
             stop(
                 "Python package 'arboreto' is required for GRNBoost2.
@@ -245,4 +251,3 @@ infer_networks <- function(
         ))
     }
 }
-

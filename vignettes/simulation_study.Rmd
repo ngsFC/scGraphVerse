@@ -90,7 +90,6 @@ library(AnnotationDbi)
 library(org.Hs.eg.db)
 library(SingleR)
 library(celldex)
-
 ```
 
 # 1. Defining a Ground-Truth Network from STRINGdb
@@ -197,7 +196,6 @@ sims <- zinb_simdata(
 )
 # Transpose to cells × genes
 count_matrices <- lapply(sims, t)
-
 ```
 
 # 3. Inferring Networks with JRF

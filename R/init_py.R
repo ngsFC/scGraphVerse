@@ -28,14 +28,14 @@
 #' \code{install_missing = TRUE}, automatically installs the 'arboreto'
 #' package using the specified method if not found.
 #'
-#' @importFrom reticulate use_python import py_module_available py_install 
+#' @importFrom reticulate use_python import py_module_available py_install
 #'   conda_install
 #' @export
 #'
 #' @examples
 #' # Initialize Python environment (adjust python_path as needed)
 #' modules <- init_py()
-#' 
+#'
 #' # Initialize with automatic installation of missing packages
 #' modules <- init_py(install_missing = TRUE)
 init_py <- function(
@@ -45,42 +45,50 @@ init_py <- function(
     install_method = "auto",
     verbose = TRUE) {
     reticulate::use_python(python_path, required = required)
-    
+
     if (install_missing && !reticulate::py_module_available("arboreto")) {
         if (verbose) {
             message("Installing Python package 'arboreto' for GRNBoost2...")
             message("This may take a few minutes.")
         }
-        
-        tryCatch({
-            if (install_method == "auto") {
-                if (verbose) message("Trying conda installation...")
-                tryCatch({
+
+        tryCatch(
+            {
+                if (install_method == "auto") {
+                    if (verbose) message("Trying conda installation...")
+                    tryCatch(
+                        {
+                            reticulate::conda_install("arboreto", 
+                                                        channel = "bioconda")
+                            if (verbose) message("Successfully installed.")
+                        },
+                        error = function(e) {
+                            if (verbose) message("Conda failed, trying pip...")
+                            reticulate::py_install("arboreto")
+                            if (verbose) message("Successfully installed.")
+                        }
+                    )
+                } else if (install_method == "conda") {
                     reticulate::conda_install("arboreto", channel = "bioconda")
                     if (verbose) message("Successfully installed via conda.")
-                }, error = function(e) {
-                    if (verbose) message("Conda failed, trying pip...")
+                } else if (install_method == "pip") {
                     reticulate::py_install("arboreto")
                     if (verbose) message("Successfully installed via pip.")
-                })
-            } else if (install_method == "conda") {
-                reticulate::conda_install("arboreto", channel = "bioconda")
-                if (verbose) message("Successfully installed via conda.")
-            } else if (install_method == "pip") {
-                reticulate::py_install("arboreto")
-                if (verbose) message("Successfully installed via pip.")
-            } else {
-                stop("Invalid install_method. Use 'auto', 'conda', or 'pip'.")
+                } else {
+                    stop("Invalid install_method. Use 'auto',
+                        'conda', or 'pip'.")
+                }
+            },
+            error = function(e) {
+                if (verbose) {
+                    message("Installation failed: ", e$message)
+                    message("Try manual installation: pip install arboreto")
+                }
+                if (required) {
+                    stop("Failed to install Python package 'arboreto'.")
+                }
             }
-        }, error = function(e) {
-            if (verbose) {
-                message("Installation failed: ", e$message)
-                message("Try manual installation: pip install arboreto")
-            }
-            if (required) {
-                stop("Failed to install required Python package 'arboreto'.")
-            }
-        })
+        )
     }
 
     modules <- list(

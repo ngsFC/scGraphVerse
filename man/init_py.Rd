@@ -4,7 +4,13 @@
 \alias{init_py}
 \title{Initialize Python Environment for GRNBoost2}
 \usage{
-init_py(python_path = "/usr/bin/python3", required = TRUE)
+init_py(
+  python_path = "/usr/bin/python3",
+  required = TRUE,
+  install_missing = FALSE,
+  install_method = "auto",
+  verbose = TRUE
+)
 }
 \arguments{
 \item{python_path}{Character string. Path to the Python executable,
@@ -12,6 +18,16 @@ e.g., \code{"/usr/bin/python3"}.}
 
 \item{required}{Logical. If \code{TRUE}, errors if Python is not
 available or path is invalid. Default: \code{TRUE}.}
+
+\item{install_missing}{Logical. If \code{TRUE}, automatically installs
+missing Python packages. Default: \code{FALSE}.}
+
+\item{install_method}{Character string. Installation method when
+\code{install_missing = TRUE}. Options: "auto", "conda", "pip".
+Default: "auto".}
+
+\item{verbose}{Logical. If \code{TRUE}, shows installation progress.
+Default: \code{TRUE}.}
 }
 \value{
 A list with three Python module objects:
@@ -24,14 +40,18 @@ A list with three Python module objects:
 \description{
 Sets up the Python environment and lazily loads modules required for
 running GRNBoost2: \code{arboreto}, \code{pandas}, and \code{numpy}.
+Automatically installs missing Python packages if requested.
 }
 \details{
 Uses \pkg{reticulate} to bind R to the specified Python
-interpreter and lazily import modules needed for GRNBoost2. If a module
-is missing or incompatible, an informative error is raised (when
-\code{required = TRUE}).
+interpreter and lazily import modules needed for GRNBoost2. If
+\code{install_missing = TRUE}, automatically installs the 'arboreto'
+package using the specified method if not found.
 }
 \examples{
 # Initialize Python environment (adjust python_path as needed)
 modules <- init_py()
+
+# Initialize with automatic installation of missing packages
+modules <- init_py(install_missing = TRUE)
 }
