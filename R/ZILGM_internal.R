@@ -236,11 +236,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 
         # M-step: Use glmnet for L1-regularized regression
         if (update_type == "IRLS") {
-            # Working response and weights for IRLS
+            # IRLS with weighted Gaussian regression
             z <- eta + (y - mu) / pmax(mu, 1e-8)
             w <- pmax(mu * (1 - prob_zero), 1e-8)
 
-            # Use glmnet with weights for IRLS
             fit_result <- tryCatch({
                 fit <- glmnet::glmnet(
                     x = X, y = z,
@@ -249,31 +248,28 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                     lambda = lambda / sum(w),
                     alpha = 1,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
-                # Fallback to previous iteration if glmnet fails
                 beta_old
             })
             beta <- fit_result
         } else { # MM algorithm
-            # MM quadratic approximation
-            sig <- sum(pmax(mu, 1e-8))
-            
+            # Direct Poisson regression as in original ZILGM
             fit_result <- tryCatch({
                 fit <- glmnet::glmnet(
-                    x = X,
-                    y = eta + n * (y - mu) / sig,
-                    family = "gaussian",
+                    x = X, y = y,
+                    family = "poisson",
                     alpha = 1,
-                    lambda = lambda / sig,
+                    lambda = lambda,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
-                # Fallback to previous iteration if glmnet fails
                 beta_old
             })
             beta <- fit_result
@@ -323,7 +319,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 
         # M-step: Use glmnet for L1-regularized regression
         if (update_type == "IRLS") {
-            # Working response and weights for NB1 IRLS
+            # IRLS with weighted Gaussian regression for NB1
             w <- pmax(mu * (1 - prob_zero) * theta / (theta + mu), 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
 
@@ -335,7 +331,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                     lambda = lambda / sum(w),
                     alpha = 1,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
@@ -343,18 +340,16 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             })
             beta <- fit_result
         } else {
-            # MM algorithm for NB1
-            sig <- sum(mu * theta / (theta + mu))
-            
+            # MM algorithm: Direct Poisson regression for NB
             fit_result <- tryCatch({
                 fit <- glmnet::glmnet(
-                    x = X,
-                    y = eta + n * (y - mu) * theta / ((theta + mu) * sig),
-                    family = "gaussian",
+                    x = X, y = y,
+                    family = "poisson",
                     alpha = 1,
-                    lambda = lambda / sig,
+                    lambda = lambda,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
@@ -407,7 +402,7 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 
         # M-step: Use glmnet for L1-regularized regression
         if (update_type == "IRLS") {
-            # Working response and weights for NB2 IRLS
+            # IRLS with weighted Gaussian regression for NB2
             w <- pmax(mu * (1 - prob_zero) * theta / (theta + mu), 1e-8)
             z <- eta + (y - mu) / pmax(mu, 1e-8)
 
@@ -419,7 +414,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
                     lambda = lambda / sum(w),
                     alpha = 1,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
@@ -427,18 +423,16 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             })
             beta <- fit_result
         } else {
-            # MM algorithm for NB2
-            sig <- sum(mu * theta / (theta + mu))
-            
+            # MM algorithm: Direct Poisson regression for NB2
             fit_result <- tryCatch({
                 fit <- glmnet::glmnet(
-                    x = X,
-                    y = eta + n * (y - mu) * theta / ((theta + mu) * sig),
-                    family = "gaussian",
+                    x = X, y = y,
+                    family = "poisson",
                     alpha = 1,
-                    lambda = lambda / sig,
+                    lambda = lambda,
                     standardize = FALSE,
-                    intercept = FALSE
+                    intercept = FALSE,
+                    nlambda = 1
                 )
                 as.numeric(fit$beta[, 1])
             }, error = function(e) {
