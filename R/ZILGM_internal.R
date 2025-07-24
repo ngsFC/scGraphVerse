@@ -119,25 +119,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
 #' @keywords internal
 #' @noRd
 .compute_lambda_max_exact <- function(X, family) {
-    n <- nrow(X)
-    p <- ncol(X)
-
-    # Standardize X
-    X_std <- scale(X)
-    if (any(is.na(X_std))) {
-        X_std[is.na(X_std)] <- 0
-    }
-
-    # Compute cross-product matrix
-    XtX <- t(X_std) %*% X_std
-
-    # Extract upper triangular part (excluding diagonal)
-    upper_tri_indices <- upper.tri(XtX)
-    cross_products <- abs(XtX[upper_tri_indices])
-
-    # Lambda max as in original ZILGM
-    lambda_max <- max(cross_products) / n
-
+    # Original ZILGM find_lammax() implementation - no standardization
+    # Based on Karush-Kuhn-Tucker condition from Park et al. (2021)
+    tmp <- t(X) %*% X
+    lambda_max <- (1 / nrow(X)) * max(abs(tmp[upper.tri(tmp)]))
     return(lambda_max)
 }
 

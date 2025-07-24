@@ -573,6 +573,15 @@ Nodes:",
 #' @noRd
 
 .run_zilgm <- function(mat, adjm, nCores, params = list()) {
+    # Ensure lambda is calculated using original ZILGM method for consistency
+    if (is.null(params$lambda)) {
+        # Use internal implementation that matches original ZILGM find_lammax()
+        family_param <- if (is.null(params$family)) "NBII" else params$family
+        lambda_max <- .compute_lambda_max_exact(t(mat), family_param)
+        lambda_min <- 1e-4 * lambda_max
+        params$lambda <- exp(seq(log(lambda_max), log(lambda_min), length.out = 50))
+    }
+    
     # Use updated internal implementation
     zilgm_args <- modifyList(list(
         X = t(mat),

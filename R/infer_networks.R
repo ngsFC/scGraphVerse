@@ -132,8 +132,6 @@ infer_networks <- function(
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
 
-    # Note: Seed handling is method-specific and implemented within each method
-    # to comply with Bioconductor guidelines
 
     # Merge method-specific parameters with defaults
     genie3_params <- .merge_genie3_params(genie3_params)
