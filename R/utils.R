@@ -1092,7 +1092,6 @@ Nodes:",
 
 .merge_zilgm_params <- function(user_params) {
     defaults <- list(
-        lambda = 0.1,
         alpha = 1,
         max_iter = 100,
         tol = 1e-4
