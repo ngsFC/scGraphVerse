@@ -1,146 +1,64 @@
-url: https://ngsfc.github.io/scGraphVerse/
+url: https://ngsFC.github.io/scGraphVerse
+
 template:
   bootstrap: 5
   bootswatch: flatly
-  bslib:
-    primary: '#2c3e50'
-    secondary: '#95a5a6'
-    success: '#27ae60'
-    info: '#3498db'
-    warning: '#f39c12'
-    danger: '#e74c3c'
-  includes:
-    in_header: |
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    after_body: "<script>\n  // Add smooth scrolling\n  document.querySelectorAll('a[href^=\"#\"]').forEach(anchor
-      => {\n    anchor.addEventListener('click', function (e) {\n      e.preventDefault();\n
-      \     document.querySelector(this.getAttribute('href')).scrollIntoView({\n        behavior:
-      'smooth'\n      });\n    });\n  });\n  \n  // Add intersection observer for
-      animations\n  const observerOptions = {\n    threshold: 0.1,\n    rootMargin:
-      '0px 0px -50px 0px'\n  };\n  \n  const observer = new IntersectionObserver(function(entries)
-      {\n    entries.forEach(entry => {\n      if (entry.isIntersecting) {\n        entry.target.classList.add('animate__animated',
-      'animate__fadeInUp');\n      }\n    });\n  }, observerOptions);\n  \n  // Observe
-      all feature boxes and workflow steps\n  document.querySelectorAll('.feature-box,
-      .workflow-step').forEach(el => {\n    observer.observe(el);\n  });\n</script>\n"
-  assets: pkgdown/extra.css
+
 navbar:
   structure:
     left:
-    - home
-    - intro
-    - reference
-    - articles
-    - news
-    right:
-    - search
-    - github
-  components:
-    intro:
-      text: Get Started
-      href: articles/case_study.html
-    github:
-      icon: fab fa-github fa-lg
-      href: https://github.com/ngsFC/scGraphVerse
-      aria-label: GitHub
+      - home
+      - reference
+      - articles
+
 home:
-  title: scGraphVerse
-  description: |
-    A comprehensive toolkit for gene regulatory network inference, consensus building, and visualization from single-cell RNA-seq data. Integrates multiple inference methods with robust evaluation and community detection capabilities.
+  title: "scGraphVerse"
+  description: >
+    A toolkit for gene regulatory network inference, consensus, and visualization
+    from single-cell RNA-seq data.
   links:
-  - text: <i class='fab fa-github'></i> GitHub Repository
-    href: https://github.com/ngsFC/scGraphVerse
-  - text: <i class='fas fa-bug'></i> Report Issues
-    href: https://github.com/ngsFC/scGraphVerse/issues
-  - text: <i class='fas fa-download'></i> Installation Guide
-    href: '#installation'
-  - text: <i class='fas fa-play-circle'></i> Quick Start
-    href: articles/case_study.html
-  strip_header: yes
-  sidebar:
-    structure:
-    - links
-    - license
-    - community
-    - citation
-    - authors
-    - dev
-    components:
-      community:
-        title: Community
-        text: |
-          Get help and connect with other users:
-          * [GitHub Discussions](https://github.com/ngsFC/scGraphVerse/discussions) * [Stack Overflow](https://stackoverflow.com/questions/tagged/scgraphverse)
-      citation:
-        title: Citation
-        text: |
-          If you use scGraphVerse in your research, please cite:
-          ```r citation("scGraphVerse") ```
+    - text: GitHub Repository
+      href: https://github.com/ngsFC/scGraphVerse
+    - text: Report Issues
+      href: https://github.com/ngsFC/scGraphVerse/issues
+
 reference:
-- title: <i class='fas fa-database'></i> Data Preparation & Import
-  desc: Functions for loading and preprocessing single-cell data
-  contents:
-  - adj_truth
-  - count_matrices
-  - selgene
-  - earlyj
-- title: <i class='fas fa-network-wired'></i> Network Inference
-  desc: Core algorithms for inferring gene regulatory networks
-  contents:
-  - infer_networks
-  - init_py
-  - cutoff_adjacency
-  - generate_adjacency
-  - symmetrize
-- title: <i class='fas fa-layer-group'></i> Consensus & Integration
-  desc: Methods for building consensus networks and evaluation
-  contents:
-  - create_consensus
-  - compare_consensus
-  - pscores
-  - plotROC
-  - edge_mining
-- title: <i class='fas fa-project-diagram'></i> Community Detection & Analysis
-  desc: Network topology analysis and community structure
-  contents:
-  - community_path
-  - community_similarity
-- title: <i class='fas fa-chart-line'></i> Visualization & Plotting
-  desc: Tools for network visualization and results display
-  contents:
-  - plotg
-  - plotROC
-- title: <i class='fas fa-flask'></i> Simulation & Benchmarking
-  desc: Functions for generating synthetic data and testing
-  contents: zinb_simdata
-- title: <i class='fas fa-cloud-download-alt'></i> External Data Sources
-  desc: Integration with external databases and resources
-  contents:
-  - download_Atlas
-  - stringdb_adjacency
+  - title: "Toy data"
+    contents:
+      - adj_truth
+      - count_matrices
+  - title: "Infer Networks"
+    contents:
+      - infer_networks
+      - cutoff_adjacency
+      - generate_adjacency
+      - earlyj
+      - symmetrize
+  - title: "Consensus & Evaluation"
+    contents:
+      - create_consensus
+      - compare_consensus
+      - community_similarity
+      - plotROC
+      - pscores
+  - title: "Simulation & Visualization"
+    contents:
+      - zinb_simdata
+      - plotg
+  - title: "Data and Utility Functions"
+    contents:
+      - download_Atlas
+      - stringdb_adjacency
+      - edge_mining
+      - selgene
+      - community_path
+      - init_py
+
 articles:
-- title: <i class='fas fa-graduation-cap'></i> Tutorials & Guides
-  desc: Step-by-step guides for using scGraphVerse
-  contents: case_study
-- title: <i class='fas fa-microscope'></i> Advanced Analysis
-  desc: In-depth analysis and benchmarking studies
-  contents: simulation_study
-footer:
-  structure:
-    left:
-    - developed_by
-    - built_with
-    right: package_info
-  components:
-    package_info:
-      text: |
-        <p><strong>scGraphVerse</strong> v{version}<br> Licensed under <a href="LICENSE.html">GPL-3</a><br> Built with <i class="fas fa-heart" style="color: #e74c3c;"></i> for the single-cell community</p>
-development:
-  mode: auto
-  version_label: default
-  version_tooltip: Version
-news:
-  releases:
-  - text: Version 0.99.0
-    href: https://github.com/ngsFC/scGraphVerse/releases/tag/v0.99.0
+  - title: "Case Study"
+    contents:
+      - case_study
+  - title: "Simulation Study"
+    contents:
+      - simulation_study
 

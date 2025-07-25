@@ -5,7 +5,7 @@ Supports inference methods "GENIE3", "GRNBoost2",
 and "JRF".'><meta property="og:description" content='Applies a cutoff to weighted adjacency matrices using a percentile
 estimated from shuffled versions of the original expression matrices.
 Supports inference methods "GENIE3", "GRNBoost2",
-and "JRF".'><meta property="og:image" content="https://ngsfc.github.io/scGraphVerse/logo.png"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"></head><body>
+and "JRF".'><meta property="og:image" content="https://ngsFC.github.io/scGraphVerse/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -13,7 +13,7 @@ and "JRF".'><meta property="og:image" content="https://ngsfc.github.io/scGraphVe
 
     <a class="navbar-brand me-2" href="../index.html">scGraphVerse</a>
 
-    <small class="nav-text text-default me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.99.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,19 +21,11 @@ and "JRF".'><meta property="og:image" content="https://ngsfc.github.io/scGraphVe
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/case_study.html">Get Started</a></li>
-<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-news"><li><h6 class="dropdown-header" data-toc-skip>Releases</h6></li>
-    <li><a class="external-link dropdown-item" href="https://github.com/ngsFC/scGraphVerse/releases/tag/v0.99.0">Version 0.99.0</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../news/index.html">Changelog</a></li>
-  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ngsFC/scGraphVerse/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -203,49 +195,18 @@ al., 2010).</p></li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Francesco Cecere. Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Developed by Francesco Cecere.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>list(text = “
-</p>
-<p>
-<strong>scGraphVerse</strong> v{version}<br> Licensed under <a href="%5C%22LICENSE.html%5C%22">GPL-3</a><br> Built with &lt;i class="fas fa-heart" style="color: #e74c3c;"&gt; for the single-cell community
-</p><p>“)</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
 
 
 
-  <script>
-  // Add smooth scrolling
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      document.querySelector(this.getAttribute('href')).scrollIntoView({
-        behavior: 'smooth'
-      });
-    });
-  });
 
-  // Add intersection observer for animations
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-  };
 
-  const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('animate__animated', 'animate__fadeInUp');
-      }
-    });
-  }, observerOptions);
-
-  // Observe all feature boxes and workflow steps
-  document.querySelectorAll('.feature-box, .workflow-step').forEach(el => {
-    observer.observe(el);
-  });
-</script></body></html>
+  </body></html>
 
