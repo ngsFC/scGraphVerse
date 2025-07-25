@@ -267,7 +267,7 @@ plotg(list(consensus))
 ```
 
 
-```{r communities, fig.alt="Community detection adj_truth"}
+```{r communities adj_truth, fig.alt="Community detection adj_truth"}
 # Note: This section may require internet connectivity for STRINGdb validation
 # To run this section, set eval=TRUE and ensure internet connectivity
 
@@ -288,7 +288,7 @@ comm_cons <- community_path(consensus)
 ```
 
 
-```{r communities, fig.alt="compare Graph with reference"}
+```{r communities metrics, fig.alt="compare Graph with reference"}
 # Similarity
 sim_score <- community_similarity(comm_truth, list(comm_cons))
 ```
