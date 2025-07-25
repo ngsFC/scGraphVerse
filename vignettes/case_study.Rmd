@@ -107,34 +107,21 @@ pbmc2_sub <- pbmc2_sub[, colData(pbmc2_sub)$predicted_celltype == "B_cell"]
 # List for multi-sample analysis
 bcell_list <- list(pbmc1_sub, pbmc2_sub)
 
-shuffle_matrix_rows <- function(mat) {
-    # Convert DelayedArray to matrix if needed
-    if (is(mat, "DelayedArray")) {
-        mat <- as.matrix(mat)
-    }
-    shuffled <- t(apply(mat, 1, sample))
-    rownames(shuffled) <- rownames(mat)
-    colnames(shuffled) <- colnames(mat)
-    return(shuffled)
-}
-
-
-
-check <- shuffle_matrix_rows(assay(bcell_list[[1]], "counts")[1:5, 1:5])
 ```
 
 # 2. Network Inference
 
-We infer GRNs using three algorithms. Replace `method` to switch.
+We infer GRNs using five different algorithms.
 
 ```{r genie3}
-# Choose method: "GENIE3", "GRNBoost2", or "JRF"
+# Choose method: "GENIE3", "GRNBoost2", "ZILGM", "PCzinb" or "JRF"
 method <- "GENIE3"
 networks <- infer_networks(
     count_matrices_list = bcell_list,
     method = method,
-    nCores = 1
+    nCores = 15
 )
+
 ```
 
 ## 2.1. Building Adjacency Matrices
@@ -146,14 +133,14 @@ Convert edge lists to weighted matrices, symmetrize, and apply threshold.
 wadj <- generate_adjacency(networks)
 # Symmetrize
 swadj <- symmetrize(wadj, weight_function = "mean")
-# Binary cutoff (top 5%)
+# Binary cutoff (top 1%)
 binary_adj <- cutoff_adjacency(
     count_matrices = bcell_list,
     weighted_adjm_list = swadj,
     n = 2,
     method = method,
-    quantile_threshold = 0.95,
-    nCores = 1
+    quantile_threshold = 0.99,
+    nCores = 15
 )
 # Plot
 plotg(binary_adj)
@@ -166,11 +153,12 @@ Aggregate multiple binary networks into a consensus and find network modules.
 ```{r consensus, fig.alt="plot consensus Graph"}
 # Consensus by vote
 consensus <- create_consensus(binary_adj, method = "vote")
+
 plotg(list(consensus))
 ```
 
 
-```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb", eval=FALSE}
+```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb"}
 # Note: This requires internet connection for STRINGdb
 # To run this section, set eval=TRUE and ensure internet connectivity
 compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
@@ -183,7 +171,7 @@ communities <- community_path(consensus)
 
 Fetch high-confidence interactions from STRING and evaluate true positives.
 
-```{r stringdb, eval=FALSE}
+```{r stringdb}
 # Note: This requires internet connection for STRINGdb downloads
 # To run this section, set eval=TRUE and ensure internet connectivity
 str <- stringdb_adjacency(
