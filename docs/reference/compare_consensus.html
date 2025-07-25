@@ -169,15 +169,18 @@ reference (only if <code>false_plot = TRUE</code>).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Initializing STRINGdb...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Mapping genes to STRING IDs...</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>URL 'https://stringdb-downloads.org/download/protein.aliases.v11.5/9606.protein.aliases.v11.5.txt.gz': status was 'SSL peer certificate or SSH remote key was not OK'</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in download.file(urlStr, temp):</span> cannot open URL 'https://stringdb-downloads.org/download/protein.aliases.v11.5/9606.protein.aliases.v11.5.txt.gz'</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Mapped 35 genes to STRING IDs.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Retrieving **physical** interactions from STRING API...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Found 31 STRING physical interactions.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Adjacency matrices constructed successfully.</span>
+<span class="r-plt img"><img src="compare_consensus-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">compare_consensus</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="va">consensus</span>,</span></span>
 <span class="r-in"><span>    reference_matrix <span class="op">=</span> <span class="va">adj_truth</span>,</span></span>
 <span class="r-in"><span>    false_plot <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="compare_consensus-1.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="compare_consensus-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

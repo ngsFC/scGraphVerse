@@ -100,17 +100,15 @@ parallelization. Defaults to the number of workers in the current
 
 <dt id="arg-grnboost-modules">grnboost_modules<a class="anchor" aria-label="anchor" href="#arg-grnboost-modules"></a></dt>
 <dd><p>Python modules required for <code>GRNBoost2</code>
-(created via <span class="pkg">reticulate</span>). Use <code><a href="init_py.html">init_py()</a></code> to create this object,
-or NULL to auto-detect. Use <code>init_py(install_missing = TRUE)</code> for automated
-dependency installation.</p></dd>
+(created via <span class="pkg">reticulate</span>).</p></dd>
 
 
 <dt id="arg-genie-params">genie3_params<a class="anchor" aria-label="anchor" href="#arg-genie-params"></a></dt>
 <dd><p>List of parameters for GENIE3 method:</p><ul><li><p><code>regulators</code>: Vector of regulator gene names (default: all)</p></li>
 <li><p><code>targets</code>: Vector of target gene names (default: all genes)</p></li>
-<li><p><code>tree.method</code>: "RF" or "ET" (default: "RF")</p></li>
+<li><p><code>treeMethod</code>: "RF" or "ET" (default: "RF")</p></li>
 <li><p><code>K</code>: Number of candidate regulators (default: "sqrt")</p></li>
-<li><p><code>nb.trees</code>: Number of trees per ensemble (default: 1000)</p></li>
+<li><p><code>nTrees</code>: Number of trees per ensemble (default: 1000)</p></li>
 <li><p><code>seed</code>: Random seed for reproducibility (default: NULL)</p></li>
 </ul></dd>
 
@@ -180,8 +178,7 @@ internal parallelization across random forest trees using
 </ul><p>Methods are based on:</p><ul><li><p><strong>GENIE3</strong>: Random Forest-based inference (Huynh-Thu et
 al., 2010).</p></li>
 <li><p><strong>GRNBoost2</strong>: Gradient boosting trees using arboreto
-(Moerman et al., 2019). <strong>Requires Python package 'arboreto'</strong>.
-Use <code>init_py(install_missing = TRUE)</code> for automated installation.</p></li>
+(Moerman et al., 2019).</p></li>
 <li><p><strong>ZILGM</strong>: Zero-Inflated Graphical Models for scRNA-seq
 (Zhang et al., 2021).</p></li>
 <li><p><strong>JRF</strong>: Joint Random Forests across multiple conditions
@@ -194,7 +191,6 @@ Use <code>init_py(install_missing = TRUE)</code> for automated installation.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"count_matrices"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Using GENIE3 (recommended for examples - no external dependencies)</span></span></span>
 <span class="r-in"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu">infer_networks</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span></span>
 <span class="r-in"><span>    method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span></span>
@@ -202,16 +198,12 @@ Use <code>init_py(install_missing = TRUE)</code> for automated installation.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.2006033</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1980781</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E       CD3D 0.1598757</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1559646</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC3      ARPC2 0.1551775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         GNB2L1      UBA52 0.1530419</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># For GRNBoost2 usage (requires Python setup):</span></span></span>
-<span class="r-in"><span><span class="co"># 1. Install dependencies: init_py(install_missing = TRUE)</span></span></span>
-<span class="r-in"><span><span class="co"># 2. Run: infer_networks(count_matrices, method = "GRNBoost2")</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1992252</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1973449</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1589728</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1538982</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC2      HLA-E 0.1475527</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1475117</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -67,252 +67,283 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9"><div class="hero-section">
-<div class="container text-center">
-<div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="sc">&lt;</span>img src<span class="ot">=</span><span class="st">"./man/figures/logo.png"</span> alt<span class="ot">=</span><span class="st">"scGraphVerse logo"</span> width<span class="ot">=</span><span class="st">"200"</span> style<span class="ot">=</span><span class="st">"margin-bottom: 30px;"</span><span class="sc">/</span><span class="er">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="er">&lt;</span>h1<span class="sc">&gt;</span>scGraphVerse<span class="sc">&lt;</span><span class="er">/</span>h1<span class="sc">&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="er">&lt;</span>p class<span class="ot">=</span><span class="st">"lead"</span><span class="sc">&gt;</span>Comprehensive Gene Regulatory Network Analysis <span class="cf">for</span> Single<span class="sc">-</span>Cell Data<span class="sc">&lt;</span><span class="er">/</span>p<span class="sc">&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="er">&lt;</span>div style<span class="ot">=</span><span class="st">"margin-top: 30px;"</span><span class="sc">&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="er">&lt;</span>span class<span class="ot">=</span><span class="st">"method-badge"</span><span class="sc">&gt;</span>GENIE3<span class="sc">&lt;</span><span class="er">/</span>span<span class="sc">&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="er">&lt;</span>span class<span class="ot">=</span><span class="st">"method-badge"</span><span class="sc">&gt;</span>GRNBoost2<span class="sc">&lt;</span><span class="er">/</span>span<span class="sc">&gt;</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="er">&lt;</span>span class<span class="ot">=</span><span class="st">"method-badge"</span><span class="sc">&gt;</span>ZILGM<span class="sc">&lt;</span><span class="er">/</span>span<span class="sc">&gt;</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="er">&lt;</span>span class<span class="ot">=</span><span class="st">"method-badge"</span><span class="sc">&gt;</span>JRF<span class="sc">&lt;</span><span class="er">/</span>span<span class="sc">&gt;</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="er">&lt;</span>span class<span class="ot">=</span><span class="st">"method-badge"</span><span class="sc">&gt;</span>PCzinb<span class="sc">&lt;</span><span class="er">/</span>span<span class="sc">&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-</div>
+  <main id="main" class="col-md-9"><div class="section level1">
+
 <div align="center">
-<p><a href="https://www.gnu.org/licenses/gpl-3.0" class="external-link"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a> <a href="https://github.com/ngsFC/scGraphVerse/actions" class="external-link"><img src="https://github.com/ngsFC/scGraphVerse/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://codecov.io/gh/ngsFC/scGraphVerse?branch=main" class="external-link"><img src="https://codecov.io/gh/ngsFC/scGraphVerse/branch/main/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://CRAN.R-project.org/package=scGraphVerse" class="external-link"><img src="https://www.r-pkg.org/badges/version/scGraphVerse" alt="CRAN status"></a> <a href="https://cran.r-project.org/package=scGraphVerse" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/scGraphVerse" alt="Downloads"></a> <a href="https://bioconductor.org/checkResults/release/bioc-LATEST/scGraphVerse" class="external-link"><img src="http://www.bioconductor.org/shields/build/release/bioc/scGraphVerse.svg" alt="Bioc release status"></a></p>
-</div>
-<p><strong>scGraphVerse</strong> is a comprehensive R/Bioconductor package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, enhanced parameter control, consensus construction, and rich visualizations — all optimized for single-cell expression analysis.</p>
-<hr>
-<div class="section level2">
-<h2 id="id_-key-features">✨ Key Features<a class="anchor" aria-label="anchor" href="#id_-key-features"></a>
-</h2>
-<div class="row">
-<div class="col-md-6">
-<div class="sourceCode" id="cb2"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"feature-box"</span><span class="sc">&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="er">&lt;</span>h3<span class="sc">&gt;</span><span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-network-wired text-primary"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span> Multiple Inference Methods<span class="sc">&lt;</span><span class="er">/</span>h3<span class="sc">&gt;</span></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="er">&lt;</span>ul<span class="sc">&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>GENIE3<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Tree<span class="sc">-</span>based ensemble learning<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>GRNBoost2<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Gradient boosting with Dask<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>ZILGM<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Zero<span class="sc">-</span>inflated Gaussian graphical models<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>JRF<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Joint Random Forests<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>PCzinb<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Partial correlation with ZINB<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="er">&lt;/</span>ul<span class="sc">&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-6">
-<div class="sourceCode" id="cb3"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"feature-box"</span><span class="sc">&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="er">&lt;</span>h3<span class="sc">&gt;</span><span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-layer-group text-success"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span> Advanced Consensus<span class="sc">&lt;</span><span class="er">/</span>h3<span class="sc">&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="er">&lt;</span>ul<span class="sc">&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Voting consensus<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Democratic edge selection<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Union consensus<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Comprehensive edge inclusion<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>INet consensus<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Intelligent network integration<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Weighted consensus<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Score<span class="sc">-</span>based combination<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="er">&lt;/</span>ul<span class="sc">&gt;</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-</div>
-<div class="row">
-<div class="col-md-6">
-<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"feature-box"</span><span class="sc">&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="er">&lt;</span>h3<span class="sc">&gt;</span><span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-chart-bar text-info"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span> Comprehensive Evaluation<span class="sc">&lt;</span><span class="er">/</span>h3<span class="sc">&gt;</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="er">&lt;</span>ul<span class="sc">&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Performance metrics<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> ROC, AUC, F1<span class="sc">-</span>score, MCC<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Network topology<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Modularity, clustering coefficients<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Community detection<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> With pathway enrichment<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Benchmarking<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Against known networks<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="er">&lt;/</span>ul<span class="sc">&gt;</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-6">
-<div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"feature-box"</span><span class="sc">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="er">&lt;</span>h3<span class="sc">&gt;</span><span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-paint-brush text-warning"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span> Rich Visualizations<span class="sc">&lt;</span><span class="er">/</span>h3<span class="sc">&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="er">&lt;</span>ul<span class="sc">&gt;</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Interactive networks<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Community highlighting<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Performance plots<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> ROC curves, precision<span class="sc">-</span>recall<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Consensus comparisons<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> Method benchmarking<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="er">&lt;</span>li<span class="sc">&gt;</span><span class="er">&lt;</span>strong<span class="sc">&gt;</span>Publication<span class="sc">-</span>ready<span class="sc">&lt;</span><span class="er">/</span>strong<span class="sc">&gt;</span> <span class="sc">-</span> High<span class="sc">-</span>quality figures<span class="sc">&lt;</span><span class="er">/</span>li<span class="sc">&gt;</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="er">&lt;/</span>ul<span class="sc">&gt;</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="id_-workflow-overview">🔄 Workflow Overview<a class="anchor" aria-label="anchor" href="#id_-workflow-overview"></a>
-</h2>
-<div class="row text-center">
-<div class="col-md-2">
-<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-step"</span><span class="sc">&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-upload fa-2x text-primary"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="er">&lt;</span>h5<span class="sc">&gt;</span><span class="fl">1.</span> Load Data<span class="sc">&lt;</span><span class="er">/</span>h5<span class="sc">&gt;</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="er">&lt;</span>p<span class="sc">&gt;</span>Single<span class="sc">-</span>cell RNA<span class="sc">-</span>seq matrices<span class="sc">&lt;</span><span class="er">/</span>p<span class="sc">&gt;</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-1">
-<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-arrow"</span><span class="sc">&gt;</span>→<span class="sc">&lt;</span><span class="er">/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-2">
-<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-step"</span><span class="sc">&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-network-wired fa-2x text-success"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="er">&lt;</span>h5<span class="sc">&gt;</span><span class="fl">2.</span> Infer Networks<span class="sc">&lt;</span><span class="er">/</span>h5<span class="sc">&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="er">&lt;</span>p<span class="sc">&gt;</span>Multiple algorithms<span class="sc">&lt;</span><span class="er">/</span>p<span class="sc">&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-1">
-<div class="sourceCode" id="cb9"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-arrow"</span><span class="sc">&gt;</span>→<span class="sc">&lt;</span><span class="er">/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-2">
-<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-step"</span><span class="sc">&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-layer-group fa-2x text-info"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="er">&lt;</span>h5<span class="sc">&gt;</span><span class="fl">3.</span> Build Consensus<span class="sc">&lt;</span><span class="er">/</span>h5<span class="sc">&gt;</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="er">&lt;</span>p<span class="sc">&gt;</span>Integrate results<span class="sc">&lt;</span><span class="er">/</span>p<span class="sc">&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-1">
-<div class="sourceCode" id="cb11"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-arrow"</span><span class="sc">&gt;</span>→<span class="sc">&lt;</span><span class="er">/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
-<div class="col-md-2">
-<div class="sourceCode" id="cb12"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="sc">&lt;</span>div class<span class="ot">=</span><span class="st">"workflow-step"</span><span class="sc">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="er">&lt;</span>i class<span class="ot">=</span><span class="st">"fas fa-chart-line fa-2x text-warning"</span><span class="sc">&gt;</span><span class="er">&lt;/</span>i<span class="sc">&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="er">&lt;</span>h5<span class="sc">&gt;</span><span class="fl">4.</span> Analyze <span class="sc">&amp;</span> Visualize<span class="sc">&lt;</span><span class="er">/</span>h5<span class="sc">&gt;</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="er">&lt;</span>p<span class="sc">&gt;</span>Communities <span class="sc">&amp;</span> pathways<span class="sc">&lt;</span><span class="er">/</span>p<span class="sc">&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="er">&lt;/</span>div<span class="sc">&gt;</span></span></code></pre></div>
-</div>
+<img src="./reference/figures/logo.png" alt="scGraphVerse logo" width="200"><h1>
+🧬 scGraphVerse
+</h1>
+<h3>
+✨ Comprehensive Gene Regulatory Network Analysis for Single-Cell Data ✨
+</h3>
+<p><a href="https://www.gnu.org/licenses/gpl-3.0" class="external-link"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a></p>
 </div>
 <hr>
-<div align="center">
-<p><img src="./reference/figures/gabstract.png" alt="Graphical Abstract" width="700"></p>
+<div class="section level2">
+<h2 id="id_-overview">🎯 Overview<a class="anchor" aria-label="anchor" href="#id_-overview"></a>
+</h2>
+<blockquote>
+<p><strong>scGraphVerse</strong> is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, consensus construction, and rich visualizations optimized for single-cell expression analysis.</p>
+</blockquote>
+<div class="section level3">
+<h3 id="id_-key-features">⚡ Key Features<a class="anchor" aria-label="anchor" href="#id_-key-features"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="40%">
+<col width="59%">
+</colgroup>
+<thead><tr class="header">
+<th>Feature</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>🔬 <strong>Multiple Inference Methods</strong>
+</td>
+<td>GENIE3, GRNBoost2, ZILGM, JRF, PCzinb</td>
+</tr>
+<tr class="even">
+<td>🤝 <strong>Consensus Networks</strong>
+</td>
+<td>Voting, union, INet integration</td>
+</tr>
+<tr class="odd">
+<td>📊 <strong>Comprehensive Evaluation</strong>
+</td>
+<td>ROC curves, AUC, F1-score, community analysis</td>
+</tr>
+<tr class="even">
+<td>🎨 <strong>Visualizations</strong>
+</td>
+<td>Interactive networks, performance plots</td>
+</tr>
+<tr class="odd">
+<td>🔧 <strong>Flexible Integration</strong>
+</td>
+<td>SingleCellExperiment, Seurat, matrix objects</td>
+</tr>
+</tbody>
+</table>
 </div>
-<hr>
 </div>
 <div class="section level2">
-<h2 id="id_-quick-start">🚀 Quick Start<a class="anchor" aria-label="anchor" href="#id_-quick-start"></a>
+<h2 id="id_-installation">🚀 Installation<a class="anchor" aria-label="anchor" href="#id_-installation"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="section level3">
+<h3 id="id_-development-version">💻 Development Version<a class="anchor" aria-label="anchor" href="#id_-development-version"></a>
+</h3>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Install development version</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ngsFC/scGraphVerse"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_-inference-algorithms">🔬 Inference Algorithms<a class="anchor" aria-label="anchor" href="#id_-inference-algorithms"></a>
+</h3>
+<table class="table">
+<thead><tr class="header">
+<th>Method</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<strong>GENIE3</strong> 🌳</td>
+<td>Tree-based ensemble learning</td>
+</tr>
+<tr class="even">
+<td>
+<strong>GRNBoost2</strong> 🚀</td>
+<td>Gradient boosting with Dask</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>ZILGM</strong> 🎯</td>
+<td>Zero-inflated Gaussian graphical models</td>
+</tr>
+<tr class="even">
+<td>
+<strong>JRF</strong> 🌲</td>
+<td>Joint Random Forests</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>PCzinb</strong> 🔗</td>
+<td>Partial correlation with ZINB</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="id_-quick-start-demo">🎪 Quick Start Demo<a class="anchor" aria-label="anchor" href="#id_-quick-start-demo"></a>
+</h3>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ngsFC.github.io/scGraphVerse" class="external-link">scGraphVerse</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Load example data</span></span>
+<span><span class="co"># Load example data 📊</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"count_matrices"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Infer networks using GENIE3</span></span>
+<span><span class="co"># Infer networks 🧠</span></span>
 <span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/infer_networks.html">infer_networks</a></span><span class="op">(</span></span>
 <span>  count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span>
 <span>  nCores <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create consensus network</span></span>
+<span><span class="co"># Create consensus magic ✨</span></span>
 <span><span class="va">wadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span>
-<span><span class="va">swadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span>
-<span><span class="va">binary_adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span>
-<span>  count_matrices <span class="op">=</span> <span class="va">count_matrices</span>,</span>
-<span>  weighted_adjm_list <span class="op">=</span> <span class="va">swadj</span>,</span>
-<span>  quantile_threshold <span class="op">=</span> <span class="fl">0.95</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">binary_adj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span>
+<span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">wadj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualize network</span></span>
-<span><span class="fu"><a href="reference/plotg.html">plotg</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Detect communities</span></span>
-<span><span class="va">communities</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/community_path.html">community_path</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="id_-installation">💾 Installation<a class="anchor" aria-label="anchor" href="#id_-installation"></a>
-</h2>
-<div class="section level3">
-<h3 id="bioconductor-recommended">Bioconductor (Recommended)<a class="anchor" aria-label="anchor" href="#bioconductor-recommended"></a>
-</h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install from Bioconductor</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://bioconductor.github.io/BiocManager/" class="external-link">"BiocManager"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"scGraphVerse"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="from-github-development-version">From GitHub (Development Version)<a class="anchor" aria-label="anchor" href="#from-github-development-version"></a>
-</h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install development version</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ngsFC/scGraphVerse"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># For GRNBoost2 support (optional)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ngsFC.github.io/scGraphVerse" class="external-link">scGraphVerse</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/init_py.html">init_py</a></span><span class="op">(</span>install_missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>  <span class="co"># Installs Python dependencies</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="system-requirements">System Requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
-</h3>
-<ul>
-<li>
-<strong>R</strong> ≥ 4.4.0</li>
-<li>
-<strong>Python</strong> ≥ 3.6 (optional, for GRNBoost2)</li>
-<li>
-<strong>Dependencies</strong>: All R dependencies installed automatically</li>
-</ul>
-<hr>
-<hr>
+<span><span class="co"># Visualize! 🎨</span></span>
+<span><span class="fu"><a href="reference/plotg.html">plotg</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="id_-license--attribution">📄 License &amp; Attribution<a class="anchor" aria-label="anchor" href="#id_-license--attribution"></a>
+<h2 id="id_-documentation">📚 Documentation<a class="anchor" aria-label="anchor" href="#id_-documentation"></a>
 </h2>
-<p><strong>scGraphVerse</strong> is licensed under <strong>GPL (&gt;= 2)</strong> .</p>
+<div align="center">
+<table class="table">
+<colgroup>
+<col width="34%">
+<col width="20%">
+<col width="44%">
+</colgroup>
+<thead><tr class="header">
+<th>Resource</th>
+<th>Link</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>🌐 <strong>Website</strong>
+</td>
+<td><a href="https://ngsfc.github.io/scGraphVerse/">ngsfc.github.io/scGraphVerse</a></td>
+<td>Main documentation hub</td>
+</tr>
+<tr class="even">
+<td>📖 <strong>Simulation Study</strong>
+</td>
+<td><a href="https://ngsfc.github.io/scGraphVerse/articles/simulation_study.html">Vignette</a></td>
+<td>Benchmarking tutorial</td>
+</tr>
+<tr class="odd">
+<td>🔬 <strong>Case Study</strong>
+</td>
+<td><a href="https://ngsfc.github.io/scGraphVerse/articles/case_study.html">Vignette</a></td>
+<td>Real-world example</td>
+</tr>
+<tr class="even">
+<td>📋 <strong>Reference</strong>
+</td>
+<td><a href="https://ngsfc.github.io/scGraphVerse/reference/">Manual</a></td>
+<td>Function documentation</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section level2">
+<h2 id="id_-citation">📝 Citation<a class="anchor" aria-label="anchor" href="#id_-citation"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"scGraphVerse"</span><span class="op">)</span>  <span class="co"># 🎓 Academic credit</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="integrated-code-attribution">Integrated Code Attribution<a class="anchor" aria-label="anchor" href="#integrated-code-attribution"></a>
+<h3 id="id_-please-also-cite-the-original-methods">🌟 Please also cite the original methods:<a class="anchor" aria-label="anchor" href="#id_-please-also-cite-the-original-methods"></a>
 </h3>
-<p>This package includes adapted functions from:</p>
-<ul>
-<li>
-<strong>ZILGM</strong> (Park et al., 2021) - GPL-2 license</li>
-<li>
-<strong>JRF</strong> (Petralia et al., 2015) - GPL (&gt;= 2) license</li>
-</ul>
+<div align="center">
+<table class="table">
+<colgroup>
+<col width="29%">
+<col width="37%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Method</th>
+<th>Citation</th>
+<th>Journal</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<strong>GENIE3</strong> 🌳</td>
+<td>Huynh-Thu et al. (2010)</td>
+<td>
+<em>PLOS ONE</em> 5(9):e12776</td>
+</tr>
+<tr class="even">
+<td>
+<strong>GRNBoost2</strong> 🚀</td>
+<td>Moerman et al. (2019)</td>
+<td>
+<em>Bioinformatics</em> 35(12):2159-61</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>ZILGM</strong> 🎯</td>
+<td>Park et al. (2021)</td>
+<td>
+<em>Statistical Analysis and Data Mining</em> 37(18):3085-3092</td>
+</tr>
+<tr class="even">
+<td>
+<strong>JRF</strong> 🌲</td>
+<td>Petralia et al. (2015)</td>
+<td>
+<em>Journal of Proteome Research</em> 31(12):i197-i205</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>PCzinb</strong> 🔗</td>
+<td>Nguyen et al. (2023)</td>
+<td>
+<em>Ann. Appl. Stat.</em> 17(3):2555-73</td>
+</tr>
+<tr class="even">
+<td>
+<strong>INet-Tool</strong> 🔧</td>
+<td>Policastro et al. (2025)</td>
+<td>
+<em>Comput Stat</em> 40, 1517–1539</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>Robin</strong> 🎯</td>
+<td>Policastro et al. (2021)</td>
+<td>
+<em>The R Journal</em> 13(1):292-309</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="id_️-license">⚖️ License<a class="anchor" aria-label="anchor" href="#id_%EF%B8%8F-license"></a>
+</h2>
+<p><strong>scGraphVerse</strong> is licensed under <strong>GPL (≥ 2)</strong> 📜</p>
+<div class="section level3">
+<h3 id="id_-integrated-code-attribution">🤝 Integrated Code Attribution<a class="anchor" aria-label="anchor" href="#id_-integrated-code-attribution"></a>
+</h3>
+<p>This package includes adapted functions from: - <strong>ZILGM</strong> (Park et al., 2021) - GPL-2 license - <strong>JRF</strong> (Petralia et al., 2015) - GPL (≥ 2) license - <strong>learn2count</strong> (Nguyen et al. 2023) - for the PCzinb implementation</p>
 <p>All integrated code maintains proper attribution and copyright notices.</p>
-<hr>
 </div>
-</div>
-<div class="section level2">
-<h2 id="id_-citation">📚 Citation<a class="anchor" aria-label="anchor" href="#id_-citation"></a>
-</h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Get citation information</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"scGraphVerse"</span><span class="op">)</span></span></code></pre></div>
-<p>Please also cite the original methods implemented:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>GENIE3</strong>: Huynh-Thu et al. (2010). <em>PLOS ONE</em> 5(9):e12776</li>
-<li>
-<strong>GRNBoost2</strong>: Moerman et al. (2019). <em>Bioinformatics</em> 35(12):2159-61</li>
-<li>
-<strong>ZILGM</strong>: Park et al. (2021). <em>Statistical Analysis and Data Mining</em> 37(18):3085-3092</li>
-<li>
-<strong>JRF</strong>: Petralia et al. (2015). <em>Journal of Proteome Research</em> 31(12):i197-i205</li>
-<li>
-<strong>PCzinb</strong>: Nguyen et al. (2023). <em>Ann. Appl. Stat.</em> 17(3):2555-73</li>
-<li>
-<strong>INet-Tool</strong>: Policastro et al (2025). <em>Comput Stat</em> 40, 1517–1539</li>
-</ol>
-<hr>
-<hr>
 </div>
 <div class="section level2">
 <h2 id="id_-funding">💰 Funding<a class="anchor" aria-label="anchor" href="#id_-funding"></a>
 </h2>
-<p>This work is supported by the <strong>National Centre for HPC, Big Data and Quantum Computing</strong> - <strong>Funded by</strong>: European Union – Next Generation EU – CN00000013 - <strong>CUP</strong>: B93C22000620006</p>
-<hr>
+<p>This work is supported by the <strong>National Centre for HPC, Big Data and Quantum Computing</strong> 🇪🇺 - <strong>Funded by</strong>: European Union – Next Generation EU – CN00000013 - <strong>CUP</strong>: B93C22000620006</p>
 <hr>
 <div align="center">
+<h2>
+🧬 Happy Network Inference! 📊
+</h2>
 <p>
-<strong>Happy Network Inference! 🧬📊</strong>
+<em>Discover the hidden connections in your single-cell data</em>
 </p>
 </div>
 </div>
-
+</div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
@@ -329,7 +360,7 @@
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://www.r-project.org/Licenses/GPL-3" class="external-link">GPL-3</a></small></li>
+<li><small><a href="https://www.r-project.org/Licenses/GPL-3" class="external-link">GPL-3</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
 </ul>
 </div>
 
