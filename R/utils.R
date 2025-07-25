@@ -203,6 +203,7 @@ Nodes:",
     # Transform FPR to (1-FPR) for visualization only
     if ("FPR" %in% names(sd)) {
         sd$FPR <- 1 - sd$FPR
+        names(sd)[names(sd) == "FPR"] <- "1-FPR"
     }
     if ("MCC" %in% names(sd)) {
         neg <- which(sd$MCC < 0)

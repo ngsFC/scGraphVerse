@@ -279,6 +279,7 @@ evaluate_consensus <- compare_consensus(
 )
 
 # Community detection
+
 comm_truth <- community_path(adj_truth)
 ```
 
@@ -291,16 +292,6 @@ comm_cons <- community_path(consensus)
 ```{r communities metrics, fig.alt="compare Graph with reference"}
 # Similarity
 sim_score <- community_similarity(comm_truth, list(comm_cons))
-```
-
-```{r communities-demo}
-# Alternative: Simple community detection without external validation
-comm_truth <- community_path(adj_truth, plot = FALSE, verbose = FALSE)
-comm_cons <- community_path(consensus, plot = FALSE, verbose = FALSE)
-
-# Community similarity
-sim_score <- community_similarity(comm_truth, list(comm_cons))
-print(sim_score)
 ```
 
 ## 5.1. Edge Mining
