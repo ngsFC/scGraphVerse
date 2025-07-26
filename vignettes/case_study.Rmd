@@ -119,7 +119,7 @@ method <- "GENIE3"
 networks <- infer_networks(
     count_matrices_list = bcell_list,
     method = method,
-    nCores = 15
+    nCores = 1
 )
 
 ```
@@ -140,7 +140,7 @@ binary_adj <- cutoff_adjacency(
     n = 2,
     method = method,
     quantile_threshold = 0.99,
-    nCores = 15
+    nCores = 1
 )
 # Plot
 plotg(binary_adj)
