@@ -210,8 +210,7 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     iter.theta <- 2
     stop.epsilon <- .0001
     
-    # Source the optimization functions
-    .source_zinb_functions()
+    # All optimization functions are implemented below in this file
     
     # Estimate dispersion parameters (following original foreach loop)
     zeta <- BiocParallel::bplapply(seq_len(p), function(i) {
@@ -563,14 +562,20 @@ PCzinb_internal <- function(X, method = "poi", alpha = NULL, maxcard = 2,
     # Compute gradients (simplified version)
     if (need.wres.mu && has1) {
         wres.mu <- (Y - mu) * mu
-        grad[r$start.alpha[1]:(r$start.alpha[1] + r$dim.alpha[1] - 1)] <- 
-            colSums(A.mu * wres.mu)
+        # Fix dimension mismatch: A.mu is n x p, wres.mu is n x 1
+        if (r$dim.alpha[1] > 0) {
+            grad[r$start.alpha[1]:(r$start.alpha[1] + r$dim.alpha[1] - 1)] <- 
+                colSums(A.mu * as.vector(wres.mu))
+        }
     }
     
     if (need.wres.pi && has0) {
         wres.pi <- muz * (1 - muz)
-        grad[r$start.alpha[2]:(r$start.alpha[2] + r$dim.alpha[2] - 1)] <- 
-            colSums(A.pi[Y0, , drop = FALSE] * wres.pi[Y0])
+        # Fix dimension mismatch: A.pi is n x p, wres.pi is n x 1  
+        if (r$dim.alpha[2] > 0 && sum(Y0) > 0) {
+            grad[r$start.alpha[2]:(r$start.alpha[2] + r$dim.alpha[2] - 1)] <- 
+                colSums(A.pi[Y0, , drop = FALSE] * as.vector(wres.pi[Y0]))
+        }
     }
     
     grad
