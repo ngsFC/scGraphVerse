@@ -186,9 +186,6 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             }
             
             return(list(Bmat = Bmat, b0 = b0))
-                        update_type,
-                        thresh
-                    )
                 } else if (family == "NBI") {
                     beta_matrix[, i] <- .fit_zero_inflated_nb1(
                         y, X_std, lam,
