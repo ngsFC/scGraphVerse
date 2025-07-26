@@ -186,6 +186,25 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
             }
             
             return(list(Bmat = Bmat, b0 = b0))
+                        update_type,
+                        thresh
+                    )
+                } else if (family == "NBI") {
+                    beta_matrix[, i] <- .fit_zero_inflated_nb1(
+                        y, X_std, lam,
+                        update_type, theta,
+                        thresh
+                    )
+                } else if (family == "NBII") {
+                    beta_matrix[, i] <- .fit_zero_inflated_nb2(
+                        y, X_std, lam,
+                        update_type, theta,
+                        thresh
+                    )
+                }
+            }
+
+            return(beta_matrix)
         },
         error = function(e) {
             # Return zero matrices on error
@@ -280,27 +299,10 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = "NBII",
     nlambda <- length(lambda)
     coef_mat <- array(dim = c(p_genes, p_genes, nlambda))
     
-    # Following original lines 149-151 but handling dimension mismatch
-    # Each gene's Bmat has (p_genes-1) rows since target gene is excluded
+    # Following original lines 149-151: coef_mat[, j, ] = as.matrix(coef_tmp[[j]]$Bmat)
     for (j in seq_len(p_genes)) {
         if (!is.null(gene_results[[j]]) && !is.null(gene_results[[j]]$Bmat)) {
-            # Create expanded coefficient matrix with zero for target gene position
-            bmat <- as.matrix(gene_results[[j]]$Bmat)
-            if (nrow(bmat) == (p_genes - 1)) {
-                # Insert zero row at position j (target gene)
-                expanded_bmat <- matrix(0, nrow = p_genes, ncol = nlambda)
-                if (j == 1) {
-                    expanded_bmat[2:p_genes, ] <- bmat
-                } else if (j == p_genes) {
-                    expanded_bmat[1:(p_genes-1), ] <- bmat
-                } else {
-                    expanded_bmat[1:(j-1), ] <- bmat[1:(j-1), ]
-                    expanded_bmat[(j+1):p_genes, ] <- bmat[j:(p_genes-1), ]
-                }
-                coef_mat[, j, ] <- expanded_bmat
-            } else {
-                coef_mat[, j, ] <- 0
-            }
+            coef_mat[, j, ] <- as.matrix(gene_results[[j]]$Bmat)
         } else {
             coef_mat[, j, ] <- 0
         }
