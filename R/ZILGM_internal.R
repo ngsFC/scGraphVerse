@@ -48,6 +48,9 @@
 #'
 #' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
 #' @importFrom Matrix Matrix
+#' @importFrom mpath glmreg
+#' @importFrom glmnet glmnet
+#' @importFrom stats optimize optim
 #' @keywords internal
 #' @noRd
 zilgm_internal <- function(X, lambda = NULL, nlambda = 50, family = c("Poisson", "NBI", "NBII"), 

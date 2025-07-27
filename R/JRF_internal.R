@@ -587,10 +587,11 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     # Run JRF for this target gene using joint modeling approach
     # Create proper joint data structure for multinomial RandomForest
     
-    # Convert covar matrix to samples × features format (transpose)
-    rf_data <- data.frame(t(covar))
+    # Extract only the actual samples (not zero-padded ones)
+    actual_samples <- sum(sampsize)
+    rf_data <- data.frame(t(covar[, 1:actual_samples]))
     
-    # Create class labels indicating condition membership for each sample
+    # Create class labels indicating condition membership for each actual sample
     rf_y <- rep(1:nclasses, times = sampsize)
     rf_y <- as.factor(rf_y)
     
@@ -674,10 +675,11 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       }
       
       # Use joint modeling approach with multinomial RandomForest
-      # Convert covar matrix to samples × features format (transpose)
-      rf_data <- data.frame(t(covar))
+      # Extract only the actual samples (not zero-padded ones)
+      actual_samples <- sum(sampsize)
+      rf_data <- data.frame(t(covar[, 1:actual_samples]))
       
-      # Create class labels indicating condition membership for each sample
+      # Create class labels indicating condition membership for each actual sample
       rf_y <- rep(1:nclasses, times = sampsize)
       rf_y <- as.factor(rf_y)
       
