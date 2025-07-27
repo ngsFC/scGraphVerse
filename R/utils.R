@@ -1093,10 +1093,23 @@ Nodes:",
 }
 
 .merge_zilgm_params <- function(user_params) {
+    # Default parameters for ZILGM (based on original zilgm function signature)
     defaults <- list(
-        alpha = 1,
-        max_iter = 100,
-        tol = 1e-4
+        lambda = NULL,
+        nlambda = 50,
+        family = "NBII",
+        update_type = "IRLS",
+        sym = "AND",
+        theta = NULL,
+        thresh = 1e-6,
+        weights_mat = NULL,
+        penalty_mat = NULL,
+        do_boot = FALSE,
+        boot_num = 10,
+        beta = 0.05,
+        lambda_min_ratio = 1e-4,
+        init_select = FALSE,
+        verbose = 0
     )
     modifyList(defaults, user_params)
 }

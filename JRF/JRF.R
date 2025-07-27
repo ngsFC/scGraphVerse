@@ -1,48 +1,28 @@
-#' Internal JRF Network Inference Function
+#' Joint Random Forest for the simultaneous estimation of multiple related networks
 #'
-#' This function provides the core JRF (Joint Random Forest) network inference 
-#' functionality with BiocParallel support for parallelization. It implements
-#' joint random forests for simultaneous estimation of multiple related networks
-#' across different conditions or datasets.
+#' MAIN FUNCTION -- > JRF
+#' 
+#' INPUT
+#' 
+#' X            list object containing data for each class
+#' ntree        number of trees
+#' mtry         number of variables to be sampled at each node
+#' genes.name   list of gene names 
+#' 
+#' OUTPUT: importance score of interactions
 #'
-#' @param X A list of expression matrices, where each matrix represents gene 
-#'   expression data for a different condition/dataset. Each matrix should have
-#'   genes as rows and samples as columns.
-#' @param ntree Number of trees in the random forest. Default: 500.
-#' @param mtry Number of variables to sample at each tree node. If NULL,
-#'   defaults to sqrt(p-1) where p is the number of genes.
-#' @param genes.name Character vector of gene names. If NULL, uses row names
-#'   of the first matrix or generates names.
-#' @param nodesize Minimum size of terminal nodes. Default: 5.
-#' @param maxnodes Maximum number of terminal nodes in each tree. Default: NULL.
-#' @param nCores Number of cores for parallelization. Uses BiocParallel backend.
-#' @param importance Whether to compute variable importance. Default: TRUE.
-#' @param verbose Logical. If TRUE, print progress messages. Default: FALSE.
-#' @param seed Random seed for reproducibility. Default: NULL.
-#' @param ... Additional arguments passed to internal functions.
 #'
-#' @return A data frame with columns:
-#'   \item{gene1}{First gene in each pair}
-#'   \item{gene2}{Second gene in each pair}
-#'   \item{importance1, importance2, ...}{Importance scores for each condition}
-#'
-#' @details
-#' JRF performs joint modeling of gene regulatory networks across multiple
-#' conditions by sharing information between random forest models. For each
-#' target gene, it fits a random forest model using the expression of all
-#' other genes as predictors, with class-specific trees that can borrow
-#' information across conditions.
-#'
-#' The importance scores represent the contribution of each gene-gene interaction
-#' to the prediction accuracy, averaged across conditions when appropriate.
-#'
-#' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
-#' @importFrom parallel mclapply
-#' @importFrom stats runif
-#' @importFrom randomForest randomForest importance
-#'
-#' @keywords internal
-#' @noRd
+#' OTHER FUNCTIONS -- > importance  and  JRF_onetarget
+#' 
+#' importance     compute importance score for an object of class JRF 
+#' (this file is a modified version of file importance contained in package randomForest, A. Liaw and M. Wiener (2002))
+#' 
+#' JRF_onetarget  for each class, model the expression of a target gene as a function of the expression of other genes via random forest. 
+#'                class specific tree ensemble are designed to borrow information across them. 
+#' (this file is a modified version of file randomForest contained in package randomForest, A. Liaw and M. Wiener (2002))
+#'   
+#' "JRF" <-  function(X, ...)UseMethod("JRF")
+
 
 importance <- function(x,  scale=TRUE) {
   # --- Function importance is a modified version of function importance from R package randomForest
@@ -103,7 +83,7 @@ importance <- function(x,  scale=TRUE) {
            proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity=FALSE, ...) {
+           keep.inbag=FALSE, purity, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
@@ -223,6 +203,7 @@ importance <- function(x,  scale=TRUE) {
       error.test <- if (labelts) double((nclass+1) * ntree) else double(1)
       
       
+      ####### -- call C function to compute tree ------------------------------------------------------- ###########
       rfout <- .C("classRF",
                   x = x,
                   xdim = as.integer(c(p, n)),
@@ -487,162 +468,7 @@ importance <- function(x,  scale=TRUE) {
   }
 
 
-#' Internal JRF Network Inference Function with BiocParallel
-#'
-#' @param X A list of expression matrices, where each matrix represents gene 
-#'   expression data for a different condition/dataset. Each matrix should have
-#'   genes as rows and samples as columns.
-#' @param ntree Number of trees in the random forest. Default: 500.
-#' @param mtry Number of variables to sample at each tree node. If NULL,
-#'   defaults to sqrt(p-1) where p is the number of genes.
-#' @param genes.name Character vector of gene names. If NULL, uses row names
-#'   of the first matrix or generates names.
-#' @param nCores Number of cores for parallelization. Uses BiocParallel backend.
-#' @param verbose Logical. If TRUE, print progress messages. Default: FALSE.
-#'
-#' @return A data frame with columns:
-#'   \item{gene1}{First gene in each pair}
-#'   \item{gene2}{Second gene in each pair}
-#'   \item{importance1, importance2, ...}{Importance scores for each condition}
-#'
-#' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
-#' @keywords internal
-#' @noRd
-JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL, 
-                        nCores = 1, verbose = FALSE, ...) {
-  
-  # Validate inputs
-  if (!is.list(X)) {
-    stop("X must be a list of expression matrices")
-  }
-  
-  nclasses <- length(X)
-  if (nclasses == 0) {
-    stop("X must contain at least one matrix")
-  }
-  
-  # Get dimensions and gene names
-  p <- nrow(X[[1]])
-  if (is.null(genes.name)) {
-    genes.name <- rownames(X[[1]])
-    if (is.null(genes.name)) {
-      genes.name <- paste0("Gene", 1:p)
-    }
-  }
-  
-  # Set mtry default
-  if (is.null(mtry)) {
-    mtry <- round(sqrt(p - 1))
-  }
-  
-  # Validate dimensions across matrices
-  for (i in 1:nclasses) {
-    if (nrow(X[[i]]) != p) {
-      stop("All matrices in X must have the same number of genes (rows)")
-    }
-  }
-  
-  # Get sample sizes
-  sampsize <- sapply(X, ncol)
-  tot <- max(sampsize)
-  
-  # Initialize importance array
-  imp <- array(0, c(p, length(genes.name), nclasses))
-  
-  # Prepare output structure
-  imp.final <- matrix(0, p * (p - 1) / 2, nclasses)
-  vec1 <- matrix(rep(genes.name, p), p, p)
-  vec2 <- t(vec1)
-  vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
-  vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
-  
-  # Setup BiocParallel backend
-  if (nCores > 1) {
-    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
-  } else {
-    BPPARAM <- BiocParallel::SerialParam()
-  }
-  
-  if (verbose) {
-    message("Running JRF with ", nclasses, " conditions, ", p, " genes, and ", 
-            ntree, " trees per target gene")
-  }
-  
-  # Parallel computation across target genes
-  gene_results <- BiocParallel::bplapply(1:length(genes.name), function(j) {
-    
-    if (verbose && j %% 100 == 0) {
-      message("Processing gene ", j, "/", length(genes.name))
-    }
-    
-    # Prepare data for target gene j
-    covar <- matrix(0, (p - 1) * nclasses, tot)             
-    y <- matrix(0, nclasses, tot)             
-    
-    for (c in 1:nclasses) {
-      y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
-      covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
-    }
-    
-    # Run JRF for this target gene using joint modeling approach
-    # Create proper joint data structure for multinomial RandomForest
-    
-    # Convert covar matrix to samples × features format (transpose)
-    rf_data <- data.frame(t(covar))
-    
-    # Create class labels indicating condition membership for each sample
-    rf_y <- rep(1:nclasses, times = sampsize)
-    rf_y <- as.factor(rf_y)
-    
-    # Train joint random forest - this preserves the joint modeling!
-    # The forest learns to distinguish conditions using stacked gene features
-    jrf.out <- randomForest::randomForest(x = rf_data, y = rf_y, mtry = mtry, 
-                                         importance = TRUE, ntree = ntree)
-    
-    # Extract condition-specific importance scores
-    # Use MeanDecreaseAccuracy importance which measures feature contribution
-    rf_importance <- randomForest::importance(jrf.out, type = 1)
-    imp_gene <- matrix(0, p - 1, nclasses)
-    
-    # Parse importance back to condition-specific blocks
-    # Each condition's features occupy specific rows in the stacked covar matrix
-    for (s in 1:nclasses) {
-      start_idx <- (s - 1) * (p - 1) + 1
-      end_idx <- s * (p - 1)
-      imp_gene[, s] <- rf_importance[start_idx:end_idx, 1]
-    }
-    
-    return(list(gene_idx = j, importance = imp_gene))
-    
-  }, BPPARAM = BPPARAM)
-  
-  # Collect results from parallel computation
-  for (result in gene_results) {
-    j <- result$gene_idx
-    imp[-j, j, ] <- result$importance
-  }
-  
-  # Derive importance score for each interaction (symmetrize)
-  for (s in 1:nclasses) { 
-    imp.s <- imp[, , s]
-    t.imp <- t(imp.s)
-    imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] + 
-                      t.imp[lower.tri(t.imp, diag = FALSE)]) / 2        
-  }
-  
-  # Create output data frame
-  out <- cbind(as.character(vec1), as.character(vec2), 
-               as.data.frame(imp.final), stringsAsFactors = FALSE)
-  colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
-  
-  if (verbose) {
-    message("JRF completed successfully")
-  }
-  
-  return(out)
-}
-
-# --- Original JRF function (kept for backward compatibility)
+# --- MAIN function
 "JRF" <-
   function(X, ntree,mtry,genes.name) {
 
@@ -673,24 +499,9 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
         covar[seq((c-1)*(p-1)+1,c*(p-1)),seq(1,sampsize[c])]<-X[[c]][-j,]
       }
       
-      # Use joint modeling approach with multinomial RandomForest
-      # Convert covar matrix to samples × features format (transpose)
-      rf_data <- data.frame(t(covar))
+      jrf.out<-JRF_onetarget(x=covar,y=y,mtry=mtry,importance=TRUE,sampsize=sampsize,nclasses=nclasses,ntree=ntree)
       
-      # Create class labels indicating condition membership for each sample
-      rf_y <- rep(1:nclasses, times = sampsize)
-      rf_y <- as.factor(rf_y)
-      
-      # Train joint random forest preserving joint modeling
-      jrf.out<-randomForest::randomForest(x=rf_data,y=rf_y,mtry=mtry,importance=TRUE,ntree=ntree)
-      
-      # Extract condition-specific importance from joint model
-      rf_importance <- randomForest::importance(jrf.out, type = 1)
-      for (s in 1:nclasses) {
-        start_idx <- (s - 1) * (p - 1) + 1
-        end_idx <- s * (p - 1)
-        imp[-j,j,s] <- rf_importance[start_idx:end_idx, 1]
-      }
+      for (s in 1:nclasses) imp[-j,j,s]<-importance(jrf.out,scale=FALSE)[seq((p-1)*(s-1)+1,(p-1)*(s-1)+p-1)]  #- save importance score for net1
       
       }
       
