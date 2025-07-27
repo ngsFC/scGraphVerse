@@ -245,13 +245,13 @@ zigm_wrapper = function(jth, X, lambda, family, update_type, theta, weights, pen
 
   if (init_select) {
 
-    fit0 = glmnet(x = X[, -jth, drop = FALSE], y = X[, jth], standardize = FALSE,
+    fit0 = glmnet::glmnet(x = X[, -jth, drop = FALSE], y = X[, jth], standardize = FALSE,
                   family = "poisson", nlambda = 100, dfmax = p)
     bic = (1 - fit0$dev.ratio) * fit0$nulldev + 2 * fit0$df
     p0.b = which.min(bic[-1])
     # lam_ind = ifelse(p0.b >= length(fit0$lambda), p0.b, p0.b + 1)
     lam_ind = p0.b
-    coeff = drop(predict.glmnet(fit0, s = fit0$lambda[lam_ind], type = "coefficients"))
+    coeff = drop(glmnet::predict.glmnet(fit0, s = fit0$lambda[lam_ind], type = "coefficients"))
     nset = seqP[-jth][which(abs(coeff[-1]) > (thresh / 100))]
 
     wthres = thresh / 100
@@ -969,7 +969,7 @@ irls_p = function(y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL,
     w = mu0
     z = eta0 + (y - mu0) / mu0
 
-    bobj = glmnet(x = x, y = z, family = "gaussian", weights = w * weights, lambda = lambda / sum(w * weights),
+    bobj = glmnet::glmnet(x = x, y = z, family = "gaussian", weights = w * weights, lambda = lambda / sum(w * weights),
                   standardize = FALSE, alpha = 1, thresh = thresh, maxit = 10 * maxit, nlambda = 1)
 
     bvec = drop(coefficients(bobj))
@@ -1017,7 +1017,7 @@ pglm_p_mm = function(y, x, weights, penalty.factor = NULL, bvec0 = NULL, eta0 = 
   for (i in 1:maxit) {
 
     sig = max(n * weights * mu0)
-    bobj = glmnet(x = x, y = eta0 + n * weights * (y - mu0) / sig, family = "gaussian", alpha = 1,
+    bobj = glmnet::glmnet(x = x, y = eta0 + n * weights * (y - mu0) / sig, family = "gaussian", alpha = 1,
                   lambda = lambda / sig, penalty.factor = penalty.factor, maxit = 10 * maxit, thresh = thresh, standardize = FALSE)
     bvec = drop(coefficients(bobj, s = lambda / sig))
     eta = drop(bvec[1] + x %*% bvec[-1])
@@ -1050,7 +1050,7 @@ pglm_p_irls = function(y, x, weights, bvec0 = NULL, eta0 = NULL, mu0 = NULL,
                        lambda, penalty.factor = rep(1, NCOL(x)), thresh = 1e-6, maxit = 1e+3, n = NROW(x), p = NCOL(x))
 {
   fun_call = match.call()
-  poisson_fit = try((glmreg(y = y, x = x, weights = weights, lambda = lambda, alpha = 1, family = "poisson",
+  poisson_fit = try((mpath::glmreg(y = y, x = x, weights = weights, lambda = lambda, alpha = 1, family = "poisson",
                             thresh = thresh, maxit = maxit, penalty.factor = penalty.factor,
                             start = bvec0, mustart = mu0, etastart = eta0, standardize = FALSE, penalty = "enet",
                             x.keep = FALSE, y.keep = FALSE, trace = FALSE)), silent = FALSE)
@@ -1285,7 +1285,7 @@ irls_nb = function(y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL
     w = mu0 / (1 + mu0 / theta0)
     z = eta0 + (y - mu0) / mu0
      
-    bobj = try((glmnet(x = x, y = z, family = "gaussian", weights = w * weights, lambda = lambda / sum(w * weights),
+    bobj = try((glmnet::glmnet(x = x, y = z, family = "gaussian", weights = w * weights, lambda = lambda / sum(w * weights),
                   standardize = FALSE, alpha = 1, thresh = thresh, maxit = 10 * maxit, nlambda = 1, penalty.factor = penalty.factor)), silent = TRUE)
     
 	if (inherits(bobj, "try-error")) {
@@ -1339,7 +1339,7 @@ pglm_nb_mm = function(y, x, weights, penalty.factor = NULL, bvec0 = NULL, eta0 =
   for (i in 1:maxit) {
 
     sig = max(n * weights * ((1 + 1 / theta0 * y) * mu0)/(1 + 1 / theta0 * mu0)^2)
-    bobj = glmnet(x = x, y = eta0 + n * weights * ((y - mu0) / (1 + 1 / theta0 * mu0)) / sig, family = "gaussian", alpha = 1,
+    bobj = glmnet::glmnet(x = x, y = eta0 + n * weights * ((y - mu0) / (1 + 1 / theta0 * mu0)) / sig, family = "gaussian", alpha = 1,
                   lambda = lambda / sig, penalty.factor = penalty.factor, maxit = 10 * maxit, thresh = thresh, standardize = FALSE)
     bvec = drop(coefficients(bobj, s = lambda / sig))
     eta = drop(bvec[1] + x %*% bvec[-1])
@@ -1375,7 +1375,7 @@ pglm_nb_irls = function(y, x, weights, theta0 = NULL, bvec0 = NULL, eta0 = NULL,
                    lambda, penalty.factor = rep(1, NCOL(x)), thresh = 1e-6, maxit = 1e+3, n = NROW(x), p = NCOL(x))
 {
   fun_call = match.call()
-  negbin_fit = try((glmreg(y = y, x = x, weights = weights, lambda = lambda, alpha = 1, theta = theta0,
+  negbin_fit = try((mpath::glmreg(y = y, x = x, weights = weights, lambda = lambda, alpha = 1, theta = theta0,
                            family = "negbin", thresh = thresh, maxit = maxit, penalty.factor = penalty.factor,
                            start = bvec0, mustart = mu0, etastart = eta0, standardize = FALSE, penalty = "enet",
                            x.keep = FALSE, y.keep = FALSE, trace = FALSE)), silent = TRUE)

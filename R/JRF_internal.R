@@ -617,6 +617,11 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     # Extract condition-specific importance scores
     # Use MeanDecreaseAccuracy importance which measures feature contribution
     rf_importance <- randomForest::importance(jrf.out, type = 1)
+    
+    # Ensure non-negative values for scGraphVerse compatibility
+    # Negative importance means the feature is harmful/noise, so set to 0 (no edge)
+    rf_importance <- pmax(rf_importance, 0)
+    
     imp_gene <- matrix(0, p - 1, nclasses)
     
     # Check the dimensions and extract importance properly
@@ -724,6 +729,10 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       
       # Extract condition-specific importance from joint model
       rf_importance <- randomForest::importance(jrf.out, type = 1)
+      
+      # Ensure non-negative values for scGraphVerse compatibility
+      # Negative importance means the feature is harmful/noise, so set to 0 (no edge)
+      rf_importance <- pmax(rf_importance, 0)
       
       # Check dimensions and extract importance properly
       if (length(rf_importance) >= (p - 1) * nclasses) {
