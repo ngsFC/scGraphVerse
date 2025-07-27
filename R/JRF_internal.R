@@ -607,7 +607,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     
     # Combine all conditions
     rf_data <- data.frame(do.call(rbind, rf_data_list))
-    rf_y <- as.factor(do.call(c, rf_y_list))
+    rf_y <- as.factor(do.call("c", rf_y_list))
     
     # Train joint random forest - this preserves the joint modeling!
     # The forest learns to distinguish conditions using stacked gene features
@@ -706,7 +706,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       
       # Combine all conditions
       rf_data <- data.frame(do.call(rbind, rf_data_list))
-      rf_y <- as.factor(do.call(c, rf_y_list))
+      rf_y <- as.factor(do.call("c", rf_y_list))
       
       # Train joint random forest preserving joint modeling
       jrf.out<-randomForest::randomForest(x=rf_data,y=rf_y,mtry=mtry,importance=TRUE,ntree=ntree)
