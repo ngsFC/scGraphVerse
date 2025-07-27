@@ -587,13 +587,27 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     # Run JRF for this target gene using joint modeling approach
     # Create proper joint data structure for multinomial RandomForest
     
-    # Extract only the actual samples (not zero-padded ones)
-    actual_samples <- sum(sampsize)
-    rf_data <- data.frame(t(covar[, 1:actual_samples]))
+    # The original JRF uses a different structure: each condition fills the same columns
+    # but different row blocks. We need to restructure this for standard RandomForest.
     
-    # Create class labels indicating condition membership for each actual sample
-    rf_y <- rep(1:nclasses, times = sampsize)
-    rf_y <- as.factor(rf_y)
+    # Extract actual samples from each condition and stack them properly
+    rf_data_list <- list()
+    rf_y_list <- list()
+    
+    for (c in 1:nclasses) {
+      if (sampsize[c] > 0) {
+        # Extract condition c's data: its row block and actual samples
+        condition_rows <- seq((c - 1) * (p - 1) + 1, c * (p - 1))
+        condition_data <- t(covar[condition_rows, seq(1, sampsize[c]), drop = FALSE])
+        
+        rf_data_list[[c]] <- condition_data
+        rf_y_list[[c]] <- rep(c, sampsize[c])
+      }
+    }
+    
+    # Combine all conditions
+    rf_data <- data.frame(do.call(rbind, rf_data_list))
+    rf_y <- as.factor(do.call(c, rf_y_list))
     
     # Train joint random forest - this preserves the joint modeling!
     # The forest learns to distinguish conditions using stacked gene features
@@ -675,13 +689,24 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       }
       
       # Use joint modeling approach with multinomial RandomForest
-      # Extract only the actual samples (not zero-padded ones)
-      actual_samples <- sum(sampsize)
-      rf_data <- data.frame(t(covar[, 1:actual_samples]))
+      # Extract actual samples from each condition and stack them properly
+      rf_data_list <- list()
+      rf_y_list <- list()
       
-      # Create class labels indicating condition membership for each actual sample
-      rf_y <- rep(1:nclasses, times = sampsize)
-      rf_y <- as.factor(rf_y)
+      for (c in 1:nclasses) {
+        if (sampsize[c] > 0) {
+          # Extract condition c's data: its row block and actual samples
+          condition_rows <- seq((c - 1) * (p - 1) + 1, c * (p - 1))
+          condition_data <- t(covar[condition_rows, seq(1, sampsize[c]), drop = FALSE])
+          
+          rf_data_list[[c]] <- condition_data
+          rf_y_list[[c]] <- rep(c, sampsize[c])
+        }
+      }
+      
+      # Combine all conditions
+      rf_data <- data.frame(do.call(rbind, rf_data_list))
+      rf_y <- as.factor(do.call(c, rf_y_list))
       
       # Train joint random forest preserving joint modeling
       jrf.out<-randomForest::randomForest(x=rf_data,y=rf_y,mtry=mtry,importance=TRUE,ntree=ntree)
