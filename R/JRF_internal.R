@@ -584,62 +584,72 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
     }
     
-    # Run JRF for this target gene using joint modeling approach
-    # Create proper joint data structure for multinomial RandomForest
+    # True joint modeling: use same samples across conditions with condition-specific features
+    # This matches the original JRF approach where the C function processes joint data
     
-    # The original JRF uses a different structure: each condition fills the same columns
-    # but different row blocks. We need to restructure this for standard RandomForest.
+    # Create feature matrix with condition-specific gene expression
+    # Each sample gets features from all conditions (padded with zeros where no data)
+    max_samples <- max(sampsize)
+    joint_features <- matrix(0, max_samples, (p - 1) * nclasses)
+    joint_response <- numeric(max_samples)
     
-    # Extract actual samples from each condition and stack them properly
-    rf_data_list <- list()
-    rf_y_list <- list()
-    
-    for (c in 1:nclasses) {
-      if (sampsize[c] > 0) {
-        # Extract condition c's data: its row block and actual samples
-        condition_rows <- seq((c - 1) * (p - 1) + 1, c * (p - 1))
-        condition_data <- t(covar[condition_rows, seq(1, sampsize[c]), drop = FALSE])
-        
-        rf_data_list[[c]] <- condition_data
-        rf_y_list[[c]] <- rep(c, sampsize[c])
+    # Fill the joint feature matrix
+    for (sample_idx in 1:max_samples) {
+      for (c in 1:nclasses) {
+        if (sample_idx <= sampsize[c]) {
+          # This sample exists in condition c
+          condition_features_start <- (c - 1) * (p - 1) + 1
+          condition_features_end <- c * (p - 1)
+          
+          # Extract features for this condition
+          joint_features[sample_idx, condition_features_start:condition_features_end] <- 
+            covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), sample_idx]
+          
+          # Response is the target gene expression from this condition
+          joint_response[sample_idx] <- y[c, sample_idx]
+        }
       }
     }
     
-    # Combine all conditions
-    rf_data <- data.frame(do.call(rbind, rf_data_list))
-    rf_y <- as.factor(do.call("c", rf_y_list))
-    
-    # Train joint random forest - this preserves the joint modeling!
-    # The forest learns to distinguish conditions using stacked gene features
-    jrf.out <- randomForest::randomForest(x = rf_data, y = rf_y, mtry = mtry, 
-                                         importance = TRUE, ntree = ntree)
-    
-    # Extract condition-specific importance scores
-    # Use MeanDecreaseAccuracy importance which measures feature contribution
-    rf_importance <- randomForest::importance(jrf.out, type = 1)
-    
-    # Ensure non-negative values for scGraphVerse compatibility
-    # Negative importance means the feature is harmful/noise, so set to 0 (no edge)
-    rf_importance <- pmax(rf_importance, 0)
-    
-    imp_gene <- matrix(0, p - 1, nclasses)
-    
-    # Check the dimensions and extract importance properly
-    if (length(rf_importance) >= (p - 1) * nclasses) {
+    # Remove samples that have no data in any condition
+    valid_samples <- rowSums(joint_features != 0) > 0
+    if (sum(valid_samples) == 0) {
+      # No valid samples, return zero importance
+      imp_gene <- matrix(0, p - 1, nclasses)
+    } else {
+      joint_features_valid <- joint_features[valid_samples, , drop = FALSE]
+      joint_response_valid <- joint_response[valid_samples]
+      
+      # Create feature names to track condition-specific features
+      feature_names <- character((p - 1) * nclasses)
+      for (c in 1:nclasses) {
+        start_idx <- (c - 1) * (p - 1) + 1
+        end_idx <- c * (p - 1)
+        feature_names[start_idx:end_idx] <- paste0("C", c, "_G", 1:(p-1))
+      }
+      colnames(joint_features_valid) <- feature_names
+      
+      # Train joint random forest with regression (same target across conditions)
+      jrf.out <- randomForest::randomForest(x = joint_features_valid, 
+                                           y = joint_response_valid, 
+                                           mtry = mtry, 
+                                           importance = TRUE, 
+                                           ntree = ntree)
+      
+      # Extract importance scores
+      rf_importance <- randomForest::importance(jrf.out, type = 1)
+      
+      # Ensure non-negative values for scGraphVerse compatibility
+      rf_importance <- pmax(rf_importance, 0)
+      
       # Parse importance back to condition-specific blocks
-      # Each condition's features occupy specific columns in rf_data
+      imp_gene <- matrix(0, p - 1, nclasses)
       for (s in 1:nclasses) {
         start_idx <- (s - 1) * (p - 1) + 1
         end_idx <- s * (p - 1)
         if (end_idx <= length(rf_importance)) {
           imp_gene[, s] <- rf_importance[start_idx:end_idx]
         }
-      }
-    } else {
-      # Fallback: distribute importance equally across conditions
-      n_features <- length(rf_importance)
-      for (s in 1:nclasses) {
-        imp_gene[, s] <- rf_importance[1:min(p-1, n_features)] / nclasses
       }
     }
     
@@ -704,51 +714,59 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
         covar[seq((c-1)*(p-1)+1,c*(p-1)),seq(1,sampsize[c])]<-X[[c]][-j,]
       }
       
-      # Use joint modeling approach with multinomial RandomForest
-      # Extract actual samples from each condition and stack them properly
-      rf_data_list <- list()
-      rf_y_list <- list()
+      # True joint modeling: use same samples across conditions with condition-specific features
+      # This matches the original JRF approach where the C function processes joint data
       
-      for (c in 1:nclasses) {
-        if (sampsize[c] > 0) {
-          # Extract condition c's data: its row block and actual samples
-          condition_rows <- seq((c - 1) * (p - 1) + 1, c * (p - 1))
-          condition_data <- t(covar[condition_rows, seq(1, sampsize[c]), drop = FALSE])
-          
-          rf_data_list[[c]] <- condition_data
-          rf_y_list[[c]] <- rep(c, sampsize[c])
+      # Create feature matrix with condition-specific gene expression
+      # Each sample gets features from all conditions (padded with zeros where no data)
+      max_samples <- max(sampsize)
+      joint_features <- matrix(0, max_samples, (p - 1) * nclasses)
+      joint_response <- numeric(max_samples)
+      
+      # Fill the joint feature matrix
+      for (sample_idx in 1:max_samples) {
+        for (c in 1:nclasses) {
+          if (sample_idx <= sampsize[c]) {
+            # This sample exists in condition c
+            condition_features_start <- (c - 1) * (p - 1) + 1
+            condition_features_end <- c * (p - 1)
+            
+            # Extract features for this condition
+            joint_features[sample_idx, condition_features_start:condition_features_end] <- 
+              covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), sample_idx]
+            
+            # Response is the target gene expression from this condition
+            joint_response[sample_idx] <- y[c, sample_idx]
+          }
         }
       }
       
-      # Combine all conditions
-      rf_data <- data.frame(do.call(rbind, rf_data_list))
-      rf_y <- as.factor(do.call("c", rf_y_list))
-      
-      # Train joint random forest preserving joint modeling
-      jrf.out<-randomForest::randomForest(x=rf_data,y=rf_y,mtry=mtry,importance=TRUE,ntree=ntree)
-      
-      # Extract condition-specific importance from joint model
-      rf_importance <- randomForest::importance(jrf.out, type = 1)
-      
-      # Ensure non-negative values for scGraphVerse compatibility
-      # Negative importance means the feature is harmful/noise, so set to 0 (no edge)
-      rf_importance <- pmax(rf_importance, 0)
-      
-      # Check dimensions and extract importance properly
-      if (length(rf_importance) >= (p - 1) * nclasses) {
+      # Remove samples that have no data in any condition
+      valid_samples <- rowSums(joint_features != 0) > 0
+      if (sum(valid_samples) > 0) {
+        joint_features_valid <- joint_features[valid_samples, , drop = FALSE]
+        joint_response_valid <- joint_response[valid_samples]
+        
+        # Train joint random forest with regression (same target across conditions)
+        jrf.out <- randomForest::randomForest(x = joint_features_valid, 
+                                             y = joint_response_valid, 
+                                             mtry = mtry, 
+                                             importance = TRUE, 
+                                             ntree = ntree)
+        
+        # Extract importance scores
+        rf_importance <- randomForest::importance(jrf.out, type = 1)
+        
+        # Ensure non-negative values for scGraphVerse compatibility
+        rf_importance <- pmax(rf_importance, 0)
+        
+        # Parse importance back to condition-specific blocks
         for (s in 1:nclasses) {
           start_idx <- (s - 1) * (p - 1) + 1
           end_idx <- s * (p - 1)
           if (end_idx <= length(rf_importance)) {
             imp[-j,j,s] <- rf_importance[start_idx:end_idx]
           }
-        }
-      } else {
-        # Fallback: distribute importance equally across conditions
-        n_features <- length(rf_importance)
-        for (s in 1:nclasses) {
-          importance_subset <- rf_importance[1:min(p-1, n_features)] / nclasses
-          imp[-j,j,s] <- importance_subset
         }
       }
       
