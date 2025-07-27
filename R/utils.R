@@ -621,11 +621,12 @@ Nodes:",
         genes.name = rownames(norm_list[[1]]),
         ntree = 500,
         mtry = round(sqrt(nrow(norm_list[[1]]) - 1)),
-        nCores = nCores
+        nCores = nCores,
+        verbose = FALSE
     ), params)
 
     # Filter out unsupported parameters for JRF_internal
-    supported_params <- c("X", "ntree", "mtry", "genes.name", "nCores")
+    supported_params <- c("X", "ntree", "mtry", "genes.name", "nCores", "verbose")
     jrf_args <- jrf_args[names(jrf_args) %in% supported_params]
 
     # Use internal JRF implementation with BiocParallel
