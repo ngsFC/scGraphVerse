@@ -32,7 +32,7 @@
 #'
 #' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
 #' @importFrom stats pnorm
-#' @importFrom methods setGeneric setMethod signature standardGeneric
+#' @importFrom methods setMethod signature
 #' @keywords internal
 #' @noRd
 PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
@@ -55,19 +55,6 @@ PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
   
   return(result)
 }
-
-#' Structure learning for count data using PC algorithms
-#'
-#' This function performs structure learning for count data using various PC algorithms
-#' adapted for different distributional assumptions including Poisson, Negative Binomial,
-#' and Zero-Inflated Negative Binomial models.
-#'
-#' @param x A matrix of count data or SummarizedExperiment object
-#' @param ... Additional arguments passed to specific methods
-#' @return An adjacency matrix or SummarizedExperiment with adjacency matrix
-#' @export
-#' @rdname PCzinb
-setGeneric("PCzinb", function(x, ...) standardGeneric("PCzinb"))
 
 #' @rdname PCzinb
 #' @importFrom SummarizedExperiment assay assayNames `assay<-`
