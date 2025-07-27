@@ -32,6 +32,7 @@
 #'
 #' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
 #' @importFrom stats pnorm
+#' @importFrom methods setGeneric setMethod signature standardGeneric
 #' @keywords internal
 #' @noRd
 PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
@@ -54,6 +55,19 @@ PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
   
   return(result)
 }
+
+#' Structure learning for count data using PC algorithms
+#'
+#' This function performs structure learning for count data using various PC algorithms
+#' adapted for different distributional assumptions including Poisson, Negative Binomial,
+#' and Zero-Inflated Negative Binomial models.
+#'
+#' @param x A matrix of count data or SummarizedExperiment object
+#' @param ... Additional arguments passed to specific methods
+#' @return An adjacency matrix or SummarizedExperiment with adjacency matrix
+#' @export
+#' @rdname PCzinb
+setGeneric("PCzinb", function(x, ...) standardGeneric("PCzinb"))
 
 #' @rdname PCzinb
 #' @importFrom SummarizedExperiment assay assayNames `assay<-`
@@ -106,15 +120,16 @@ setMethod(
                           method=c("poi", "nb", "zinb0", "zinb1"),
                           alpha=2*pnorm(nrow(x)^.2,lower.tail=FALSE),
                           maxcard=2,
-                          extend=TRUE) {
+                          extend=TRUE,
+                          nCores=1) {
 
         method <- match.arg(method)
 
         switch(method,
-               poi = pois.wald(x, maxcard, alpha, extend),
-               nb = nb.wald(x, maxcard, alpha, extend),
-               zinb0 = zinb0.noT(x, maxcard, alpha, extend),
-               zinb1 = zinb1.noT(x, maxcard, alpha, extend))
+               poi = pois.wald(x, maxcard, alpha, extend, nCores),
+               nb = nb.wald(x, maxcard, alpha, extend, nCores),
+               zinb0 = zinb0.noT(x, maxcard, alpha, extend, nCores),
+               zinb1 = zinb1.noT(x, maxcard, alpha, extend, nCores))
 
 })
 
