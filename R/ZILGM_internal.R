@@ -1185,6 +1185,22 @@ zilgm_poisson = function(y, x, lambda, weights = NULL, update_type = c("IRLS", "
   return(out)
 }
 
+#' Find maximum lambda value for ZILGM regularization
+#'
+#' This function computes the maximum lambda value for regularization
+#' in ZILGM network inference. It is copied from the original ZILGM package.
+#'
+#' @param X A matrix of expression data (samples × genes)
+#' @return Maximum lambda value for regularization
+#' @keywords internal
+#' @noRd
+find_lammax = function(X)
+{
+  tmp = t(X) %*% X
+  lammax = 1/nrow(X) * max(abs(tmp[upper.tri(tmp)]))
+  return(lammax)
+}
+
 # NB regression with l1 regularization for x with 1 columns
 # glmreg_fit = mpath:::glmreg_fit
 wlasso_nb = function(y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL, theta0 = NULL,
@@ -1550,6 +1566,22 @@ zilgm_negbin = function(y, x, lambda, weights = NULL, update_type = c("IRLS", "M
   return(out)
 }
 
+#' Find maximum lambda value for ZILGM regularization
+#'
+#' This function computes the maximum lambda value for regularization
+#' in ZILGM network inference. It is copied from the original ZILGM package.
+#'
+#' @param X A matrix of expression data (samples × genes)
+#' @return Maximum lambda value for regularization
+#' @keywords internal
+#' @noRd
+find_lammax = function(X)
+{
+  tmp = t(X) %*% X
+  lammax = 1/nrow(X) * max(abs(tmp[upper.tri(tmp)]))
+  return(lammax)
+}
+
 
 zilgm_negbin2 = function(y, x, lambda, weights = NULL, update_type = c("IRLS", "MM"), penalty.factor = NULL,
                          tol = 1e-6, EM_tol = 1e-5, EM_iter = 3e+2, thresh = 1e-6, maxit = 3e+2, theta = NULL)
@@ -1684,4 +1716,20 @@ zilgm_negbin2 = function(y, x, lambda, weights = NULL, update_type = c("IRLS", "
   out$call = fun_call
   class(out) = "zilgm"
   return(out)
+}
+
+#' Find maximum lambda value for ZILGM regularization
+#'
+#' This function computes the maximum lambda value for regularization
+#' in ZILGM network inference. It is copied from the original ZILGM package.
+#'
+#' @param X A matrix of expression data (samples × genes)
+#' @return Maximum lambda value for regularization
+#' @keywords internal
+#' @noRd
+find_lammax = function(X)
+{
+  tmp = t(X) %*% X
+  lammax = 1/nrow(X) * max(abs(tmp[upper.tri(tmp)]))
+  return(lammax)
 }

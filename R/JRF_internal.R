@@ -102,7 +102,7 @@ importance <- function(x,  scale=TRUE) {
            proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity, ...) {
+           keep.inbag=FALSE, purity=FALSE, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
@@ -585,7 +585,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     
     # Run JRF for this target gene
     jrf.out <- JRF_onetarget(x = covar, y = y, mtry = mtry, importance = TRUE, 
-                            sampsize = sampsize, nclasses = nclasses, ntree = ntree)
+                            sampsize = sampsize, nclasses = nclasses, ntree = ntree, purity = FALSE)
     
     # Extract importance scores for each condition
     imp_gene <- matrix(0, p - 1, nclasses)
@@ -654,7 +654,7 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
         covar[seq((c-1)*(p-1)+1,c*(p-1)),seq(1,sampsize[c])]<-X[[c]][-j,]
       }
       
-      jrf.out<-JRF_onetarget(x=covar,y=y,mtry=mtry,importance=TRUE,sampsize=sampsize,nclasses=nclasses,ntree=ntree)
+      jrf.out<-JRF_onetarget(x=covar,y=y,mtry=mtry,importance=TRUE,sampsize=sampsize,nclasses=nclasses,ntree=ntree,purity=FALSE)
       
       for (s in 1:nclasses) imp[-j,j,s]<-importance(jrf.out,scale=FALSE)[seq((p-1)*(s-1)+1,(p-1)*(s-1)+p-1)]
       
