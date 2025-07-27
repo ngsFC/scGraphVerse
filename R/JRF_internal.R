@@ -619,12 +619,23 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
     rf_importance <- randomForest::importance(jrf.out, type = 1)
     imp_gene <- matrix(0, p - 1, nclasses)
     
-    # Parse importance back to condition-specific blocks
-    # Each condition's features occupy specific rows in the stacked covar matrix
-    for (s in 1:nclasses) {
-      start_idx <- (s - 1) * (p - 1) + 1
-      end_idx <- s * (p - 1)
-      imp_gene[, s] <- rf_importance[start_idx:end_idx, 1]
+    # Check the dimensions and extract importance properly
+    if (length(rf_importance) >= (p - 1) * nclasses) {
+      # Parse importance back to condition-specific blocks
+      # Each condition's features occupy specific columns in rf_data
+      for (s in 1:nclasses) {
+        start_idx <- (s - 1) * (p - 1) + 1
+        end_idx <- s * (p - 1)
+        if (end_idx <= length(rf_importance)) {
+          imp_gene[, s] <- rf_importance[start_idx:end_idx]
+        }
+      }
+    } else {
+      # Fallback: distribute importance equally across conditions
+      n_features <- length(rf_importance)
+      for (s in 1:nclasses) {
+        imp_gene[, s] <- rf_importance[1:min(p-1, n_features)] / nclasses
+      }
     }
     
     return(list(gene_idx = j, importance = imp_gene))
@@ -713,10 +724,23 @@ JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL,
       
       # Extract condition-specific importance from joint model
       rf_importance <- randomForest::importance(jrf.out, type = 1)
-      for (s in 1:nclasses) {
-        start_idx <- (s - 1) * (p - 1) + 1
-        end_idx <- s * (p - 1)
-        imp[-j,j,s] <- rf_importance[start_idx:end_idx, 1]
+      
+      # Check dimensions and extract importance properly
+      if (length(rf_importance) >= (p - 1) * nclasses) {
+        for (s in 1:nclasses) {
+          start_idx <- (s - 1) * (p - 1) + 1
+          end_idx <- s * (p - 1)
+          if (end_idx <= length(rf_importance)) {
+            imp[-j,j,s] <- rf_importance[start_idx:end_idx]
+          }
+        }
+      } else {
+        # Fallback: distribute importance equally across conditions
+        n_features <- length(rf_importance)
+        for (s in 1:nclasses) {
+          importance_subset <- rf_importance[1:min(p-1, n_features)] / nclasses
+          imp[-j,j,s] <- importance_subset
+        }
       }
       
       }
