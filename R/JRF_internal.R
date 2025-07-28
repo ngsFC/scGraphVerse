@@ -106,9 +106,9 @@ importance <- function(x,  scale=TRUE) {
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
            keep.inbag=FALSE, purity=0.0, sampsize=NULL, nclasses=2, ...) {
     
-    sampsize=c(0,0)
-    ww=1/sampsize;
-    nclasses=2;
+    if (is.null(sampsize)) sampsize <- c(ncol(x), ncol(x))
+    ww <- ifelse(sampsize == 0, 1, 1/sampsize)
+    if (length(sampsize) < nclasses) sampsize <- rep(sampsize[1], nclasses)
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
@@ -201,6 +201,11 @@ importance <- function(x,  scale=TRUE) {
     ## Compiled code expects variables in rows and observations in columns.
     # x <- t(x)
     storage.mode(x) <- "double"
+    
+    # Check for invalid values before calling C functions
+    if (any(!is.finite(x))) stop("x contains NA/NaN/Inf values")
+    if (any(!is.finite(as.numeric(y)))) stop("y contains NA/NaN/Inf values")
+    if (any(!is.finite(ww))) ww <- rep(1, length(ww))
     
     xtest <- double(1)
     ytest <- double(1)
