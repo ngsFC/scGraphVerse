@@ -104,7 +104,7 @@ importance <- function(x,  scale=TRUE) {
            proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity, ...) {
+           keep.inbag=FALSE, purity=TRUE, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
