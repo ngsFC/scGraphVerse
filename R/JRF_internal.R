@@ -35,7 +35,7 @@
 #' The importance scores represent the contribution of each gene-gene interaction
 #' to the prediction accuracy, averaged across conditions when appropriate.
 #'
-#' @importFrom parallel makeCluster stopCluster clusterEvalQ
+#' @importFrom parallel makeCluster stopCluster clusterEvalQ clusterExport
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach %dopar% %do%
 #' @importFrom stats runif
@@ -509,6 +509,8 @@ importance <- function(x,  scale=TRUE) {
       registerDoParallel(cl)
       # Export necessary functions and variables to workers
       parallel::clusterEvalQ(cl, library(randomForest))
+      parallel::clusterExport(cl, c("X", "nclasses", "sampsize", "tot", "p", "ntree", "mtry", 
+                                    "JRF_onetarget", "importance"), envir = environment())
       on.exit(stopCluster(cl))
     }
     
