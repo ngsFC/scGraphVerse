@@ -35,13 +35,15 @@
 #' The importance scores represent the contribution of each gene-gene interaction
 #' to the prediction accuracy, averaged across conditions when appropriate.
 #'
-#' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
-#' @importFrom parallel mclapply
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach %dopar% %do%
 #' @importFrom stats runif
 #' @importFrom randomForest randomForest importance
 #'
 #' @keywords internal
 #' @noRd
+
 
 importance <- function(x,  scale=TRUE) {
   # --- Function importance is a modified version of function importance from R package randomForest
@@ -95,17 +97,18 @@ importance <- function(x,  scale=TRUE) {
            totsize = if (replace) ncol(x) else ceiling(.632*ncol(x)),
            mtry=if (!is.null(y) && !is.factor(y))
              max(floor(nrow(x)/3), 1) else floor(sqrt(nrow(x))),
-           replace=TRUE, classwt=NULL, cutoff=c(0.5, 0.5), strata=NULL,
+           replace=TRUE, classwt=NULL, cutoff, strata,
            nodesize = if (!is.null(y) && !is.factor(y)) 5 else 1,
            maxnodes=NULL,
            importance=FALSE, localImp=FALSE, nPerm=1,
-           proximity=FALSE, oob.prox=proximity,
+           proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity=1, sampsize=NULL, nclasses=2, ...) {
+           keep.inbag=FALSE, purity, ...) {
     
-    if (is.null(sampsize)) sampsize <- c(0,0)
+    sampsize=c(0,0)
     ww=1/sampsize;
+    nclasses=2;
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
@@ -489,21 +492,6 @@ importance <- function(x,  scale=TRUE) {
 # --- MAIN function
 "JRF_internal" <-
   function(X, ntree, mtry, genes.name, nCores = NULL, verbose = FALSE, ...) {
-    
-    # Set up BiocParallel backend
-    if (is.null(nCores)) {
-      # Use SerialParam if nCores not specified
-      BPPARAM <- SerialParam()
-    } else if (nCores == 1) {
-      BPPARAM <- SerialParam()
-    } else {
-      # Use MulticoreParam for parallel processing
-      BPPARAM <- MulticoreParam(workers = nCores)
-    }
-    
-    if (verbose) {
-      message("Using ", class(BPPARAM)[1], " with ", bpworkers(BPPARAM), " workers")
-    }
 
     nclasses <- length(X)
     sampsize <- rep(0, nclasses)
@@ -513,51 +501,84 @@ importance <- function(x,  scale=TRUE) {
     tot <- max(sampsize)
     p <- dim(X[[1]])[1]
     
+    # Set up parallel processing
+    use_parallel <- !is.null(nCores) && nCores > 1
+    if (use_parallel) {
+      if (verbose) message("Setting up parallel processing with ", nCores, " cores...")
+      cl <- makeCluster(nCores)
+      registerDoParallel(cl)
+      # Export necessary functions and variables to workers
+      clusterEvalQ(cl, library(randomForest))
+      on.exit(stopCluster(cl))
+    }
+    
+    if (verbose) {
+      message("Processing ", length(genes.name), " genes", 
+              if(use_parallel) " in parallel..." else "...")
+    }
+    
     # Create gene pair vectors for output
     vec1 <- matrix(rep(genes.name, p), p, p)
     vec2 <- t(vec1)
     vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
     vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
     
-    # Define function to process each gene
-    process_gene <- function(j, X, genes.name, nclasses, sampsize, tot, p, ntree, mtry) {
-      
-      covar <- matrix(0, (p-1)*nclasses, tot)             
-      y <- matrix(0, nclasses, tot)             
-      
-      for (c in 1:nclasses) {
-        y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
-        covar[seq((c-1)*(p-1)+1, c*(p-1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
+    # Parallel processing over genes
+    if (use_parallel) {
+      gene_results <- foreach(j = 1:length(genes.name), .combine = 'c', .multicombine = TRUE) %dopar% {
+        
+        covar <- matrix(0, (p-1)*nclasses, tot)             
+        y <- matrix(0, nclasses, tot)             
+        
+        for (c in 1:nclasses) {
+          y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
+          covar[seq((c-1)*(p-1)+1, c*(p-1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
+        }
+        
+        jrf.out <- JRF_onetarget(x = covar, y = y, mtry = mtry, importance = TRUE, 
+                                sampsize = sampsize, nclasses = nclasses, ntree = ntree)
+        
+        # Extract importance scores for this gene
+        gene_imp <- array(0, c(p, nclasses))
+        for (s in 1:nclasses) {
+          gene_imp[-j, s] <- importance(jrf.out, scale = FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
+        }
+        
+        list(gene_idx = j, importance = gene_imp)
       }
-      
-      jrf.out <- JRF_onetarget(x = covar, y = y, mtry = mtry, importance = TRUE, 
-                               sampsize = sampsize, nclasses = nclasses, ntree = ntree)
-      
-      # Extract importance scores for this gene
-      gene_imp <- array(0, c(p, nclasses))
-      for (s in 1:nclasses) {
-        gene_imp[-j, s] <- importance(jrf.out, scale = FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
+    } else {
+      # Sequential processing
+      gene_results <- vector("list", length(genes.name))
+      for (j in 1:length(genes.name)) {
+        
+        covar <- matrix(0, (p-1)*nclasses, tot)             
+        y <- matrix(0, nclasses, tot)             
+        
+        for (c in 1:nclasses) {
+          y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
+          covar[seq((c-1)*(p-1)+1, c*(p-1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
+        }
+        
+        jrf.out <- JRF_onetarget(x = covar, y = y, mtry = mtry, importance = TRUE, 
+                                sampsize = sampsize, nclasses = nclasses, ntree = ntree)
+        
+        # Extract importance scores for this gene
+        gene_imp <- array(0, c(p, nclasses))
+        for (s in 1:nclasses) {
+          gene_imp[-j, s] <- importance(jrf.out, scale = FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
+        }
+        
+        gene_results[[j]] <- list(gene_idx = j, importance = gene_imp)
       }
-      
-      return(list(gene_idx = j, importance = gene_imp))
     }
     
-    if (verbose) {
-      message("Processing ", length(genes.name), " genes using parallel processing...")
-    }
-    
-    # Run parallel processing over genes
-    gene_results <- bplapply(1:length(genes.name), function(j) {
-      process_gene(j, X, genes.name, nclasses, sampsize, tot, p, ntree, mtry)
-    }, BPPARAM = BPPARAM)
-    
-    # Combine results
+    # Combine results into importance array
     imp <- array(0, c(p, length(genes.name), nclasses))
     for (result in gene_results) {
       j <- result$gene_idx
       imp[, j, ] <- result$importance
     }
-    
+      
     # Derive importance score for each interaction 
     imp.final <- matrix(0, p*(p-1)/2, nclasses)
     for (s in 1:nclasses) { 
@@ -571,9 +592,7 @@ importance <- function(x,  scale=TRUE) {
                  as.data.frame(imp.final), stringsAsFactors = FALSE)
     colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
     
-    if (verbose) {
-      message("JRF inference completed successfully")
-    }
+    if (verbose) message("JRF inference completed successfully")
     
     return(out)
   }
