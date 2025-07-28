@@ -548,11 +548,9 @@ importance <- function(x,  scale=TRUE) {
     }
     
     # Run parallel processing over genes
-    gene_results <- bplapply(1:length(genes.name), process_gene, 
-                            X = X, genes.name = genes.name, nclasses = nclasses,
-                            sampsize = sampsize, tot = tot, p = p, 
-                            ntree = ntree, mtry = mtry, 
-                            BPPARAM = BPPARAM)
+    gene_results <- bplapply(1:length(genes.name), function(j) {
+      process_gene(j, X, genes.name, nclasses, sampsize, tot, p, ntree, mtry)
+    }, BPPARAM = BPPARAM)
     
     # Combine results
     imp <- array(0, c(p, length(genes.name), nclasses))
