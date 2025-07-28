@@ -18,7 +18,6 @@
 #' @param nCores Number of cores for parallelization. Uses BiocParallel backend.
 #' @param importance Whether to compute variable importance. Default: TRUE.
 #' @param verbose Logical. If TRUE, print progress messages. Default: FALSE.
-#' @param seed Random seed for reproducibility. Default: NULL.
 #' @param ... Additional arguments passed to internal functions.
 #'
 #' @return A data frame with columns:
@@ -103,7 +102,7 @@ importance <- function(x,  scale=TRUE) {
            proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity=FALSE, ...) {
+           keep.inbag=FALSE, purity, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
@@ -223,6 +222,7 @@ importance <- function(x,  scale=TRUE) {
       error.test <- if (labelts) double((nclass+1) * ntree) else double(1)
       
       
+      ####### -- call C function to compute tree ------------------------------------------------------- ###########
       rfout <- .C("classRF",
                   x = x,
                   xdim = as.integer(c(p, n)),
@@ -487,299 +487,97 @@ importance <- function(x,  scale=TRUE) {
   }
 
 
-#' Internal JRF Network Inference Function with BiocParallel
-#'
-#' @param X A list of expression matrices, where each matrix represents gene 
-#'   expression data for a different condition/dataset. Each matrix should have
-#'   genes as rows and samples as columns.
-#' @param ntree Number of trees in the random forest. Default: 500.
-#' @param mtry Number of variables to sample at each tree node. If NULL,
-#'   defaults to sqrt(p-1) where p is the number of genes.
-#' @param genes.name Character vector of gene names. If NULL, uses row names
-#'   of the first matrix or generates names.
-#' @param nCores Number of cores for parallelization. Uses BiocParallel backend.
-#' @param verbose Logical. If TRUE, print progress messages. Default: FALSE.
-#'
-#' @return A data frame with columns:
-#'   \item{gene1}{First gene in each pair}
-#'   \item{gene2}{Second gene in each pair}
-#'   \item{importance1, importance2, ...}{Importance scores for each condition}
-#'
-#' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
-#' @keywords internal
-#' @noRd
-JRF_internal <- function(X, ntree = 500, mtry = NULL, genes.name = NULL, 
-                        nCores = 1, verbose = FALSE, ...) {
-  
-  # Validate inputs
-  if (!is.list(X)) {
-    stop("X must be a list of expression matrices")
-  }
-  
-  nclasses <- length(X)
-  if (nclasses == 0) {
-    stop("X must contain at least one matrix")
-  }
-  
-  # Get dimensions and gene names
-  p <- nrow(X[[1]])
-  if (is.null(genes.name)) {
-    genes.name <- rownames(X[[1]])
-    if (is.null(genes.name)) {
-      genes.name <- paste0("Gene", 1:p)
-    }
-  }
-  
-  # Set mtry default
-  if (is.null(mtry)) {
-    mtry <- round(sqrt(p - 1))
-  }
-  
-  # Validate dimensions across matrices
-  for (i in 1:nclasses) {
-    if (nrow(X[[i]]) != p) {
-      stop("All matrices in X must have the same number of genes (rows)")
-    }
-  }
-  
-  # Get sample sizes
-  sampsize <- sapply(X, ncol)
-  tot <- max(sampsize)
-  
-  # Initialize importance array
-  imp <- array(0, c(p, length(genes.name), nclasses))
-  
-  # Prepare output structure
-  imp.final <- matrix(0, p * (p - 1) / 2, nclasses)
-  vec1 <- matrix(rep(genes.name, p), p, p)
-  vec2 <- t(vec1)
-  vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
-  vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
-  
-  # Setup BiocParallel backend
-  if (nCores > 1) {
-    BPPARAM <- BiocParallel::MulticoreParam(workers = nCores)
-  } else {
-    BPPARAM <- BiocParallel::SerialParam()
-  }
-  
-  if (verbose) {
-    message("Running JRF with ", nclasses, " conditions, ", p, " genes, and ", 
-            ntree, " trees per target gene")
-  }
-  
-  # Parallel computation across target genes
-  gene_results <- BiocParallel::bplapply(1:length(genes.name), function(j) {
+# --- MAIN function
+"JRF_internal" <-
+  function(X, ntree, mtry, genes.name, nCores = NULL, verbose = FALSE, ...) {
     
-    if (verbose && j %% 100 == 0) {
-      message("Processing gene ", j, "/", length(genes.name))
-    }
-    
-    # Prepare data for target gene j
-    covar <- matrix(0, (p - 1) * nclasses, tot)             
-    y <- matrix(0, nclasses, tot)             
-    
-    for (c in 1:nclasses) {
-      y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
-      covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
-    }
-    
-    # True joint modeling: use same samples across conditions with condition-specific features
-    # This matches the original JRF approach where the C function processes joint data
-    
-    # Create feature matrix with condition-specific gene expression
-    # Each sample gets features from all conditions (padded with zeros where no data)
-    max_samples <- max(sampsize)
-    joint_features <- matrix(0, max_samples, (p - 1) * nclasses)
-    joint_response <- numeric(max_samples)
-    
-    # Fill the joint feature matrix
-    for (sample_idx in 1:max_samples) {
-      for (c in 1:nclasses) {
-        if (sample_idx <= sampsize[c]) {
-          # This sample exists in condition c
-          condition_features_start <- (c - 1) * (p - 1) + 1
-          condition_features_end <- c * (p - 1)
-          
-          # Extract features for this condition
-          joint_features[sample_idx, condition_features_start:condition_features_end] <- 
-            covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), sample_idx]
-          
-          # Response is the target gene expression from this condition
-          joint_response[sample_idx] <- y[c, sample_idx]
-        }
-      }
-    }
-    
-    # Remove samples that have no data in any condition
-    valid_samples <- rowSums(joint_features != 0) > 0
-    if (sum(valid_samples) == 0) {
-      # No valid samples, return zero importance
-      imp_gene <- matrix(0, p - 1, nclasses)
+    # Set up BiocParallel backend
+    if (is.null(nCores)) {
+      # Use SerialParam if nCores not specified
+      BPPARAM <- SerialParam()
+    } else if (nCores == 1) {
+      BPPARAM <- SerialParam()
     } else {
-      joint_features_valid <- joint_features[valid_samples, , drop = FALSE]
-      joint_response_valid <- joint_response[valid_samples]
-      
-      # Create feature names to track condition-specific features
-      feature_names <- character((p - 1) * nclasses)
-      for (c in 1:nclasses) {
-        start_idx <- (c - 1) * (p - 1) + 1
-        end_idx <- c * (p - 1)
-        feature_names[start_idx:end_idx] <- paste0("C", c, "_G", 1:(p-1))
-      }
-      colnames(joint_features_valid) <- feature_names
-      
-      # Train joint random forest with regression (same target across conditions)
-      jrf.out <- randomForest::randomForest(x = joint_features_valid, 
-                                           y = joint_response_valid, 
-                                           mtry = mtry, 
-                                           importance = TRUE, 
-                                           ntree = ntree)
-      
-      # Extract importance scores
-      rf_importance <- randomForest::importance(jrf.out, type = 1)
-      
-      # Ensure non-negative values for scGraphVerse compatibility
-      rf_importance <- pmax(rf_importance, 0)
-      
-      # Parse importance back to condition-specific blocks
-      imp_gene <- matrix(0, p - 1, nclasses)
-      for (s in 1:nclasses) {
-        start_idx <- (s - 1) * (p - 1) + 1
-        end_idx <- s * (p - 1)
-        if (end_idx <= length(rf_importance)) {
-          imp_gene[, s] <- rf_importance[start_idx:end_idx]
-        }
-      }
+      # Use MulticoreParam for parallel processing
+      BPPARAM <- MulticoreParam(workers = nCores)
     }
     
-    return(list(gene_idx = j, importance = imp_gene))
-    
-  }, BPPARAM = BPPARAM)
-  
-  # Collect results from parallel computation
-  for (result in gene_results) {
-    j <- result$gene_idx
-    imp[-j, j, ] <- result$importance
-  }
-  
-  # Derive importance score for each interaction (symmetrize)
-  for (s in 1:nclasses) { 
-    imp.s <- imp[, , s]
-    t.imp <- t(imp.s)
-    imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] + 
-                      t.imp[lower.tri(t.imp, diag = FALSE)]) / 2        
-  }
-  
-  # Create output data frame
-  out <- cbind(as.character(vec1), as.character(vec2), 
-               as.data.frame(imp.final), stringsAsFactors = FALSE)
-  colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
-  
-  if (verbose) {
-    message("JRF completed successfully")
-  }
-  
-  return(out)
-}
+    if (verbose) {
+      message("Using ", class(BPPARAM)[1], " with ", bpworkers(BPPARAM), " workers")
+    }
 
-# --- Original JRF function (kept for backward compatibility)
-"JRF" <-
-  function(X, ntree,mtry,genes.name) {
-
-    nclasses<-length(X)
-    sampsize<-rep(0,nclasses)
+    nclasses <- length(X)
+    sampsize <- rep(0, nclasses)
     
-    for (j in 1:nclasses) sampsize[j]<-dim(X[[j]])[2]
+    for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]
     
-    tot<-max(sampsize);
-    p<-dim(X[[1]])[1];
-    imp<-array(0,c(p,length(genes.name),nclasses))
+    tot <- max(sampsize)
+    p <- dim(X[[1]])[1]
     
-    imp.final<-matrix(0,p*(p-1)/2,nclasses);
-    vec1<-matrix(rep(genes.name,p),p,p)
-    vec2<-t(vec1)
-    vec1<-vec1[lower.tri(vec1,diag=FALSE)]
-    vec2<-vec2[lower.tri(vec2,diag=FALSE)]
+    # Create gene pair vectors for output
+    vec1 <- matrix(rep(genes.name, p), p, p)
+    vec2 <- t(vec1)
+    vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
+    vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
     
-    index<-seq(1,p)
-    
-    for (j in 1:length(genes.name)){
-
-      covar<-matrix(0,(p-1)*nclasses,tot)             
-      y<-matrix(0,nclasses,tot)             
+    # Define function to process each gene
+    process_gene <- function(j, X, genes.name, nclasses, sampsize, tot, p, ntree, mtry) {
       
-      for (c in 1:nclasses)  {
-        y[c,seq(1,sampsize[c])]<-as.matrix(X[[c]][j,])
-        covar[seq((c-1)*(p-1)+1,c*(p-1)),seq(1,sampsize[c])]<-X[[c]][-j,]
+      covar <- matrix(0, (p-1)*nclasses, tot)             
+      y <- matrix(0, nclasses, tot)             
+      
+      for (c in 1:nclasses) {
+        y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
+        covar[seq((c-1)*(p-1)+1, c*(p-1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
       }
       
-      # True joint modeling: use same samples across conditions with condition-specific features
-      # This matches the original JRF approach where the C function processes joint data
+      jrf.out <- JRF_onetarget(x = covar, y = y, mtry = mtry, importance = TRUE, 
+                               sampsize = sampsize, nclasses = nclasses, ntree = ntree)
       
-      # Create feature matrix with condition-specific gene expression
-      # Each sample gets features from all conditions (padded with zeros where no data)
-      max_samples <- max(sampsize)
-      joint_features <- matrix(0, max_samples, (p - 1) * nclasses)
-      joint_response <- numeric(max_samples)
-      
-      # Fill the joint feature matrix
-      for (sample_idx in 1:max_samples) {
-        for (c in 1:nclasses) {
-          if (sample_idx <= sampsize[c]) {
-            # This sample exists in condition c
-            condition_features_start <- (c - 1) * (p - 1) + 1
-            condition_features_end <- c * (p - 1)
-            
-            # Extract features for this condition
-            joint_features[sample_idx, condition_features_start:condition_features_end] <- 
-              covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), sample_idx]
-            
-            # Response is the target gene expression from this condition
-            joint_response[sample_idx] <- y[c, sample_idx]
-          }
-        }
+      # Extract importance scores for this gene
+      gene_imp <- array(0, c(p, nclasses))
+      for (s in 1:nclasses) {
+        gene_imp[-j, s] <- importance(jrf.out, scale = FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
       }
       
-      # Remove samples that have no data in any condition
-      valid_samples <- rowSums(joint_features != 0) > 0
-      if (sum(valid_samples) > 0) {
-        joint_features_valid <- joint_features[valid_samples, , drop = FALSE]
-        joint_response_valid <- joint_response[valid_samples]
-        
-        # Train joint random forest with regression (same target across conditions)
-        jrf.out <- randomForest::randomForest(x = joint_features_valid, 
-                                             y = joint_response_valid, 
-                                             mtry = mtry, 
-                                             importance = TRUE, 
-                                             ntree = ntree)
-        
-        # Extract importance scores
-        rf_importance <- randomForest::importance(jrf.out, type = 1)
-        
-        # Ensure non-negative values for scGraphVerse compatibility
-        rf_importance <- pmax(rf_importance, 0)
-        
-        # Parse importance back to condition-specific blocks
-        for (s in 1:nclasses) {
-          start_idx <- (s - 1) * (p - 1) + 1
-          end_idx <- s * (p - 1)
-          if (end_idx <= length(rf_importance)) {
-            imp[-j,j,s] <- rf_importance[start_idx:end_idx]
-          }
-        }
-      }
-      
-      }
-      
-    # --- Derive importance score for each interaction 
-      for (s in 1:nclasses){ 
-         imp.s<-imp[,,s]; t.imp<-t(imp.s)
-         imp.final[,s]<-(imp.s[lower.tri(imp.s,diag=FALSE)]+t.imp[lower.tri(t.imp,diag=FALSE)])/2        
-      }
+      return(list(gene_idx = j, importance = gene_imp))
+    }
     
-    out<-cbind(as.character(vec1),as.character(vec2),as.data.frame(imp.final),stringsAsFactors=FALSE)
-    colnames(out)<-c(paste0('gene',1:2),paste0('importance',1:nclasses))
+    if (verbose) {
+      message("Processing ", length(genes.name), " genes using parallel processing...")
+    }
+    
+    # Run parallel processing over genes
+    gene_results <- bplapply(1:length(genes.name), process_gene, 
+                            X = X, genes.name = genes.name, nclasses = nclasses,
+                            sampsize = sampsize, tot = tot, p = p, 
+                            ntree = ntree, mtry = mtry, 
+                            BPPARAM = BPPARAM)
+    
+    # Combine results
+    imp <- array(0, c(p, length(genes.name), nclasses))
+    for (result in gene_results) {
+      j <- result$gene_idx
+      imp[, j, ] <- result$importance
+    }
+    
+    # Derive importance score for each interaction 
+    imp.final <- matrix(0, p*(p-1)/2, nclasses)
+    for (s in 1:nclasses) { 
+      imp.s <- imp[, , s]
+      t.imp <- t(imp.s)
+      imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] + 
+                         t.imp[lower.tri(t.imp, diag = FALSE)]) / 2        
+    }
+    
+    out <- cbind(as.character(vec1), as.character(vec2), 
+                 as.data.frame(imp.final), stringsAsFactors = FALSE)
+    colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
+    
+    if (verbose) {
+      message("JRF inference completed successfully")
+    }
+    
     return(out)
   }
 
