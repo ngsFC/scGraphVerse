@@ -97,14 +97,14 @@ importance <- function(x,  scale=TRUE) {
            totsize = if (replace) ncol(x) else ceiling(.632*ncol(x)),
            mtry=if (!is.null(y) && !is.factor(y))
              max(floor(nrow(x)/3), 1) else floor(sqrt(nrow(x))),
-           replace=TRUE, classwt=NULL, cutoff, strata,
+           replace=TRUE, classwt=NULL, cutoff=NULL, strata=NULL,
            nodesize = if (!is.null(y) && !is.factor(y)) 5 else 1,
            maxnodes=NULL,
            importance=FALSE, localImp=FALSE, nPerm=1,
-           proximity, oob.prox=proximity,
+           proximity=FALSE, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity, ...) {
+           keep.inbag=FALSE, purity=0.0, sampsize=NULL, nclasses=2, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
@@ -491,7 +491,7 @@ importance <- function(x,  scale=TRUE) {
 
 # --- MAIN function
 "JRF_internal" <-
-  function(X, ntree,mtry,genes.name) {
+  function(X, ntree=500, mtry=NULL, genes.name=NULL) {
 
     nclasses<-length(X)
     sampsize<-rep(0,nclasses)
@@ -500,6 +500,10 @@ importance <- function(x,  scale=TRUE) {
     
     tot<-max(sampsize);
     p<-dim(X[[1]])[1];
+    
+    # Set default values if not provided
+    if (is.null(mtry)) mtry <- floor(sqrt(p))
+    if (is.null(genes.name)) genes.name <- paste0("Gene", 1:p)
     imp<-array(0,c(p,length(genes.name),nclasses))
     
     imp.final<-matrix(0,p*(p-1)/2,nclasses);
