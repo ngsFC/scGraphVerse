@@ -95,18 +95,17 @@ importance <- function(x,  scale=TRUE) {
            totsize = if (replace) ncol(x) else ceiling(.632*ncol(x)),
            mtry=if (!is.null(y) && !is.factor(y))
              max(floor(nrow(x)/3), 1) else floor(sqrt(nrow(x))),
-           replace=TRUE, classwt=NULL, cutoff, strata,
+           replace=TRUE, classwt=NULL, cutoff=c(0.5, 0.5), strata=NULL,
            nodesize = if (!is.null(y) && !is.factor(y)) 5 else 1,
            maxnodes=NULL,
            importance=FALSE, localImp=FALSE, nPerm=1,
-           proximity, oob.prox=proximity,
+           proximity=FALSE, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity, ...) {
+           keep.inbag=FALSE, purity=1, sampsize=NULL, nclasses=2, ...) {
     
-    sampsize=c(0,0)
+    if (is.null(sampsize)) sampsize <- c(0,0)
     ww=1/sampsize;
-    nclasses=2;
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
