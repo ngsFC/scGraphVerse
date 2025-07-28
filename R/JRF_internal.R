@@ -380,81 +380,96 @@ importance <- function(x,  scale=TRUE) {
     } 
     else {
       
+      # Match the C function signature exactly:
+      # void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize, int *totsize,
+      #           int *nthsize, int *nrnodes, int *nTree, int *mtry, int *imp,
+      #           int *cat, int *maxcat, int *jprint, int *doProx, int *oobprox,
+      #           int *biasCorr, double *yptr, double *errimp, double *impmat,
+      #           double *impSD, double *prox, int *treeSize, int *nodestatus,
+      #           int *lDaughter, int *rDaughter, double *avnode, int *mbest,
+      #           double *upper, double *mse, int *keepf, int *replace,
+      #           int *testdat, double *xts, int *nts, double *yts, int *labelts,
+      #           double *yTestPred, double *proxts, double *msets, double *coef,
+      #           int *nout, int *inbag, int *nclasses)
+      
       rfout <- .C("regRF", PACKAGE = "scGraphVerse",
-                  x,
-                  y, ww,as.double(purity),
-                  as.integer(c(totsize, p)),
-                  as.integer(totsize),
-                  as.integer(nodesize),
-                  as.integer(nrnodes),
-                  as.integer(ntree),
-                  as.integer(mtry),
-                  as.integer(c(importance, localImp, nPerm)),
-                  as.integer(ncat),
-                  as.integer(maxcat),
-                  as.integer(do.trace),
-                  as.integer(proximity),
-                  as.integer(oob.prox),
-                  as.integer(corr.bias),
-                  ypred = double(n * nclasses),
-                  impout = impout,
-                  impmat = impmat,
-                  impSD = impSD,
-                  prox = prox,
-                  ndbigtree = integer(ntree),
-                  nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                  leftDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                  rightDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                  nodepred = matrix(double(nrnodes * nt * nclasses), ncol=nt),
-                  bestvar = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                  xbestsplit = matrix(double(nrnodes * nt * nclasses), ncol=nt),
-                  mse = double(ntree * nclasses),
-                  keep = as.integer(c(keep.forest, keep.inbag)),
-                  replace = as.integer(replace),
-                  testdat = as.integer(testdat),
-                  xts = xtest,
-                  ntest = as.integer(ntest),
-                  yts = as.double(ytest),
-                  labelts = as.integer(labelts),
-                  ytestpred = double(ntest),
-                  proxts = proxts,
-                  msets = double(if (labelts) ntree else 1),
-                  coef = double(2),
-                  oob.times = integer(n),
-                  inbag = if (keep.inbag)
-                    matrix(integer(n * ntree), n) else integer(1), as.integer(nclasses))[c(16:28, 36:41)]
+                  x = x,                                    # double *x
+                  y = as.double(y),                        # double *y
+                  weight = as.double(ww),                  # double *weight
+                  xdim = as.integer(c(p*nclasses, n)),    # int *xdim
+                  sampsize = as.integer(sampsize),         # int *sampsize
+                  totsize = as.integer(n),                 # int *totsize
+                  nthsize = as.integer(nodesize),          # int *nthsize
+                  nrnodes = as.integer(nrnodes),           # int *nrnodes
+                  nTree = as.integer(ntree),               # int *nTree
+                  mtry = as.integer(mtry),                 # int *mtry
+                  imp = as.integer(c(importance, localImp, nPerm)), # int *imp
+                  cat = as.integer(ncat),                  # int *cat
+                  maxcat = as.integer(maxcat),             # int *maxcat
+                  jprint = as.integer(do.trace),           # int *jprint
+                  doProx = as.integer(proximity),          # int *doProx
+                  oobprox = as.integer(oob.prox),          # int *oobprox
+                  biasCorr = as.integer(corr.bias),        # int *biasCorr
+                  yptr = double(n * nclasses),             # double *yptr
+                  errimp = impout,                         # double *errimp
+                  impmat = impmat,                         # double *impmat
+                  impSD = impSD,                           # double *impSD
+                  prox = prox,                             # double *prox
+                  treeSize = integer(ntree),               # int *treeSize
+                  nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt), # int *nodestatus
+                  lDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),  # int *lDaughter
+                  rDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),  # int *rDaughter
+                  avnode = matrix(double(nrnodes * nt * nclasses), ncol=nt),      # double *avnode
+                  mbest = matrix(integer(nrnodes * nt * nclasses), ncol=nt),      # int *mbest
+                  upper = matrix(double(nrnodes * nt * nclasses), ncol=nt),       # double *upper
+                  mse = double(ntree * nclasses),          # double *mse
+                  keepf = as.integer(c(keep.forest, keep.inbag)), # int *keepf
+                  replace = as.integer(replace),           # int *replace
+                  testdat = as.integer(testdat),           # int *testdat
+                  xts = as.double(xtest),                  # double *xts
+                  nts = as.integer(ntest),                 # int *nts
+                  yts = as.double(ytest),                  # double *yts
+                  labelts = as.integer(labelts),           # int *labelts
+                  yTestPred = double(ntest),               # double *yTestPred
+                  proxts = proxts,                         # double *proxts
+                  msets = double(if (labelts) ntree else 1), # double *msets
+                  coef = double(2),                        # double *coef
+                  nout = integer(n),                       # int *nout
+                  inbag = if (keep.inbag) matrix(integer(n * ntree), n) else integer(1), # int *inbag
+                  nclasses = as.integer(nclasses)          # int *nclasses
+                  )
       #         ## Format the forest component, if present.
       if (keep.forest) {
-        max.nodes <- max(rfout$ndbigtree)
+        max.nodes <- max(rfout$treeSize)
         rfout$nodestatus <-
           rfout$nodestatus[1:max.nodes, , drop=FALSE]
-        rfout$bestvar <-
-          rfout$bestvar[1:max.nodes, , drop=FALSE]
-        rfout$nodepred <-
-          rfout$nodepred[1:max.nodes, , drop=FALSE]
-        rfout$xbestsplit <-
-          rfout$xbestsplit[1:max.nodes, , drop=FALSE]
-        rfout$leftDaughter <-
-          rfout$leftDaughter[1:max.nodes, , drop=FALSE]
-        rfout$rightDaughter <-
-          rfout$rightDaughter[1:max.nodes, , drop=FALSE]
+        rfout$mbest <-
+          rfout$mbest[1:max.nodes, , drop=FALSE]
+        rfout$avnode <-
+          rfout$avnode[1:max.nodes, , drop=FALSE]
+        rfout$upper <-
+          rfout$upper[1:max.nodes, , drop=FALSE]
+        rfout$lDaughter <-
+          rfout$lDaughter[1:max.nodes, , drop=FALSE]
+        rfout$rDaughter <-
+          rfout$rDaughter[1:max.nodes, , drop=FALSE]
       }
       cl <- match.call()
       cl[[1]] <- as.name("randomForest")
       #         ## Make sure those obs. that have not been OOB get NA as prediction.
-      ypred <- rfout$ypred
-      if (any(rfout$oob.times < 1)) {
-        ypred[rfout$oob.times == 0] <- NA
+      ypred <- rfout$yptr
+      if (any(rfout$nout < 1)) {
+        ypred[rfout$nout == 0] <- NA
       }
       out <- list(call = cl,
                   type = "regression",
-                  predicted =0,
+                  predicted = 0,
                   mse = rfout$mse,
                   rsq = 1 - rfout$mse / (var(y[1,]) * (n-1) / n),
-                  oob.times = rfout$oob.times,
-                  importance = if (importance) matrix(rfout$impout, p * nclasses, 2) else
-                    matrix(rfout$impout, ncol=1),
-                  importanceSD=if (importance) rfout$impSD else NULL,
+                  oob.times = rfout$nout,
+                  importance = if (importance) matrix(rfout$errimp, p * nclasses, 2) else
+                    matrix(rfout$errimp, ncol=1),
+                  importanceSD = if (importance) rfout$impSD else NULL,
                   localImportance = if (localImp)
                     matrix(rfout$impmat, p, n, dimnames=list(x.col.names,
                                                              x.row.names)) else NULL,
@@ -463,15 +478,15 @@ importance <- function(x,  scale=TRUE) {
                   ntree = ntree,
                   mtry = mtry,
                   forest = if (keep.forest)
-                    c(rfout[c("ndbigtree", "nodestatus", "leftDaughter",
-                              "rightDaughter", "nodepred", "bestvar",
-                              "xbestsplit")],
+                    c(rfout[c("treeSize", "nodestatus", "lDaughter",
+                              "rDaughter", "avnode", "mbest",
+                              "upper")],
                       list(ncat = ncat), list(nrnodes=max.nodes),
                       list(ntree=ntree), list(xlevels=xlevels)) else NULL,
                   coefs = if (corr.bias) rfout$coef else NULL,
                   y = y,
                   test = if(testdat) {
-                    list(predicted = structure(rfout$ytestpred,
+                    list(predicted = structure(rfout$yTestPred,
                                                names=xts.row.names),
                          mse = if(labelts) rfout$msets else NULL,
                          rsq = if(labelts) 1 - rfout$msets /
