@@ -490,7 +490,7 @@ importance <- function(x,  scale=TRUE) {
 
 
 # --- MAIN function
-"JRF" <-
+"JRF_internal" <-
   function(X, ntree,mtry,genes.name) {
 
     nclasses<-length(X)
