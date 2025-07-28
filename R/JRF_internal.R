@@ -35,7 +35,7 @@
 #' The importance scores represent the contribution of each gene-gene interaction
 #' to the prediction accuracy, averaged across conditions when appropriate.
 #'
-#' @importFrom parallel makeCluster stopCluster
+#' @importFrom parallel makeCluster stopCluster clusterEvalQ
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach %dopar% %do%
 #' @importFrom stats runif
