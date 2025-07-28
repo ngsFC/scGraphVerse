@@ -104,7 +104,7 @@ importance <- function(x,  scale=TRUE) {
            proximity, oob.prox=proximity,
            norm.votes=TRUE, do.trace=FALSE,
            keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-           keep.inbag=FALSE, purity=TRUE, ...) {
+           keep.inbag=FALSE, purity, ...) {
     
     sampsize=c(0,0)
     ww=1/sampsize;
@@ -490,7 +490,7 @@ importance <- function(x,  scale=TRUE) {
 
 
 # --- MAIN function
-"JRF_internal" <-
+"JRF" <-
   function(X, ntree,mtry,genes.name) {
 
     nclasses<-length(X)
