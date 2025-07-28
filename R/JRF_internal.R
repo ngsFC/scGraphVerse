@@ -225,7 +225,7 @@ importance <- function(x,  scale=TRUE) {
       
       
       ####### -- call C function to compute tree ------------------------------------------------------- ###########
-      rfout <- .C("classRF",
+      rfout <- .C("classRF", PACKAGE = "randomForest",
                   x = x,
                   xdim = as.integer(c(p, n)),
                   y = as.integer(y), 
@@ -375,7 +375,7 @@ importance <- function(x,  scale=TRUE) {
     } 
     else {
       
-      rfout <- .C("regRF",
+      rfout <- .C("regRF", PACKAGE = "scGraphVerse",
                   x,
                   y, ww,as.double(purity),
                   as.integer(c(totsize, p)),
