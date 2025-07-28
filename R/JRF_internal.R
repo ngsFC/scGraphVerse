@@ -508,7 +508,7 @@ importance <- function(x,  scale=TRUE) {
       cl <- makeCluster(nCores)
       registerDoParallel(cl)
       # Export necessary functions and variables to workers
-      clusterEvalQ(cl, library(randomForest))
+      parallel::clusterEvalQ(cl, library(randomForest))
       on.exit(stopCluster(cl))
     }
     
