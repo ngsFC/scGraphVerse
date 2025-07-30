@@ -80,7 +80,7 @@ importance <- function(x,  scale=TRUE) {
                 imp <- imp[, ncol(imp) - 1, drop=FALSE]
             } else {
                 whichCol <- if (classRF) match(class, colnames(imp)) else 1
-                if (is.na(whichCol)) stop(paste("Class", class, "not found."))
+                if (is.na(whichCol)) stop("Class ", class, " not found.")
                 imp <- imp[, whichCol, drop=FALSE]
             }
         }
