@@ -307,7 +307,7 @@ zigm_network <- function(X,
     ghat <- lapply(seq_len(nlambda), FUN = function(l) {
         hat_net(coef_mat[, , l], thresh = thresh, type = sym)
     })
-    gs <- lapply(seq_len(nlambda), FUN = function(l) Matrix(ghat[[l]]))
+    gs <- lapply(seq_len(nlambda), FUN = function(l) as.matrix(ghat[[l]]))
 
     return(list(hat_net = gs, coef_net = coef_mat))
 }

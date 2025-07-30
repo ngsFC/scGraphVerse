@@ -599,7 +599,7 @@ Nodes:",
         adj <- fit$network[[fit$opt_index]]
     } else {
         # Fallback to first network if bootstrap failed or invalid index
-        adj <- as.matrix(fit$network[[1]])
+        adj <- fit$network[[1]]
     }
 
     # Set proper dimensions
