@@ -580,11 +580,7 @@ optim_fun0noT <- function(beta_mu, gamma_pi, Y, X_mu, zeta, n) {
 
 zinb.loglik <- function(Y, mu, theta, logitPi) {
     # log-probabilities of counts under the NB model
-    # Handle potential numerical issues with dnbinom by ensuring 
-    # valid parameters
-    theta_safe <- pmax(theta, 1e-8)  # Ensure theta > 0
-    mu_safe <- pmax(mu, 1e-8)        # Ensure mu > 0
-    logPnb <- dnbinom(Y, size = theta_safe, mu = mu_safe, log = TRUE)
+    logPnb <- dnbinom(Y, size = theta, mu = mu, log = TRUE)
 
     # contribution of zero inflation
     lognorm <- -log1pexp(logitPi)
@@ -615,10 +611,7 @@ zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
     }
 
     if (has0) {
-        # Handle potential numerical issues with dnbinom
-        theta_safe <- pmax(theta, 1e-8)
-        mu_safe <- pmax(mu[Y0], 1e-8)
-        logPnb <- dnbinom(0, size = theta_safe, mu = mu_safe, log = TRUE)
+        logPnb <- dnbinom(0, size = theta, mu = mu[Y0], log = TRUE)
         grad <- grad + sum(theta * (zeta - log(mu[Y0] + theta) + 1 -
             theta / (mu[Y0] + theta)) / (1 + exp(logitPi[Y0] - logPnb)))
         # *exp(- copula::log1pexp( -logPnb + logitPi[Y0])))
@@ -788,11 +781,7 @@ nb.OptimizeDispersion <- function(mu, Y, n) {
 #' @importFrom stats dnbinom optim optimize rbinom rnbinom runif var
 nb.loglik <- function(Y, mu, theta) {
     # log-probabilities of counts under the NB model
-    # Handle potential numerical issues with dnbinom by ensuring 
-    # valid parameters
-    theta_safe <- pmax(theta, 1e-8)  # Ensure theta > 0
-    mu_safe <- pmax(mu, 1e-8)        # Ensure mu > 0
-    logPnb <- dnbinom(Y, size = theta_safe, mu = mu_safe, log = TRUE)
+    logPnb <- dnbinom(Y, size = theta, mu = mu, log = TRUE)
 
     sum(logPnb)
 }
