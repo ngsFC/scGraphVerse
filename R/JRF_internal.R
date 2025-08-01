@@ -125,12 +125,13 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                          keep.inbag=FALSE, sampsize=NULL, nclasses=2, ...) {
     
     # Use EXACT original parameter handling from JRF_corrected.R  
-    # Fix: Use actual nclasses from caller, calculate proper weights
-    if (missing(nclasses)) nclasses <- 2  # Only default if not provided
+    # CRITICAL: The C regRF function can only handle nclasses=2!
+    # Store the actual nclasses for later use, but force nclasses=2 for C call
+    actual_nclasses <- if (missing(nclasses)) 2 else nclasses
+    nclasses <- 2  # Force to 2 for C function
     sampsize=c(0,0)
-    # Calculate proper weights based on actual number of classes
-    n_samples_per_class <- ncol(x) / nclasses
-    ww <- rep(1/n_samples_per_class, nclasses)
+    # Use original weights calculation that works
+    ww=c(1,1)  # Simple unit weights for 2 classes
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
