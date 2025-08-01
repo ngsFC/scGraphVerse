@@ -178,6 +178,15 @@ setMethod(
 #' @importFrom MASS glm.nb negative.binomial
 #' @importFrom utils combn
 #' @importFrom stats as.formula glm
+#' @examples
+#' # Generate sample count data
+#' set.seed(123)
+#' n <- 50
+#' p <- 4
+#' X <- matrix(rpois(n * p, lambda = 5), nrow = n, ncol = p)
+#' 
+#' # Estimate network structure using negative binomial model
+#' adj_matrix <- nb.wald(X, maxcard = 1, alpha = 0.05, extend = TRUE)
 nb.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
     p <- ncol(X)
     n <- nrow(X)
@@ -267,6 +276,15 @@ nb.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
 #' @return the estimated adjacency matrix of the graph.
 #' @export
 #' @importFrom stats coefficients
+#' @examples
+#' # Generate sample count data
+#' set.seed(123)
+#' n <- 50
+#' p <- 4
+#' X <- matrix(rpois(n * p, lambda = 3), nrow = n, ncol = p)
+#' 
+#' # Estimate network structure using Poisson model
+#' adj_matrix <- pois.wald(X, maxcard = 1, alpha = 0.05, extend = TRUE)
 pois.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
     p <- ncol(X)
     n <- nrow(X)
@@ -349,6 +367,19 @@ pois.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
 #' @importFrom stats coefficients glm AIC BIC
 #' @import methods
 #' @importClassesFrom graph graphNEL
+#' @examples
+#' # Generate sample count data
+#' set.seed(123)
+#' n <- 50
+#' p <- 4
+#' X <- matrix(rpois(n * p, lambda = 4), nrow = n, ncol = p)
+#' colnames(X) <- paste0("Gene", 1:p)
+#' 
+#' # Define topological ordering
+#' order <- colnames(X)
+#' 
+#' # Estimate DAG structure using PK2 algorithm
+#' result <- Poisk2(X, order = order, criterion = "BIC", maxcard = 2)
 Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
     if (length(colnames(X)) > 0) {
         nodes <- colnames(X)
