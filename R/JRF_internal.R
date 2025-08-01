@@ -177,10 +177,14 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     nodesize <- 5
     nrnodes <- 2 * trunc(n/max(1, nodesize - 4)) + 1
     
+    # Debug: check nrnodes calculation
+    cat("Debug - nodesize:", nodesize, "nrnodes:", nrnodes, "\n")
+    
     if (!is.null(maxnodes)) {
         maxnodes <- 2 * maxnodes - 1
         if (maxnodes > nrnodes) warning("maxnodes exceeds its max value.")
         nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
+        cat("Debug - maxnodes adjusted, nrnodes:", nrnodes, "\n")
     }
     
     storage.mode(x) <- "double"
@@ -191,6 +195,11 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     ntest <- 1
     labelts <- FALSE
     nt <- if (keep.forest) ntree else 1
+    
+    # Debug: check critical dimension calculations
+    cat("Debug - nt:", nt, "ntree:", ntree, "\n")
+    matrix_size <- nrnodes * nt * nclasses
+    cat("Debug - matrix allocation size (nrnodes * nt * nclasses):", matrix_size, "\n")
     
     nPerm <- 1
     do.trace <- FALSE
