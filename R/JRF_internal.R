@@ -127,13 +127,16 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                          keep.inbag=FALSE, sampsize=NULL, nclasses=2, ...) {
     
     # Use EXACT original parameter handling from JRF_corrected.R  
-    # The original has sampsize passed from outer function, not c(0,0)
-    # ww=1/sampsize is used by the C function, so we need valid sampsize
-    if (is.null(sampsize)) sampsize <- c(0,0)
-    # Fix the ww calculation to avoid Inf values
-    ww <- ifelse(sampsize == 0, 1, 1/sampsize)
+    # CRITICAL: Don't override sampsize if it's passed from outer function!
+    # Only set default if it's actually NULL
+    if (is.null(sampsize)) {
+        sampsize <- c(0,0)
+    }
+    ww <- 1/sampsize
     
     # Set other variables exactly as in JRF_corrected.R
+    # Don't override nclasses if passed from outer function
+    if (missing(nclasses)) nclasses <- 2
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
