@@ -148,7 +148,12 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     n <- totsize <- ncol(x)
     p <- nrow(x)/nclasses
     
+    # Debug: check dimensions to prevent memory explosion
+    cat("Debug - n:", n, "p:", p, "nclasses:", nclasses, "\n")
+    cat("Debug - nrow(x):", nrow(x), "ncol(x):", ncol(x), "\n")
+    
     if (n == 0) stop("data (x) has 0 rows")
+    if (p <= 0 || !is.finite(p)) stop("Invalid p calculation: ", p)
     
     x.row.names <- rownames(x)
     x.col.names <- if (is.null(colnames(x))) 1:ncol(x) else colnames(x)
