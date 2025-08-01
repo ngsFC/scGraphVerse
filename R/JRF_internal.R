@@ -11,62 +11,60 @@
 #' @return A data frame with gene pairs and importance scores
 #' @export
 JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
+    # Use EXACT same logic as JRF_corrected - just renamed
     
-    nclasses <- length(X)
-    sampsize <- rep(0, nclasses)
+    nclasses<-length(X)
+    sampsize<-rep(0,nclasses)
     
-    for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]
+    for (j in 1:nclasses) sampsize[j]<-dim(X[[j]])[2]
     
-    tot <- max(sampsize)
-    p <- dim(X[[1]])[1]
+    tot<-max(sampsize);
+    p<-dim(X[[1]])[1];
     
-    # Set default values if not provided
+    # Set defaults exactly like original
     if (is.null(mtry)) mtry <- floor(sqrt(p))
     if (is.null(genes.name)) genes.name <- paste0("Gene", 1:p)
     
-    imp <- array(0, c(p, length(genes.name), nclasses))
+    imp<-array(0,c(p,length(genes.name),nclasses))
     
-    imp.final <- matrix(0, p*(p-1)/2, nclasses)
-    vec1 <- matrix(rep(genes.name, p), p, p)
-    vec2 <- t(vec1)
-    vec1 <- vec1[lower.tri(vec1, diag=FALSE)]
-    vec2 <- vec2[lower.tri(vec2, diag=FALSE)]
+    imp.final<-matrix(0,p*(p-1)/2,nclasses);
+    vec1<-matrix(rep(genes.name,p),p,p)
+    vec2<-t(vec1)
+    vec1<-vec1[lower.tri(vec1,diag=FALSE)]
+    vec2<-vec2[lower.tri(vec2,diag=FALSE)]
     
-    for (j in 1:length(genes.name)) {
-        
-        covar <- matrix(0, (p-1)*nclasses, tot)             
-        y <- matrix(0, nclasses, tot)             
-        
-        for (c in 1:nclasses) {
-            y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j,])
-            covar[seq((c-1)*(p-1)+1, c*(p-1)), seq(1, sampsize[c])] <- X[[c]][-j,]
-        }
-        
-        # Call JRF_onetarget with the exact same parameters as JRF_corrected
-        # Pass the actual sampsize from the outer function
-        jrf.out <- JRF_onetarget(x=covar, y=y, mtry=mtry, importance=TRUE, ntree=ntree, sampsize=sampsize, nclasses=nclasses)
-        
-        for (s in 1:nclasses) {
-            imp[-j, j, s] <- importance_jrf(jrf.out, scale=FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
-        }
-    }
+    index<-seq(1,p)
     
-    # Derive importance score for each interaction 
-    for (s in 1:nclasses) { 
-        imp.s <- imp[,,s]
-        t.imp <- t(imp.s)
-        imp.final[,s] <- (imp.s[lower.tri(imp.s, diag=FALSE)] + 
-                         t.imp[lower.tri(t.imp, diag=FALSE)])/2        
-    }
+    for (j in 1:length(genes.name)){
+
+      covar<-matrix(0,(p-1)*nclasses,tot)             
+      y<-matrix(0,nclasses,tot)             
+      
+      for (c in 1:nclasses)  {
+        y[c,seq(1,sampsize[c])]<-as.matrix(X[[c]][j,])
+        covar[seq((c-1)*(p-1)+1,c*(p-1)),seq(1,sampsize[c])]<-X[[c]][-j,]
+      }
+      
+      # Use exact same call as original JRF_corrected
+      jrf.out<-JRF_onetarget(x=covar,y=y,mtry=mtry,importance=TRUE,sampsize=sampsize,nclasses=nclasses,ntree=ntree)
+      
+      for (s in 1:nclasses) imp[-j,j,s]<-importance(jrf.out,scale=FALSE)[seq((p-1)*(s-1)+1,(p-1)*(s-1)+p-1)]  
+      
+      }
+      
+    # --- Derive importance score for each interaction 
+      for (s in 1:nclasses){ 
+         imp.s<-imp[,,s]; t.imp<-t(imp.s)
+         imp.final[,s]<-(imp.s[lower.tri(imp.s,diag=FALSE)]+t.imp[lower.tri(t.imp,diag=FALSE)])/2        
+      }
     
-    out <- cbind(as.character(vec1), as.character(vec2), 
-                 as.data.frame(imp.final), stringsAsFactors=FALSE)
-    colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
+    out<-cbind(as.character(vec1),as.character(vec2),as.data.frame(imp.final),stringsAsFactors=FALSE)
+    colnames(out)<-c(paste0('gene',1:2),paste0('importance',1:nclasses))
     return(out)
 }
 
 # Copy the exact importance function from JRF_corrected.R
-importance_jrf <- function(x, scale=TRUE) {
+importance <- function(x, scale=TRUE) {
     type=NULL
     class=NULL
     
@@ -201,7 +199,7 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     # CORRECTED: Removed purity parameter from regRF call
     # NOTE: Currently uses randomForest's regRF for stability, but mathematically identical
     # TODO: Could be made fully independent by adapting to scGraphVerse's regRF signature
-    rfout <- .C("regRF", PACKAGE = "randomForest",
+    rfout <- .C("regRF",
                 x,
                 y, ww,  # REMOVED: as.double(purity),
                 as.integer(c(totsize, p)),
@@ -221,7 +219,7 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                 impout = impout,
                 impmat = impmat,
                 impSD = impSD,
-                prox = double(1),
+                prox = prox,
                 ndbigtree = integer(ntree),
                 nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
                 leftDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
