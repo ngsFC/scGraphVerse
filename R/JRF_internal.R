@@ -18,7 +18,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
     p <- dim(X[[1]])[1]
     if (is.null(mtry)) mtry <- floor(sqrt(p))
     if (is.null(genes.name)) genes.name <- rownames(X[[1]])
-    if (is.null(genes.name)) genes.name <- paste0("Gene", 1:p)
+    if (is.null(genes.name)) genes.name <- paste0("Gene", seq_len(p))
     
     # Check if JRF package is available
     if (!requireNamespace("JRF", quietly = TRUE)) {
