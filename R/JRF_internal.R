@@ -176,6 +176,7 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     
     storage.mode(x) <- "double"
     
+    prox <- proxts <- double(1)
     xtest <- double(1)
     ytest <- double(1)
     ntest <- 1
