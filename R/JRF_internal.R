@@ -191,9 +191,10 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     nt <- if (keep.forest) ntree else 1
     
     # Check critical dimension calculations
-    # cat("Debug - nt:", nt, "ntree:", ntree, "\n")
-    # matrix_size <- nrnodes * nt * nclasses
-    # cat("Debug - matrix allocation size (nrnodes * nt * nclasses):", matrix_size, "\n")
+    cat("Debug - nt:", nt, "ntree:", ntree, "nclasses:", nclasses, "\n")
+    matrix_size <- nrnodes * nt * nclasses
+    cat("Debug - matrix allocation size (nrnodes * nt * nclasses):", matrix_size, "\n")
+    cat("Debug - ww:", ww, "\n")
     
     nPerm <- 1
     do.trace <- FALSE
