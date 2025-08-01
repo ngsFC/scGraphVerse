@@ -126,9 +126,11 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     
     # Use EXACT original parameter handling from JRF_corrected.R  
     # CRITICAL: The C function regRF expects exactly nclasses=2, always!
-    # Using scGraphVerse's own regRF which should handle the original parameters
+    # Fix: Calculate proper weights from actual data dimensions to avoid Inf
     sampsize=c(0,0)
-    ww=1/sampsize;  # Original JRF parameter - scGraphVerse's regRF should handle Inf
+    # Instead of 1/sampsize which gives Inf, use weights based on actual data
+    n_samples_per_class <- ncol(x) / 2  # Assume equal split for nclasses=2
+    ww=c(1/n_samples_per_class, 1/n_samples_per_class);
     nclasses=2;
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
