@@ -205,7 +205,7 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     # CORRECTED: Removed purity parameter from regRF call
     # NOTE: Currently uses randomForest's regRF for stability, but mathematically identical
     # TODO: Could be made fully independent by adapting to scGraphVerse's regRF signature
-    rfout <- .C("regRF",
+    rfout <- .C("regRF", PACKAGE = "JRF",
                 x,
                 y, ww,  # REMOVED: as.double(purity),
                 as.integer(c(totsize, p)),
