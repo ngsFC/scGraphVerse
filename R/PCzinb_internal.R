@@ -442,6 +442,7 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
 #' @param mu the vector mean  of the negative binomial
 #' @param logitPi the vector of logit of the probabilities of the zero component
 #' @param n length of the returned vector
+#' @return A vector of length n with the optimized dispersion parameter values.
 #' @examples
 #' n <- 10
 #' mu <- seq(10, 50, length.out = n)
@@ -735,6 +736,7 @@ zinb.loglik.regression.gradient <- function(alpha, Y,
 #'   phi=1/theta is then called the dispersion parameter). We follow the
 #'   convention that the variance of the NB variable with mean mu and dispersion
 #'   theta is mu + mu^2/theta.
+#' @return A vector of length n with the optimized dispersion parameter values.
 nb.OptimizeDispersion <- function(mu, Y, n) {
     g <- optimize(
         f = nb.loglik.dispersion, Y = Y, mu = mu,
