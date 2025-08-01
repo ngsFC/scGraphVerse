@@ -43,8 +43,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
         }
         
         # Call JRF_onetarget with the exact same parameters as JRF_corrected
-        jrf.out <- JRF_onetarget(x=covar, y=y, mtry=mtry, importance=TRUE, 
-                                sampsize=sampsize, nclasses=nclasses, ntree=ntree)
+        jrf.out <- JRF_onetarget(x=covar, y=y, mtry=mtry, importance=TRUE, ntree=ntree)
         
         for (s in 1:nclasses) {
             imp[-j, j, s] <- importance_jrf(jrf.out, scale=FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
@@ -124,15 +123,12 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                          proximity=FALSE, oob.prox=proximity,
                          norm.votes=TRUE, do.trace=FALSE,
                          keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-                         keep.inbag=FALSE, sampsize=NULL, nclasses=2, ...) {
+                         keep.inbag=FALSE, ...) {
     
-    # Fix the sampsize parameter handling exactly as in JRF_corrected.R
-    if (is.null(sampsize)) sampsize <- c(0, 0)
-    if (any(sampsize == 0)) {
-        # Use the actual data dimensions when sampsize is 0
-        sampsize <- rep(ncol(x), nclasses)
-    }
-    ww <- 1/sampsize
+    # Use EXACT original parameter handling from JRF_corrected.R
+    sampsize=c(0,0)
+    ww=1/sampsize;
+    nclasses=2;
     
     # Set other variables exactly as in JRF_corrected.R
     nclass=mylevels=ipi=sw=NULL
@@ -230,12 +226,12 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                 keep = as.integer(c(keep.forest, keep.inbag)),
                 replace = as.integer(replace),
                 testdat = as.integer(testdat),
-                xts = double(1),
+                xts = xtest,
                 ntest = as.integer(ntest),
-                yts = double(1),
+                yts = as.double(ytest),
                 labelts = as.integer(labelts),
                 ytestpred = double(ntest),
-                proxts = double(1),
+                proxts = proxts,
                 msets = double(if (labelts) ntree else 1),
                 coef = double(2),
                 oob.times = integer(n),
