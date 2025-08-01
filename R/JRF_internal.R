@@ -43,7 +43,8 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
         }
         
         # Call JRF_onetarget with the exact same parameters as JRF_corrected
-        jrf.out <- JRF_onetarget(x=covar, y=y, mtry=mtry, importance=TRUE, ntree=ntree)
+        # Pass the actual sampsize from the outer function
+        jrf.out <- JRF_onetarget(x=covar, y=y, mtry=mtry, importance=TRUE, ntree=ntree, sampsize=sampsize, nclasses=nclasses)
         
         for (s in 1:nclasses) {
             imp[-j, j, s] <- importance_jrf(jrf.out, scale=FALSE)[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
@@ -123,12 +124,14 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                          proximity=FALSE, oob.prox=proximity,
                          norm.votes=TRUE, do.trace=FALSE,
                          keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-                         keep.inbag=FALSE, ...) {
+                         keep.inbag=FALSE, sampsize=NULL, nclasses=2, ...) {
     
-    # Use EXACT original parameter handling from JRF_corrected.R
-    sampsize=c(0,0)
-    ww=1/sampsize;
-    nclasses=2;
+    # Use EXACT original parameter handling from JRF_corrected.R  
+    # The original has sampsize passed from outer function, not c(0,0)
+    # ww=1/sampsize is used by the C function, so we need valid sampsize
+    if (is.null(sampsize)) sampsize <- c(0,0)
+    # Fix the ww calculation to avoid Inf values
+    ww <- ifelse(sampsize == 0, 1, 1/sampsize)
     
     # Set other variables exactly as in JRF_corrected.R
     nclass=mylevels=ipi=sw=NULL
