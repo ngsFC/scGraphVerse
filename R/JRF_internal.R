@@ -126,8 +126,9 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     
     # Use EXACT original parameter handling from JRF_corrected.R  
     # CRITICAL: The C function regRF expects exactly nclasses=2, always!
+    # Using scGraphVerse's own regRF which should handle the original parameters
     sampsize=c(0,0)
-    ww=1/sampsize;
+    ww=1/sampsize;  # Original JRF parameter - scGraphVerse's regRF should handle Inf
     nclasses=2;
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
@@ -205,7 +206,7 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     # CORRECTED: Removed purity parameter from regRF call
     # NOTE: Currently uses randomForest's regRF for stability, but mathematically identical
     # TODO: Could be made fully independent by adapting to scGraphVerse's regRF signature
-    rfout <- .C("regRF", PACKAGE = "JRF",
+    rfout <- .C("regRF", PACKAGE = "scGraphVerse",
                 x,
                 y, ww,  # REMOVED: as.double(purity),
                 as.integer(c(totsize, p)),
