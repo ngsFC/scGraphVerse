@@ -125,16 +125,10 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
                          keep.inbag=FALSE, sampsize=NULL, nclasses=2, ...) {
     
     # Use EXACT original parameter handling from JRF_corrected.R  
-    # CRITICAL: Don't override sampsize if it's passed from outer function!
-    # Only set default if it's actually NULL
-    if (is.null(sampsize)) {
-        sampsize <- c(0,0)
-    }
-    ww <- 1/sampsize
-    
-    # Set other variables exactly as in JRF_corrected.R
-    # Don't override nclasses if passed from outer function
-    if (missing(nclasses)) nclasses <- 2
+    # CRITICAL: The C function regRF expects exactly nclasses=2, always!
+    sampsize=c(0,0)
+    ww=1/sampsize;
+    nclasses=2;
     nclass=mylevels=ipi=sw=NULL
     addclass <- is.null(y)
     classRF <- addclass || is.factor(y)
@@ -148,9 +142,8 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     n <- totsize <- ncol(x)
     p <- nrow(x)/nclasses
     
-    # Debug: check dimensions to prevent memory explosion
-    cat("Debug - n:", n, "p:", p, "nclasses:", nclasses, "\n")
-    cat("Debug - nrow(x):", nrow(x), "ncol(x):", ncol(x), "\n")
+    # Dimension check
+    # cat("Debug - n:", n, "p:", p, "nclasses:", nclasses, "\n")
     
     if (n == 0) stop("data (x) has 0 rows")
     if (p <= 0 || !is.finite(p)) stop("Invalid p calculation: ", p)
@@ -177,14 +170,13 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     nodesize <- 5
     nrnodes <- 2 * trunc(n/max(1, nodesize - 4)) + 1
     
-    # Debug: check nrnodes calculation
-    cat("Debug - nodesize:", nodesize, "nrnodes:", nrnodes, "\n")
+    # cat("Debug - nodesize:", nodesize, "nrnodes:", nrnodes, "\n")
     
     if (!is.null(maxnodes)) {
         maxnodes <- 2 * maxnodes - 1
         if (maxnodes > nrnodes) warning("maxnodes exceeds its max value.")
         nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
-        cat("Debug - maxnodes adjusted, nrnodes:", nrnodes, "\n")
+        # cat("Debug - maxnodes adjusted, nrnodes:", nrnodes, "\n")
     }
     
     storage.mode(x) <- "double"
@@ -196,10 +188,10 @@ JRF_onetarget <- function(x, y=NULL, xtest=NULL, ytest=NULL, ntree,
     labelts <- FALSE
     nt <- if (keep.forest) ntree else 1
     
-    # Debug: check critical dimension calculations
-    cat("Debug - nt:", nt, "ntree:", ntree, "\n")
-    matrix_size <- nrnodes * nt * nclasses
-    cat("Debug - matrix allocation size (nrnodes * nt * nclasses):", matrix_size, "\n")
+    # Check critical dimension calculations
+    # cat("Debug - nt:", nt, "ntree:", ntree, "\n")
+    # matrix_size <- nrnodes * nt * nclasses
+    # cat("Debug - matrix allocation size (nrnodes * nt * nclasses):", matrix_size, "\n")
     
     nPerm <- 1
     do.trace <- FALSE
