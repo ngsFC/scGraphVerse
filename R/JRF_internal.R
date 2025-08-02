@@ -72,56 +72,56 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
         impout <- matrix(0.0, (p-1)*nclasses, 2)
         impSD <- matrix(0.0, (p-1)*nclasses, 1)
         
-        # Call regRF via .C (same as original)
+        # Call regRF via .C exactly like original JRF
+        nt <- 1  # keep.forest = FALSE
         rfout <- .C("regRF",
-                   x = as.double(covar),
-                   y = as.double(y), 
-                   weight = as.double(ww),
-                   xdim = xdim,
-                   sampsize = as.integer(sampsize),
-                   totsize = as.integer(tot),
-                   nthsize = as.integer(nodesize),
-                   nrnodes = as.integer(nrnodes),
-                   nTree = as.integer(ntree),
-                   mtry = as.integer(mtry),
-                   imp = as.integer(c(1, 0, 1)),  # importance=TRUE, localImp=FALSE, nPerm=1
-                   cat = ncat,
-                   maxcat = as.integer(maxcat),
-                   jprint = as.integer(0),  # do.trace=FALSE
-                   doProx = as.integer(0),  # proximity=FALSE
-                   oobprox = as.integer(0), # oob.prox=FALSE
-                   biasCorr = as.integer(0), # corr.bias=FALSE
+                   as.double(covar),
+                   as.double(y), 
+                   as.double(ww),
+                   as.integer(c(tot, (p-1)*nclasses)),
+                   as.integer(tot),
+                   as.integer(nodesize),
+                   as.integer(nrnodes),
+                   as.integer(ntree),
+                   as.integer(mtry),
+                   as.integer(c(1, 0, 1)),  # importance=TRUE, localImp=FALSE, nPerm=1
+                   as.integer(ncat),
+                   as.integer(maxcat),
+                   as.integer(0),  # do.trace=FALSE
+                   as.integer(0),  # proximity=FALSE
+                   as.integer(0),  # oob.prox=FALSE
+                   as.integer(0),  # corr.bias=FALSE
                    ypred = double(tot * nclasses),
-                   errimp = impout,
+                   impout = impout,
                    impmat = double(1),  # localImp=FALSE
                    impSD = impSD,
                    prox = double(1),    # proximity=FALSE
-                   treeSize = integer(ntree),
-                   nodestatus = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
-                   lDaughter = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
-                   rDaughter = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
-                   avnode = matrix(double(nrnodes * ntree * nclasses), ncol=ntree),
-                   mbest = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
-                   upper = matrix(double(nrnodes * ntree * nclasses), ncol=ntree),
+                   ndbigtree = integer(ntree),
+                   nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
+                   leftDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
+                   rightDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
+                   nodepred = matrix(double(nrnodes * nt * nclasses), ncol=nt),
+                   bestvar = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
+                   xbestsplit = matrix(double(nrnodes * nt * nclasses), ncol=nt),
                    mse = double(ntree * nclasses),
-                   keepf = as.integer(c(0, 0)),  # keep.forest=FALSE, keep.inbag=FALSE
+                   keep = as.integer(c(0, 0)),  # keep.forest=FALSE, keep.inbag=FALSE
                    replace = as.integer(1),  # replace=TRUE
                    testdat = as.integer(0),  # no test data
                    xts = double(1),
-                   nts = as.integer(1),
+                   ntest = as.integer(1),
                    yts = double(1),
                    labelts = as.integer(0),
-                   yTestPred = double(1),
+                   ytestpred = double(1),
                    proxts = double(1),
                    msets = double(1),
                    coef = double(2),
-                   nout = integer(tot),
+                   oob.times = integer(tot),
                    inbag = integer(1),
-                   nclasses = as.integer(nclasses),
-                   PACKAGE = "scGraphVerse")[c("errimp")]  # Extract importance
+                   as.integer(nclasses),
+                   PACKAGE = "scGraphVerse")[c(17:29, 35:40)]  # Extract like original
         
         # Extract importance scores like original (scale=FALSE)
-        importance_scores <- rfout$errimp[, 2]  # MeanDecreaseGini column
+        importance_scores <- rfout$impout[, 2]  # MeanDecreaseGini column
         
         # Save importance scores for each class like original
         for (s in 1:nclasses) {
