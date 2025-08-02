@@ -29,130 +29,124 @@
 #' # Run JRF network inference
 #' result <- JRF_internal(X, ntree = 50, genes.name = paste0("Gene", 1:n_genes))
 JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
-    # Internal JRF implementation using embedded C functions
-    # Replicates the original JRF algorithm exactly
+    # Internal JRF implementation exactly replicating original JRF algorithm
     
     # Set defaults exactly like original JRF
+    nclasses <- length(X)
+    sampsize <- rep(0, nclasses)
+    
+    for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]
+    
+    tot <- max(sampsize)
     p <- dim(X[[1]])[1]
-    n <- dim(X[[1]])[2]
-    if (is.null(mtry)) mtry <- floor(sqrt(p))
+    
+    if (is.null(mtry)) mtry <- max(floor(p/3), 1)  # Default from original
     if (is.null(genes.name)) genes.name <- rownames(X[[1]])
     if (is.null(genes.name)) genes.name <- paste0("Gene", seq_len(p))
     
-    # Validate inputs
-    if (!is.list(X)) stop("X must be a list of matrices")
-    if (length(X) == 0) stop("X must contain at least one matrix")
+    # Initialize importance array like original
+    imp <- array(0, c(p, length(genes.name), nclasses))
     
-    # Combine all expression matrices (datasets) 
-    # Each matrix in X is p genes x n_samples
-    combined_data <- do.call(cbind, X)
-    total_samples <- ncol(combined_data)
-    
-    # Initialize result structure
-    all_edges <- list()
-    
-    # For each target gene, build regression forest
-    for (target_idx in seq_len(p)) {
-        target_gene <- genes.name[target_idx]
+    # For each target gene (same loop as original JRF)
+    for (j in seq_len(length(genes.name))) {
         
-        # Target values across all samples
-        y <- as.double(combined_data[target_idx, ])
+        # Create covar and y matrices exactly like original
+        covar <- matrix(0, (p-1)*nclasses, tot)             
+        y <- matrix(0, nclasses, tot)             
         
-        # Predictor matrix: all other genes
-        predictor_indices <- setdiff(seq_len(p), target_idx)
-        if (length(predictor_indices) == 0) next
-        
-        # Create predictor matrix (samples x predictors)
-        x <- t(combined_data[predictor_indices, , drop = FALSE])
-        mdim <- ncol(x)
-        nsample <- nrow(x)
-        
-        # Random forest parameters
-        nodesize <- 5  # minimum node size
-        maxnodes <- 2 * nsample + 1
-        
-        # Storage for forest results
-        importance <- double(mdim)
-        
-        # Build regression forest using internal C function
-        for (tree in seq_len(ntree)) {
-            # Sample with replacement (bootstrap)
-            sample_indices <- sample(nsample, nsample, replace = TRUE)
-            x_bootstrap <- x[sample_indices, , drop = FALSE]
-            y_bootstrap <- y[sample_indices]
-            nsample_boot <- length(sample_indices)
-            
-            # Initialize tree structure arrays
-            lDaughter <- integer(maxnodes)
-            rDaughter <- integer(maxnodes) 
-            upper <- double(maxnodes)
-            avnode <- double(maxnodes)
-            nodestatus <- integer(maxnodes)
-            treeSize <- integer(1)
-            mbest <- integer(mdim)
-            cat <- integer(mdim)  # all continuous variables
-            tgini <- double(mdim)  # variable importance
-            varUsed <- integer(mdim)
-            sampsize <- as.integer(nsample_boot)
-            weight <- rep(1.0, nsample_boot)  # equal weights
-            
-            # Call C function (void return, modifies arrays in place)
-            .Call("regTree", 
-                  as.double(t(x_bootstrap)),  # x: predictor matrix (transposed)
-                  as.double(y_bootstrap),     # y: response vector
-                  as.integer(mdim),           # mdim: number of predictors
-                  sampsize,                   # sampsize: bootstrap sample size
-                  as.integer(nsample_boot),   # nsample: number of samples
-                  lDaughter,                  # lDaughter: left child nodes
-                  rDaughter,                  # rDaughter: right child nodes
-                  upper,                      # upper: split values
-                  avnode,                     # avnode: node averages
-                  nodestatus,                 # nodestatus: node status
-                  as.integer(maxnodes),       # nrnodes: max nodes
-                  treeSize,                   # treeSize: actual tree size
-                  as.integer(nodesize),       # nthsize: minimum node size
-                  as.integer(mtry),           # mtry: variables to try at each split
-                  mbest,                      # mbest: best split variable
-                  cat,                        # cat: categorical indicators
-                  tgini,                      # tgini: variable importance (Gini)
-                  varUsed,                    # varUsed: variables used
-                  as.integer(1),              # nclasses: 1 for regression
-                  weight,                     # weight: sample weights
-                  PACKAGE = "scGraphVerse")
-            
-            # Accumulate variable importance
-            importance <- importance + tgini
+        for (c in 1:nclasses)  {
+            y[c, seq_len(sampsize[c])] <- as.matrix(X[[c]][j,])
+            covar[seq((c-1)*(p-1)+1, c*(p-1)), seq_len(sampsize[c])] <- X[[c]][-j,]
         }
         
-        # Average importance across trees
-        importance <- importance / ntree
+        # Call regRF using .C like the original JRF_onetarget
+        # Prepare parameters for regRF call
+        xdim <- as.integer(c((p-1)*nclasses, tot))
+        ww <- rep(1.0/sampsize, sampsize)  # weights
+        nodesize <- 5L
+        nrnodes <- 2L * trunc(tot/max(1, nodesize - 4)) + 1L
+        ncat <- rep(1L, (p-1)*nclasses)  # all continuous
+        maxcat <- 1L
         
-        # Create edges with importance scores
-        predictor_genes <- genes.name[predictor_indices]
-        for (j in seq_along(predictor_genes)) {
-            if (importance[j] > 0) {  # Only include non-zero importance
-                edge <- data.frame(
-                    gene1 = target_gene,
-                    gene2 = predictor_genes[j], 
-                    importance = importance[j],
-                    stringsAsFactors = FALSE
-                )
-                all_edges[[length(all_edges) + 1]] <- edge
-            }
+        # Initialize output arrays
+        impout <- matrix(0.0, (p-1)*nclasses, 2)
+        impSD <- matrix(0.0, (p-1)*nclasses, 1)
+        
+        # Call regRF via .C (same as original)
+        rfout <- .C("regRF",
+                   x = as.double(covar),
+                   y = as.double(y), 
+                   weight = as.double(ww),
+                   xdim = xdim,
+                   sampsize = as.integer(sampsize),
+                   totsize = as.integer(tot),
+                   nthsize = as.integer(nodesize),
+                   nrnodes = as.integer(nrnodes),
+                   nTree = as.integer(ntree),
+                   mtry = as.integer(mtry),
+                   imp = as.integer(c(1, 0, 1)),  # importance=TRUE, localImp=FALSE, nPerm=1
+                   cat = ncat,
+                   maxcat = as.integer(maxcat),
+                   jprint = as.integer(0),  # do.trace=FALSE
+                   doProx = as.integer(0),  # proximity=FALSE
+                   oobprox = as.integer(0), # oob.prox=FALSE
+                   biasCorr = as.integer(0), # corr.bias=FALSE
+                   ypred = double(tot * nclasses),
+                   errimp = impout,
+                   impmat = double(1),  # localImp=FALSE
+                   impSD = impSD,
+                   prox = double(1),    # proximity=FALSE
+                   treeSize = integer(ntree),
+                   nodestatus = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
+                   lDaughter = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
+                   rDaughter = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
+                   avnode = matrix(double(nrnodes * ntree * nclasses), ncol=ntree),
+                   mbest = matrix(integer(nrnodes * ntree * nclasses), ncol=ntree),
+                   upper = matrix(double(nrnodes * ntree * nclasses), ncol=ntree),
+                   mse = double(ntree * nclasses),
+                   keepf = as.integer(c(0, 0)),  # keep.forest=FALSE, keep.inbag=FALSE
+                   replace = as.integer(1),  # replace=TRUE
+                   testdat = as.integer(0),  # no test data
+                   xts = double(1),
+                   nts = as.integer(1),
+                   yts = double(1),
+                   labelts = as.integer(0),
+                   yTestPred = double(1),
+                   proxts = double(1),
+                   msets = double(1),
+                   coef = double(2),
+                   nout = integer(tot),
+                   inbag = integer(1),
+                   nclasses = as.integer(nclasses),
+                   PACKAGE = "scGraphVerse")[c("errimp")]  # Extract importance
+        
+        # Extract importance scores like original (scale=FALSE)
+        importance_scores <- rfout$errimp[, 2]  # MeanDecreaseGini column
+        
+        # Save importance scores for each class like original
+        for (s in 1:nclasses) {
+            imp[-j, j, s] <- importance_scores[seq((p-1)*(s-1)+1, (p-1)*(s-1)+p-1)]
         }
     }
     
-    # Combine all edges
-    if (length(all_edges) > 0) {
-        result <- do.call(rbind, all_edges)
-    } else {
-        result <- data.frame(
-            gene1 = character(0),
-            gene2 = character(0), 
-            importance = numeric(0),
-            stringsAsFactors = FALSE
-        )
+    # Derive final importance scores exactly like original
+    imp.final <- matrix(0, p*(p-1)/2, nclasses)
+    vec1 <- matrix(rep(genes.name, p), p, p)
+    vec2 <- t(vec1)
+    vec1 <- vec1[lower.tri(vec1, diag=FALSE)]
+    vec2 <- vec2[lower.tri(vec2, diag=FALSE)]
+    
+    for (s in 1:nclasses) { 
+        imp.s <- imp[,,s]
+        t.imp <- t(imp.s)
+        imp.final[,s] <- (imp.s[lower.tri(imp.s, diag=FALSE)] + 
+                         t.imp[lower.tri(t.imp, diag=FALSE)])/2        
     }
     
-    return(result)
+    # Create output exactly like original
+    out <- cbind(as.character(vec1), as.character(vec2), 
+                 as.data.frame(imp.final), stringsAsFactors=FALSE)
+    colnames(out) <- c(paste0('gene', 1:2), paste0('importance', 1:nclasses))
+    
+    return(out)
 }
