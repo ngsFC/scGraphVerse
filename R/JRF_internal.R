@@ -80,36 +80,48 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
             sample_indices <- sample(nsample, nsample, replace = TRUE)
             x_bootstrap <- x[sample_indices, , drop = FALSE]
             y_bootstrap <- y[sample_indices]
+            nsample_boot <- length(sample_indices)
             
-            # Variables used in this tree
-            var_used <- integer(mdim)
+            # Initialize tree structure arrays
+            lDaughter <- integer(maxnodes)
+            rDaughter <- integer(maxnodes) 
+            upper <- double(maxnodes)
+            avnode <- double(maxnodes)
+            nodestatus <- integer(maxnodes)
+            treeSize <- integer(1)
+            mbest <- integer(mdim)
+            cat <- integer(mdim)  # all continuous variables
+            tgini <- double(mdim)  # variable importance
+            varUsed <- integer(mdim)
+            sampsize <- as.integer(nsample_boot)
+            weight <- rep(1.0, nsample_boot)  # equal weights
             
-            # Build single regression tree
-            tree_result <- .Call("regTree", 
-                                as.double(t(x_bootstrap)),
-                                as.double(y_bootstrap),
-                                as.integer(mdim),
-                                as.integer(nsample),
-                                as.integer(nsample),
-                                integer(maxnodes),      # lDaughter
-                                integer(maxnodes),      # rDaughter  
-                                double(maxnodes),       # upper
-                                double(maxnodes),       # avnode
-                                integer(maxnodes),      # nodestatus
-                                as.integer(maxnodes),
-                                integer(1),             # treeSize
-                                as.integer(nodesize),
-                                as.integer(mtry),
-                                integer(mdim),          # mbest
-                                integer(mdim),          # cat (all continuous)
-                                double(mdim),           # tgini (importance)
-                                as.integer(var_used),
-                                as.integer(1),          # nclasses (regression)
-                                double(nsample),        # weight (equal weights)
-                                PACKAGE = "scGraphVerse")
+            # Call C function (void return, modifies arrays in place)
+            .Call("regTree", 
+                  as.double(t(x_bootstrap)),  # x: predictor matrix (transposed)
+                  as.double(y_bootstrap),     # y: response vector
+                  as.integer(mdim),           # mdim: number of predictors
+                  sampsize,                   # sampsize: bootstrap sample size
+                  as.integer(nsample_boot),   # nsample: number of samples
+                  lDaughter,                  # lDaughter: left child nodes
+                  rDaughter,                  # rDaughter: right child nodes
+                  upper,                      # upper: split values
+                  avnode,                     # avnode: node averages
+                  nodestatus,                 # nodestatus: node status
+                  as.integer(maxnodes),       # nrnodes: max nodes
+                  treeSize,                   # treeSize: actual tree size
+                  as.integer(nodesize),       # nthsize: minimum node size
+                  as.integer(mtry),           # mtry: variables to try at each split
+                  mbest,                      # mbest: best split variable
+                  cat,                        # cat: categorical indicators
+                  tgini,                      # tgini: variable importance (Gini)
+                  varUsed,                    # varUsed: variables used
+                  as.integer(1),              # nclasses: 1 for regression
+                  weight,                     # weight: sample weights
+                  PACKAGE = "scGraphVerse")
             
             # Accumulate variable importance
-            importance <- importance + tree_result$tgini
+            importance <- importance + tgini
         }
         
         # Average importance across trees
