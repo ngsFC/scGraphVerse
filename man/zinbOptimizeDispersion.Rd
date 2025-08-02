@@ -17,6 +17,9 @@ zinbOptimizeDispersion(mu, logitPi, Y, n)
 
 \item{n}{length of the returned vector}
 }
+\value{
+A vector of length n with the optimized dispersion parameter values.
+}
 \description{
 (ZINB) model. The ZINB distribution is parametrized by three
 parameters: the mean value and the dispersion of the negative binomial

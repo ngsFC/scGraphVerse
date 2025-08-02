@@ -1,6 +1,6 @@
 #' Generic functions for scGraphVerse
 #'
-#' This file contains all generic function definitions for the scGraphVerse package.
+#' This file contains all generic function definitions for the scGraphVerse.
 #' These must be defined before any setMethod calls.
 #'
 #' @importFrom methods setGeneric standardGeneric
@@ -8,9 +8,9 @@
 
 #' Structure learning for count data using PC algorithms
 #'
-#' This function performs structure learning for count data using various PC algorithms
-#' adapted for different distributional assumptions including Poisson, Negative Binomial,
-#' and Zero-Inflated Negative Binomial models.
+#' This function performs structure learning for count data using various 
+#' PC algorithms adapted for different distributional assumptions including 
+#' Poisson, Negative Binomial, and Zero-Inflated Negative Binomial models.
 #'
 #' @param x A matrix of count data or SummarizedExperiment object
 #' @param ... Additional arguments passed to specific methods

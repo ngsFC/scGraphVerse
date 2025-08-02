@@ -27,6 +27,20 @@ matrix of counts and topological ordering, using a given criterion ("AIC",
 Herskovits (1992) able to deal with Poisson data. See Nguyen et al. (2022)
 for details.
 }
+\examples{
+# Generate sample count data
+set.seed(123)
+n <- 50
+p <- 4
+X <- matrix(rpois(n * p, lambda = 4), nrow = n, ncol = p)
+colnames(X) <- paste0("Gene", 1:p)
+
+# Define topological ordering
+order <- colnames(X)
+
+# Estimate DAG structure using PK2 algorithm
+result <- Poisk2(X, order = order, criterion = "BIC", maxcard = 2)
+}
 \references{
 Cooper, G. F. and Herskovits, E. (1992). A Bayesian method for the induction
 of probabilistic networks from data. Machine learning, 9(4), 309–347.

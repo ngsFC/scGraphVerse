@@ -23,3 +23,13 @@ the estimated adjacency matrix of the graph.
 This function estimates the adjacency matrix of a Poisson model given a
 matrix of counts, using the glm function.
 }
+\examples{
+# Generate sample count data
+set.seed(123)
+n <- 50
+p <- 4
+X <- matrix(rpois(n * p, lambda = 3), nrow = n, ncol = p)
+
+# Estimate network structure using Poisson model
+adj_matrix <- pois.wald(X, maxcard = 1, alpha = 0.05, extend = TRUE)
+}

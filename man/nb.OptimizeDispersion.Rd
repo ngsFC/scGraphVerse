@@ -19,6 +19,9 @@ phi=1/theta is then called the dispersion parameter). We follow the
 convention that the variance of the NB variable with mean mu and dispersion
 theta is mu + mu^2/theta.}
 }
+\value{
+A vector of length n with the optimized dispersion parameter values.
+}
 \description{
 (NB) model. The NB distribution is parametrized by two
 parameters: the mean value and the dispersion of the negative binomial
