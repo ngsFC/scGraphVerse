@@ -116,7 +116,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    msets = double(1),
                    coef = double(2),
                    nout = integer(tot),
-                   inbag = integer(1),
+                   inbag = integer(1), 
                    as.integer(nclasses),
                    PACKAGE = "scGraphVerse"
                    )[c(17:29, 35:40)]  # Extract like original
