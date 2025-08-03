@@ -11,5 +11,5 @@ static const R_CMethodDef cMethods[] = {
 
 void R_init_scGraphVerse(DllInfo *info) {
     R_registerRoutines(info, cMethods, NULL, NULL, NULL);
-    R_useDynamicSymbols(info, TRUE);  // Allow dynamic symbol lookup
+    R_useDynamicSymbols(info, FALSE);
 }

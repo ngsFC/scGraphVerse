@@ -117,7 +117,8 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    coef = double(2),
                    oob.times = integer(tot),
                    inbag = integer(1),
-                   as.integer(nclasses)
+                   as.integer(nclasses),
+                   PACKAGE = "scGraphVerse"
                    )[c(17:29, 35:40)]  # Extract like original
         
         # Extract importance scores like original (scale=FALSE)
