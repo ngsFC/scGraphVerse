@@ -115,7 +115,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    proxts = double(1),
                    msets = double(1),
                    coef = double(2),
-                   oob.times = integer(tot),
+                   nout = integer(tot),
                    inbag = integer(1),
                    as.integer(nclasses),
                    PACKAGE = "scGraphVerse"
