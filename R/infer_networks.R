@@ -162,7 +162,10 @@ infer_networks <- function(
     if (method == "JRF") {
         norm_list <- lapply(
             count_matrices_list,
-            function(mat) t(scale(t(mat)))
+            function(mat) {
+                # Use the same normalization as working JRF example
+                t(apply(mat, 1, function(x) { (x - mean(x)) / sd(x) }))
+            }
         )
         if (verbose) message("Running JRF on all matrices jointly")
         return(.run_jrf(norm_list, nCores, jrf_params))
