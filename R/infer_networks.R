@@ -168,7 +168,7 @@ infer_networks <- function(
             }
         )
         if (verbose) message("Running JRF on all matrices jointly")
-        return(.run_jrf(norm_list, nCores, jrf_params))
+        return(.run_jrf(norm_list, jrf_params$ntree, jrf_params$mtry))
     }
 
     if (method == "GRNBoost2") {

@@ -18,46 +18,47 @@
     as.vector(y),                             # 2 double vector (flattened)
     as.double(1 / sampsize),                  # 3 weights
     as.integer(c(nrow(x), totsize)),          # 4 xdim: (variables, samples)
-    as.integer(totsize),                      # 5 nsample
-    as.integer(5),                            # 6 nodesize (fixed to 5)
-    as.integer(nrnodes),                      # 7 nrnodes
-    as.integer(ntree),                        # 8 ntree
-    as.integer(mtry),                         # 9 mtry
-    as.integer(c(importance, FALSE, 1)),      #10 importance flags
-    as.integer(ncat),                         #11 ncat
-    as.integer(maxcat),                       #12 maxcat
-    as.integer(0),                            #13 do.trace
-    as.integer(0),                            #14 proximity
-    as.integer(0),                            #15 oob.prox
-    as.integer(0),                            #16 corr.bias
+    as.integer(sampsize),                     # 5 sampsize per class
+    as.integer(totsize),                      # 6 total sample size
+    as.integer(5),                            # 7 nodesize (fixed to 5)
+    as.integer(nrnodes),                      # 8 nrnodes
+    as.integer(ntree),                        # 9 ntree
+    as.integer(mtry),                         #10 mtry
+    as.integer(c(importance, FALSE, 1)),      #11 importance flags
+    as.integer(ncat),                         #12 ncat
+    as.integer(maxcat),                       #13 maxcat
+    as.integer(0),                            #14 do.trace
+    as.integer(0),                            #15 proximity
+    as.integer(0),                            #16 oob.prox
+    as.integer(0),                            #17 corr.bias
     # ---- Output placeholders ----
-    ypred = double(totsize * nclasses),       #17 predictions
-    impout = double(nrow(x) * 2),             #18 variable importance
-    impmat = double(1),                       #19
-    impSD = double(nrow(x)),                  #20
-    prox = double(1),                         #21
-    ndbigtree = integer(ntree),               #22
-    nodestatus = integer(nrnodes * ntree * nclasses), #23
-    leftDaughter = integer(1),                #24
-    rightDaughter = integer(1),               #25
-    nodepred = double(1),                     #26
-    bestvar = integer(1),                     #27
-    xbestsplit = double(1),                   #28
-    mse = double(ntree * nclasses),           #29
-    keep = as.integer(c(1, 0)),               #30 keep forest, keep inbag
-    replace = as.integer(1),                  #31 bootstrap
-    testdat = as.integer(0),                  #32
-    xts = double(1),                          #33
-    ntest = as.integer(1),                    #34
-    yts = as.double(0),                       #35
-    labelts = as.integer(0),                  #36
-    ytestpred = double(1),                    #37
-    proxts = double(1),                       #38
-    msets = double(1),                        #39
-    coef = double(2),                         #40
-    oob.times = integer(totsize),             #41
-    inbag = integer(1),                       #42
-    as.integer(nclasses)                      #43
+    ypred = double(totsize * nclasses),       #18 predictions
+    impout = double(nrow(x) * 2),             #19 variable importance
+    impmat = double(1),                       #20
+    impSD = double(nrow(x)),                  #21
+    prox = double(1),                         #22
+    ndbigtree = integer(ntree),               #23
+    nodestatus = integer(nrnodes * ntree * nclasses), #24
+    leftDaughter = integer(1),                #25
+    rightDaughter = integer(1),               #26
+    nodepred = double(1),                     #27
+    bestvar = integer(1),                     #28
+    xbestsplit = double(1),                   #29
+    mse = double(ntree * nclasses),           #30
+    keep = as.integer(c(1, 0)),               #31 keep forest, keep inbag
+    replace = as.integer(1),                  #32 bootstrap
+    testdat = as.integer(0),                  #33
+    xts = double(1),                          #34
+    ntest = as.integer(1),                    #35
+    yts = as.double(0),                       #36
+    labelts = as.integer(0),                  #37
+    ytestpred = double(1),                    #38
+    proxts = double(1),                       #39
+    msets = double(1),                        #40
+    coef = double(2),                         #41
+    oob.times = integer(totsize),             #42
+    inbag = integer(1),                       #43
+    as.integer(nclasses)                      #44
   )
 
   # Return minimal object (importance matrix)
