@@ -4,12 +4,8 @@
 
 # 1) JRF on a single target (C backend)
 .jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses, importance = TRUE) {
-  # Total samples across classes
-  totsize <- sum(sampsize)
-
-  # Tree nodes calculation (like original randomForest)
-  nrnodes <- 2 * trunc(totsize / max(1, 5 - 4)) + 1
-
+  totsize <- sum(sampsize)  # total observations
+  nrnodes <- 2 * trunc(ncol(x) / max(1, 5 - 4)) + 1  # based on columns (samples)
   # For numeric-only data
   ncat <- rep(1L, nrow(x))   # each variable has 1 category
   maxcat <- 1L
