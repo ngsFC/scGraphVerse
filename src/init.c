@@ -18,7 +18,7 @@ void regRF(
 );
 
 static const R_CMethodDef CEntries[] = {
-    {"regRF", (DL_FUNC) &regRF, 44},  /* matches your R call */
+    {"regRF", (DL_FUNC) &regRF, 43},  /* matches your R call */
     {NULL, NULL, 0}
 };
 
