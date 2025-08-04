@@ -79,6 +79,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    as.double(y), 
                    as.double(ww),
                    as.integer(c(tot, (p-1)*nclasses)),
+                   as.integer(sampsize),
                    as.integer(tot),
                    as.integer(nodesize),
                    as.integer(nrnodes),
