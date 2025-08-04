@@ -614,29 +614,9 @@ Nodes:",
 #' @keywords internal
 #' @noRd
 
-.run_jrf <- function(norm_list, nCores, params = list()) {
-    jrf_args <- modifyList(list(
-        X = norm_list,
-        genes.name = rownames(norm_list[[1]]),
-        ntree = 500,
-        mtry = round(sqrt(nrow(norm_list[[1]]) - 1)),
-        nCores = nCores,
-        verbose = FALSE
-    ), params)
-
-    # Filter out unsupported parameters for JRF_internal
-    supported_params <- c("X", "ntree", "mtry", "genes.name")
-    jrf_args <- jrf_args[names(jrf_args) %in% supported_params]
-
-    # Use internal JRF implementation with BiocParallel
-    rf <- do.call(JRF_internal, jrf_args)
-
-    importance_columns <- grep("importance", names(rf), value = TRUE)
-    lapply(importance_columns, function(col) {
-        df <- rf[, c("gene1", "gene2", col)]
-        names(df)[3] <- col
-        df
-    })
+.run_jrf <- function(count_matrices_list, ntree = 1000, mtry = NULL) {
+  message("[JRF] Running Joint Random Forest for ", length(count_matrices_list), " datasets...")
+  return(.jrf_network(count_matrices_list, ntree = ntree, mtry = mtry))
 }
 
 #' @keywords internal
