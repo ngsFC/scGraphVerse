@@ -15,7 +15,7 @@
   rfout <- .C("regRF",
     # ---- Input arguments ----
     x,                                        # 1 double matrix (flattened)
-    y,                                        # 2 double vector
+    as.vector(y),                             # 2 double vector (flattened)
     as.double(1 / sampsize),                  # 3 weights
     as.integer(c(nrow(x), totsize)),          # 4 xdim: (variables, samples)
     as.integer(totsize),                      # 5 nsample
