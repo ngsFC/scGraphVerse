@@ -67,6 +67,7 @@ NULL
     oob.times = integer(sum(sampsize)),
     inbag = integer(1),
     as.integer(nclasses)
+    
   )
 
   # Build an object similar to randomForest
