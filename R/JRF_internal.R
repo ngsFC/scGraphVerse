@@ -96,7 +96,7 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    impmat = double(1),  # localImp=FALSE
                    impSD = impSD,
                    prox = double(1),    # proximity=FALSE
-                   ndbigtree = integer(ntree),
+                   treeSize = integer(ntree),  # treeSize parameter  
                    nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
                    leftDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
                    rightDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
