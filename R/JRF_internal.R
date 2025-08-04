@@ -60,13 +60,17 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
         }
         
         # Call regRF using .C like the original JRF_onetarget
-        # Prepare parameters for regRF call
-        xdim <- as.integer(c((p-1)*nclasses, tot))
-        ww <- rep(1.0/sampsize, sampsize)  # weights
+        # Prepare parameters for regRF call (fix sizes to prevent crash)
         nodesize <- 5L
         nrnodes <- 2L * trunc(tot/max(1, nodesize - 4)) + 1L
         ncat <- rep(1L, (p-1)*nclasses)  # all continuous
         maxcat <- 1L
+        
+        # Fix weight vector size - should match total samples
+        ww <- rep(1.0, tot)  # Equal weights for all samples
+        
+        # Limit matrix sizes to prevent memory issues
+        nrnodes <- min(nrnodes, 1000L)  # Cap at reasonable size
         
         # Initialize output arrays
         impout <- matrix(0.0, (p-1)*nclasses, 2)
@@ -98,12 +102,12 @@ JRF_internal <- function(X, ntree=500, mtry=NULL, genes.name=NULL) {
                    impSD = impSD,
                    prox = double(1),    # proximity=FALSE
                    treeSize = integer(ntree),  # treeSize parameter  
-                   nodestatus = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                   leftDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                   rightDaughter = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                   nodepred = matrix(double(nrnodes * nt * nclasses), ncol=nt),
-                   bestvar = matrix(integer(nrnodes * nt * nclasses), ncol=nt),
-                   xbestsplit = matrix(double(nrnodes * nt * nclasses), ncol=nt),
+                   nodestatus = integer(nrnodes * nt),  # Simplified allocation
+                   leftDaughter = integer(nrnodes * nt),
+                   rightDaughter = integer(nrnodes * nt), 
+                   nodepred = double(nrnodes * nt),
+                   bestvar = integer(nrnodes * nt),
+                   xbestsplit = double(nrnodes * nt),
                    mse = double(ntree * nclasses),
                    keep = as.integer(c(0, 0)),  # keep.forest=FALSE, keep.inbag=FALSE
                    replace = as.integer(1),  # replace=TRUE
