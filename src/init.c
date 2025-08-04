@@ -2,7 +2,7 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-/* Declare regRF with full argument list */
+/* Full declaration of regRF */
 void regRF(
     double *x, double *y, double *ww,
     int *xdim, int *nsample, int *nodesize, int *nrnodes,
@@ -18,7 +18,7 @@ void regRF(
 );
 
 static const R_CMethodDef CEntries[] = {
-    {"regRF", (DL_FUNC) &regRF, 41},
+    {"regRF", (DL_FUNC) &regRF, 44},  /* matches your R call */
     {NULL, NULL, 0}
 };
 
