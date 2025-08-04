@@ -77,4 +77,4 @@ Suggests:
 VignetteBuilder: knitr
 LazyData: false
 SystemRequirements: Python (>= 3.6) and arboreto Python package for GRNBoost2 method. 
-    Use init_py(install_missing = TRUE) for automated installation.
+    Use init_py(install_missing = TRUE) for automated installation.    
