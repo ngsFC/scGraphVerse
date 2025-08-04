@@ -22,6 +22,11 @@ NULL
 
 # JRF_onetarget (C backend)
 .jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses, importance = TRUE) {
+  # Total number of samples across all classes
+  totsize <- sum(sampsize)
+  nrnodes <- 2 * trunc(totsize / max(1, 5 - 4)) + 1
+  ncat <- rep(1L, nrow(x))   # all predictors numeric
+  maxcat <- 1L
   # This calls the native compiled code via .C like original JRF
   rfout <- .C("regRF",
     # Arguments in correct order:
