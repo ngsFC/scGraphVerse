@@ -2,7 +2,6 @@
 
 useDynLib(scGraphVerse, .registration = TRUE)
 
-export(JRF_internal)
 export(PCzinb)
 export(Poisk2)
 export(community_path)
