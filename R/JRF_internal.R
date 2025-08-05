@@ -101,7 +101,17 @@
                          t.imp[lower.tri(t.imp, diag = FALSE)]) / 2
   }
 
-  out <- cbind(as.character(vec1), as.character(vec2), as.data.frame(imp.final), stringsAsFactors = FALSE)
-  colnames(out) <- c("gene1", "gene2", paste0("importance", seq_len(nclasses)))
-  return(out)
+  # Return list of dataframes - one per condition/matrix
+  result_list <- vector("list", nclasses)
+  
+  for (s in seq_len(nclasses)) {
+    result_list[[s]] <- data.frame(
+      gene1 = as.character(vec1),
+      gene2 = as.character(vec2), 
+      importance = imp.final[, s],
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  return(result_list)
 }
