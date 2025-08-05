@@ -112,7 +112,9 @@
   # Class-specific split criteria (like critvar[s] in original C)
   class_criteria <- numeric(nclasses)
   class_weights <- numeric(nclasses)
-  raw_class_scores <- numeric(nclasses)  # NEW: Store raw class-specific scores
+  raw_class_scores <- numeric(nclasses)
+  
+  total_samples <- sum(sampsize)
   
   for (s in seq_len(nclasses)) {
     # Extract data for this class and variable
@@ -123,9 +125,13 @@
       next
     }
     
-    # Get predictor values for this variable and class
-    predictor_vals <- x[var_row_idx, 1:sampsize[s]]
-    response_vals <- y[s, 1:sampsize[s]]
+    # Get predictor and response values for this class
+    # CRITICAL FIX: Get data from correct column range for each class
+    class_start_col <- if (s == 1) 1 else sum(sampsize[1:(s-1)]) + 1
+    class_end_col <- sum(sampsize[1:s])
+    
+    predictor_vals <- x[var_row_idx, class_start_col:class_end_col]
+    response_vals <- y[s, class_start_col:class_end_col]
     
     # Apply bootstrap sampling
     boot_pred <- predictor_vals[bootstrap_samples[[s]]]
@@ -142,30 +148,29 @@
     boot_resp <- boot_resp[valid_idx]
     valid_classes[s] <- TRUE
     
-    # Calculate split criterion for this class (simplified version of original C logic)
+    # Calculate split criterion for this class
     raw_score <- .calculate_split_criterion(boot_pred, boot_resp)
-    raw_class_scores[s] <- raw_score  # Store raw score
+    raw_class_scores[s] <- raw_score
     class_criteria[s] <- raw_score
-    class_weights[s] <- length(boot_resp) / sum(sampsize)  # Weight by sample size
+    class_weights[s] <- sampsize[s] / total_samples  # Proper class weighting
   }
   
-  # JOINT DECISION: Same variable selected, but keep class-specific scores
-  # This maintains joint variable selection while preserving class differences
+  # JOINT DECISION: Same variable selected, preserve class-specific scores
   valid_idx <- which(valid_classes)
   joint_score <- 0
   if (length(valid_idx) > 0) {
-    # Joint criterion = weighted average (for variable selection)
-    joint_score <- sum(class_weights[valid_idx] * class_criteria[valid_idx]) / length(valid_idx)
+    # Joint criterion for variable selection
+    joint_score <- sum(class_weights[valid_idx] * class_criteria[valid_idx])
     
-    # But keep individual class contributions (for importance calculation)
-    class_contributions[valid_idx] <- class_criteria[valid_idx]  # Use raw scores, not joint
+    # Keep individual class contributions for importance
+    class_contributions[valid_idx] <- class_criteria[valid_idx]
   }
   
   return(list(
     class_contributions = class_contributions,
     valid_classes = valid_classes,
     joint_score = joint_score,
-    raw_class_scores = raw_class_scores,  # NEW: Return raw class-specific scores
+    raw_class_scores = raw_class_scores,
     class_weights = class_weights
   ))
 }
@@ -277,18 +282,18 @@
                          t.imp[lower.tri(t.imp, diag = FALSE)]) / 2
   }
 
-  # Return SINGLE dataframe EXACTLY like original JRF
-  # Format: gene1, gene2, importance1, importance2, ..., importanceN
-  out <- data.frame(
-    gene1 = as.character(vec1),
-    gene2 = as.character(vec2),
-    stringsAsFactors = FALSE
-  )
+  # Return LIST of dataframes (scGraphVerse format)
+  # Each dataframe has columns: gene1, gene2, importance
+  result_list <- vector("list", nclasses)
   
-  # Add importance columns
   for (s in seq_len(nclasses)) {
-    out[[paste0("importance", s)]] <- imp.final[, s]
+    result_list[[s]] <- data.frame(
+      gene1 = as.character(vec1),
+      gene2 = as.character(vec2),
+      importance = imp.final[, s],
+      stringsAsFactors = FALSE
+    )
   }
   
-  return(out)
+  return(result_list)
 }
