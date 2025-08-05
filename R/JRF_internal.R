@@ -34,7 +34,15 @@
   
   # STEP 2: Format output to match original JRF structure
   # Original returns flattened importance: (p_per_class * nclasses) rows, 2 columns
-  flattened_importance <- as.vector(joint_importance)
+  # CRITICAL FIX: Properly flatten by CLASS, not by column
+  
+  # Flatten importance matrix correctly: class1_vars, class2_vars, class3_vars, ...
+  flattened_importance <- numeric(p_per_class * nclasses)
+  for (s in seq_len(nclasses)) {
+    start_idx <- (s - 1) * p_per_class + 1
+    end_idx <- s * p_per_class
+    flattened_importance[start_idx:end_idx] <- joint_importance[, s]
+  }
   
   # Create importance matrix in original format
   imp_matrix <- matrix(0, nrow = length(flattened_importance), ncol = 2)
@@ -69,9 +77,7 @@
   # Available variables to consider (like mind[] in original C)
   available_vars <- 1:p_per_class
   
-  # For simplification, we'll do one level of splits to demonstrate joint selection
-  # In practice, this would be recursive tree building
-  
+  # Build joint tree: for each split, same variable chosen but class-specific importance
   for (split_iter in seq_len(min(mtry, p_per_class))) {
     # STEP 1: Randomly select a variable to evaluate (like original)
     if (length(available_vars) == 0) break
@@ -84,11 +90,13 @@
     joint_criterion <- .evaluate_joint_split_criterion(x, y, var_idx, sampsize, 
                                                       nclasses, bootstrap_samples, p_per_class)
     
-    # STEP 3: Update importance based on joint criterion
-    # Distribute the joint importance to all classes that contributed
+    # STEP 3: Update importance with CLASS-SPECIFIC values
+    # Each class gets its OWN importance contribution (not shared)
     for (s in seq_len(nclasses)) {
       if (joint_criterion$valid_classes[s]) {
-        tree_importance[var_idx, s] <- tree_importance[var_idx, s] + joint_criterion$class_contributions[s]
+        # CRITICAL: Use class-specific contribution, not joint score
+        tree_importance[var_idx, s] <- tree_importance[var_idx, s] + 
+          joint_criterion$raw_class_scores[s] * joint_criterion$class_weights[s]
       }
     }
   }
@@ -104,6 +112,7 @@
   # Class-specific split criteria (like critvar[s] in original C)
   class_criteria <- numeric(nclasses)
   class_weights <- numeric(nclasses)
+  raw_class_scores <- numeric(nclasses)  # NEW: Store raw class-specific scores
   
   for (s in seq_len(nclasses)) {
     # Extract data for this class and variable
@@ -134,25 +143,30 @@
     valid_classes[s] <- TRUE
     
     # Calculate split criterion for this class (simplified version of original C logic)
-    class_criteria[s] <- .calculate_split_criterion(boot_pred, boot_resp)
+    raw_score <- .calculate_split_criterion(boot_pred, boot_resp)
+    raw_class_scores[s] <- raw_score  # Store raw score
+    class_criteria[s] <- raw_score
     class_weights[s] <- length(boot_resp) / sum(sampsize)  # Weight by sample size
   }
   
-  # JOINT DECISION: Weighted sum across classes (like original sumcritvar)
-  # This is the KEY joint modeling step
+  # JOINT DECISION: Same variable selected, but keep class-specific scores
+  # This maintains joint variable selection while preserving class differences
   valid_idx <- which(valid_classes)
+  joint_score <- 0
   if (length(valid_idx) > 0) {
-    # Joint criterion = weighted average across valid classes
+    # Joint criterion = weighted average (for variable selection)
     joint_score <- sum(class_weights[valid_idx] * class_criteria[valid_idx]) / length(valid_idx)
     
-    # Distribute joint score back to contributing classes
-    class_contributions[valid_idx] <- joint_score * class_weights[valid_idx]
+    # But keep individual class contributions (for importance calculation)
+    class_contributions[valid_idx] <- class_criteria[valid_idx]  # Use raw scores, not joint
   }
   
   return(list(
     class_contributions = class_contributions,
     valid_classes = valid_classes,
-    joint_score = if (length(valid_idx) > 0) joint_score else 0
+    joint_score = joint_score,
+    raw_class_scores = raw_class_scores,  # NEW: Return raw class-specific scores
+    class_weights = class_weights
   ))
 }
 
