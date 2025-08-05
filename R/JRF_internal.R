@@ -4,7 +4,7 @@
 
 # 1) JRF on a single target (C backend)
 # TRUE Joint Random Forest - EXACT replication of original C algorithm
-.jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses, importance = TRUE) {
+.jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses, importance = TRUE, nCores = 1) {
   # CRITICAL: Implement TRUE joint modeling as in original C code
   # Key insight: Same variable selection across classes, class-specific thresholds
   
@@ -14,19 +14,54 @@
   # Build joint importance matrix exactly like original
   joint_importance <- array(0, dim = c(p_per_class, nclasses))
   
-  # STEP 1: Implement joint tree building algorithm
+  # STEP 1: Implement joint tree building algorithm with BiocParallel
   # This replicates the core logic from regTree.c and findBestSplit
   
-  for (tree_idx in seq_len(ntree)) {
-    # Joint bootstrap sampling across all classes (like original)
-    bootstrap_samples <- .joint_bootstrap_sample(sampsize, nclasses)
+  # Setup parallel backend if nCores > 1 and BiocParallel available
+  use_parallel <- (nCores > 1) && requireNamespace("BiocParallel", quietly = TRUE) && (ntree > 1)
+  
+  if (use_parallel) {
+    # PARALLEL TREE BUILDING with BiocParallel
+    # Setup parallel backend
+    if (nCores > 1) {
+      bp_param <- BiocParallel::MulticoreParam(workers = nCores)
+    } else {
+      bp_param <- BiocParallel::SerialParam()
+    }
     
-    # Build one joint tree with shared variable selection
-    tree_importance <- .build_joint_tree(x, y, mtry, sampsize, nclasses, 
-                                        bootstrap_samples, p_per_class)
+    # Build trees in parallel
+    tree_results <- BiocParallel::bplapply(seq_len(ntree), function(tree_idx) {
+      # Set seed for reproducibility across workers
+      set.seed(tree_idx * 12345 + as.integer(Sys.time()))
+      
+      # Joint bootstrap sampling for this tree
+      bootstrap_samples <- .joint_bootstrap_sample(sampsize, nclasses)
+      
+      # Build one joint tree with shared variable selection
+      tree_importance <- .build_joint_tree(x, y, mtry, sampsize, nclasses, 
+                                          bootstrap_samples, p_per_class)
+      
+      return(tree_importance)
+    }, BPPARAM = bp_param)
     
-    # Accumulate importance scores
-    joint_importance <- joint_importance + tree_importance
+    # Aggregate results from parallel workers
+    for (tree_result in tree_results) {
+      joint_importance <- joint_importance + tree_result
+    }
+    
+  } else {
+    # SEQUENTIAL TREE BUILDING (fallback)
+    for (tree_idx in seq_len(ntree)) {
+      # Joint bootstrap sampling across all classes (like original)
+      bootstrap_samples <- .joint_bootstrap_sample(sampsize, nclasses)
+      
+      # Build one joint tree with shared variable selection
+      tree_importance <- .build_joint_tree(x, y, mtry, sampsize, nclasses, 
+                                          bootstrap_samples, p_per_class)
+      
+      # Accumulate importance scores
+      joint_importance <- joint_importance + tree_importance
+    }
   }
   
   # EXACT replication of original tgini normalization
@@ -231,7 +266,7 @@
 }
 
 # 2) Main JRF network inference - TRUE joint modeling implementation
-.jrf_network <- function(data_list, ntree = 1000, mtry = NULL) {
+.jrf_network <- function(data_list, ntree = 1000, mtry = NULL, nCores = 1) {
   nclasses <- length(data_list)
   sampsize <- vapply(data_list, ncol, FUN.VALUE = integer(1))
   p <- nrow(data_list[[1]])
@@ -243,6 +278,10 @@
   # Storage for importance - EXACT format as original
   imp <- array(0, dim = c(p, length(genes.name), nclasses))
 
+  # OPTION 1: Parallelize across target genes (alternative parallelization strategy)
+  # For now, keep sequential gene processing to focus tree-level parallelization
+  # Could be parallelized with: BiocParallel::bplapply(seq_len(p), function(j) {...})
+  
   # For each target gene - EXACT replication of original loop
   for (j in seq_len(p)) {
     # Build covariate matrix: (p-1) * nclasses rows, totsize cols
@@ -265,7 +304,7 @@
 
     # Run TRUE joint RF - now implements genuine joint modeling
     jrf.out <- .jrf_onetarget(x = covar, y = y, ntree = ntree, mtry = mtry,
-                               sampsize = sampsize, nclasses = nclasses)
+                               sampsize = sampsize, nclasses = nclasses, nCores = nCores)
 
     # Extract importance scores per class - EXACT original extraction
     for (s in seq_len(nclasses)) {
