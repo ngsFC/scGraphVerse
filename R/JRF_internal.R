@@ -2,22 +2,13 @@
 # Internal helper for JRF
 # =========================
 
-# 1) JRF on a single target (C backend)
-# TRUE Joint Random Forest - EXACT replication of original C algorithm
 .jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses, importance = TRUE, nCores = 1) {
-  # CRITICAL: Implement TRUE joint modeling as in original C code
-  # Key insight: Same variable selection across classes, class-specific thresholds
   
   totsize <- sum(sampsize)
   p_per_class <- nrow(x) / nclasses
   
-  # Build joint importance matrix exactly like original
   joint_importance <- array(0, dim = c(p_per_class, nclasses))
   
-  # STEP 1: Implement joint tree building algorithm with BiocParallel
-  # This replicates the core logic from regTree.c and findBestSplit
-  
-  # Setup parallel backend if nCores > 1 and BiocParallel available
   use_parallel <- (nCores > 1) && requireNamespace("BiocParallel", quietly = TRUE) && (ntree > 1)
   
   if (use_parallel) {
@@ -334,8 +325,6 @@
                          t.imp[lower.tri(t.imp, diag = FALSE)]) / 2
   }
 
-  # Return LIST of dataframes (scGraphVerse format)
-  # Each dataframe has columns: gene1, gene2, importance
   result_list <- vector("list", nclasses)
   
   for (s in seq_len(nclasses)) {

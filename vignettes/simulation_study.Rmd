@@ -206,8 +206,8 @@ regulatory edges.
 ```{r genie3}
 networks_joint <- infer_networks(
     count_matrices_list = count_matrices,
-    method = "GENIE3",
-    nCores = 1
+    method = "JRF",
+    nCores = 15
 )
 # Weighted adjacency
 wadj_list <- generate_adjacency(networks_joint)
@@ -240,9 +240,9 @@ binary_listj <- cutoff_adjacency(
     count_matrices = count_matrices,
     weighted_adjm_list = swadj_list,
     n = 2,
-    method = "GENIE3",
+    method = "JRF",
     quantile_threshold = 0.95,
-    nCores = 1,
+    nCores = 15,
     debug = TRUE
 )
 

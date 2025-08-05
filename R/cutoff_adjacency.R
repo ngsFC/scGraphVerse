@@ -99,44 +99,73 @@ cutoff_adjacency <- function(
 
     count_matrices <- .convert_counts_list(count_matrices)
 
-    job_list <- expand.grid(
-        matrix_idx  = seq_along(count_matrices),
-        shuffle_idx = seq_len(n)
-    )
-    jobs <- lapply(
-        seq_len(nrow(job_list)),
-        function(i) {
-            list(
-                matrix_idx  = job_list$matrix_idx[i],
-                shuffle_idx = job_list$shuffle_idx[i]
-            )
+    if (method == "JRF") {
+        # JRF-SPECIFIC LOGIC: Joint null distribution approach
+        if (debug) {
+            message("[JRF] Using joint null distribution approach for ", n, " shuffle replicates")
         }
-    )
-
-    param_outer <- if (method == "JRF") {
-        BiocParallel::SerialParam()
-    } else {
-        BiocParallel::MulticoreParam(workers = nCores)
-    }
-
-    results <- BiocParallel::bplapply(
-        jobs,
-        function(job) {
-            mat_idx <- job$matrix_idx
-            mat <- count_matrices[[mat_idx]]
-            q_value <- .run_network_on_shuffled(
-                mat,
+        
+        # For JRF, we need to process all matrices together for each shuffle
+        results <- lapply(seq_len(n), function(shuffle_idx) {
+            if (debug) {
+                message("[JRF] Processing joint shuffle replicate ", shuffle_idx, "/", n)
+            }
+            
+            # Get condition-specific cutoffs from joint null distribution
+            cutoffs_vector <- .run_jrf_on_shuffled_joint(
+                count_matrices,
                 method,
-                grnboost_modules,
                 weight_function,
                 quantile_threshold
             )
-            list(matrix_idx = mat_idx, q_value = q_value)
-        },
-        BPPARAM = param_outer
-    )
+            
+            # Return cutoffs for each condition
+            lapply(seq_along(cutoffs_vector), function(cond_idx) {
+                list(matrix_idx = cond_idx, q_value = cutoffs_vector[cond_idx])
+            })
+        })
+        
+        # Flatten the nested results
+        results <- unlist(results, recursive = FALSE)
+        cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
+        
+    } else {
+        # ORIGINAL LOGIC: Individual matrices (GENIE3/GRNBoost2)
+        job_list <- expand.grid(
+            matrix_idx  = seq_along(count_matrices),
+            shuffle_idx = seq_len(n)
+        )
+        jobs <- lapply(
+            seq_len(nrow(job_list)),
+            function(i) {
+                list(
+                    matrix_idx  = job_list$matrix_idx[i],
+                    shuffle_idx = job_list$shuffle_idx[i]
+                )
+            }
+        )
 
-    cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
+        param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+
+        results <- BiocParallel::bplapply(
+            jobs,
+            function(job) {
+                mat_idx <- job$matrix_idx
+                mat <- count_matrices[[mat_idx]]
+                q_value <- .run_network_on_shuffled(
+                    mat,
+                    method,
+                    grnboost_modules,
+                    weight_function,
+                    quantile_threshold
+                )
+                list(matrix_idx = mat_idx, q_value = q_value)
+            },
+            BPPARAM = param_outer
+        )
+        
+        cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
+    }
     binary_list <- .binarize_adjacency(
         weighted_adjm_list,
         cutoffs,

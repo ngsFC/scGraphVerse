@@ -318,6 +318,35 @@ Nodes:",
     symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
     quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
 }
+
+# JRF-specific function for joint null distribution
+.run_jrf_on_shuffled_joint <- function(
+    matrices_list,
+    method,
+    weight_function,
+    quantile_threshold) {
+    
+    # Shuffle ALL matrices together (joint null distribution)
+    shuffled_list <- lapply(matrices_list, .shuffle_matrix_rows)
+    
+    # Run joint inference on shuffled data
+    joint_networks <- infer_networks(shuffled_list, method = method)
+    
+    # Generate adjacency matrices for each condition
+    adjm_list <- generate_adjacency(joint_networks)
+    
+    # Symmetrize each condition's adjacency matrix
+    symm_list <- lapply(adjm_list, function(adjm) {
+        symmetrize(list(adjm), weight_function = weight_function)[[1]]
+    })
+    
+    # Calculate condition-specific cutoffs from joint null distribution
+    cutoffs <- sapply(symm_list, function(symm_adjm) {
+        quantile(symm_adjm[upper.tri(symm_adjm)], quantile_threshold, names = FALSE)
+    })
+    
+    return(cutoffs)  # Vector of cutoffs, one per condition
+}
 #' @keywords internal
 #' @noRd
 
