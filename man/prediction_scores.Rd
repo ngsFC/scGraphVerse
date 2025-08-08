@@ -27,7 +27,9 @@ available.
 \examples{
 set.seed(123)
 adj <- matrix(c(0, 1, 1, 1, 0, 1, 1, 1, 0), nrow = 3)
-mat <- simdata(n = 100, p = 3, B = adj, mu = 5, mu_noise = 1)
+mat <- zinb_simdata(n = 100, p = 3, B = adj, 
+                    mu_range = list(c(1, 5)), mu_noise = 1, 
+                    theta = 1, pi = 0.1)[[1]]
 res <- PCzinb(mat, method = "poi", alpha = 0.05)
 prediction_scores(adj, res, type = "UG")
 }

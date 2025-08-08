@@ -25,11 +25,3 @@ A vector of length n with the optimized dispersion parameter values.
 parameters: the mean value and the dispersion of the negative binomial
 distribution, and the probability of the zero component.
 }
-\examples{
-n <- 10
-mu <- seq(10, 50, length.out = n)
-logitPi <- rnorm(1)
-zeta <- rnorm(1)
-Y <- rnbinom(n = n, size = exp(zeta), mu = mu)
-learn2count:::zinbOptimizeDispersion(mu, logitPi, Y, n)
-}

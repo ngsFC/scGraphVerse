@@ -102,13 +102,13 @@ cutoff_adjacency <- function(
     if (method == "JRF") {
         # JRF-SPECIFIC LOGIC: Joint null distribution approach
         if (debug) {
-            message("[JRF] Using joint null distribution approach for ", n, " shuffle replicates")
+            message("[JRF] for ", n, " shuffle replicates")
         }
         
         # For JRF, we need to process all matrices together for each shuffle
         results <- lapply(seq_len(n), function(shuffle_idx) {
             if (debug) {
-                message("[JRF] Processing joint shuffle replicate ", shuffle_idx, "/", n)
+                message("[JRF] Processing joint shuffle", shuffle_idx, "/", n)
             }
             
             # Get condition-specific cutoffs from joint null distribution

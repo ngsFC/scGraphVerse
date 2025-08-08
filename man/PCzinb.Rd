@@ -48,7 +48,7 @@ is a SummarizedExperiment, a SummarizedExperiment object with the adjacency
 matrix as metadata.
 }
 \description{
-This file contains all generic function definitions for the scGraphVerse package.
+This file contains all generic function definitions for the scGraphVerse.
 These must be defined before any setMethod calls.
 }
 \examples{

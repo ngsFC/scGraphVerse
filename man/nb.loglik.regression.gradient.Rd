@@ -29,8 +29,8 @@ regression model given a vector of counts.
 }
 \details{
 The regression model is described in
-\code{\code{nb.loglik.regression}}.
+\code{\link{nb.loglik.regression}}.
 }
 \seealso{
-\code{\code{nb.loglik.regression}}
+\code{\link{nb.loglik.regression}}
 }

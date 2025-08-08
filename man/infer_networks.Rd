@@ -71,6 +71,7 @@ parallelization. Defaults to the number of workers in the current
 (default: sqrt(p))
 \item \code{nodesize}: Minimum node size (default: 5)
 \item \code{maxnodes}: Maximum number of nodes (default: NULL)
+\item \code{nCores}: Number of cores for parallel (default: 1)
 }}
 
 \item{pczinb_params}{List of parameters for PCzinb method:

@@ -60,10 +60,12 @@ Imports:
     cli,
     glmnet,
     INetTool,
-    randomForest,
     MASS,
     utils,
-    stats
+    stats,
+    S4Vectors,
+    graph,
+    mpath
 Suggests:
     testthat (>= 3.0.0),
     knitr,

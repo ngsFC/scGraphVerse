@@ -173,6 +173,7 @@ setMethod(
 #' @param maxcard the uper bound of the cardinality of the conditional sets K
 #' @param extend if TRUE it considers the union of the tests, otherwise it
 #'   considers the intersection.
+#' @param nCores number of cores to use for parallel processing. Default is 1.
 #' @return the estimated adjacency matrix of the graph.
 #' @export
 #' @importFrom MASS glm.nb negative.binomial
@@ -273,6 +274,7 @@ nb.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
 #' @param maxcard the uper bound of the cardinality of the conditional sets K
 #' @param extend if TRUE it considers the union of the tests, otherwise it
 #'   considers the intersection.
+#' @param nCores number of cores to use for parallel processing. Default is 1.
 #' @return the estimated adjacency matrix of the graph.
 #' @export
 #' @importFrom stats coefficients
@@ -408,27 +410,6 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
     }
 
 
-    ###### second auxiliary function to find new candidates for parent sets
-    findmax <- function(i, parents) {
-        gmax <- f(i, parents)
-        z <- integer()
-        if (pos == 1) {
-            return(z)
-        } else {
-            candidates <- setdiff(order[seq_len(pos - 1)], parents)
-            for (j in seq_along(candidates)) {
-                pa <- c(parents, candidates[j])
-                gnew <- f(i, pa)
-                if (gnew > gmax) {
-                    gmax <- gnew
-                    z <- candidates[j]
-                }
-            }
-            return(z)
-        }
-    }
-
-
     ### estimate the adjacency matrix
     Adj <- matrix(0, nrow = p, ncol = p)
     colnames(Adj) <- rownames(Adj) <- nodes
@@ -441,6 +422,26 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
         gold <- f(i, c())
         OK <- TRUE
         counter <- 0
+
+        ###### second auxiliary function to find new candidates for parent sets
+        findmax <- function(i, parents) {
+            gmax <- f(i, parents)
+            z <- integer()
+            if (pos == 1) {
+                return(z)
+            } else {
+                candidates <- setdiff(order[seq_len(pos - 1)], parents)
+                for (j in seq_along(candidates)) {
+                    pa <- c(parents, candidates[j])
+                    gnew <- f(i, pa)
+                    if (gnew > gmax) {
+                        gmax <- gnew
+                        z <- candidates[j]
+                    }
+                }
+                return(z)
+            }
+        }
 
         while ((OK) & (length(pa_list[[i]]) < min(maxcard, pos - 1))) {
             counter <- counter + 1
@@ -474,13 +475,6 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
 #' @param logitPi the vector of logit of the probabilities of the zero component
 #' @param n length of the returned vector
 #' @return A vector of length n with the optimized dispersion parameter values.
-#' @examples
-#' n <- 10
-#' mu <- seq(10, 50, length.out = n)
-#' logitPi <- rnorm(1)
-#' zeta <- rnorm(1)
-#' Y <- rnbinom(n = n, size = exp(zeta), mu = mu)
-#' learn2count:::zinbOptimizeDispersion(mu, logitPi, Y, n)
 zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
     g <- optimize(
         f = zinb.loglik.dispersion, Y = Y, mu = mu,
@@ -996,7 +990,9 @@ nb.optim_funnoT <- function(beta_mu, Y, X_mu, zeta, n) {
 #' @examples
 #' set.seed(123)
 #' adj <- matrix(c(0, 1, 1, 1, 0, 1, 1, 1, 0), nrow = 3)
-#' mat <- simdata(n = 100, p = 3, B = adj, mu = 5, mu_noise = 1)
+#' mat <- zinb_simdata(n = 100, p = 3, B = adj, 
+#'                     mu_range = list(c(1, 5)), mu_noise = 1, 
+#'                     theta = 1, pi = 0.1)[[1]]
 #' res <- PCzinb(mat, method = "poi", alpha = 0.05)
 #' prediction_scores(adj, res, type = "UG")
 prediction_scores <- function(trueG, estimatedG, type) {

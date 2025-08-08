@@ -894,7 +894,7 @@ wlasso_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
         if (is.nan(obj) | is.infinite(obj)) {
             obj <- obj_prev
         }
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta
@@ -971,7 +971,7 @@ irls_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
         if (is.nan(obj) | is.infinite(obj)) {
             obj <- obj_prev
         }
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta
@@ -1023,7 +1023,7 @@ pglm_p_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
         if (is.nan(obj) | is.infinite(obj)) {
             obj <- obj_prev
         }
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta
@@ -1258,7 +1258,7 @@ wlasso_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
         if (is.nan(obj) | is.infinite(obj)) {
             obj <- obj_prev
         }
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta
@@ -1341,7 +1341,7 @@ irls_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
         if (is.nan(obj) | is.infinite(obj)) {
             obj <- obj_prev
         }
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta
@@ -1395,7 +1395,7 @@ pglm_nb_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
             obj <- obj_prev
         }
 
-        if (abs((obj_prev - obj) / obj_prev) <- thresh) {
+        if (abs((obj_prev - obj) / obj_prev) < thresh) {
             bvec <- bvec
             mu <- mu
             eta <- eta

@@ -15,6 +15,8 @@ pois.wald(X, maxcard, alpha, extend, nCores = 1)
 
 \item{extend}{if TRUE it considers the union of the tests, otherwise it
 considers the intersection.}
+
+\item{nCores}{the number of cores to use for parallel processing. Default is 1.}
 }
 \value{
 the estimated adjacency matrix of the graph.
