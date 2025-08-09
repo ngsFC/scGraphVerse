@@ -453,13 +453,6 @@ cal_ebic_inflation <- function(results, X, gamval = 1) {
     return(list(bic = bic, ebic = ebic, risk = risk, df = df))
 }
 
-# Unused cal_ebic function removed
-
-# Unused get_A function removed
-
-# Unused utility functions removed: to_upper, vec2tri, tri2vec
-
-
 p_bvec_obj <- function(y, weights, bvec, mu, lambda, penalty.factor) {
     penalty <- lambda * sum(abs(penalty.factor * bvec[-1]))
     pnl <- -sum(weights * dP(y = y, mu = mu, log = FALSE) + 1e-10)
@@ -517,9 +510,6 @@ thresholding_mat <- function(mat, thres = 0.1) {
     return(Bmat)
 }
 
-# Unused cross-validation functions removed: f_K_fold, split_to_subset
-
-
 hat_net <- function(coef_mat, thresh = 1e-6, type = c("AND", "OR")) {
     type <- match.arg(type)
 
@@ -551,21 +541,6 @@ theta_ml <- function(y, mu, weights = NULL) {
     theta <- ifelse(fit$maximum > 1e+3, 1e+8, fit$maximum)
     return(theta)
 }
-
-
-# Unused theta_ml2 function removed
-
-
-# Unused theta_mm function removed
-
-# Unused theta estimation functions removed
-
-# Unused pNBII function removed
-
-# Unused qNBII function removed
-
-
-# Unused rNBII function removed
 
 
 sigma_ml <- function(y, mu, weights = NULL) {
@@ -1216,7 +1191,6 @@ zilgm_poisson <- function(y, x, lambda, weights = NULL,
     return(out)
 }
 
-# Duplicate function removed - keeping only first definition
 
 # NB regression with l1 regularization for x with 1 columns
 # glmreg_fit = mpath:::glmreg_fit
@@ -1643,9 +1617,6 @@ zilgm_negbin <- function(y, x, lambda, weights = NULL,
     return(out)
 }
 
-# Duplicate function removed - keeping only first definition
-
-
 zilgm_negbin2 <- function(y, x, lambda, weights = NULL,
     update_type = c("IRLS", "MM"), penalty.factor = NULL,
     tol = 1e-6, EM_tol = 1e-5, EM_iter = 3e+2,
@@ -1800,5 +1771,3 @@ zilgm_negbin2 <- function(y, x, lambda, weights = NULL,
     class(out) <- "zilgm"
     return(out)
 }
-
-# Duplicate function removed - keeping only first definition

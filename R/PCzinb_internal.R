@@ -500,10 +500,6 @@ zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
     zeta
 }
 
-# Copied on 5/14/2019 from log1pexp of the copula package (v. 0.999.19) by
-# Marius Hofert, Ivan Kojadinovic, Martin Maechler, Jun Yan,
-# Johanna G. Neslehova
-# Copied here to avoid dependence on gsl which causes troubles.
 log1pexp <- function(x, c0 = -37, c1 = 18, c2 = 33.3) {
     if (has.na <- any(ina <- is.na(x))) {
         y <- x
@@ -526,9 +522,6 @@ log1pexp <- function(x, c0 = -37, c1 = 18, c2 = 33.3) {
         r
     }
 }
-
-
-
 
 #' Parse ZINB regression model
 #'
@@ -640,7 +633,6 @@ zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
         logPnb <- dnbinom(0, size = theta, mu = mu[Y0], log = TRUE)
         grad <- grad + sum(theta * (zeta - log(mu[Y0] + theta) + 1 -
             theta / (mu[Y0] + theta)) / (1 + exp(logitPi[Y0] - logPnb)))
-        # *exp(- copula::log1pexp( -logPnb + logitPi[Y0])))
     }
 
     grad
@@ -659,7 +651,6 @@ zinb.loglik.regression <- function(alpha, Y,
 
     # Call the log likelihood function
     z <- zinb.loglik(Y, exp(r$logMu), exp(C.theta), r$logitPi)
-    # return z
     z
 }
 
@@ -969,50 +960,6 @@ nb.optim_funnoT <- function(beta_mu, Y, X_mu, zeta, n) {
         control = list(fnscale = -1, trace = 0),
         method = "BFGS"
     )$par
-}
-
-#' Prediction scores for estimated graph
-#'
-#' This function returns a set of metrics useful to evaluate the goodness of the
-#' estimation of the graph on simulated data, or whenever a true graph is
-#' available.
-#'
-#' @return A vector with the number of true positives (TP), the number of false
-#'   positives (FP), the number of false negatives (FN), the positive predictive
-#'   value (PPV), the sensitivity (Se), and the F1 score (F1).
-#'
-#' @param trueG the adjacency matrix of the true graph.
-#' @param estimatedG the adjacency matrix of the estimated graph.
-#' @param type the type of the true graph, could be "UG" undirected graph, 
-#'   or "DAG" directed acyclic graph.
-#'
-#' @export
-#' @examples
-#' set.seed(123)
-#' adj <- matrix(c(0, 1, 1, 1, 0, 1, 1, 1, 0), nrow = 3)
-#' mat <- zinb_simdata(n = 100, p = 3, B = adj, 
-#'                     mu_range = list(c(1, 5)), mu_noise = 1, 
-#'                     theta = 1, pi = 0.1)[[1]]
-#' res <- PCzinb(mat, method = "poi", alpha = 0.05)
-#' prediction_scores(adj, res, type = "UG")
-prediction_scores <- function(trueG, estimatedG, type) {
-    if (type == "UG") {
-        TP <- sum(trueG * estimatedG) / 2
-        FP <- sum((estimatedG - trueG) == 1) / 2
-        FN <- sum((estimatedG - trueG) == -1) / 2
-        PPV <- TP / (TP + FP)
-        Se <- TP / (TP + FN)
-        F1 <- 2 * (PPV * Se) / (PPV + Se)
-        return(c(TP = TP, FP = FP, FN = FN, PPV = PPV, Se = Se, F1 = F1))
-    } else {
-        TP <- sum(trueG * estimatedG)
-        FP <- sum((estimatedG - trueG) == 1)
-        FN <- sum((estimatedG - trueG) == -1)
-        PPV <- TP / (TP + FP)
-        Se <- TP / (TP + FN)
-        F1 <- 2 * (PPV * Se) / (PPV + Se)
-        return(c(TP = TP, FP = FP, FN = FN, PPV = PPV, Se = Se, F1 = F1))
-    }
 }
 
 #' Structure learning with zero-inflated negative binomial model (mean only)

@@ -24,15 +24,14 @@
         # Build trees in parallel
         tree_results <- BiocParallel::bplapply(seq_len(ntree),
             function(tree_idx) {
-                # Note: Seed management handled by BiocParallel RNG streams
-
+                
                 # Joint bootstrap sampling for this tree
                 bootstrap_samples <- .joint_bootstrap_sample(sampsize, nclasses)
 
-                # Build one joint tree with shared variable selection
+                # Build one joint tree with full recursive splitting
                 tree_importance <- .build_joint_tree(
                     x, y, mtry, sampsize, nclasses,
-                    bootstrap_samples, p_per_class
+                    bootstrap_samples, p_per_class, nodesize = 5
                 )
 
                 return(tree_importance)
@@ -45,15 +44,14 @@
             joint_importance <- joint_importance + tree_result
         }
     } else {
-        # SEQUENTIAL TREE BUILDING (fallback)
         for (tree_idx in seq_len(ntree)) {
-            # Joint bootstrap sampling across all classes (like original)
+            # Joint bootstrap sampling across all classes
             bootstrap_samples <- .joint_bootstrap_sample(sampsize, nclasses)
 
-            # Build one joint tree with shared variable selection
+            # Build one joint tree with full recursive splitting
             tree_importance <- .build_joint_tree(
                 x, y, mtry, sampsize, nclasses,
-                bootstrap_samples, p_per_class
+                bootstrap_samples, p_per_class, nodesize = 5
             )
 
             # Accumulate importance scores
@@ -61,15 +59,9 @@
         }
     }
 
-    # EXACT replication of original tgini normalization
-    # Original C: tgini[mdim * s + m] /= *nTree;
     joint_importance <- joint_importance / ntree
 
-    # STEP 2: EXACT format to match original JRF C output structure
-    # Original C stores tgini as: tgini[(msplit-1) + s*mdim]
-    # This creates: [class1_vars, class2_vars, class3_vars, ...]
-
-    # Flatten importance matrix EXACTLY like original C tgini array
+    # Flatten importance matrix 
     flattened_importance <- numeric(p_per_class * nclasses)
     for (s in seq_len(nclasses)) {
         start_idx <- (s - 1) * p_per_class + 1
@@ -86,14 +78,12 @@
     return(out)
 }
 
-# EXACT replication of original C bootstrap sampling
+# bootstrap sampling
 .joint_bootstrap_sample <- function(sampsize, nclasses) {
     bootstrap_idx <- vector("list", nclasses)
 
-    # Replicate original C bootstrap logic from regRF.c lines 176-205
+    # bootstrap logic
     for (s in seq_len(nclasses)) {
-        # Original C: k = (int) (xrand[n] * sampsize[s]);
-        # This is sampling WITH replacement (replace=TRUE)
         bootstrap_idx[[s]] <- sample(seq_len(sampsize[s]), sampsize[s],
             replace = TRUE
         )
@@ -102,51 +92,129 @@
     return(bootstrap_idx)
 }
 
-# Build single joint tree with shared variable selection
+# Build single joint tree with full recursive splitting (matching original JRF)
 .build_joint_tree <- function(x, y, mtry, sampsize, nclasses,
-                        bootstrap_samples, p_per_class) {
+                        bootstrap_samples, p_per_class, nodesize = 5, maxnodes = NULL) {
     # Initialize importance accumulator
     tree_importance <- array(0, dim = c(p_per_class, nclasses))
-
-    # CORE JOINT ALGORITHM: Replicate findBestSplit logic
-    # For each potential split, evaluate jointly across all classes
-
-    # EXACT replication of original C variable selection strategy
-    # Original C code: mind[i] array with swapping logic
-    mind <- seq_len(p_per_class) # Equivalent to mind[] array in C
-    last <- p_per_class - 1 # Equivalent to last in C
-
-    # Build joint tree: EXACT replication of original mtry loop
-    for (split_iter in seq_len(min(mtry, p_per_class))) {
-        # STEP 1: EXACT replication of original C variable selection
-        # Original C: j = (int) (unif_rand() * (last+1)); kv = mind[j];
-        if (last < 0) break
-
-        j <- sample(0:last, 1) # 0-based indexing like C
-        var_idx <- mind[j + 1] # Convert to 1-based R indexing
-
-        # EXACT replication of swapping logic
-        # Original C: swapInt(mind[j], mind[last]); last--;
-        mind[j + 1] <- mind[last + 1]
-        last <- last - 1
-
-        # STEP 2: Joint evaluation across ALL classes for this variable
-        # This is the KEY difference: same variable, joint evaluation
-        joint_criterion <- .evaluate_joint_split_criterion(
-            x, y, var_idx, sampsize,
-            nclasses, bootstrap_samples, p_per_class
+    
+    total_samples <- sum(sampsize)
+    
+    # Calculate maximum nodes if not specified (matching original logic)
+    if (is.null(maxnodes)) {
+        maxnodes <- 2 * floor(total_samples / max(1, nodesize - 4)) + 1
+    } else {
+        maxnodes <- 2 * maxnodes - 1  # Convert terminal nodes to total nodes
+    }
+    
+    # Initialize node tracking structures
+    node_queue <- list()
+    node_counter <- 1
+    
+    # Create root node for each class
+    root_nodes <- list()
+    for (s in seq_len(nclasses)) {
+        root_nodes[[s]] <- list(
+            node_id = 1,
+            class_id = s,
+            start_idx = 1,
+            end_idx = sampsize[s],
+            sample_indices = bootstrap_samples[[s]],
+            status = "to_split",
+            depth = 0
         )
-
-        # STEP 3: EXACT replication of importance accumulation
-        # Original C: tgini[(msplit - 1) + s * mdim] += decsplit[s];
+    }
+    
+    # Add root nodes to queue
+    node_queue[[1]] <- root_nodes
+    
+    # Main tree building loop
+    while (length(node_queue) > 0 && node_counter < maxnodes) {
+        current_node_set <- node_queue[[1]]
+        node_queue <- node_queue[-1]
+        
+        # Check if any nodes in this set need splitting
+        nodes_to_split <- sapply(current_node_set, function(node) node$status == "to_split")
+        if (!any(nodes_to_split)) next
+        
+        # Find best variable across all classes for joint splitting
+        best_split <- .find_best_joint_variable(x, y, current_node_set, mtry, 
+                                                sampsize, nclasses, p_per_class, 
+                                                nodesize)
+        
+        if (is.null(best_split) || best_split$improvement <= 0) {
+            # Mark all nodes as terminal
+            for (s in seq_len(nclasses)) {
+                if (current_node_set[[s]]$status == "to_split") {
+                    current_node_set[[s]]$status <- "terminal"
+                }
+            }
+            next
+        }
+        
+        # Accumulate variable importance
         for (s in seq_len(nclasses)) {
-            if (joint_criterion$valid_classes[s]) {
-                tree_importance[var_idx, s] <- tree_importance[var_idx, s] +
-                    joint_criterion$class_contributions[s]
+            if (best_split$valid_classes[s] && best_split$class_contributions[s] > 0) {
+                tree_importance[best_split$variable, s] <- tree_importance[best_split$variable, s] + 
+                    best_split$class_contributions[s]
             }
         }
+        
+        # Create child nodes
+        left_nodes <- list()
+        right_nodes <- list()
+        
+        for (s in seq_len(nclasses)) {
+            node <- current_node_set[[s]]
+            if (node$status == "to_split" && best_split$valid_classes[s]) {
+                
+                # Get split threshold for this class
+                threshold <- best_split$thresholds[s]
+                
+                # Split samples based on threshold
+                split_result <- .split_node_samples(x, y, node, best_split$variable, 
+                                                   threshold, s, nclasses, p_per_class)
+                
+                # Create left child node
+                left_nodes[[s]] <- list(
+                    node_id = node_counter + 1,
+                    class_id = s,
+                    sample_indices = split_result$left_samples,
+                    status = if (length(split_result$left_samples) <= nodesize) "terminal" else "to_split",
+                    depth = node$depth + 1,
+                    parent_id = node$node_id
+                )
+                
+                # Create right child node  
+                right_nodes[[s]] <- list(
+                    node_id = node_counter + 2,
+                    class_id = s,
+                    sample_indices = split_result$right_samples,
+                    status = if (length(split_result$right_samples) <= nodesize) "terminal" else "to_split",
+                    depth = node$depth + 1,
+                    parent_id = node$node_id
+                )
+                
+            } else {
+                # Node doesn't split - create terminal copies
+                left_nodes[[s]] <- node
+                right_nodes[[s]] <- node
+                left_nodes[[s]]$status <- "terminal"
+                right_nodes[[s]]$status <- "terminal"
+            }
+        }
+        
+        # Add child nodes to queue if they need splitting
+        if (any(sapply(left_nodes, function(n) n$status == "to_split"))) {
+            node_queue <- c(node_queue, list(left_nodes))
+        }
+        if (any(sapply(right_nodes, function(n) n$status == "to_split"))) {
+            node_queue <- c(node_queue, list(right_nodes))
+        }
+        
+        node_counter <- node_counter + 2
     }
-
+    
     return(tree_importance)
 }
 
@@ -173,7 +241,6 @@
         }
 
         # Get predictor and response values for this class
-        # CRITICAL FIX: Get data from correct column range for each class
         class_start_col <- if (s == 1) 1 else sum(sampsize[seq_len(s - 1)]) + 1
         class_end_col <- sum(sampsize[seq_len(s)])
 
@@ -202,12 +269,9 @@
         class_weights[s] <- sampsize[s] / total_samples # class weighting
     }
 
-    # JOINT DECISION: EXACT replication of original C code logic
     valid_idx <- which(valid_classes)
     joint_score <- 0
     if (length(valid_idx) > 0) {
-        # CRITICAL FIX: Match original C code exactly
-        # Original: sumcritvar = sum(weight[s] * critvar[s]) / nclasses
         joint_score <- (sum(class_weights[valid_idx] *
             class_criteria[valid_idx]) / nclasses)
 
@@ -223,7 +287,6 @@
     ))
 }
 
-# Calculate split criterion for a single class (simplified version)
 .calculate_split_criterion <- function(predictor_vals, response_vals) {
     if (length(unique(predictor_vals)) < 2) {
         return(0)
@@ -234,30 +297,33 @@
     sorted_pred <- predictor_vals[sorted_idx]
     sorted_resp <- response_vals[sorted_idx]
 
+    # Calculate parent node variance
+    n_total <- length(sorted_resp)
+    if (n_total < 2) return(0)
+    
+    parent_var <- var(sorted_resp)
     best_criterion <- 0
-    total_sum <- sum(sorted_resp)
-    total_count <- length(sorted_resp)
 
-    # Try different split points
     for (i in seq_len(length(sorted_pred) - 1)) {
         if (sorted_pred[i] >= sorted_pred[i + 1]) next
 
-        # Left side
-        left_sum <- sum(sorted_resp[seq_len(i)])
-        left_count <- i
+        # Left and right node data
+        left_vals <- sorted_resp[1:i]
+        right_vals <- sorted_resp[(i + 1):n_total]
 
-        # Right side
-        right_sum <- total_sum - left_sum
-        right_count <- total_count - left_count
+        # Require minimum node size (at least 1 observation per node)
+        if (length(left_vals) == 0 || length(right_vals) == 0) next
 
-        if (left_count == 0 || right_count == 0) next
+        # Calculate variances for each child node
+        left_var <- if (length(left_vals) == 1) 0 else var(left_vals)
+        right_var <- if (length(right_vals) == 1) 0 else var(right_vals)
+        
+        # Calculate node weights
+        left_weight <- length(left_vals) / n_total
+        right_weight <- length(right_vals) / n_total
 
-        # Calculate criterion (simplified version of original C calculation)
-        parent_criterion <- total_sum^2 / total_count
-        left_criterion <- left_sum^2 / left_count
-        right_criterion <- right_sum^2 / right_count
-
-        split_criterion <- left_criterion + right_criterion - parent_criterion
+        # Variance reduction criterion (standard Random Forest)
+        split_criterion <- parent_var - (left_weight * left_var + right_weight * right_var)
 
         if (split_criterion > best_criterion) {
             best_criterion <- split_criterion
@@ -267,7 +333,208 @@
     return(best_criterion)
 }
 
-# 2) Main JRF network inference - TRUE joint modeling implementation
+# Find best variable for joint splitting across all classes (full tree version)
+.find_best_joint_variable <- function(x, y, node_set, mtry, sampsize, nclasses, 
+                                     p_per_class, nodesize) {
+    
+    # Variable selection with shuffling (matching original C implementation)
+    available_vars <- seq_len(p_per_class)
+    last <- p_per_class - 1
+    
+    best_improvement <- 0
+    best_variable <- NULL
+    best_thresholds <- numeric(nclasses)
+    best_contributions <- numeric(nclasses)
+    best_valid_classes <- logical(nclasses)
+    
+    # Try mtry variables
+    for (var_iter in seq_len(min(mtry, p_per_class))) {
+        if (last < 0) break
+        
+        # Random variable selection with array swapping
+        j <- sample(0:last, 1)
+        var_idx <- available_vars[j + 1]
+        available_vars[j + 1] <- available_vars[last + 1]
+        last <- last - 1
+        
+        # Evaluate this variable for joint splitting
+        joint_result <- .evaluate_joint_variable_split(x, y, node_set, var_idx, 
+                                                      sampsize, nclasses, p_per_class)
+        
+        if (joint_result$joint_improvement > best_improvement) {
+            best_improvement <- joint_result$joint_improvement
+            best_variable <- var_idx
+            best_thresholds <- joint_result$thresholds
+            best_contributions <- joint_result$class_contributions
+            best_valid_classes <- joint_result$valid_classes
+        }
+    }
+    
+    if (is.null(best_variable) || best_improvement <= 0) {
+        return(NULL)
+    }
+    
+    return(list(
+        variable = best_variable,
+        improvement = best_improvement,
+        thresholds = best_thresholds,
+        class_contributions = best_contributions,
+        valid_classes = best_valid_classes
+    ))
+}
+
+# Evaluate a specific variable for joint splitting
+.evaluate_joint_variable_split <- function(x, y, node_set, var_idx, sampsize, nclasses, p_per_class) {
+    
+    class_contributions <- numeric(nclasses)
+    valid_classes <- logical(nclasses)
+    thresholds <- numeric(nclasses)
+    class_weights <- sampsize / sum(sampsize)
+    
+    # Evaluate split for each class
+    for (s in seq_len(nclasses)) {
+        node <- node_set[[s]]
+        
+        if (node$status != "to_split" || length(node$sample_indices) <= 1) {
+            valid_classes[s] <- FALSE
+            next
+        }
+        
+        # Extract data for this class and variable
+        var_row_idx <- (s - 1) * p_per_class + var_idx
+        
+        if (var_row_idx > nrow(x)) {
+            valid_classes[s] <- FALSE
+            next
+        }
+        
+        # Get predictor and response values using node's sample indices
+        class_start_col <- if (s == 1) 1 else sum(sampsize[seq_len(s - 1)]) + 1
+        class_end_col <- sum(sampsize[seq_len(s)])
+        
+        # Apply node's bootstrap sampling
+        predictor_vals <- x[var_row_idx, class_start_col:class_end_col][node$sample_indices]
+        response_vals <- y[s, class_start_col:class_end_col][node$sample_indices]
+        
+        # Remove invalid values
+        valid_idx <- is.finite(predictor_vals) & is.finite(response_vals)
+        if (sum(valid_idx) < 3) {
+            valid_classes[s] <- FALSE
+            next
+        }
+        
+        predictor_vals <- predictor_vals[valid_idx]
+        response_vals <- response_vals[valid_idx]
+        
+        # Find best threshold for this class (matching original C logic)
+        split_result <- .find_best_threshold_for_class(predictor_vals, response_vals)
+        
+        if (split_result$improvement > 0) {
+            class_contributions[s] <- split_result$improvement
+            thresholds[s] <- split_result$threshold
+            valid_classes[s] <- TRUE
+        } else {
+            valid_classes[s] <- FALSE
+        }
+    }
+    
+    # Calculate joint improvement (weighted by class size)
+    valid_idx <- which(valid_classes)
+    joint_improvement <- 0
+    
+    if (length(valid_idx) > 0) {
+        joint_improvement <- sum(class_weights[valid_idx] * class_contributions[valid_idx]) / nclasses
+    }
+    
+    return(list(
+        joint_improvement = joint_improvement,
+        class_contributions = class_contributions,
+        valid_classes = valid_classes,
+        thresholds = thresholds
+    ))
+}
+
+# Find best threshold for a single class (matching original C algorithm)
+.find_best_threshold_for_class <- function(predictor_vals, response_vals) {
+    
+    if (length(unique(predictor_vals)) < 2) {
+        return(list(improvement = 0, threshold = mean(predictor_vals)))
+    }
+    
+    # Sort values (matching original C qsort)
+    sorted_idx <- order(predictor_vals)
+    sorted_pred <- predictor_vals[sorted_idx]
+    sorted_resp <- response_vals[sorted_idx]
+    
+    n_total <- length(sorted_resp)
+    sum_total <- sum(sorted_resp)
+    
+    # Parent criterion (sum of squares)
+    parent_criterion <- sum_total * sum_total / n_total
+    
+    best_improvement <- 0
+    best_threshold <- mean(range(sorted_pred))
+    
+    sum_left <- 0
+    n_left <- 0
+    
+    # Search through gaps (matching original C algorithm)
+    for (i in seq_len(n_total - 1)) {
+        
+        sum_left <- sum_left + sorted_resp[i]
+        n_left <- n_left + 1
+        
+        sum_right <- sum_total - sum_left
+        n_right <- n_total - n_left
+        
+        # Only consider if there's a gap between values
+        if (sorted_pred[i] < sorted_pred[i + 1] && n_left > 0 && n_right > 0) {
+            
+            # Calculate improvement (matching original C formula)
+            left_criterion <- sum_left * sum_left / n_left
+            right_criterion <- sum_right * sum_right / n_right
+            improvement <- left_criterion + right_criterion - parent_criterion
+            
+            if (improvement > best_improvement) {
+                best_improvement <- improvement
+                best_threshold <- (sorted_pred[i] + sorted_pred[i + 1]) / 2
+            }
+        }
+    }
+    
+    return(list(
+        improvement = best_improvement,
+        threshold = best_threshold
+    ))
+}
+
+# Split node samples based on threshold
+.split_node_samples <- function(x, y, node, var_idx, threshold, class_id, nclasses, p_per_class) {
+    
+    # Get predictor values for this variable and class
+    var_row_idx <- (class_id - 1) * p_per_class + var_idx
+    
+    sampsize_cumsum <- c(0, cumsum(rep(max(node$sample_indices), nclasses)))
+    class_start_col <- sampsize_cumsum[class_id] + 1
+    class_end_col <- sampsize_cumsum[class_id + 1]
+    
+    # Get predictor values using node's sample indices
+    predictor_vals <- x[var_row_idx, class_start_col:class_end_col][node$sample_indices]
+    
+    # Split samples based on threshold
+    left_mask <- predictor_vals <= threshold
+    right_mask <- !left_mask
+    
+    left_samples <- node$sample_indices[left_mask]
+    right_samples <- node$sample_indices[right_mask]
+    
+    return(list(
+        left_samples = left_samples,
+        right_samples = right_samples
+    ))
+}
+
+# Main JRF network inference
 .jrf_network <- function(data_list, ntree = 1000, mtry = NULL, nCores = 1) {
     nclasses <- length(data_list)
     sampsize <- vapply(data_list, ncol, FUN.VALUE = integer(1))
@@ -277,18 +544,15 @@
     genes.name <- rownames(data_list[[1]])
     if (is.null(genes.name)) genes.name <- paste0("G", seq_len(p))
 
-    # Storage for importance - EXACT format as original
     imp <- array(0, dim = c(p, length(genes.name), nclasses))
 
-    # For each target gene - EXACT replication of original loop
     for (j in seq_len(p)) {
         # Build covariate matrix: (p-1) * nclasses rows, totsize cols
-        # This EXACTLY matches original JRF data structure
         totsize <- sum(sampsize)
         covar <- matrix(0, (p - 1) * nclasses, totsize)
         y <- matrix(0, nclasses, totsize)
 
-        # Fill data matrices EXACTLY like original
+        # Fill data matrices
         for (c in seq_len(nclasses)) {
             idx_start <- if (c == 1) 1 else sum(sampsize[seq_len(c - 1)]) + 1
             idx_end <- sum(sampsize[seq_len(c)])
@@ -303,13 +567,13 @@
             ] <- data_list[[c]][-j, ]
         }
 
-        # Run TRUE joint RF - now implements genuine joint modeling
+        # Run TRUE joint RF - joint modeling with full trees
         jrf.out <- .jrf_onetarget(
             x = covar, y = y, ntree = ntree, mtry = mtry,
             sampsize = sampsize, nclasses = nclasses, nCores = nCores
         )
 
-        # Extract importance scores per class - EXACT original extraction
+        # Extract importance scores per class
         for (s in seq_len(nclasses)) {
             start_idx <- (p - 1) * (s - 1) + 1
             end_idx <- (p - 1) * s
@@ -323,7 +587,7 @@
         }
     }
 
-    # Create symmetric importance matrix - EXACT original calculation
+    # Create symmetric importance matrix
     imp.final <- matrix(0, nrow = p * (p - 1) / 2, ncol = nclasses)
     vec1 <- matrix(rep(genes.name, p), p, p)
     vec2 <- t(vec1)
