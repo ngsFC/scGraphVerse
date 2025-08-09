@@ -69,7 +69,7 @@ expression matrices using different inference methods:
 
 <dl><dt id="arg-count-matrices-list">count_matrices_list<a class="anchor" aria-label="anchor" href="#arg-count-matrices-list"></a></dt>
 <dd><p>A list of expression matrices (genes × cells)
-or Seurat or SingleCellExperiment
+or Seurat or <a href="https://rdrr.io/pkg/SingleCellExperiment/man/SingleCellExperiment.html" class="external-link">SingleCellExperiment</a>
 objects.</p></dd>
 
 
@@ -127,6 +127,7 @@ parallelization. Defaults to the number of workers in the current
 (default: sqrt(p))</p></li>
 <li><p><code>nodesize</code>: Minimum node size (default: 5)</p></li>
 <li><p><code>maxnodes</code>: Maximum number of nodes (default: NULL)</p></li>
+<li><p><code>nCores</code>: Number of cores for parallel (default: 1)</p></li>
 </ul></dd>
 
 
@@ -190,12 +191,12 @@ al., 2010).</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">networks</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   regulatoryGene targetGene    weight</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1992252</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1973449</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ARPC3      ARPC2 0.1589728</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4          HLA-E        FOS 0.1538982</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC2      HLA-E 0.1475527</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1475117</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ARPC2      ARPC3 0.1898821</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          HLA-A       CD74 0.1833771</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3           CD3E        JUN 0.1705402</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          ARPC3      ARPC2 0.1554772</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5          ARPC2      HLA-E 0.1546997</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           CD3E       CD3D 0.1538856</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
