@@ -30,3 +30,4 @@ This approach assumes that the structure of the graph only depends on the
 mean parameter, treating zero inflation as a technical noise effect. We call
 this model \code{zinb0}.
 }
+\keyword{internal}

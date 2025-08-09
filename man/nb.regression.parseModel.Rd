@@ -24,3 +24,4 @@ and its parameters.
 \seealso{
 \code{\link{nb.loglik.regression}}
 }
+\keyword{internal}

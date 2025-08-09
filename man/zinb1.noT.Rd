@@ -29,3 +29,4 @@ of counts, using the optim function. Uses BiocParallel for parallelization.
 This approach assumes that the structure of the graph depends on both the
 mean parameter and the zero inflation parameter. We call this model \code{zinb1}.
 }
+\keyword{internal}

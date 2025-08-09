@@ -24,3 +24,4 @@ Given the parameters of a ZINB regression model, this function parses the
 model and computes the vector of log(mu), logit(pi), and the dimensions of
 the different components of the vector of parameters.
 }
+\keyword{internal}

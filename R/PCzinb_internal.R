@@ -175,7 +175,7 @@ setMethod(
 #'   considers the intersection.
 #' @param nCores number of cores to use for parallel processing. Default is 1.
 #' @return the estimated adjacency matrix of the graph.
-#' @export
+#' @keywords internal
 #' @importFrom MASS glm.nb negative.binomial
 #' @importFrom utils combn
 #' @importFrom stats as.formula glm
@@ -276,7 +276,7 @@ nb.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
 #'   considers the intersection.
 #' @param nCores number of cores to use for parallel processing. Default is 1.
 #' @return the estimated adjacency matrix of the graph.
-#' @export
+#' @keywords internal
 #' @importFrom stats coefficients
 #' @examples
 #' # Generate sample count data
@@ -365,7 +365,7 @@ pois.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
 #'   could be "AIC" or "BIC".
 #' @return a list containing the estimated adjacency matrix of the graph and a
 #'   graphNEL object of the same graph.
-#' @export
+#' @keywords internal
 #' @importFrom stats coefficients glm AIC BIC
 #' @import methods
 #' @importClassesFrom graph graphNEL
@@ -475,6 +475,7 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
 #' @param logitPi the vector of logit of the probabilities of the zero component
 #' @param n length of the returned vector
 #' @return A vector of length n with the optimized dispersion parameter values.
+#' @keywords internal
 zinbOptimizeDispersion <- function(mu, logitPi, Y, n) {
     g <- optimize(
         f = zinb.loglik.dispersion, Y = Y, mu = mu,
@@ -536,6 +537,7 @@ log1pexp <- function(x, c0 = -37, c1 = 18, c2 = 33.3) {
 #'   vector of length 2 with the dimension of each of the vectors \code{a.mu},
 #'   \code{a.pi}  in \code{alpha}), and \code{start.alpha} (a vector
 #'   of length 2 with the starting indices of the 2 vectors in \code{alpha})
+#' @keywords internal
 zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
     n <- nrow(A.mu)
     logMu <- 0
@@ -753,6 +755,7 @@ zinb.loglik.regression.gradient <- function(alpha, Y,
 #'   convention that the variance of the NB variable with mean mu and dispersion
 #'   theta is mu + mu^2/theta.
 #' @return A vector of length n with the optimized dispersion parameter values.
+#' @keywords internal
 nb.OptimizeDispersion <- function(mu, Y, n) {
     g <- optimize(
         f = nb.loglik.dispersion, Y = Y, mu = mu,
@@ -796,6 +799,7 @@ nb.OptimizeDispersion <- function(mu, Y, n) {
 #'   theta is mu + mu^2/theta.
 #'
 #' @return the log-likelihood of the model.
+#' @keywords internal
 #' @importFrom stats dnbinom optim optimize rbinom rnbinom runif var
 nb.loglik <- function(Y, mu, theta) {
     # log-probabilities of counts under the NB model
@@ -820,6 +824,7 @@ nb.loglik <- function(Y, mu, theta) {
 #' @param Y a vector of counts
 #' @param mu a vector of mean parameters of the negative binomial
 #' @return the log-likelihood of the model.
+#' @keywords internal
 nb.loglik.dispersion <- function(zeta, Y, mu) {
     nb.loglik(Y, mu, exp(zeta))
 }
@@ -836,6 +841,7 @@ nb.loglik.dispersion <- function(zeta, Y, mu) {
 #' @param A.mu matrix of the model (default=empty)
 #' @return A list with slot \code{logMu},
 #' @seealso \code{\link{nb.loglik.regression}}
+#' @keywords internal
 nb.regression.parseModel <- function(alpha, A.mu) {
     n <- nrow(A.mu)
     logMu <- 0
@@ -870,6 +876,7 @@ nb.regression.parseModel <- function(alpha, A.mu) {
 #'    and the vector of inverse   dispersion parameters.  The
 #'   log-likelihood of a vector of parameters \eqn{\alpha = a_\mu}
 #' @return the log-likelihood.
+#' @keywords internal
 nb.loglik.regression <- function(alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
@@ -898,6 +905,7 @@ nb.loglik.regression <- function(alpha, Y,
 #'   \code{\link{nb.loglik.regression}}.
 #' @seealso \code{\link{nb.loglik.regression}}
 #' @return The gradient of the log-likelihood.
+#' @keywords internal
 nb.loglik.regression.gradient <- function(alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
@@ -978,6 +986,7 @@ nb.optim_funnoT <- function(beta_mu, Y, X_mu, zeta, n) {
 #'   considers the intersection.
 #' @param nCores number of cores for parallelization
 #' @return the estimated adjacency matrix of the graph.
+#' @keywords internal
 zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
     p <- ncol(X)
     n <- nrow(X)
@@ -1196,6 +1205,7 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
 #'   considers the intersection.
 #' @param nCores number of cores for parallelization
 #' @return the estimated adjacency matrix of the graph.
+#' @keywords internal
 zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
     p <- ncol(X)
     n <- nrow(X)

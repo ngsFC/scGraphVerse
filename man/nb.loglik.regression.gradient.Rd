@@ -34,3 +34,4 @@ The regression model is described in
 \seealso{
 \code{\link{nb.loglik.regression}}
 }
+\keyword{internal}

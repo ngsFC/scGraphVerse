@@ -34,3 +34,4 @@ log-probabilities of the counts under a  negative binomial
 parameters: the mean value and the dispersion of the negative binomial
 distribution
 }
+\keyword{internal}

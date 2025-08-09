@@ -26,3 +26,4 @@ the NB model. The dispersion parameter is provided to the function through
 zeta = log(theta), where theta is sometimes called the inverse dispersion
 parameter.
 }
+\keyword{internal}

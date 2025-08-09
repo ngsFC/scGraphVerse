@@ -25,3 +25,4 @@ A vector of length n with the optimized dispersion parameter values.
 parameters: the mean value and the dispersion of the negative binomial
 distribution, and the probability of the zero component.
 }
+\keyword{internal}

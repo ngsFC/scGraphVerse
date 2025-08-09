@@ -3,7 +3,7 @@
 #' This file contains all generic function definitions for the scGraphVerse.
 #' These must be defined before any setMethod calls.
 #'
-#' @importFrom methods setGeneric standardGeneric
+#' @importFrom methods setGeneric
 #' @keywords internal
 
 #' Structure learning for count data using PC algorithms

@@ -35,3 +35,4 @@ respectively the vector of mean parameters of the NB distribution,
 and the vector of inverse   dispersion parameters.  The
 log-likelihood of a vector of parameters \eqn{\alpha = a_\mu}
 }
+\keyword{internal}
