@@ -6,7 +6,7 @@
    Check these declarations against the C/Fortran source code.
 */
 
-/* .C calls */
+/* .C calls - Match JRF package exactly */
 extern void regRF(double *, double *, double *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, double *, double *, double *, double *, double *, int *, int *, int *, int *, double *, int *, double *, double *, int *, int *, int *, double *, int *, double *, int *, double *, double *, double *, double *, int *, int *, int *);
 
 static const R_CMethodDef CEntries[] = {
@@ -16,6 +16,7 @@ static const R_CMethodDef CEntries[] = {
 
 void R_init_scGraphVerse(DllInfo *dll)
 {
+    /* Register only regRF function like JRF package */
     R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

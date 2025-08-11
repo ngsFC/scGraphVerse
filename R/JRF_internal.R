@@ -1,185 +1,294 @@
 # =========================
-# Internal helper for JRF (C implementation)
+# JRF Implementation - EXACT copy of working JRF package functions
 # =========================
 
-.jrf_onetarget <- function(x, y, ntree, mtry, sampsize, nclasses,
-                        importance = TRUE) {
-    # JRF processes each class separately, not jointly in one C call
-    # This is the correct interpretation of the original algorithm
-    
-    totsize <- sum(sampsize)
-    p_per_class <- nrow(x) / nclasses
-    
-    # Combine importance from all classes
-    combined_importance <- matrix(0.0, p_per_class * nclasses, 2)
-    
-    # Process each class separately 
-    for (class_idx in seq_len(nclasses)) {
-        # Extract data for this class only
-        class_start_col <- if (class_idx == 1) 1 else sum(sampsize[seq_len(class_idx - 1)]) + 1
-        class_end_col <- sum(sampsize[seq_len(class_idx)])
-        
-        class_start_row <- (class_idx - 1) * p_per_class + 1
-        class_end_row <- class_idx * p_per_class
-        
-        # Single class data
-        x_class <- x[class_start_row:class_end_row, class_start_col:class_end_col]
-        y_class <- matrix(y[class_idx, class_start_col:class_end_col], nrow = 1)
-        
-        # Storage mode for C interface
-        storage.mode(x_class) <- "double"
-        storage.mode(y_class) <- "double"
-        
-        # Single class parameters
-        class_sampsize <- sampsize[class_idx]
-        weight_class <- 1.0
-        storage.mode(weight_class) <- "double"
-        
-        nodesize <- 5
-        nrnodes <- 2 * floor(class_sampsize / max(1, nodesize - 4)) + 1
-        
-        # Initialize output matrices for this class
-        impout_class <- matrix(0.0, p_per_class, 2)
-        impSD_class <- matrix(0.0, p_per_class, 1)
-        
-        # Call C function for this class only
-        rfout <- .C("regRF",
-                    x_class,                                      # 1. double *x
-                    y_class,                                      # 2. double *y  
-                    weight_class,                                 # 3. double *weight
-                    as.integer(c(class_sampsize, p_per_class)),  # 4. int *xdim (nsample, mdim)
-                    as.integer(class_sampsize),                   # 5. int *sampsize
-                    as.integer(class_sampsize),                   # 6. int *totsize
-                    as.integer(nodesize),                         # 7. int *nthsize
-                    as.integer(nrnodes),                          # 8. int *nrnodes
-                    as.integer(ntree),                            # 9. int *nTree
-                    as.integer(mtry),                             # 10. int *mtry
-                    as.integer(c(as.integer(importance), 0, 1)),  # 11. int *imp
-                    as.integer(rep(1, p_per_class)),              # 12. int *cat
-                    as.integer(1),                                # 13. int *maxcat
-                    as.integer(0),                                # 14. int *jprint
-                    as.integer(0),                                # 15. int *doProx
-                    as.integer(0),                                # 16. int *oobprox
-                    as.integer(0),                                # 17. int *biasCorr
-                    ypred = double(class_sampsize),               # 18. double *yptr
-                    impout = impout_class,                        # 19. double *errimp
-                    impmat = double(1),                           # 20. double *impmat
-                    impSD = impSD_class,                          # 21. double *impSD
-                    prox = double(1),                             # 22. double *prox
-                    treeSize = integer(ntree),                    # 23. int *treeSize
-                    nodestatus = integer(nrnodes * ntree),        # 24. int *nodestatus
-                    lDaughter = integer(nrnodes * ntree),         # 25. int *lDaughter
-                    rDaughter = integer(nrnodes * ntree),         # 26. int *rDaughter
-                    avnode = double(nrnodes * ntree),             # 27. double *avnode
-                    mbest = integer(nrnodes * ntree),             # 28. int *mbest
-                    upper = double(nrnodes * ntree),              # 29. double *upper
-                    mse = double(ntree),                          # 30. double *mse
-                    keepf = as.integer(c(0, 0)),                  # 31. int *keepf
-                    replace = as.integer(1),                      # 32. int *replace
-                    testdat = as.integer(0),                      # 33. int *testdat
-                    xts = double(1),                              # 34. double *xts
-                    nts = as.integer(1),                          # 35. int *nts
-                    yts = double(1),                              # 36. double *yts
-                    labelts = as.integer(0),                      # 37. int *labelts
-                    yTestPred = double(1),                        # 38. double *yTestPred
-                    proxts = double(1),                           # 39. double *proxts
-                    msets = double(1),                            # 40. double *msets
-                    coef = double(2),                             # 41. double *coef
-                    nout = integer(class_sampsize),               # 42. int *nout
-                    inbag = integer(1),                           # 43. int *inbag
-                    nclasses = as.integer(1)                      # 44. int *nclasses (always 1 per call)
-        )[c("impout")]
-        
-        # Store importance for this class
-        combined_importance[class_start_row:class_end_row, ] <- rfout$impout
+# EXACT COPY of working JRF_onetarget function
+.jrf_onetarget <- function(x, y = NULL, xtest = NULL, ytest = NULL, ntree, sampsize, 
+    totsize = if (replace) ncol(x) else ceiling(0.632 * ncol(x)), 
+    mtry = if (!is.null(y) && !is.factor(y)) max(floor(nrow(x)/3), 
+        1) else floor(sqrt(nrow(x))), replace = TRUE, classwt = NULL, 
+    cutoff, strata, nodesize = if (!is.null(y) && !is.factor(y)) 5 else 1, 
+    maxnodes = NULL, importance = FALSE, localImp = FALSE, nPerm = 1, 
+    proximity, oob.prox = proximity, norm.votes = TRUE, do.trace = FALSE, 
+    keep.forest = !is.null(y) && is.null(xtest), corr.bias = FALSE, 
+    keep.inbag = FALSE, nclasses, ...) 
+{
+    ww = 1/sampsize  # EXACT calculation from working version
+    nclass = mylevels = ipi = sw = NULL
+    addclass <- is.null(y)
+    classRF <- addclass || is.factor(y)
+    if (!classRF && length(unique(y)) <= 5) {
+        warning("The response has five or fewer unique values.  Are you sure you want to do regression?")
     }
+    if (classRF && !addclass && length(unique(y)) < 2) 
+        stop("Need at least two classes to do classification.")
+    n <- ncol(y)  # EXACT: ncol(y), not ncol(x)
+    p <- nrow(x)/nclasses
+    if (n == 0) 
+        stop("data (x) has 0 rows")
+    x.row.names <- rownames(x)
+    x.col.names <- if (is.null(colnames(x))) 
+        1:ncol(x)
+    else colnames(x)
+    keep.forest = !is.null(y)
+    xtest = NULL
+    ytest = NULL
+    testdat <- !is.null(xtest)
+    if (testdat) {
+        if (ncol(x) != ncol(xtest)) 
+            stop("x and xtest must have same number of columns")
+        ntest <- nrow(xtest)
+        xts.row.names <- rownames(xtest)
+    }
+    prox <- proxts <- double(1)
+    if (any(is.na(x))) 
+        stop("NA not permitted in predictors")
+    if (testdat && any(is.na(xtest))) 
+        stop("NA not permitted in xtest")
+    if (any(is.na(y))) 
+        stop("NA not permitted in response")
+    if (!is.null(ytest) && any(is.na(ytest))) 
+        stop("NA not permitted in ytest")
+    if (is.data.frame(x)) {
+        xlevels <- lapply(x, function(z) if(is.factor(z)) levels(z) else NULL)
+        ncat <- sapply(xlevels, length)
+        ncat <- ifelse(sapply(x, is.ordered), 1, ncat)
+        x <- data.matrix(x)
+        if (testdat) {
+            if (!is.data.frame(xtest)) 
+                stop("xtest must be data frame if x is")
+            xfactor <- which(sapply(xtest, is.factor))
+            if (length(xfactor) > 0) {
+                for (i in xfactor) {
+                  if (any(!levels(xtest[[i]]) %in% xlevels[[i]])) 
+                    stop("New factor levels in xtest not present in x")
+                  xtest[[i]] <- factor(xlevels[[i]][match(xtest[[i]], 
+                    xlevels[[i]])], levels = xlevels[[i]])
+                }
+            }
+            xtest <- data.matrix(xtest)
+        }
+    }
+    else {
+        ncat <- rep(1, p)
+        xlevels <- as.list(rep(0, p))
+    }
+    maxcat <- max(ncat)
+    if (maxcat > 32) 
+        stop("Can not handle categorical predictors with more than 32 categories.")
+    addclass <- FALSE
+    proximity <- addclass
+    impout <- matrix(0, p * nclasses, 2)
+    impSD <- matrix(0, p * nclasses, 1)
+    nsample <- if (addclass) 
+        2 * n
+    else n
+    Stratify <- length(n) > 1
+    nodesize = 5
+    nrnodes <- 2 * trunc(n/max(1, nodesize - 4)) + 1
+    maxnodes = NULL
+    if (!is.null(maxnodes)) {
+        maxnodes <- 2 * maxnodes - 1
+        if (maxnodes > nrnodes) 
+            warning("maxnodes exceeds its max value.")
+        nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
+    }
+    storage.mode(x) <- "double"
+    xtest <- double(1)
+    ytest <- double(1)
+    ntest <- 1
+    labelts <- FALSE
+    nt <- if (keep.forest) 
+        ntree
+    else 1
+    nPerm = 1
+    do.trace = F
+    oob.prox = F
+    corr.bias = FALSE
+    keep.inbag = FALSE
+    impmat <- double(1)
+    replace = T
     
-    out <- list(importance = combined_importance)
+    # EXACT regRF call from working JRF (regression branch)
+    rfout <- .C("regRF", x, y, ww, as.integer(c(totsize, 
+        p)), sampsize = as.integer(sampsize), as.integer(totsize), 
+        as.integer(nodesize), as.integer(nrnodes), as.integer(ntree), 
+        as.integer(mtry), as.integer(c(importance, localImp, 
+            nPerm)), as.integer(ncat), as.integer(maxcat), 
+        as.integer(do.trace), as.integer(proximity), as.integer(oob.prox), 
+        as.integer(corr.bias), ypred = double(n * nclasses), 
+        impout = impout, impmat = impmat, impSD = impSD, 
+        prox = prox, ndbigtree = integer(ntree), nodestatus = matrix(integer(nrnodes * 
+            nt * nclasses), ncol = nt), leftDaughter = matrix(integer(nrnodes * 
+            nt * nclasses), ncol = nt), rightDaughter = matrix(integer(nrnodes * 
+            nt * nclasses), ncol = nt), nodepred = matrix(double(nrnodes * 
+            nt * nclasses), ncol = nt), bestvar = matrix(integer(nrnodes * 
+            nt * nclasses), ncol = nt), xbestsplit = matrix(double(nrnodes * 
+            nt * nclasses), ncol = nt), mse = double(ntree * 
+            nclasses), keep = as.integer(c(keep.forest, keep.inbag)), 
+        replace = as.integer(replace), testdat = as.integer(testdat), 
+        xts = xtest, ntest = as.integer(ntest), yts = as.double(ytest), 
+        labelts = as.integer(labelts), ytestpred = double(ntest), 
+        proxts = proxts, msets = double(if (labelts) ntree else 1), 
+        coef = double(2), oob.times = integer(n), inbag = if (keep.inbag) matrix(integer(n * 
+            ntree), n) else integer(1), as.integer(nclasses))[c(16:28, 
+        36:41)]
+        
+    if (keep.forest) {
+        max.nodes <- max(rfout$ndbigtree)
+        rfout$nodestatus <- rfout$nodestatus[1:max.nodes, 
+            , drop = FALSE]
+        rfout$bestvar <- rfout$bestvar[1:max.nodes, , drop = FALSE]
+        rfout$nodepred <- rfout$nodepred[1:max.nodes, , drop = FALSE]
+        rfout$xbestsplit <- rfout$xbestsplit[1:max.nodes, 
+            , drop = FALSE]
+        rfout$leftDaughter <- rfout$leftDaughter[1:max.nodes, 
+            , drop = FALSE]
+        rfout$rightDaughter <- rfout$rightDaughter[1:max.nodes, 
+            , drop = FALSE]
+    }
+    cl <- match.call()
+    cl[[1]] <- as.name("randomForest")
+    ypred <- rfout$ypred
+    if (any(rfout$oob.times < 1)) {
+        ypred[rfout$oob.times == 0] <- NA
+    }
+    out <- list(call = cl, type = "regression", predicted = 0, 
+        mse = rfout$mse, rsq = 1 - rfout$mse/(var(y[1, ]) * 
+            (n - 1)/n), oob.times = rfout$oob.times, importance = if (importance) matrix(rfout$impout, 
+            p * nclasses, 2) else matrix(rfout$impout, ncol = 1), 
+        importanceSD = if (importance) rfout$impSD else NULL, 
+        localImportance = if (localImp) matrix(rfout$impmat, 
+            p, n, dimnames = list(x.col.names, x.row.names)) else NULL, 
+        proximity = if (proximity) matrix(rfout$prox, n, 
+            n, dimnames = list(x.row.names, x.row.names)) else NULL, 
+        ntree = ntree, mtry = mtry, forest = if (keep.forest) c(rfout[c("ndbigtree", 
+            "nodestatus", "leftDaughter", "rightDaughter", 
+            "nodepred", "bestvar", "xbestsplit")], list(ncat = ncat), 
+            list(nrnodes = max.nodes), list(ntree = ntree), 
+            list(xlevels = xlevels)) else NULL, coefs = if (corr.bias) rfout$coef else NULL, 
+        y = y, test = if (testdat) {
+            list(predicted = structure(rfout$ytestpred, names = x.row.names), 
+              mse = if (labelts) rfout$msets else NULL, rsq = if (labelts) 1 - 
+                rfout$msets/(var(ytest) * (n - 1)/n) else NULL, 
+              proximity = if (proximity) matrix(rfout$proxts/ntree, 
+                nrow = ntest, dimnames = list(x.row.names, 
+                  c(x.row.names, x.row.names))) else NULL)
+        } else NULL, inbag = if (keep.inbag) matrix(rfout$inbag, 
+            nrow(rfout$inbag), dimnames = list(x.row.names, 
+              NULL)) else NULL)
     class(out) <- "randomForest"
     return(out)
 }
 
-
-# Main JRF network inference
-.jrf_network <- function(data_list, ntree = 1000, mtry = NULL) {
-    nclasses <- length(data_list)
-    sampsize <- vapply(data_list, ncol, FUN.VALUE = integer(1))
-    p <- nrow(data_list[[1]])
-    if (is.null(mtry)) mtry <- max(floor(sqrt(p - 1)), 1)
-
-    genes.name <- rownames(data_list[[1]])
-    if (is.null(genes.name)) genes.name <- paste0("G", seq_len(p))
-
-    imp <- array(0, dim = c(p, length(genes.name), nclasses))
-
-    for (j in seq_len(p)) {
-        # Build covariate matrix: (p-1) * nclasses rows, totsize cols
-        totsize <- sum(sampsize)
-        covar <- matrix(0, (p - 1) * nclasses, totsize)
-        y <- matrix(0, nclasses, totsize)
-
-        # Fill data matrices
-        for (c in seq_len(nclasses)) {
-            idx_start <- if (c == 1) 1 else sum(sampsize[seq_len(c - 1)]) + 1
-            idx_end <- sum(sampsize[seq_len(c)])
-
-            # Target gene response for class c
-            y[c, idx_start:idx_end] <- data_list[[c]][j, ]
-
-            # Predictor genes for class c (excluding target gene j)
-            covar[
-                ((c - 1) * (p - 1) + 1):(c * (p - 1)),
-                idx_start:idx_end
-            ] <- data_list[[c]][-j, ]
+# EXACT copy of working importance function
+.importance <- function(x, scale = TRUE) {
+    type = NULL
+    class = NULL
+    if (!inherits(x, "randomForest")) 
+        stop("x is not of class randomForest")
+    classRF <- x$type != "regression"
+    hasImp <- !is.null(dim(x$importance)) || ncol(x$importance) == 
+        1
+    hasType <- !is.null(type)
+    if (hasType && type == 1 && !hasImp) 
+        stop("That measure has not been computed")
+    allImp <- is.null(type) && hasImp
+    if (hasType) {
+        if (!(type %in% 1:2)) 
+            stop("Wrong type specified")
+        if (type == 2 && !is.null(class)) 
+            stop("No class-specific measure for that type")
+    }
+    imp <- x$importance
+    if (hasType && type == 2) {
+        if (hasImp) 
+            imp <- imp[, ncol(imp), drop = FALSE]
+    }
+    else {
+        if (scale) {
+            SD <- x$importanceSD
+            imp[, -ncol(imp)] <- imp[, -ncol(imp), drop = FALSE]/ifelse(SD < 
+                .Machine$double.eps, 1, SD)
         }
-
-        # Run TRUE joint RF - joint modeling with full trees
-        jrf.out <- .jrf_onetarget(
-            x = covar, y = y, ntree = ntree, mtry = mtry,
-            sampsize = sampsize, nclasses = nclasses
-        )
-
-        # Extract importance scores per class
-        for (s in seq_len(nclasses)) {
-            start_idx <- (p - 1) * (s - 1) + 1
-            end_idx <- (p - 1) * s
-
-            if (end_idx <= nrow(jrf.out$importance)) {
-                imp[-j, j, s] <- jrf.out$importance[start_idx:end_idx, 2]
-            } else {
-                # Handle edge case - fill with small random values
-                imp[-j, j, s] <- runif(p - 1, 0, 0.01)
+        if (!allImp) {
+            if (is.null(class)) {
+                imp <- imp[, ncol(imp) - 1, drop = FALSE]
+            }
+            else {
+                whichCol <- if (classRF) 
+                  match(class, colnames(imp))
+                else 1
+                if (is.na(whichCol)) 
+                  stop(paste("Class", class, "not found."))
+                imp <- imp[, whichCol, drop = FALSE]
             }
         }
     }
+    imp <- imp[, 2]
+    imp
+}
 
-    # Create symmetric importance matrix
-    imp.final <- matrix(0, nrow = p * (p - 1) / 2, ncol = nclasses)
-
-    # Generate gene pair names
+# EXACT copy of working JRF main function
+.jrf_network <- function(data_list, ntree = 1000, mtry = NULL) {
+    X <- data_list
+    nclasses <- length(X)
+    sampsize <- rep(0, nclasses)
+    
+    for (j in 1:nclasses) sampsize[j] <- dim(X[[j]])[2]
+    tot <- max(sampsize)  # EXACT: uses max(), not sum()
+    p <- dim(X[[1]])[1]
+    
+    genes.name <- rownames(X[[1]])
+    if (is.null(genes.name)) genes.name <- paste0("G", seq_len(p))
+    
+    # Set default mtry if not provided
+    if (is.null(mtry)) mtry <- round(sqrt(p - 1))
+    
+    imp <- array(0, c(p, length(genes.name), nclasses))
+    imp.final <- matrix(0, p * (p - 1)/2, nclasses)
     vec1 <- matrix(rep(genes.name, p), p, p)
     vec2 <- t(vec1)
     vec1 <- vec1[lower.tri(vec1, diag = FALSE)]
     vec2 <- vec2[lower.tri(vec2, diag = FALSE)]
-
-    # Aggregate importance scores (symmetric)
-    for (s in seq_len(nclasses)) {
+    index <- seq(1, p)
+    
+    for (j in 1:length(genes.name)) {
+        covar <- matrix(0, (p - 1) * nclasses, tot)
+        y <- matrix(0, nclasses, tot)
+        
+        for (c in 1:nclasses) {
+            y[c, seq(1, sampsize[c])] <- as.matrix(X[[c]][j, ])
+            covar[seq((c - 1) * (p - 1) + 1, c * (p - 1)), seq(1, sampsize[c])] <- X[[c]][-j, ]
+        }
+        
+        # EXACT function call - sampsize and nclasses as explicit parameters
+        jrf.out <- .jrf_onetarget(x = covar, y = y, mtry = mtry, 
+                                 importance = TRUE, sampsize = sampsize, 
+                                 nclasses = nclasses, ntree = ntree)
+        
+        for (s in 1:nclasses) {
+            imp[-j, j, s] <- .importance(jrf.out, scale = FALSE)[seq((p - 1) * (s - 1) + 1, (p - 1) * (s - 1) + p - 1)]
+        }
+    }
+    
+    for (s in 1:nclasses) {
         imp.s <- imp[, , s]
         t.imp <- t(imp.s)
-        imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] +
-                          t.imp[lower.tri(t.imp, diag = FALSE)]) / 2
+        imp.final[, s] <- (imp.s[lower.tri(imp.s, diag = FALSE)] + 
+                          t.imp[lower.tri(t.imp, diag = FALSE)])/2
     }
-
-    # Create result list - one network per class
+    
+    # Convert to scGraphVerse format
     result_list <- vector("list", nclasses)
     for (s in seq_len(nclasses)) {
         result_list[[s]] <- data.frame(
             gene1 = as.character(vec1),
-            gene2 = as.character(vec2),
+            gene2 = as.character(vec2), 
             importance = imp.final[, s],
             stringsAsFactors = FALSE
         )
     }
-
+    
     return(result_list)
 }
