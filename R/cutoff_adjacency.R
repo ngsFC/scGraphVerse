@@ -20,7 +20,8 @@
 #'   adjacency matrices (\code{"mean"}, \code{"max"}, etc.).
 #' @param nCores Integer. Number of CPU cores to use for
 #'   parallelization. Default is the number of workers in the current
-#'   \pkg{BiocParallel} backend.
+#'   \pkg{BiocParallel} backend. Note: JRF uses C implementation and
+#'   does not use this parameter.
 #' @param grnboost_modules Python modules needed for \code{GRNBoost2} if
 #'   using reticulate.
 #' @param debug Logical. If \code{TRUE}, prints detailed progress messages.

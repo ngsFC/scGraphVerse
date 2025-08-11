@@ -46,9 +46,6 @@
 #'     \item \code{ntree}: Number of trees (default: 500)
 #'     \item \code{mtry}: Number of variables to sample at each split
 #'     (default: sqrt(p))
-#'     \item \code{nodesize}: Minimum node size (default: 5)
-#'     \item \code{maxnodes}: Maximum number of nodes (default: NULL)
-#'     \item \code{nCores}: Number of cores for parallel (default: 1)
 #'   }
 #' @param pczinb_params List of parameters for PCzinb method:
 #'   \itemize{
@@ -80,9 +77,8 @@
 #'       computation.
 #'     \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
 #'       matrices using \pkg{BiocParallel}.
-#'     \item \strong{JRF}: Joint modeling of all matrices together;
-#'       internal parallelization across random forest trees using
-#'       \pkg{doParallel}.
+#'     \item \strong{JRF}: Joint modeling of all matrices together using
+#'       optimized C implementation.
 #'   }
 #'
 #'   Methods are based on:
@@ -169,7 +165,7 @@ infer_networks <- function(
             }
         )
         if (verbose) message("Running JRF on all matrices jointly")
-        return(.run_jrf(norm_list, jrf_params$ntree, jrf_params$mtry, nCores))
+        return(.run_jrf(norm_list, jrf_params$ntree, jrf_params$mtry))
     }
 
     if (method == "GRNBoost2") {

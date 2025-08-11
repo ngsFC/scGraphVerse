@@ -645,21 +645,13 @@ Nodes:",
 #' @keywords internal
 #' @noRd
 
-.run_jrf <- function(count_matrices_list, ntree=1000, mtry=NULL, nCores = 1) {
-    if (nCores > 1) {
-        message(
-            "[JRF] Running Joint Random Forest for ",
-            length(count_matrices_list), " datasets using ", nCores, " cores..."
-        )
-    } else {
-        message(
-            "[JRF] Running Joint Random Forest for ",
-            length(count_matrices_list), " datasets..."
-        )
-    }
+.run_jrf <- function(count_matrices_list, ntree=1000, mtry=NULL) {
+    message(
+        "[JRF] Running Joint Random Forest for ",
+        length(count_matrices_list), " datasets using C implementation..."
+    )
     return(.jrf_network(count_matrices_list,
-        ntree = ntree, mtry = mtry,
-        nCores = nCores
+        ntree = ntree, mtry = mtry
     ))
 }
 
