@@ -29,6 +29,7 @@
 #include <Rmath.h>
 #include <R_ext/Random.h>
 #include <R_ext/Utils.h>
+#include <R_ext/Memory.h>
 #include "rf.h"
 
 void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDaughter,
@@ -45,18 +46,18 @@ void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDa
     sumnode = (double *) S_alloc(nclasses, sizeof(double));
     d = (double *) S_alloc(nclasses, sizeof(double));
     ubest = (double *) S_alloc(nclasses, sizeof(double));
-    ndendl = (int *) Calloc(nclasses, int);
-    nodecnt = (int *) Calloc(nclasses, int);
+    ndendl = Calloc(nclasses, int);
+    nodecnt = Calloc(nclasses, int);
     decsplit = (double *) S_alloc(nclasses, sizeof(double));
     
     
-    nodestart = (int *) Calloc(nclasses * nrnodes, int);
-    nodepop   = (int *) Calloc(nclasses * nrnodes, int);
+    nodestart = Calloc(nclasses * nrnodes, int);
+    nodepop = Calloc(nclasses * nrnodes, int);
     av         = (double *) S_alloc(nclasses, sizeof(double)); /* average for each class */
     ss         = (double *) S_alloc(nclasses, sizeof(double)); /* standard deviation for each class */
     avnode     = (double *) S_alloc(nclasses * nrnodes, sizeof(double)); /* matrix average node x classes */
-    ndstart = (int *) Calloc(nclasses, int);
-    ndend = (int *) Calloc(nclasses, int);
+    ndstart = Calloc(nclasses, int);
+    ndend = Calloc(nclasses, int);
     
     /* initialize some arrays for the tree */
     zeroInt(nodestatus, nrnodes * nclasses);
@@ -65,7 +66,7 @@ void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDa
     
    /* zeroDouble(avnode, nrnodes); */
 
-    jdex = (int *) Calloc(nclasses * nsample, int);
+    jdex = Calloc(nclasses * nsample, int);
     
     ncur = 0;
     for (s = 0; s < nclasses; ++s) {
@@ -243,16 +244,16 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
     double crit, *critmax, *critvar, suml, sumr, d, critParent, sumcritvar, sumcritmax;
 
     
-    critvar = (double *) Calloc(nclasses, double);
-    critmax = (double *) Calloc(nclasses, double);
-    ubestt = (double *) Calloc(nclasses, double);
+    critvar = Calloc(nclasses, double);
+    critmax = Calloc(nclasses, double);
+    ubestt = Calloc(nclasses, double);
   
-    ut = (double *) Calloc(nclasses * nsample, double);
-    xt = (double *) Calloc(nclasses * nsample, double);
-    v  = (double *) Calloc(nsample, double);
-    yl = (double *) Calloc(nsample * nclasses, double);
-    mind  = (int *) Calloc(mdim, int);
-    ncase = (int *) Calloc(nsample, int);
+    ut = Calloc(nclasses * nsample, double);
+    xt = Calloc(nclasses * nsample, double);
+    v = Calloc(nsample, double);
+    yl = Calloc(nsample * nclasses, double);
+    mind = Calloc(mdim, int);
+    ncase = Calloc(nsample, int);
     zeroDouble(avcat, 32);
     zeroDouble(tavcat, 32);
 
@@ -440,7 +441,7 @@ void predictRegTree(double *x, int nsample, int mdim,
      for (s = 0; s < nclasses; ++s) { /* loop over classes */
        
 /*    if (maxcat > 1) {
-        cbestsplit = (int *) Calloc(maxcat * treeSize, int);
+        cbestsplit = Calloc(maxcat * treeSize, int);
         zeroInt(cbestsplit, maxcat * treeSize);
        
         for (i = 0; i < nrnodes; ++i) {
@@ -485,7 +486,7 @@ void permuteOOB(int m, double *x, int *in, int nsample, int mdim, int s, int ncl
     double *tp, tmp;
     int i, last, k, nOOB = 0;
 
-    tp = (double *) Calloc(nsample, double);
+    tp = Calloc(nsample, double);
 
     for (i = 0; i < nsample; ++i) {
   	/* make a copy of the OOB part of the data into tp (for permuting) */

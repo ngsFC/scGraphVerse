@@ -18,6 +18,7 @@
 #include <R.h>
 #include <R_ext/Random.h>
 #include <R_ext/Utils.h>
+#include <R_ext/Memory.h>
 
 /* test if the bit at position pos is turned on */
 #define isBitOn(x,pos) (((x) & (1 << (pos))) > 0)
