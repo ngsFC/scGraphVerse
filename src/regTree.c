@@ -25,8 +25,10 @@
  *      It comes with no guarantee.
  *
  ******************************************************************/
-#include <Rmath.h>
 #include <R.h>
+#include <Rmath.h>
+#include <R_ext/Random.h>
+#include <R_ext/Utils.h>
 #include "rf.h"
 
 void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDaughter,

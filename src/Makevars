@@ -1,0 +1,19 @@
+# Makevars for scGraphVerse - R 4.5+ compatibility
+#
+# This file ensures proper compilation with modern C compilers and R >= 4.5
+
+# Standard C compiler flags for R packages
+PKG_CFLAGS = -DHAVE_VISIBILITY_ATTRIBUTE -fvisibility=hidden
+
+# Additional flags for R 4.5+ compatibility
+PKG_CFLAGS += -std=gnu99 -Wall -Wextra -pedantic
+
+# Disable specific warnings that are common in legacy RandomForest code
+# but don't affect functionality
+PKG_CFLAGS += -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare
+
+# Ensure we use the correct R headers
+PKG_CPPFLAGS = -I$(R_INCLUDE_DIR)
+
+# Linker flags
+PKG_LIBS = -L$(R_HOME)/lib -lR

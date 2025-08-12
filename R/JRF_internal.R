@@ -2,7 +2,6 @@
 # JRF Implementation - EXACT copy of working JRF package functions
 # =========================
 
-# EXACT COPY of working JRF_onetarget function
 .jrf_onetarget <- function(x, y = NULL, xtest = NULL, ytest = NULL, ntree, sampsize, 
     totsize = if (replace) ncol(x) else ceiling(0.632 * ncol(x)), 
     mtry = if (!is.null(y) && !is.factor(y)) max(floor(nrow(x)/3), 
@@ -109,7 +108,6 @@
     impmat <- double(1)
     replace = T
     
-    # EXACT regRF call from working JRF (regression branch)
     rfout <- .C("regRF", x, y, ww, as.integer(c(totsize, 
         p)), sampsize = as.integer(sampsize), as.integer(totsize), 
         as.integer(nodesize), as.integer(nrnodes), as.integer(ntree), 
@@ -181,7 +179,6 @@
     return(out)
 }
 
-# EXACT copy of working importance function
 .importance <- function(x, scale = TRUE) {
     type = NULL
     class = NULL
@@ -229,7 +226,6 @@
     imp
 }
 
-# EXACT copy of working JRF main function
 .jrf_network <- function(data_list, ntree = 1000, mtry = NULL) {
     X <- data_list
     nclasses <- length(X)

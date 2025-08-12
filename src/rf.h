@@ -14,6 +14,11 @@
 #ifndef RF_H
 #define RF_H
 
+/* Include R headers for compatibility */
+#include <R.h>
+#include <R_ext/Random.h>
+#include <R_ext/Utils.h>
+
 /* test if the bit at position pos is turned on */
 #define isBitOn(x,pos) (((x) & (1 << (pos))) > 0)
 /* swap two integers */
@@ -72,6 +77,10 @@ void unpack(int nBits, unsigned int npack, int *icat);
 
 void zeroInt(int *x, int length);
 void zeroDouble(double *x, int length);
+
+/* Additional function prototypes for R 4.5+ compatibility */
+void simpleLinReg(int nsample, double *x, double *y, double *coef,
+                  double *mse, int *hasPred);
 void createClass(double *x, int realN, int totalN, int mdim);
 void prepare(int *cl, const int nsample, const int nclass, const int ipi, 
 	     double *pi, double *pid, int *nc, double *wtt);

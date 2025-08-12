@@ -1,0 +1,9 @@
+# Makevars.win for scGraphVerse - Windows R 4.5+ compatibility
+#
+# This file ensures proper compilation on Windows with modern compilers
+
+# Standard C compiler flags for Windows R packages  
+PKG_CFLAGS = -std=gnu99 -Wall -O2
+
+# Disable specific warnings common in legacy code
+PKG_CFLAGS += -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare

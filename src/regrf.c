@@ -16,6 +16,8 @@
 *******************************************************************/
 
 #include <R.h>
+#include <R_ext/Random.h>
+#include <R_ext/Utils.h>
 #include "rf.h"
 
 void simpleLinReg(int nsample, double *x, double *y, double *coef,
@@ -224,9 +226,6 @@ for (s =0; s< *nclasses; ++s){
 }
    }
 
- 
-    
-    }
-     
-           
-  
+    /* Clean up R random number state */
+    PutRNGstate();
+}
