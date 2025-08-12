@@ -15,12 +15,7 @@
    GNU General Public License for more details.
 *******************************************************************/
 
-#define R_NO_REMAP
 #include <R.h>
-#include <Rinternals.h>
-#include <R_ext/Memory.h>
-#include <R_ext/Random.h>
-#include <R_ext/Utils.h>
 #include "rf.h"
 
 void simpleLinReg(int nsample, double *x, double *y, double *coef,
@@ -64,16 +59,16 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
 
   *************************************************************************/
 
-    double errts = 0.0, *meanYts, *varYts, r, *xrand,
-	  resid=0.0, ooberrperm, delta;
+    double errts = 0.0, averrb,  *meanYts, *varYts, r, *xrand,
+	  *errb, resid=0.0, *ooberr, ooberrperm, delta, *resOOB;
 
-    double *yb, *xb, *ytree, *tgini, *meanY, *varY, *ww;
+    double *yb, *xtmp, *xb, *ytr, *ytree, *tgini, *meanY, *varY, *ww;
 
-    int k, m, mr, n, nOOB, j, jout, idx, ntest, last, ktmp,
+    int k, m, mr, n, nOOB, j, jout, idx, ntest, last, ktmp, nPerm,
         nsample, mdim, keepF, keepInbag, s;
-    int varImp, localImp, *varUsed, kk;
+    int *oobpair, varImp, localImp, *varUsed, kk;
 
-    int *in, *nind, *nodexts;
+    int *in, *nind, *nodex, *nodexts;
 
   
     nsample = xdim[0];
@@ -81,14 +76,14 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
     ntest = *nts;
     varImp = imp[0];
     localImp = imp[1];
-    /* nPerm = imp[2]; // unused variable removed */
+    nPerm = imp[2];
     keepF = keepf[0];
     keepInbag = keepf[1];
 
     if (*jprint == 0) *jprint = *nTree + 1;   	
 	
-    /* errb = (double *) S_alloc(*nclasses, sizeof(double)); // unused variable removed */
-    /* ooberr = (double *) S_alloc(*nclasses, sizeof(double)); // unused variable removed */
+    errb         = (double *) S_alloc(*nclasses, sizeof(double));	
+    ooberr  = (double *) S_alloc(*nclasses, sizeof(double));
     yb         = (double *) S_alloc(*nclasses * *totsize, sizeof(double));
     xb         = (double *) S_alloc(*nclasses * mdim * *totsize, sizeof(double));
     meanY         = (double *) S_alloc(*nclasses, sizeof(double));
@@ -97,23 +92,23 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
     varYts         = (double *) S_alloc(*nclasses, sizeof(double));
     ww         = (double *) S_alloc(*nclasses, sizeof(double));
     xrand        = (double *) S_alloc(*totsize, sizeof(double)); /* predictions for each class */
-    /* ytr = (double *) S_alloc(nsample * *nclasses, sizeof(double)); // unused variable removed */
-    /* xtmp = (double *) S_alloc(nsample, sizeof(double)); // unused variable removed */
-    /* resOOB = (double *) S_alloc(nsample * *nclasses, sizeof(double)); // unused variable removed */
+    ytr        = (double *) S_alloc(nsample * *nclasses, sizeof(double)); /* predictions for each class */
+    xtmp       = (double *) S_alloc(nsample, sizeof(double));
+    resOOB     = (double *) S_alloc(nsample * *nclasses, sizeof(double));
     in        = (int *) S_alloc(nsample, sizeof(int));
-    /* nodex = (int *) S_alloc(*nclasses * nsample, sizeof(int)); // unused variable removed */
+    nodex      = (int *) S_alloc(*nclasses * nsample, sizeof(int));
     varUsed    = (int *) S_alloc(mdim, sizeof(int));
     nind = *replace ? NULL : (int *) S_alloc(nsample, sizeof(int));
 
-    /* oobpair = (*doProx && *oobprox) ?
-	  (int *) S_alloc(nsample * nsample, sizeof(int)) : NULL; // unused variable removed */
+    oobpair = (*doProx && *oobprox) ?
+	  (int *) S_alloc(nsample * nsample, sizeof(int)) : NULL;
 
     /* If variable importance is requested, tgini points to the second
        "column" of errimp, otherwise it's just the same as errimp. */
     kk= (mdim * *nclasses);
     tgini = varImp ? errimp + kk : errimp;
 
-    /* averrb = 0.0; // unused variable removed */
+    averrb = 0.0;
 
 
     zeroDouble(yptr, *nclasses * nsample);
@@ -229,6 +224,9 @@ for (s =0; s< *nclasses; ++s){
 }
    }
 
-    /* Clean up R random number state */
-    PutRNGstate();
-}
+ 
+    
+    }
+     
+           
+  

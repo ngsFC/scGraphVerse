@@ -25,16 +25,8 @@
  *      It comes with no guarantee.
  *
  ******************************************************************/
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <R_ext/Memory.h>
-#include <R_ext/Random.h>
-#include <R_ext/Utils.h>
 #include <Rmath.h>
-
-/* Using R_alloc for memory allocation (automatically freed) */
-
+#include <R.h>
 #include "rf.h"
 
 void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDaughter,
@@ -51,18 +43,18 @@ void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDa
     sumnode = (double *) S_alloc(nclasses, sizeof(double));
     d = (double *) S_alloc(nclasses, sizeof(double));
     ubest = (double *) S_alloc(nclasses, sizeof(double));
-    ndendl = (int *) R_alloc(nclasses, sizeof(int));
-    nodecnt = (int *) R_alloc(nclasses, sizeof(int));
+    ndendl = (int *) Calloc(nclasses, int);
+    nodecnt = (int *) Calloc(nclasses, int);
     decsplit = (double *) S_alloc(nclasses, sizeof(double));
     
     
-    nodestart = (int *) R_alloc(nclasses * nrnodes, sizeof(int));
-    nodepop = (int *) R_alloc(nclasses * nrnodes, sizeof(int));
+    nodestart = (int *) Calloc(nclasses * nrnodes, int);
+    nodepop   = (int *) Calloc(nclasses * nrnodes, int);
     av         = (double *) S_alloc(nclasses, sizeof(double)); /* average for each class */
     ss         = (double *) S_alloc(nclasses, sizeof(double)); /* standard deviation for each class */
     avnode     = (double *) S_alloc(nclasses * nrnodes, sizeof(double)); /* matrix average node x classes */
-    ndstart = (int *) R_alloc(nclasses, sizeof(int));
-    ndend = (int *) R_alloc(nclasses, sizeof(int));
+    ndstart = (int *) Calloc(nclasses, int);
+    ndend = (int *) Calloc(nclasses, int);
     
     /* initialize some arrays for the tree */
     zeroInt(nodestatus, nrnodes * nclasses);
@@ -71,7 +63,7 @@ void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDa
     
    /* zeroDouble(avnode, nrnodes); */
 
-    jdex = (int *) R_alloc(nclasses * nsample, sizeof(int));
+    jdex = (int *) Calloc(nclasses * nsample, int);
     
     ncur = 0;
     for (s = 0; s < nclasses; ++s) {
@@ -219,8 +211,13 @@ void regTree(double *x, double *y, int mdim, int *sampsize,int nsample, int *lDa
 
 
     
-    /* Memory allocated with R_alloc is automatically freed */
-    /* Free(nodestart); Free(jdex); Free(nodepop); Free(ndendl); Free(nodecnt); Free(nodestart); Free(ndend); */
+    Free(nodestart);
+    Free(jdex);
+    Free(nodepop);
+    Free(ndendl);
+    Free(nodecnt);
+    Free(nodestart);
+    Free(ndend);
       
 }
 
@@ -238,22 +235,22 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
          
 
 
-    int last, ncat[32], icat[32], nl, nr, npopl, npopr;
+    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
     int i, j, kv, l, *mind, *ncase, s;
     double *xt, *ut, *v, *yl, sumcat[32], avcat[32], tavcat[32], *ubestt;
     double crit, *critmax, *critvar, suml, sumr, d, critParent, sumcritvar, sumcritmax;
 
     
-    critvar = (double *) R_alloc(nclasses, sizeof(double));
-    critmax = (double *) R_alloc(nclasses, sizeof(double));
-    ubestt = (double *) R_alloc(nclasses, sizeof(double));
+    critvar = (double *) Calloc(nclasses, double);
+    critmax = (double *) Calloc(nclasses, double);
+    ubestt = (double *) Calloc(nclasses, double);
   
-    ut = (double *) R_alloc(nclasses * nsample, sizeof(double));
-    xt = (double *) R_alloc(nclasses * nsample, sizeof(double));
-    v = (double *) R_alloc(nsample, sizeof(double));
-    yl = (double *) R_alloc(nsample * nclasses, sizeof(double));
-    mind = (int *) R_alloc(mdim, sizeof(int));
-    ncase = (int *) R_alloc(nsample, sizeof(int));
+    ut = (double *) Calloc(nclasses * nsample, double);
+    xt = (double *) Calloc(nclasses * nsample, double);
+    v  = (double *) Calloc(nsample, double);
+    yl = (double *) Calloc(nsample * nclasses, double);
+    mind  = (int *) Calloc(mdim, int);
+    ncase = (int *) Calloc(nsample, int);
     zeroDouble(avcat, 32);
     zeroDouble(tavcat, 32);
 
@@ -283,7 +280,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
     swapInt(mind[j], mind[last]);
 		last--;
 		
-		/* lc = cat[kv]; // unused variable removed */
+		lc = cat[kv];
 	
 			
   		for (s = 0; s < nclasses; ++s) { /* xt: value of selected variable [kv] for each class each sample  */
@@ -408,8 +405,15 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
 
   
 	
-    /* Memory allocated with R_alloc is automatically freed */
-    /* Free(ncase); Free(mind); Free(v); Free(yl); Free(xt); Free(ut); Free(critvar); Free(critmax); Free(ubestt); */
+    Free(ncase);
+    Free(mind);
+    Free(v);
+    Free(yl);
+    Free(xt);
+    Free(ut);
+    Free(critvar);
+    Free(critmax);  
+    Free(ubestt);
 }
 
 void zeroInt(int *x, int length) {
@@ -434,7 +438,7 @@ void predictRegTree(double *x, int nsample, int mdim,
      for (s = 0; s < nclasses; ++s) { /* loop over classes */
        
 /*    if (maxcat > 1) {
-        cbestsplit = (int *) R_alloc(maxcat * treeSize, sizeof(int));
+        cbestsplit = (int *) Calloc(maxcat * treeSize, int);
         zeroInt(cbestsplit, maxcat * treeSize);
        
         for (i = 0; i < nrnodes; ++i) {
@@ -463,8 +467,7 @@ void predictRegTree(double *x, int nsample, int mdim,
 	nodex[i * nclasses + s] = k + 1;
     } 
      }
-    /* Memory allocated with R_alloc is automatically freed */
-    /* if (maxcat > 1) Free(cbestsplit); */
+    if (maxcat > 1) Free(cbestsplit);
 }
 
 
@@ -480,7 +483,7 @@ void permuteOOB(int m, double *x, int *in, int nsample, int mdim, int s, int ncl
     double *tp, tmp;
     int i, last, k, nOOB = 0;
 
-    tp = (double *) R_alloc(nsample, sizeof(double));
+    tp = (double *) Calloc(nsample, double);
 
     for (i = 0; i < nsample; ++i) {
   	/* make a copy of the OOB part of the data into tp (for permuting) */
@@ -507,7 +510,6 @@ void permuteOOB(int m, double *x, int *in, int nsample, int mdim, int s, int ncl
             nOOB++;
 		}
     }
-    /* Memory allocated with R_alloc is automatically freed */
-    /* Free(tp); */
+    Free(tp);
 }
 
