@@ -15,7 +15,10 @@
    GNU General Public License for more details.
 *******************************************************************/
 
+#define R_NO_REMAP
 #include <R.h>
+#include <Rinternals.h>
+#include <R_ext/Memory.h>
 #include <R_ext/Random.h>
 #include <R_ext/Utils.h>
 #include "rf.h"
