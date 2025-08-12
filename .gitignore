@@ -14,3 +14,14 @@
 *.tar.gz
 *.zip
 docs
+
+# Compiled binary files (should never be tracked)
+src/*.o
+src/*.so
+src/*.dll
+*.o
+*.so
+*.dll
+
+# BiocCheck output
+*.BiocCheck/
