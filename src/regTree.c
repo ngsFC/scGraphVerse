@@ -238,7 +238,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
          
 
 
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
+    int last, ncat[32], icat[32], nl, nr, npopl, npopr;
     int i, j, kv, l, *mind, *ncase, s;
     double *xt, *ut, *v, *yl, sumcat[32], avcat[32], tavcat[32], *ubestt;
     double crit, *critmax, *critvar, suml, sumr, d, critParent, sumcritvar, sumcritmax;
@@ -283,7 +283,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
     swapInt(mind[j], mind[last]);
 		last--;
 		
-		lc = cat[kv];
+		/* lc = cat[kv]; // unused variable removed */
 	
 			
   		for (s = 0; s < nclasses; ++s) { /* xt: value of selected variable [kv] for each class each sample  */

@@ -64,16 +64,16 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
 
   *************************************************************************/
 
-    double errts = 0.0, averrb,  *meanYts, *varYts, r, *xrand,
-	  *errb, resid=0.0, *ooberr, ooberrperm, delta, *resOOB;
+    double errts = 0.0, *meanYts, *varYts, r, *xrand,
+	  resid=0.0, ooberrperm, delta;
 
-    double *yb, *xtmp, *xb, *ytr, *ytree, *tgini, *meanY, *varY, *ww;
+    double *yb, *xb, *ytree, *tgini, *meanY, *varY, *ww;
 
-    int k, m, mr, n, nOOB, j, jout, idx, ntest, last, ktmp, nPerm,
+    int k, m, mr, n, nOOB, j, jout, idx, ntest, last, ktmp,
         nsample, mdim, keepF, keepInbag, s;
-    int *oobpair, varImp, localImp, *varUsed, kk;
+    int varImp, localImp, *varUsed, kk;
 
-    int *in, *nind, *nodex, *nodexts;
+    int *in, *nind, *nodexts;
 
   
     nsample = xdim[0];
@@ -81,14 +81,14 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
     ntest = *nts;
     varImp = imp[0];
     localImp = imp[1];
-    nPerm = imp[2];
+    /* nPerm = imp[2]; // unused variable removed */
     keepF = keepf[0];
     keepInbag = keepf[1];
 
     if (*jprint == 0) *jprint = *nTree + 1;   	
 	
-    errb         = (double *) S_alloc(*nclasses, sizeof(double));	
-    ooberr  = (double *) S_alloc(*nclasses, sizeof(double));
+    /* errb = (double *) S_alloc(*nclasses, sizeof(double)); // unused variable removed */
+    /* ooberr = (double *) S_alloc(*nclasses, sizeof(double)); // unused variable removed */
     yb         = (double *) S_alloc(*nclasses * *totsize, sizeof(double));
     xb         = (double *) S_alloc(*nclasses * mdim * *totsize, sizeof(double));
     meanY         = (double *) S_alloc(*nclasses, sizeof(double));
@@ -97,23 +97,23 @@ void regRF(double *x, double *y, double *weight, int *xdim, int *sampsize,int *t
     varYts         = (double *) S_alloc(*nclasses, sizeof(double));
     ww         = (double *) S_alloc(*nclasses, sizeof(double));
     xrand        = (double *) S_alloc(*totsize, sizeof(double)); /* predictions for each class */
-    ytr        = (double *) S_alloc(nsample * *nclasses, sizeof(double)); /* predictions for each class */
-    xtmp       = (double *) S_alloc(nsample, sizeof(double));
-    resOOB     = (double *) S_alloc(nsample * *nclasses, sizeof(double));
+    /* ytr = (double *) S_alloc(nsample * *nclasses, sizeof(double)); // unused variable removed */
+    /* xtmp = (double *) S_alloc(nsample, sizeof(double)); // unused variable removed */
+    /* resOOB = (double *) S_alloc(nsample * *nclasses, sizeof(double)); // unused variable removed */
     in        = (int *) S_alloc(nsample, sizeof(int));
-    nodex      = (int *) S_alloc(*nclasses * nsample, sizeof(int));
+    /* nodex = (int *) S_alloc(*nclasses * nsample, sizeof(int)); // unused variable removed */
     varUsed    = (int *) S_alloc(mdim, sizeof(int));
     nind = *replace ? NULL : (int *) S_alloc(nsample, sizeof(int));
 
-    oobpair = (*doProx && *oobprox) ?
-	  (int *) S_alloc(nsample * nsample, sizeof(int)) : NULL;
+    /* oobpair = (*doProx && *oobprox) ?
+	  (int *) S_alloc(nsample * nsample, sizeof(int)) : NULL; // unused variable removed */
 
     /* If variable importance is requested, tgini points to the second
        "column" of errimp, otherwise it's just the same as errimp. */
     kk= (mdim * *nclasses);
     tgini = varImp ? errimp + kk : errimp;
 
-    averrb = 0.0;
+    /* averrb = 0.0; // unused variable removed */
 
 
     zeroDouble(yptr, *nclasses * nsample);
