@@ -690,7 +690,19 @@ Nodes:",
     adjm,
     grnboost_modules,
     params = list()) {
-    param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+    
+    # macOS compatibility: Use SerialParam for GRNBoost2 to avoid 
+    # BiocParallel + reticulate fork issues
+    is_macos <- Sys.info()["sysname"] == "Darwin"
+    
+    if (is_macos && method == "GRNBoost2") {
+        # Force serial processing on macOS for GRNBoost2
+        param_outer <- BiocParallel::SerialParam()
+        message("macOS detected: using serial processing")
+    } else {
+        # Use parallel processing for other methods or non-macOS systems
+        param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+    }
     BiocParallel::bplapply(
         seq_along(count_matrices_list),
         function(i) {

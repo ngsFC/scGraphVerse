@@ -21,7 +21,8 @@
 #' @param nCores Integer. Number of CPU cores to use for
 #'   parallelization. Default is the number of workers in the current
 #'   \pkg{BiocParallel} backend. Note: JRF uses C implementation and
-#'   does not use this parameter.
+#'   does not use this parameter. On macOS, GRNBoost2 automatically uses
+#'   serial processing to avoid fork() + Python compatibility issues.
 #' @param grnboost_modules Python modules needed for \code{GRNBoost2} if
 #'   using reticulate.
 #' @param debug Logical. If \code{TRUE}, prints detailed progress messages.
@@ -146,7 +147,20 @@ cutoff_adjacency <- function(
             }
         )
 
-        param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+        # macOS compatibility: Use SerialParam for GRNBoost2 to avoid 
+        # BiocParallel + reticulate fork issues
+        is_macos <- Sys.info()["sysname"] == "Darwin"
+        
+        if (is_macos && method == "GRNBoost2") {
+            # Force serial processing on macOS for GRNBoost2 shuffled runs
+            param_outer <- BiocParallel::SerialParam()
+            if (debug) {
+                message("macOS detected: using serial processing shuffled runs")
+            }
+        } else {
+            # Use parallel processing for other methods or non-macOS systems
+            param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+        }
 
         results <- BiocParallel::bplapply(
             jobs,

@@ -38,7 +38,9 @@ adjacency matrices (\code{"mean"}, \code{"max"}, etc.).}
 
 \item{nCores}{Integer. Number of CPU cores to use for
 parallelization. Default is the number of workers in the current
-\pkg{BiocParallel} backend.}
+\pkg{BiocParallel} backend. Note: JRF uses C implementation and
+does not use this parameter. On macOS, GRNBoost2 automatically uses
+serial processing to avoid fork() + Python compatibility issues.}
 
 \item{grnboost_modules}{Python modules needed for \code{GRNBoost2} if
 using reticulate.}
