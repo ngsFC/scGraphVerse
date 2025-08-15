@@ -748,9 +748,11 @@ Nodes:",
                     columns = genes,
                     index   = rownames(df)
                 )
+                # Force local execution on macOS to avoid Dask client issues
                 result_py <- grnboost_modules$arboreto$grnboost2(
                     expression_data = df_pandas,
-                    tf_names = genes
+                    tf_names = genes,
+                    client_or_address = "local"
                 )
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
@@ -789,9 +791,11 @@ Nodes:",
                     columns = genes,
                     index   = rownames(df)
                 )
+                # Force local execution on macOS to avoid Dask client issues
                 result_py <- grnboost_modules$arboreto$grnboost2(
                     expression_data = df_pandas,
-                    tf_names = genes
+                    tf_names = genes,
+                    client_or_address = "local"
                 )
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
