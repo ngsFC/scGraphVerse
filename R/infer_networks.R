@@ -55,7 +55,6 @@
 #'     \item \code{tol}: Convergence tolerance (default: 1e-4)
 #'   }
 #' @param verbose Logical. If TRUE, display progress messages. Default: FALSE.
-#' @param seed Integer. Random seed for reproducibility. Default: NULL.
 #'
 #' @return A list of inferred networks:
 #'   \itemize{
@@ -125,8 +124,7 @@ infer_networks <- function(
     zilgm_params = list(),
     jrf_params = list(),
     pczinb_params = list(),
-    verbose = FALSE,
-    seed = NULL) {
+    verbose = FALSE) {
     method <- match.arg(method)
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
