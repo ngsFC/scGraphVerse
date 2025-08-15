@@ -15,8 +15,7 @@ infer_networks(
   zilgm_params = list(),
   jrf_params = list(),
   pczinb_params = list(),
-  verbose = FALSE,
-  seed = NULL
+  verbose = FALSE
 )
 }
 \arguments{
@@ -80,8 +79,6 @@ parallelization. Defaults to the number of workers in the current
 }}
 
 \item{verbose}{Logical. If TRUE, display progress messages. Default: FALSE.}
-
-\item{seed}{Integer. Random seed for reproducibility. Default: NULL.}
 }
 \value{
 A list of inferred networks:
