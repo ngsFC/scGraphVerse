@@ -309,14 +309,31 @@ Nodes:",
     grnboost_modules,
     weight_function,
     quantile_threshold) {
-    shuffled <- .shuffle_matrix_rows(mat)
-    inferred <- infer_networks(list(shuffled),
-        method = method,
-        grnboost_modules = grnboost_modules
-    )
-    adjm <- generate_adjacency(inferred)
-    symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
-    quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
+    # Enhanced error handling for shuffled network inference
+    tryCatch({
+        shuffled <- .shuffle_matrix_rows(mat)
+        
+        # Additional safety check for GRNBoost2 on macOS
+        if (method == "GRNBoost2" && Sys.info()["sysname"] == "Darwin") {
+            # Ensure Python environment is clean before each shuffled run
+            if (!is.null(grnboost_modules)) {
+                if (!reticulate::py_module_available("pandas") || 
+                    !reticulate::py_module_available("arboreto")) {
+                    stop("Required Python modules not available")
+                }
+            }
+        }
+        
+        inferred <- infer_networks(list(shuffled),
+            method = method,
+            grnboost_modules = grnboost_modules
+        )
+        adjm <- generate_adjacency(inferred)
+        symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
+        quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
+    }, error = function(e) {
+        stop("Shuffled network inf failed (",method, "):", conditionMessage(e))
+    })
 }
 
 # JRF-specific function for joint null distribution
@@ -691,18 +708,70 @@ Nodes:",
     grnboost_modules,
     params = list()) {
     
-    # macOS compatibility: Use SerialParam for GRNBoost2 to avoid 
-    # BiocParallel + reticulate fork issues
+    # macOS compatibility: Completely bypass BiocParallel for GRNBoost2
+    # to avoid Python object serialization issues
     is_macos <- Sys.info()["sysname"] == "Darwin"
     
     if (is_macos && method == "GRNBoost2") {
-        # Force serial processing on macOS for GRNBoost2
-        param_outer <- BiocParallel::SerialParam()
-        message("macOS detected: using serial processing")
+        # Complete bypass of BiocParallel on macOS for GRNBoost2
+        message("macOS detected: using sequential processing for GRNBoost2")
+        return(lapply(seq_along(count_matrices_list), function(i) {
+            mat <- count_matrices_list[[i]]
+            
+            # Enhanced error handling for Python module access
+            tryCatch({
+                if (is.null(grnboost_modules)) {
+                    stop("Provide grnboost_modules")
+                }
+                
+                # Ensure Python modules are properly accessible
+                if (!reticulate::py_module_available("pandas")) {
+                    stop("pandas module not available in Python environment")
+                }
+                if (!reticulate::py_module_available("arboreto")) {
+                    stop("arboreto module not available in Python environment")
+                }
+                
+                df <- as.data.frame(t(mat))
+                genes <- colnames(df)
+                rownames(df) <- make.unique(rownames(df))
+                
+                if (exists("df_pandas", envir = .GlobalEnv)) {
+                    rm(df_pandas, envir = .GlobalEnv)
+                }
+                if (exists("result_py", envir = .GlobalEnv)) {
+                    rm(result_py, envir = .GlobalEnv)
+                }
+                
+                df_pandas <- grnboost_modules$pandas$DataFrame(
+                    data    = as.matrix(df),
+                    columns = genes,
+                    index   = rownames(df)
+                )
+                result_py <- grnboost_modules$arboreto$grnboost2(
+                    expression_data = df_pandas,
+                    tf_names = genes
+                )
+                result_r <- reticulate::py_to_r(result_py)
+                if (is.data.frame(result_r)) {
+                    rownames(result_r) <- NULL
+                }
+                return(result_r)
+            }, error = function(e) {
+                stop("GRNBoost2 failed (matrix ",i, "): ", conditionMessage(e))
+            })
+        }))
+    }
+    
+    # Use BiocParallel for all other cases
+    if (method == "GRNBoost2") {
+        # Non-macOS GRNBoost2: use parallel processing
+        param_outer <- BiocParallel::MulticoreParam(workers = nCores)
     } else {
-        # Use parallel processing for other methods or non-macOS systems
+        # Other methods: use parallel processing
         param_outer <- BiocParallel::MulticoreParam(workers = nCores)
     }
+    
     BiocParallel::bplapply(
         seq_along(count_matrices_list),
         function(i) {

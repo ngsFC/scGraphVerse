@@ -125,9 +125,6 @@ parallelization. Defaults to the number of workers in the current
 <dd><p>List of parameters for JRF method:</p><ul><li><p><code>ntree</code>: Number of trees (default: 500)</p></li>
 <li><p><code>mtry</code>: Number of variables to sample at each split
 (default: sqrt(p))</p></li>
-<li><p><code>nodesize</code>: Minimum node size (default: 5)</p></li>
-<li><p><code>maxnodes</code>: Maximum number of nodes (default: NULL)</p></li>
-<li><p><code>nCores</code>: Number of cores for parallel (default: 1)</p></li>
 </ul></dd>
 
 
@@ -164,10 +161,11 @@ plain matrix).</p>
 parallelization; internal <code>nCores</code> parameter controls
 computation.</p></li>
 <li><p><strong>GRNBoost2</strong> and <strong>PCzinb</strong>: Parallelized across
-matrices using <span class="pkg">BiocParallel</span>.</p></li>
-<li><p><strong>JRF</strong>: Joint modeling of all matrices together;
-internal parallelization across random forest trees using
-<span class="pkg">doParallel</span>.</p></li>
+matrices using <span class="pkg">BiocParallel</span>. Note: On macOS, GRNBoost2
+automatically uses serial processing to avoid fork() + Python
+compatibility issues.</p></li>
+<li><p><strong>JRF</strong>: Joint modeling of all matrices together using
+optimized C implementation.</p></li>
 </ul><p>Methods are based on:</p><ul><li><p><strong>GENIE3</strong>: Random Forest-based inference (Huynh-Thu et
 al., 2010).</p></li>
 <li><p><strong>GRNBoost2</strong>: Gradient boosting trees using arboreto

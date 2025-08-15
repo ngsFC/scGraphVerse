@@ -98,7 +98,9 @@ adjacency matrices (<code>"mean"</code>, <code>"max"</code>, etc.).</p></dd>
 <dt id="arg-ncores">nCores<a class="anchor" aria-label="anchor" href="#arg-ncores"></a></dt>
 <dd><p>Integer. Number of CPU cores to use for
 parallelization. Default is the number of workers in the current
-<span class="pkg">BiocParallel</span> backend.</p></dd>
+<span class="pkg">BiocParallel</span> backend. Note: JRF uses C implementation and
+does not use this parameter. On macOS, GRNBoost2 automatically uses
+serial processing to avoid fork() + Python compatibility issues.</p></dd>
 
 
 <dt id="arg-grnboost-modules">grnboost_modules<a class="anchor" aria-label="anchor" href="#arg-grnboost-modules"></a></dt>

@@ -147,24 +147,15 @@ cutoff_adjacency <- function(
             }
         )
 
-        # macOS compatibility: Use SerialParam for GRNBoost2 to avoid 
-        # BiocParallel + reticulate fork issues
+        # macOS compatibility: Completely bypass BiocParallel for GRNBoost2 
+        # shuffled runs to avoid Python object serialization issues
         is_macos <- Sys.info()["sysname"] == "Darwin"
         
         if (is_macos && method == "GRNBoost2") {
-            # Force serial processing on macOS for GRNBoost2 shuffled runs
-            param_outer <- BiocParallel::SerialParam()
             if (debug) {
-                message("macOS detected: using serial processing shuffled runs")
+                message("macOS detected: using sequential processing")
             }
-        } else {
-            # Use parallel processing for other methods or non-macOS systems
-            param_outer <- BiocParallel::MulticoreParam(workers = nCores)
-        }
-
-        results <- BiocParallel::bplapply(
-            jobs,
-            function(job) {
+            results <- lapply(jobs, function(job) {
                 mat_idx <- job$matrix_idx
                 mat <- count_matrices[[mat_idx]]
                 q_value <- .run_network_on_shuffled(
@@ -175,9 +166,27 @@ cutoff_adjacency <- function(
                     quantile_threshold
                 )
                 list(matrix_idx = mat_idx, q_value = q_value)
-            },
-            BPPARAM = param_outer
-        )
+            })
+        } else {
+            # Use parallel processing for other methods or non-macOS systems
+            param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+            results <- BiocParallel::bplapply(
+                jobs,
+                function(job) {
+                    mat_idx <- job$matrix_idx
+                    mat <- count_matrices[[mat_idx]]
+                    q_value <- .run_network_on_shuffled(
+                        mat,
+                        method,
+                        grnboost_modules,
+                        weight_function,
+                        quantile_threshold
+                    )
+                    list(matrix_idx = mat_idx, q_value = q_value)
+                },
+                BPPARAM = param_outer
+            )
+        }
         
         cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
     }
