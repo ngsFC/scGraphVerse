@@ -800,12 +800,23 @@ Nodes:",
                     columns = genes,
                     index   = rownames(df)
                 )
-                # Force local execution on macOS to avoid Dask client issues
-                result_py <- grnboost_modules$arboreto$grnboost2(
+                # Prepare GRNBoost2 arguments
+                grnboost_args <- list(
                     expression_data = df_pandas,
-                    tf_names = genes,
-                    client_or_address = "local"
+                    tf_names = genes
                 )
+                
+                # Merge with user parameters
+                if (length(params) > 0) {
+                    grnboost_args <- modifyList(grnboost_args, params)
+                }
+                
+                # Ensure local execution on macOS to avoid Dask client issues
+                if (Sys.info()["sysname"] == "Darwin") {
+                    grnboost_args$client_or_address <- "local"
+                }
+                
+                result_py <- do.call(grnboost_modules$arboreto$grnboost2, grnboost_args)
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
                     rownames(result_r) <- NULL
