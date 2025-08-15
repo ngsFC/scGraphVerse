@@ -75,9 +75,7 @@
 #'       parallelization; internal \code{nCores} parameter controls
 #'       computation.
 #'     \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
-#'       matrices using \pkg{BiocParallel}. Note: On macOS, GRNBoost2
-#'       automatically uses serial processing to avoid fork() + Python
-#'       compatibility issues.
+#'       matrices using \pkg{BiocParallel}.
 #'     \item \strong{JRF}: Joint modeling of all matrices together using
 #'       optimized C implementation.
 #'   }

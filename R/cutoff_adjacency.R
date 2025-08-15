@@ -21,8 +21,7 @@
 #' @param nCores Integer. Number of CPU cores to use for
 #'   parallelization. Default is the number of workers in the current
 #'   \pkg{BiocParallel} backend. Note: JRF uses C implementation and
-#'   does not use this parameter. On macOS, GRNBoost2 automatically uses
-#'   serial processing to avoid fork() + Python compatibility issues.
+#'   does not use this parameter.
 #' @param grnboost_modules Python modules needed for \code{GRNBoost2} if
 #'   using reticulate.
 #' @param debug Logical. If \code{TRUE}, prints detailed progress messages.
@@ -147,15 +146,11 @@ cutoff_adjacency <- function(
             }
         )
 
-        # macOS compatibility: Completely bypass BiocParallel for GRNBoost2 
-        # shuffled runs to avoid Python object serialization issues
-        is_macos <- Sys.info()["sysname"] == "Darwin"
-        
-        if (is_macos && method == "GRNBoost2") {
-            if (debug) {
-                message("macOS detected: using sequential processing")
-            }
-            results <- lapply(jobs, function(job) {
+        # Use parallel processing
+        param_outer <- BiocParallel::MulticoreParam(workers = nCores)
+        results <- BiocParallel::bplapply(
+            jobs,
+            function(job) {
                 mat_idx <- job$matrix_idx
                 mat <- count_matrices[[mat_idx]]
                 q_value <- .run_network_on_shuffled(
@@ -166,27 +161,9 @@ cutoff_adjacency <- function(
                     quantile_threshold
                 )
                 list(matrix_idx = mat_idx, q_value = q_value)
-            })
-        } else {
-            # Use parallel processing for other methods or non-macOS systems
-            param_outer <- BiocParallel::MulticoreParam(workers = nCores)
-            results <- BiocParallel::bplapply(
-                jobs,
-                function(job) {
-                    mat_idx <- job$matrix_idx
-                    mat <- count_matrices[[mat_idx]]
-                    q_value <- .run_network_on_shuffled(
-                        mat,
-                        method,
-                        grnboost_modules,
-                        weight_function,
-                        quantile_threshold
-                    )
-                    list(matrix_idx = mat_idx, q_value = q_value)
-                },
-                BPPARAM = param_outer
-            )
-        }
+            },
+            BPPARAM = param_outer
+        )
         
         cutoffs <- .aggregate_cutoffs(results, length(count_matrices))
     }

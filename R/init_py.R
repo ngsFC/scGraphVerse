@@ -5,7 +5,8 @@
 #' Automatically installs missing Python packages if requested.
 #'
 #' @param python_path Character string. Path to the Python executable,
-#'   e.g., \code{"/usr/bin/python3"}.
+#'   e.g., \code{"/usr/bin/python3"}. For optimal GRNBoost2 compatibility,
+#'   Python 3.8.10 is recommended.
 #' @param required Logical. If \code{TRUE}, errors if Python is not
 #'   available or path is invalid. Default: \code{TRUE}.
 #' @param install_missing Logical. If \code{TRUE}, automatically installs
@@ -13,6 +14,11 @@
 #' @param install_method Character string. Installation method when
 #'   \code{install_missing = TRUE}. Options: "auto", "conda", "pip".
 #'   Default: "auto".
+#' @param create_conda_env Logical. If \code{TRUE}, creates a conda 
+#'   environment with Python 3.8.10 for optimal GRNBoost2 compatibility.
+#'   Default: \code{FALSE}.
+#' @param conda_env_name Character string. Name for the conda environment.
+#'   Default: "scgraphverse-py38".
 #' @param verbose Logical. If \code{TRUE}, shows installation progress.
 #'   Default: \code{TRUE}.
 #'
@@ -38,13 +44,87 @@
 #'
 #' # Initialize with automatic installation of missing packages
 #' modules <- init_py(install_missing = TRUE)
+#' 
+#' # Create conda environment with Python 3.8.10 for optimal compatibility
+#' modules <- init_py(create_conda_env = TRUE, install_missing = TRUE)
+#' 
+#' # Use existing conda environment
+#' modules <- init_py(create_conda_env = TRUE, 
+#'                    conda_env_name = "my-py38-env",
+#'                    install_missing = TRUE)
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE,
     install_missing = FALSE,
     install_method = "auto",
+    create_conda_env = FALSE,
+    conda_env_name = "scgraphverse-py38",
     verbose = TRUE) {
-    reticulate::use_python(python_path, required = required)
+    
+    # Create conda environment with Python 3.8.10 if requested
+    if (create_conda_env) {
+        if (verbose) {
+            message("Creating conda environment '", conda_env_name, "' with Python 3.8.10...")
+        }
+        
+        tryCatch({
+            # Check if conda is available
+            if (!reticulate::conda_binary() == "") {
+                # Check if environment already exists
+                existing_envs <- reticulate::conda_list()
+                if (!conda_env_name %in% existing_envs$name) {
+                    # Create new environment with Python 3.8.10
+                    reticulate::conda_create(
+                        envname = conda_env_name,
+                        python_version = "3.8.10"
+                    )
+                    if (verbose) message("✓ Conda environment created successfully")
+                } else {
+                    if (verbose) message("✓ Conda environment already exists")
+                }
+                
+                # Use the conda environment
+                reticulate::use_condaenv(conda_env_name, required = TRUE)
+                if (verbose) message("✓ Using conda environment: ", conda_env_name)
+                
+            } else {
+                stop("Conda not found. Please install Anaconda or Miniconda first.")
+            }
+        }, error = function(e) {
+            if (verbose) {
+                message("Failed to create conda environment: ", e$message)
+                message("Falling back to specified python_path")
+            }
+            reticulate::use_python(python_path, required = required)
+        })
+    } else {
+        reticulate::use_python(python_path, required = required)
+    }
+    
+    # Check Python version compatibility for GRNBoost2
+    if (verbose) {
+        tryCatch({
+            py_version <- reticulate::py_config()$version
+            if (verbose) message("Using Python version: ", py_version)
+            
+            # Extract major.minor.patch version
+            version_parts <- strsplit(py_version, "\\.")[[1]]
+            major <- as.numeric(version_parts[1])
+            minor <- as.numeric(version_parts[2])
+            
+            # Check if not using recommended Python 3.8.10
+            if (!(major == 3 && minor == 8)) {
+                message("INFO: Python ", major, ".", minor, " detected.")
+                message("For optimal GRNBoost2 compatibility, Python 3.8.10 is recommended")
+                message("On macOS: pyenv install 3.8.10 && pyenv global 3.8.10")
+                message("On Windows: Download Python 3.8.10 from python.org/downloads/release/python-3810/")
+            } else {
+                message("✓ Using Python 3.8.x - optimal for GRNBoost2")
+            }
+        }, error = function(e) {
+            if (verbose) message("Could not check Python version")
+        })
+    }
 
     if (install_missing && !reticulate::py_module_available("arboreto")) {
         if (verbose) {
@@ -106,19 +186,6 @@ init_py <- function(
         )
     )
 
-    # Configure Dask for macOS compatibility
-    if (Sys.info()["sysname"] == "Darwin") {
-        if (verbose) message("macOS detected: configuring Dask for compatibility...")
-        tryCatch({
-            reticulate::py_run_string("
-import dask
-dask.config.set(scheduler='single-threaded')
-print('Dask configured for single-threaded execution on macOS')
-            ")
-        }, error = function(e) {
-            if (verbose) message("Warning: Could not configure Dask: ", e$message)
-        })
-    }
     
     if (verbose) message("Python modules successfully loaded.")
     return(modules)
