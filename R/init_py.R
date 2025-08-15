@@ -16,9 +16,12 @@
 #'   Default: "auto".
 #' @param create_conda_env Logical. If \code{TRUE}, creates a conda 
 #'   environment with Python 3.8.10 for optimal GRNBoost2 compatibility.
+#'   If conda is not available, automatically installs Miniconda first.
 #'   Default: \code{FALSE}.
 #' @param conda_env_name Character string. Name for the conda environment.
 #'   Default: "scgraphverse-py38".
+#' @param install_conda Logical. If \code{TRUE}, automatically installs 
+#'   Miniconda when conda is not found. Default: \code{TRUE}.
 #' @param verbose Logical. If \code{TRUE}, shows installation progress.
 #'   Default: \code{TRUE}.
 #'
@@ -46,11 +49,17 @@
 #' modules <- init_py(install_missing = TRUE)
 #' 
 #' # Create conda environment with Python 3.8.10 for optimal compatibility
+#' # This will automatically install Miniconda if not found
 #' modules <- init_py(create_conda_env = TRUE, install_missing = TRUE)
 #' 
 #' # Use existing conda environment
 #' modules <- init_py(create_conda_env = TRUE, 
 #'                    conda_env_name = "my-py38-env",
+#'                    install_missing = TRUE)
+#'                    
+#' # Disable automatic Miniconda installation
+#' modules <- init_py(create_conda_env = TRUE, 
+#'                    install_conda = FALSE,
 #'                    install_missing = TRUE)
 init_py <- function(
     python_path = "/usr/bin/python3",
@@ -59,6 +68,7 @@ init_py <- function(
     install_method = "auto",
     create_conda_env = FALSE,
     conda_env_name = "scgraphverse-py38",
+    install_conda = TRUE,
     verbose = TRUE) {
     
     # Create conda environment with Python 3.8.10 if requested
@@ -69,10 +79,30 @@ init_py <- function(
         
         tryCatch({
             # Check if conda is available
-            if (!reticulate::conda_binary() == "") {
+            conda_available <- tryCatch({
+                !reticulate::conda_binary() == ""
+            }, error = function(e) FALSE)
+            
+            if (!conda_available && install_conda) {
+                if (verbose) {
+                    message("Conda not found. Installing Miniconda...")
+                    message("This may take several minutes...")
+                }
+                
+                # Install Miniconda using reticulate
+                reticulate::install_miniconda()
+                
+                if (verbose) message("✓ Miniconda installed successfully")
+                conda_available <- TRUE
+            }
+            
+            if (conda_available) {
                 # Check if environment already exists
                 existing_envs <- reticulate::conda_list()
                 if (!conda_env_name %in% existing_envs$name) {
+                    if (verbose) {
+                        message("Creating conda environment with Python 3.8.10...")
+                    }
                     # Create new environment with Python 3.8.10
                     reticulate::conda_create(
                         envname = conda_env_name,
@@ -88,7 +118,7 @@ init_py <- function(
                 if (verbose) message("✓ Using conda environment: ", conda_env_name)
                 
             } else {
-                stop("Conda not found. Please install Anaconda or Miniconda first.")
+                stop("Conda installation failed or install_conda=FALSE. Please install Anaconda/Miniconda manually.")
             }
         }, error = function(e) {
             if (verbose) {
