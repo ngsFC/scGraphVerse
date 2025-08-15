@@ -6,7 +6,7 @@
 #'
 #' @param python_path Character string. Path to the Python executable,
 #'   e.g., \code{"/usr/bin/python3"}. For optimal GRNBoost2 compatibility,
-#'   Python 3.8.10 is recommended.
+#'   Python 3.8.x is strongly recommended.
 #' @param required Logical. If \code{TRUE}, errors if Python is not
 #'   available or path is invalid. Default: \code{TRUE}.
 #' @param install_missing Logical. If \code{TRUE}, automatically installs
@@ -14,14 +14,6 @@
 #' @param install_method Character string. Installation method when
 #'   \code{install_missing = TRUE}. Options: "auto", "conda", "pip".
 #'   Default: "auto".
-#' @param create_conda_env Logical. If \code{TRUE}, creates a conda 
-#'   environment with Python 3.8.10 for optimal GRNBoost2 compatibility.
-#'   If conda is not available, automatically installs Miniconda first.
-#'   Default: \code{FALSE}.
-#' @param conda_env_name Character string. Name for the conda environment.
-#'   Default: "scgraphverse-py38".
-#' @param install_conda Logical. If \code{TRUE}, automatically installs 
-#'   Miniconda when conda is not found. Default: \code{TRUE}.
 #' @param verbose Logical. If \code{TRUE}, shows installation progress.
 #'   Default: \code{TRUE}.
 #'
@@ -48,88 +40,16 @@
 #' # Initialize with automatic installation of missing packages
 #' modules <- init_py(install_missing = TRUE)
 #' 
-#' # Create conda environment with Python 3.8.10 for optimal compatibility
-#' # This will automatically install Miniconda if not found
-#' modules <- init_py(create_conda_env = TRUE, install_missing = TRUE)
-#' 
-#' # Use existing conda environment
-#' modules <- init_py(create_conda_env = TRUE, 
-#'                    conda_env_name = "my-py38-env",
-#'                    install_missing = TRUE)
-#'                    
-#' # Disable automatic Miniconda installation
-#' modules <- init_py(create_conda_env = TRUE, 
-#'                    install_conda = FALSE,
-#'                    install_missing = TRUE)
+#' # Use specific Python 3.8 installation for optimal GRNBoost2 compatibility
+#' modules <- init_py(python_path = "/usr/bin/python3.8", install_missing = TRUE)
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE,
     install_missing = FALSE,
     install_method = "auto",
-    create_conda_env = FALSE,
-    conda_env_name = "scgraphverse-py38",
-    install_conda = TRUE,
     verbose = TRUE) {
     
-    # Create conda environment with Python 3.8.10 if requested
-    if (create_conda_env) {
-        if (verbose) {
-            message("Creating conda environment '", conda_env_name, "' with Python 3.8.10...")
-        }
-        
-        tryCatch({
-            # Check if conda is available
-            conda_available <- tryCatch({
-                !reticulate::conda_binary() == ""
-            }, error = function(e) FALSE)
-            
-            if (!conda_available && install_conda) {
-                if (verbose) {
-                    message("Conda not found. Installing Miniconda...")
-                    message("This may take several minutes...")
-                }
-                
-                # Install Miniconda using reticulate
-                reticulate::install_miniconda()
-                
-                if (verbose) message("✓ Miniconda installed successfully")
-                conda_available <- TRUE
-            }
-            
-            if (conda_available) {
-                # Check if environment already exists
-                existing_envs <- reticulate::conda_list()
-                if (!conda_env_name %in% existing_envs$name) {
-                    if (verbose) {
-                        message("Creating conda environment with Python 3.8.10...")
-                    }
-                    # Create new environment with Python 3.8.10
-                    reticulate::conda_create(
-                        envname = conda_env_name,
-                        python_version = "3.8.10"
-                    )
-                    if (verbose) message("✓ Conda environment created successfully")
-                } else {
-                    if (verbose) message("✓ Conda environment already exists")
-                }
-                
-                # Use the conda environment
-                reticulate::use_condaenv(conda_env_name, required = TRUE)
-                if (verbose) message("✓ Using conda environment: ", conda_env_name)
-                
-            } else {
-                stop("Conda installation failed or install_conda=FALSE. Please install Anaconda/Miniconda manually.")
-            }
-        }, error = function(e) {
-            if (verbose) {
-                message("Failed to create conda environment: ", e$message)
-                message("Falling back to specified python_path")
-            }
-            reticulate::use_python(python_path, required = required)
-        })
-    } else {
-        reticulate::use_python(python_path, required = required)
-    }
+    reticulate::use_python(python_path, required = required)
     
     # Check Python version compatibility for GRNBoost2
     if (verbose) {
@@ -142,12 +62,15 @@ init_py <- function(
             major <- as.numeric(version_parts[1])
             minor <- as.numeric(version_parts[2])
             
-            # Check if not using recommended Python 3.8.10
+            # Check if not using recommended Python 3.8.x
             if (!(major == 3 && minor == 8)) {
-                message("INFO: Python ", major, ".", minor, " detected.")
-                message("For optimal GRNBoost2 compatibility, Python 3.8.10 is recommended")
-                message("On macOS: pyenv install 3.8.10 && pyenv global 3.8.10")
-                message("On Windows: Download Python 3.8.10 from python.org/downloads/release/python-3810/")
+                message("WARNING: Python ", major, ".", minor, " detected.")
+                message("GRNBoost2 works best with Python 3.8.x")
+                message("Consider installing Python 3.8:")
+                message("  • Ubuntu/Debian: sudo apt install python3.8")
+                message("  • macOS: brew install python@3.8") 
+                message("  • Windows: Download Python 3.8 from python.org")
+                message("  • Then use: modules <- init_py(python_path = 'path/to/python3.8')")
             } else {
                 message("✓ Using Python 3.8.x - optimal for GRNBoost2")
             }
