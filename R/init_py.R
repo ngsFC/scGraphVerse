@@ -106,6 +106,20 @@ init_py <- function(
         )
     )
 
+    # Configure Dask for macOS compatibility
+    if (Sys.info()["sysname"] == "Darwin") {
+        if (verbose) message("macOS detected: configuring Dask for compatibility...")
+        tryCatch({
+            reticulate::py_run_string("
+import dask
+dask.config.set(scheduler='single-threaded')
+print('Dask configured for single-threaded execution on macOS')
+            ")
+        }, error = function(e) {
+            if (verbose) message("Warning: Could not configure Dask: ", e$message)
+        })
+    }
+    
     if (verbose) message("Python modules successfully loaded.")
     return(modules)
 }
