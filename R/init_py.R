@@ -41,7 +41,8 @@
 #' modules <- init_py(install_missing = TRUE)
 #' 
 #' # Use specific Python 3.8 installation for optimal GRNBoost2 compatibility
-#' modules <- init_py(python_path = "/usr/bin/python3.8", install_missing = TRUE)
+#' modules <- init_py(python_path = "/usr/bin/python3.8",
+#'                   install_missing = TRUE)
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE,
@@ -64,13 +65,14 @@ init_py <- function(
             
             # Check if not using recommended Python 3.8.x
             if (!(major == 3 && minor == 8)) {
-                message("WARNING: Python ", major, ".", minor, " detected.")
+                message("Python ", major, ".", minor, " detected.")
                 message("GRNBoost2 works best with Python 3.8.x")
                 message("Consider installing Python 3.8:")
                 message("  • Ubuntu/Debian: sudo apt install python3.8")
                 message("  • macOS: brew install python@3.8") 
                 message("  • Windows: Download Python 3.8 from python.org")
-                message("  • Then use: modules <- init_py(python_path = 'path/to/python3.8')")
+                message("  • Then use: modules <- init_py(",
+                        "python_path = 'path/to/python3.8')")
             } else {
                 message("✓ Using Python 3.8.x - optimal for GRNBoost2")
             }
@@ -108,8 +110,7 @@ init_py <- function(
                     reticulate::py_install("arboreto")
                     if (verbose) message("Successfully installed via pip.")
                 } else {
-                    stop("Invalid install_method. Use 'auto',
-                        'conda', or 'pip'.")
+                    stop("install_method must be 'auto', 'conda', or 'pip'")
                 }
             },
             error = function(e) {
@@ -118,7 +119,7 @@ init_py <- function(
                     message("Try manual installation: pip install arboreto")
                 }
                 if (required) {
-                    stop("Failed to install Python package 'arboreto'.")
+                    stop("Python package 'arboreto' installation failed")
                 }
             }
         )

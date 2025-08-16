@@ -310,20 +310,23 @@ Nodes:",
     weight_function,
     quantile_threshold) {
     # Enhanced error handling for shuffled network inference
-    tryCatch({
-        shuffled <- .shuffle_matrix_rows(mat)
-        
-        
-        inferred <- infer_networks(list(shuffled),
-            method = method,
-            grnboost_modules = grnboost_modules
-        )
-        adjm <- generate_adjacency(inferred)
-        symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
-        quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
-    }, error = function(e) {
-        stop("Shuffled network inf failed (",method, "):", conditionMessage(e))
-    })
+    tryCatch(
+        {
+            shuffled <- .shuffle_matrix_rows(mat)
+
+
+            inferred <- infer_networks(list(shuffled),
+                method = method,
+                grnboost_modules = grnboost_modules
+            )
+            adjm <- generate_adjacency(inferred)
+            symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
+            quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
+        },
+        error = function(e) {
+            stop("Shuffled netinf failed (", method, "):", conditionMessage(e))
+        }
+    )
 }
 
 # JRF-specific function for joint null distribution
@@ -652,7 +655,7 @@ Nodes:",
 #' @keywords internal
 #' @noRd
 
-.run_jrf <- function(count_matrices_list, ntree=1000, mtry=NULL) {
+.run_jrf <- function(count_matrices_list, ntree = 1000, mtry = NULL) {
     message(
         "[JRF] Running Joint Random Forest for ",
         length(count_matrices_list), " datasets using C implementation..."
@@ -697,14 +700,13 @@ Nodes:",
     adjm,
     grnboost_modules,
     params = list()) {
-    
     # Use BiocParallel for parallel processing
     if (method == "GRNBoost2") {
         param_outer <- BiocParallel::MulticoreParam(workers = nCores)
     } else {
         param_outer <- BiocParallel::MulticoreParam(workers = nCores)
     }
-    
+
     BiocParallel::bplapply(
         seq_along(count_matrices_list),
         function(i) {
@@ -727,13 +729,16 @@ Nodes:",
                     expression_data = df_pandas,
                     tf_names = genes
                 )
-                
+
                 # Merge with user parameters
                 if (length(params) > 0) {
                     grnboost_args <- modifyList(grnboost_args, params)
                 }
-                
-                result_py <- do.call(grnboost_modules$arboreto$grnboost2, grnboost_args)
+
+                result_py <- do.call(
+                    grnboost_modules$arboreto$grnboost2,
+                    grnboost_args
+                )
                 result_r <- reticulate::py_to_r(result_py)
                 if (is.data.frame(result_r)) {
                     rownames(result_r) <- NULL
