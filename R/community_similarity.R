@@ -107,12 +107,24 @@ community_similarity <- function(
         "Transitivity"
     )
 
+    # Capture plots without displaying them
+    png(filename = tempfile(), width = 480, height = 480)
     .plot_radar_communities(comm_df)
+    radar_plot <- recordPlot()
+    dev.off()
+    
+    png(filename = tempfile(), width = 480, height = 480)
     .plot_topo_barplots(topo_df, control_topo)
+    topo_plot <- recordPlot()
+    dev.off()
 
     list(
         community_metrics = comm_df,
         topology_measures = topo_df,
-        control_topology  = control_topo
+        control_topology  = control_topo,
+        plots = list(
+            radar_plot = radar_plot,
+            topology_plot = topo_plot
+        )
     )
 }
