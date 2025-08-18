@@ -316,11 +316,14 @@ network, then compare their similarity using several metrics.
 Now we'll detect communities in our ground-truth network to establish the 
 reference community structure:
 
+```{r communities-gtruth, fig.alt="Community detection gtruth"}
+comm_truth <- community_path(adj_truth)
+```
+
 ```{r communities-consensus, fig.alt="Community detection consensus"}  
 # Detect communities in consensus network
 comm_cons <- community_path(consensus)
 ```
-
 
 Finally, we'll quantify how similar the community structures are between our 
 inferred consensus network and the ground-truth network:
