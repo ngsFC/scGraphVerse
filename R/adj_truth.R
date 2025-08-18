@@ -1,6 +1,6 @@
 #' Toy adjacency matrix for examples
 #'
-#' An afjacency matrix generated using real dataset and STRINGdb for
+#' An adjacency matrix generated using real dataset and STRINGdb for
 #' demonstrating functions in the scGraphVerse package.
 #'
 #' @format A matrix of dimension 35x35.

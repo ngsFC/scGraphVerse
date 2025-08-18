@@ -14,8 +14,7 @@
 #' @param adjm Optional. Reference adjacency matrix for matching dimensions
 #'   when using \code{"ZILGM"} or \code{"PCzinb"}.
 #' @param nCores Integer. Number of CPU cores to use for
-#'   parallelization. Defaults to the number of workers in the current
-#'   \pkg{BiocParallel} backend.
+#'   parallelization. Default: 1.
 #' @param grnboost_modules Python modules required for \code{GRNBoost2}
 #'   (created via \pkg{reticulate}).
 #' @param genie3_params List of parameters for GENIE3 method:
@@ -43,7 +42,7 @@
 #'   }
 #' @param jrf_params List of parameters for JRF method:
 #'   \itemize{
-#'     \item \code{ntree}: Number of trees (default: 500)
+#'     \item \code{ntree}: Number of trees (default: 1000)
 #'     \item \code{mtry}: Number of variables to sample at each split
 #'     (default: sqrt(p))
 #'   }
@@ -54,7 +53,7 @@
 #'     \item \code{max_iter}: Maximum iterations (default: 100)
 #'     \item \code{tol}: Convergence tolerance (default: 1e-4)
 #'   }
-#' @param verbose Logical. If TRUE, display progress messages. Default: FALSE.
+#' @param verbose Logical. If TRUE, display messages. Default: FALSE.
 #'
 #' @return A list of inferred networks:
 #'   \itemize{
@@ -71,9 +70,10 @@
 #'
 #'   Parallelization behavior:
 #'   \itemize{
-#'     \item \strong{GENIE3} and \strong{ZILGM}: No external
-#'       parallelization; internal \code{nCores} parameter controls
-#'       computation.
+#'     \item \strong{GENIE3}: No external parallelization; internal 
+#'       \code{nCores} parameter controls computation.
+#'     \item \strong{ZILGM}: Uses \code{nCores} parameter for internal
+#'       parallelization.
 #'     \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
 #'       matrices using \pkg{BiocParallel}.
 #'     \item \strong{JRF}: Joint modeling of all matrices together using
@@ -158,7 +158,6 @@ infer_networks <- function(
         norm_list <- lapply(
             count_matrices_list,
             function(mat) {
-                # Use the same normalization as working JRF example
                 t(apply(mat, 1, function(x) { (x - mean(x)) / sd(x) }))
             }
         )
