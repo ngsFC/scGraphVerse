@@ -4,7 +4,7 @@
 \alias{community_similarity}
 \title{Compare Community Assignments and Topological Properties}
 \usage{
-community_similarity(control_output, predicted_list)
+community_similarity(control_output, predicted_list, plot = TRUE)
 }
 \arguments{
 \item{control_output}{A list output from \code{community_path()} representing the
@@ -13,6 +13,9 @@ ground truth network. Must contain a \code{graph} (igraph object) and
 
 \item{predicted_list}{A list of lists, each output from \code{community_path()}
 representing predicted networks to compare.}
+
+\item{plot}{Logical. If TRUE, displays plots immediately. If FALSE, no plots
+are displayed. Default: TRUE.}
 }
 \value{
 A list containing:

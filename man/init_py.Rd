@@ -9,15 +9,13 @@ init_py(
   required = TRUE,
   install_missing = FALSE,
   install_method = "auto",
-  create_conda_env = FALSE,
-  conda_env_name = "scgraphverse-py38",
   verbose = TRUE
 )
 }
 \arguments{
 \item{python_path}{Character string. Path to the Python executable,
 e.g., \code{"/usr/bin/python3"}. For optimal GRNBoost2 compatibility,
-Python 3.8.10 is recommended.}
+Python 3.8.x is strongly recommended.}
 
 \item{required}{Logical. If \code{TRUE}, errors if Python is not
 available or path is invalid. Default: \code{TRUE}.}
@@ -28,13 +26,6 @@ missing Python packages. Default: \code{FALSE}.}
 \item{install_method}{Character string. Installation method when
 \code{install_missing = TRUE}. Options: "auto", "conda", "pip".
 Default: "auto".}
-
-\item{create_conda_env}{Logical. If \code{TRUE}, creates a conda
-environment with Python 3.8.10 for optimal GRNBoost2 compatibility.
-Default: \code{FALSE}.}
-
-\item{conda_env_name}{Character string. Name for the conda environment.
-Default: "scgraphverse-py38".}
 
 \item{verbose}{Logical. If \code{TRUE}, shows installation progress.
 Default: \code{TRUE}.}
@@ -65,11 +56,7 @@ modules <- init_py()
 # Initialize with automatic installation of missing packages
 modules <- init_py(install_missing = TRUE)
 
-# Create conda environment with Python 3.8.10 for optimal compatibility
-modules <- init_py(create_conda_env = TRUE, install_missing = TRUE)
-
-# Use existing conda environment
-modules <- init_py(create_conda_env = TRUE, 
-                   conda_env_name = "my-py38-env",
-                   install_missing = TRUE)
+# Use specific Python 3.8 installation for optimal GRNBoost2 compatibility
+modules <- init_py(python_path = "/usr/bin/python3.8",
+                  install_missing = TRUE)
 }

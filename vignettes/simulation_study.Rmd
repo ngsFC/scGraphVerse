@@ -153,7 +153,7 @@ ggraph(gtruth, layout = "fr") +
     theme_minimal()
 ```
 
-For demonstration purposes, we'll use the built-in example data:
+For demonstration purposes, we'll use the built-in example data. This example dataset contains a small ground-truth network with 35 genes and their known regulatory relationships. We'll visualize this network to understand the structure we're trying to recover through our inference methods.
 
 ```{r demo-data, fig.alt="Ground truth network nodes and edges"}
 # Use built-in example data for demonstration
@@ -177,8 +177,13 @@ ggraph(gtruth, layout = "fr") +
 
 # 2. Simulating Zero-Inflated Count Data
 
-We simulate three batches (n=50 cells each) of count matrices that follow the 
-ground-truth network topology with dropout.
+Now we'll generate synthetic single-cell count data that respects our ground-truth network structure. We simulate three experimental conditions (batches) with 50 cells each, using different parameters to model realistic batch effects and biological variability. The `zinb_simdata()` function creates zero-inflated negative binomial count data where gene expression levels are influenced by the regulatory relationships defined in our ground-truth network.
+
+**Key simulation parameters:**
+- `mu_range`: Different mean expression levels across conditions
+- `theta`: Overdispersion parameter (lower = more variable)  
+- `pi`: Zero-inflation probability (dropout rate)
+- `depth_range`: Sequencing depth variation per cell
 
 ```{r simulate}
 # Simulation parameters
@@ -198,10 +203,15 @@ sims <- zinb_simdata(
 count_matrices <- lapply(sims, t)
 ```
 
-# 3. Inferring Networks with JRF
+# 3. Inferring Networks with GENIE3
 
-We run **GENIE3** across the simulated batches to infer batch-specific
-regulatory edges.
+Next, we apply the **GENIE3** algorithm to infer gene regulatory networks from our simulated count data. GENIE3 uses random forests to predict each gene's expression based on all other genes, then ranks the importance of potential regulatory relationships. We process all three batches to capture condition-specific and shared regulatory patterns.
+
+**GENIE3 workflow:**
+1. For each target gene, build random forest model using all other genes as predictors
+2. Extract feature importance scores as edge weights  
+3. Generate weighted adjacency matrices for each batch
+4. Symmetrize the matrices using mean weights to create undirected networks
 
 ```{r genie3}
 networks_joint <- infer_networks(
@@ -217,13 +227,19 @@ swadj_list <- symmetrize(wadj_list, weight_function = "mean")
 
 # 4. ROC Curve and AUC
 
-Plot the ROC curve comparing continuous edge weights to the binary ground truth.
+Now we evaluate how well our inferred networks recover the ground-truth regulatory relationships using ROC curve analysis. The ROC curve plots True Positive Rate (sensitivity) against False Positive Rate (1-specificity) across different edge weight thresholds. A perfect classifier would achieve AUC = 1.0, while random guessing gives AUC = 0.5.
+
+**ROC Analysis Steps:**
+1. Use continuous edge weights from symmetrized adjacency matrices
+2. Compare against binary ground-truth network
+3. Calculate Area Under Curve (AUC) as overall performance metric
+4. Higher AUC indicates better recovery of true regulatory edges
 
 ```{r roc, fig.alt="ROC curve"}
 roc_res <- plotROC(
     swadj_list,
     adj_truth,
-    plot_title = "ROC Curve: JRF Joint Integration",
+    plot_title = "ROC Curve: GENIE3 Network Inference",
     is_binary = FALSE
 )
 roc_res$plot
@@ -232,7 +248,14 @@ auc_joint <- roc_res$auc
 
 ## 4.1. Precision–Recall and Graph Visualization
 
-Compute precision scores and visualize the binary networks.
+To convert our continuous edge weights into binary networks, we need to determine appropriate cutoff thresholds. The `cutoff_adjacency()` function uses a data-driven approach: it creates shuffled versions of our count data, infers networks from these null datasets, and sets the threshold at the 95th percentile of shuffled edge weights. This ensures we keep only edges that are much stronger than expected by random chance.
+
+**Cutoff Method:**
+1. Generate shuffled count matrices (randomize gene expression profiles)
+2. Run GENIE3 on shuffled data to get null distribution of edge weights
+3. Set threshold at 95th percentile of shuffled weights  
+4. Apply threshold to original networks to get binary adjacency matrices
+5. Calculate precision metrics: TPR (sensitivity), FPR, Precision, F1-score
 
 ```{r cutoff, fig.alt="result Graphs"}
 # Binary cutoff at 95th percentile
@@ -256,8 +279,12 @@ plotg(binary_listj)
 
 # 5. Consensus Networks and Community Similarity
 
-Aggregate inferred binaries by majority vote and compare community structure
-to ground truth.
+Since we have three binary networks (one per experimental condition), we can create a consensus network that captures edges consistently detected across conditions. The "vote" method includes an edge in the consensus only if it appears in at least 2 out of 3 individual networks, making it more robust to condition-specific noise.
+
+**Consensus Building:**
+- **Vote method**: Edge included if present in majority of networks (≥2/3)
+- **Union method**: Edge included if present in any network (≥1/3)  
+- **INet method**: Uses weighted evidence combination (more sophisticated)
 
 ```{r consensus, fig.alt="consensus Graph"}
 # Consensus matrix
@@ -268,9 +295,16 @@ plotg(list(consensus))
 
 
 ```{r communities adj_truth, fig.alt="Community detection adj_truth"}
-# Note: This section may require internet connectivity for STRINGdb validation
-# To run this section, set eval=TRUE and ensure internet connectivity
+Community detection identifies groups of highly interconnected genes that likely share biological functions or regulatory mechanisms. We'll detect communities in both our inferred consensus network and the ground-truth network, then compare their similarity using several metrics.
 
+**Community Detection Steps:**
+1. Apply Louvain algorithm to identify network modules
+2. Compare community assignments using multiple similarity measures:
+   - **Variation of Information (VI)**: Lower values = more similar
+   - **Normalized Mutual Information (NMI)**: Higher values = more similar  
+   - **Adjusted Rand Index (ARI)**: Higher values = more similar
+
+```{r compare-consensus}
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,
@@ -284,21 +318,32 @@ comm_truth <- community_path(adj_truth)
 ```
 
 
-```{r communities, fig.alt="Community detection consensus"}
+Now we'll detect communities in our ground-truth network to establish the reference community structure:
+
+```{r communities-consensus, fig.alt="Community detection consensus"}  
+# Detect communities in consensus network
 comm_cons <- community_path(consensus)
 ```
 
 
-```{r communities metrics, fig.alt="compare Graph with reference"}
-# Similarity
+Finally, we'll quantify how similar the community structures are between our inferred consensus network and the ground-truth network:
+
+```{r community-similarity, fig.alt="Community similarity metrics"}
+# Calculate community similarity metrics
 sim_score <- community_similarity(comm_truth, list(comm_cons))
 ```
 
 ## 5.1. Edge Mining
 
-Identify true positive edges in the consensus network using edge mining.
+Edge mining provides a detailed analysis of network reconstruction performance by categorizing each predicted edge as True Positive (TP), False Positive (FP), True Negative (TN), or False Negative (FN). This gives us insight into which specific regulatory relationships were successfully recovered.
 
-```{r edgemining}
+**Edge Mining Analysis:**
+- **True Positives (TP)**: Correctly predicted edges that exist in ground truth
+- **False Positives (FP)**: Incorrectly predicted edges not in ground truth  
+- **False Negatives (FN)**: Missed edges that exist in ground truth
+- **True Negatives (TN)**: Correctly identified non-edges
+
+```{r edge-mining}
 em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
 ```
 

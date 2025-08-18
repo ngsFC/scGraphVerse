@@ -31,8 +31,7 @@ objects.}
 when using \code{"ZILGM"} or \code{"PCzinb"}.}
 
 \item{nCores}{Integer. Number of CPU cores to use for
-parallelization. Defaults to the number of workers in the current
-\pkg{BiocParallel} backend.}
+parallelization. Default: 1.}
 
 \item{grnboost_modules}{Python modules required for \code{GRNBoost2}
 (created via \pkg{reticulate}).}
@@ -65,7 +64,7 @@ parallelization. Defaults to the number of workers in the current
 
 \item{jrf_params}{List of parameters for JRF method:
 \itemize{
-\item \code{ntree}: Number of trees (default: 500)
+\item \code{ntree}: Number of trees (default: 1000)
 \item \code{mtry}: Number of variables to sample at each split
 (default: sqrt(p))
 }}
@@ -78,7 +77,7 @@ parallelization. Defaults to the number of workers in the current
 \item \code{tol}: Convergence tolerance (default: 1e-4)
 }}
 
-\item{verbose}{Logical. If TRUE, display progress messages. Default: FALSE.}
+\item{verbose}{Logical. If TRUE, display messages. Default: FALSE.}
 }
 \value{
 A list of inferred networks:
@@ -103,9 +102,10 @@ plain matrix).
 
 Parallelization behavior:
 \itemize{
-\item \strong{GENIE3} and \strong{ZILGM}: No external
-parallelization; internal \code{nCores} parameter controls
-computation.
+\item \strong{GENIE3}: No external parallelization; internal
+\code{nCores} parameter controls computation.
+\item \strong{ZILGM}: Uses \code{nCores} parameter for internal
+parallelization.
 \item \strong{GRNBoost2} and \strong{PCzinb}: Parallelized across
 matrices using \pkg{BiocParallel}.
 \item \strong{JRF}: Joint modeling of all matrices together using
