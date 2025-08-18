@@ -42,8 +42,21 @@ library(celldex)
 
 # 1. Dataset and Preprocessing
 
-We use two public PBMC SCE objects containing PBMC samples.
-Our goal is to focus on healthy B cells and a common gene set.
+In this real-data analysis, we'll work with two public PBMC (Peripheral Blood 
+Mononuclear Cell) datasets from 10X Genomics. Our strategy is to focus 
+specifically on B cells and identify a common set of highly expressed genes 
+across both datasets. This approach allows us to compare regulatory networks 
+between different experimental batches while controlling for cell type and gene
+selection effects.
+
+**Data Processing Workflow:**
+1. Load two PBMC datasets (3k and 4k cells) from TENxPBMCData
+2. Use SingleR for automated cell type annotation
+3. Select top 500 most expressed genes in B cells from each dataset
+4. Find intersection of expressed genes to ensure comparable gene sets
+5. Subset datasets to B cells only with common gene set
+
+This preprocessing ensures we have clean, comparable data for network inference.
 
 ```{r loaddata}
 # 1. Load PBMC data
@@ -66,6 +79,7 @@ rownames(sce1) <- make.unique(symbols_tenx1[valid1])
 logcounts(sce1) <- as.matrix(logcounts(sce1))
 colnames(sce1) <- paste0("cell_", seq_len(ncol(sce1)))
 
+# 2. Cell type annotation
 ref <- celldex::HumanPrimaryCellAtlasData()
 pred1 <- SingleR(test = sce1, ref = ref, labels = ref$label.main)
 colData(sce1)$predicted_celltype <- pred1$labels
@@ -73,7 +87,7 @@ colData(sce1)$predicted_celltype <- pred1$labels
 pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
 colData(sce)$predicted_celltype <- pred$labels
 
-# 2. Select top 500 B-cell genes
+# 3. Select top 500 B-cell genes
 genes <- selgene(
     object = sce,
     top_n = 500,
@@ -83,7 +97,6 @@ genes <- selgene(
     remove_mt = TRUE
 )
 
-# 2. Select top 500 B-cell genes
 genes1 <- selgene(
     object = sce1,
     top_n = 500,
@@ -93,8 +106,11 @@ genes1 <- selgene(
     remove_mt = TRUE
 )
 
+# 4. Find intersection
 commong <- intersect(genes, genes1)
 
+
+# 5. Subset data
 pbmc1_sub <- subset(sce, features = commong)
 pbmc2_sub <- subset(sce1, features = commong)
 
@@ -111,7 +127,12 @@ bcell_list <- list(pbmc1_sub, pbmc2_sub)
 
 # 2. Network Inference
 
-We infer GRNs using five different algorithms.
+Now we'll infer gene regulatory networks from our preprocessed B cell data 
+using GENIE3. Unlike the simulation study where we had control over all 
+parameters, here we're working with real biological data that presents unique 
+challenges: B cells have distinct expression patterns, lower total gene counts
+compared to the full transcriptome, and batch effects between the two PBMC
+datasets.
 
 ```{r genie3}
 # Choose method: "GENIE3", "GRNBoost2", "ZILGM", "PCzinb" or "JRF"
@@ -126,7 +147,11 @@ networks <- infer_networks(
 
 ## 2.1. Building Adjacency Matrices
 
-Convert edge lists to weighted matrices, symmetrize, and apply threshold.
+Here we apply a more stringent threshold (99th percentile) compared to the 
+simulation study (95th percentile). This is appropriate for real data analysis
+where we expect higher noise levels and want to focus on the most confident 
+regulatory relationships. With B cell data, we're particularly interested in 
+high-confidence edges controlling B cell function.
 
 ```{r adjacency, fig.alt="plot Graphs"}
 # Weighted adjacency
@@ -148,7 +173,10 @@ plotg(binary_adj)
 
 # 3. Consensus and Community Detection
 
-Aggregate multiple binary networks into a consensus and find network modules.
+With only two PBMC datasets, our consensus network will include edges that 
+appear in both batches, providing high confidence in the regulatory 
+relationships. This is different from the simulation study where we had three 
+conditions and used a majority vote.
 
 ```{r consensus, fig.alt="plot consensus Graph"}
 # Consensus by vote
@@ -157,6 +185,10 @@ consensus <- create_consensus(binary_adj, method = "vote")
 plotg(list(consensus))
 ```
 
+
+Here we demonstrate two key features not shown in the simulation study: 
+**network comparison with external databases** and the `false_plot` 
+parameter in `compare_consensus()`.
 
 ```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb"}
 # Note: This requires internet connection for STRINGdb
@@ -169,7 +201,11 @@ communities <- community_path(consensus)
 
 # 4. Validation with STRINGdb
 
-Fetch high-confidence interactions from STRING and evaluate true positives.
+Unlike the simulation study where we used STRINGdb to create ground truth, here 
+we use it for validation of our inferred B cell regulatory network. 
+The `keep_all_genes = TRUE` parameter ensures we retain information for all 
+genes in our dataset, even those not found in STRING, which is important for 
+comprehensive edge mining analysis.
 
 ```{r stringdb}
 # Note: This requires internet connection for STRINGdb downloads
