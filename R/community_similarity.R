@@ -11,6 +11,8 @@
 #'   `communities$membership`.
 #' @param predicted_list A list of lists, each output from `community_path()`
 #'   representing predicted networks to compare.
+#' @param plot Logical. If TRUE, displays plots immediately. If FALSE, no plots
+#'   are displayed. Default: TRUE.
 #'
 #' @return A list containing:
 #'   \itemize{
@@ -64,7 +66,8 @@
 #' sim_score <- community_similarity(comm_truth, list(comm_cons))
 community_similarity <- function(
     control_output,
-    predicted_list) {
+    predicted_list,
+    plot = TRUE) {
     required_pkgs <- c("igraph", "fmsb")
     missing_pkgs <- required_pkgs[
         !vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)
@@ -107,24 +110,15 @@ community_similarity <- function(
         "Transitivity"
     )
 
-    # Capture plots without displaying them
-    png(filename = tempfile(), width = 480, height = 480)
-    .plot_radar_communities(comm_df)
-    radar_plot <- recordPlot()
-    dev.off()
-    
-    png(filename = tempfile(), width = 480, height = 480)
-    .plot_topo_barplots(topo_df, control_topo)
-    topo_plot <- recordPlot()
-    dev.off()
+    # Display plots if requested
+    if (plot) {
+        .plot_radar_communities(comm_df)
+        .plot_topo_barplots(topo_df, control_topo)
+    }
 
     list(
         community_metrics = comm_df,
         topology_measures = topo_df,
-        control_topology  = control_topo,
-        plots = list(
-            radar_plot = radar_plot,
-            topology_plot = topo_plot
-        )
+        control_topology  = control_topo
     )
 }
