@@ -74,7 +74,7 @@ init_py <- function(
                 message("  • Then use: modules <- init_py(",
                         "python_path = 'path/to/python3.8')")
             } else {
-                message("✓ Using Python 3.8.x - optimal for GRNBoost2")
+                message("Using Python 3.8.x - optimal for GRNBoost2")
             }
         }, error = function(e) {
             if (verbose) message("Could not check Python version")
