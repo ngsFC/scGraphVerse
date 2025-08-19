@@ -92,7 +92,7 @@ library(celldex)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r}
+```{r, fig.alt="Network visualization gtruth"}
 # Note: This section requires internet connectivity for external data downloads
 # To run this section, set eval=TRUE and ensure internet connectivity
 
@@ -316,9 +316,11 @@ network, then compare their similarity using several metrics.
 Now we'll detect communities in our ground-truth network to establish the 
 reference community structure:
 
+
 ```{r communities-gtruth, fig.alt="Community detection gtruth"}
 comm_truth <- community_path(adj_truth)
 ```
+
 
 ```{r communities-consensus, fig.alt="Community detection consensus"}  
 # Detect communities in consensus network
