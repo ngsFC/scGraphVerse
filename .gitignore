@@ -25,3 +25,5 @@ src/*.dll
 
 # BiocCheck output
 *.BiocCheck/
+/doc/
+/Meta/

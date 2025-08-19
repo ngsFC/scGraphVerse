@@ -99,8 +99,7 @@ adjacency matrices (<code>"mean"</code>, <code>"max"</code>, etc.).</p></dd>
 <dd><p>Integer. Number of CPU cores to use for
 parallelization. Default is the number of workers in the current
 <span class="pkg">BiocParallel</span> backend. Note: JRF uses C implementation and
-does not use this parameter. On macOS, GRNBoost2 automatically uses
-serial processing to avoid fork() + Python compatibility issues.</p></dd>
+does not use this parameter.</p></dd>
 
 
 <dt id="arg-grnboost-modules">grnboost_modules<a class="anchor" aria-label="anchor" href="#arg-grnboost-modules"></a></dt>
@@ -165,6 +164,7 @@ al., 2010).</p></li>
 <span class="r-in"><span>    nCores <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>    debug <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> failed to open the port 11789, trying a new port...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 1 → Cutoff = 0.09270</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 2 → Cutoff = 0.10499</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> [Method: GENIE3] Matrix 3 → Cutoff = 0.09768</span>

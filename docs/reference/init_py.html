@@ -59,7 +59,8 @@ Automatically installs missing Python packages if requested.</p>
 
 <dl><dt id="arg-python-path">python_path<a class="anchor" aria-label="anchor" href="#arg-python-path"></a></dt>
 <dd><p>Character string. Path to the Python executable,
-e.g., <code>"/usr/bin/python3"</code>.</p></dd>
+e.g., <code>"/usr/bin/python3"</code>. For optimal GRNBoost2 compatibility,
+Python 3.8.x is strongly recommended.</p></dd>
 
 
 <dt id="arg-required">required<a class="anchor" aria-label="anchor" href="#arg-required"></a></dt>
@@ -101,10 +102,22 @@ package using the specified method if not found.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Initialize Python environment (adjust python_path as needed)</span></span></span>
 <span class="r-in"><span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu">init_py</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using Python version: 3.8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Could not check Python version</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Python modules successfully loaded.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Initialize with automatic installation of missing packages</span></span></span>
 <span class="r-in"><span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu">init_py</span><span class="op">(</span>install_missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using Python version: 3.8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Could not check Python version</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Python modules successfully loaded.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Use specific Python 3.8 installation for optimal GRNBoost2 compatibility</span></span></span>
+<span class="r-in"><span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu">init_py</span><span class="op">(</span>python_path <span class="op">=</span> <span class="st">"/usr/bin/python3.8"</span>,</span></span>
+<span class="r-in"><span>                  install_missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Previous request to `use_python("/usr/bin/python3", required = TRUE)` will be ignored. It is superseded by request to `use_python("/usr/bin/python3.8")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using Python version: 3.8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Could not check Python version</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Python modules successfully loaded.</span>
 </code></pre></div>
     </div>

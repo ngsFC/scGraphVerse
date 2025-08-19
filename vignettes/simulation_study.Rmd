@@ -92,7 +92,7 @@ library(celldex)
 We select 500 top-variable T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r, eval=FALSE}
+```{r}
 # Note: This section requires internet connectivity for external data downloads
 # To run this section, set eval=TRUE and ensure internet connectivity
 

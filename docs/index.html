@@ -170,23 +170,36 @@
 <h3 id="id_-quick-start-demo">🎪 Quick Start Demo<a class="anchor" aria-label="anchor" href="#id_-quick-start-demo"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ngsFC.github.io/scGraphVerse">scGraphVerse</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Load example data 📊</span></span>
+<code class="sourceCode R"><span><span class="co"># Load example data 📊</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"count_matrices"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Infer networks 🧠</span></span>
 <span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/infer_networks.html">infer_networks</a></span><span class="op">(</span></span>
 <span>  count_matrices_list <span class="op">=</span> <span class="va">count_matrices</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span>
-<span>  nCores <span class="op">=</span> <span class="fl">4</span></span>
+<span>  nCores <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create consensus magic ✨</span></span>
 <span><span class="va">wadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_adjacency.html">generate_adjacency</a></span><span class="op">(</span><span class="va">networks</span><span class="op">)</span></span>
-<span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">wadj</span>, method <span class="op">=</span> <span class="st">"vote"</span><span class="op">)</span></span>
+<span><span class="va">wadj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/symmetrize.html">symmetrize</a></span><span class="op">(</span><span class="va">wadj</span>, weight_function <span class="op">=</span> <span class="st">"mean"</span>, nCores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualize! 🎨</span></span>
+<span><span class="co"># Network cutoff </span></span>
+<span><span class="va">adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cutoff_adjacency.html">cutoff_adjacency</a></span><span class="op">(</span></span>
+<span>  <span class="va">count_matrices</span>,</span>
+<span>  <span class="va">wadj</span>,</span>
+<span>  n <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"GENIE3"</span>,</span>
+<span>  quantile_threshold <span class="op">=</span> <span class="fl">0.99</span>,</span>
+<span>  nCores <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualize the graphs ✨</span></span>
+<span><span class="fu"><a href="reference/plotg.html">plotg</a></span><span class="op">(</span><span class="va">adj</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Create consensus ✨</span></span>
+<span><span class="va">consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_consensus.html">create_consensus</a></span><span class="op">(</span><span class="va">adj</span>, method <span class="op">=</span> <span class="st">"union"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualize the consensus! 🎨</span></span>
 <span><span class="fu"><a href="reference/plotg.html">plotg</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">consensus</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>

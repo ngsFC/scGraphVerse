@@ -68,10 +68,10 @@ init_py <- function(
                 message("Python ", major, ".", minor, " detected.")
                 message("GRNBoost2 works best with Python 3.8.x")
                 message("Consider installing Python 3.8:")
-                message("  • Ubuntu/Debian: sudo apt install python3.8")
-                message("  • macOS: brew install python@3.8") 
-                message("  • Windows: Download Python 3.8 from python.org")
-                message("  • Then use: modules <- init_py(",
+                message("  - Ubuntu/Debian: sudo apt install python3.8")
+                message("  - macOS: brew install python@3.8") 
+                message("  - Windows: Download Python 3.8 from python.org")
+                message("  - Then use: modules <- init_py(",
                         "python_path = 'path/to/python3.8')")
             } else {
                 message("Using Python 3.8.x - optimal for GRNBoost2")

@@ -50,7 +50,7 @@ radar plot for community assignment and bar plots for topology.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">community_similarity</span><span class="op">(</span><span class="va">control_output</span>, <span class="va">predicted_list</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">community_similarity</span><span class="op">(</span><span class="va">control_output</span>, <span class="va">predicted_list</span>, plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,6 +66,11 @@ ground truth network. Must contain a <code>graph</code> (igraph object) and
 <dt id="arg-predicted-list">predicted_list<a class="anchor" aria-label="anchor" href="#arg-predicted-list"></a></dt>
 <dd><p>A list of lists, each output from <code><a href="community_path.html">community_path()</a></code>
 representing predicted networks to compare.</p></dd>
+
+
+<dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
+<dd><p>Logical. If TRUE, displays plots immediately. If FALSE, no plots
+are displayed. Default: TRUE.</p></dd>
 
 </dl></div>
     <div class="section level2">
