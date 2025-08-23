@@ -1,11 +1,17 @@
 Package: scGraphVerse
 Title: scGraphVerse: A Gene Regulatory Network Analysis Package
 Version: 0.99.0
-Authors@R: 
+Authors@R: c(
     person("Francesco", "Cecere", 
            email = "francesco.cecerengs@gmail.com", 
            role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-0329-0870"))
+           comment = c(ORCID = "0000-0002-0329-0870")),
+    person("Annamaria", "Carissimo", 
+           role = "aut"),
+    person("Daniela", "De Canditiis", 
+           role = "aut"),
+    person("Claudia", "Angelini", 
+           role = "aut"))
 Description: A package for inferring, comparing, and visualizing gene regulatory networks 
     from single-cell RNA sequencing data. It integrates multiple methods (GENIE3, 
     GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
