@@ -87,10 +87,10 @@ colData(sce1)$predicted_celltype <- pred1$labels
 pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
 colData(sce)$predicted_celltype <- pred$labels
 
-# 3. Select top 500 B-cell genes
+# 3. Select top 100 B-cell genes
 genes <- selgene(
     object = sce,
-    top_n = 500,
+    top_n = 100,
     cell_type = "B_cell",
     cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
@@ -99,7 +99,7 @@ genes <- selgene(
 
 genes1 <- selgene(
     object = sce1,
-    top_n = 500,
+    top_n = 100,
     cell_type = "B_cell",
     cell_type_col = "predicted_celltype",
     remove_rib = TRUE,
@@ -119,6 +119,8 @@ pbmc2_sub <- pbmc2_sub[commong, ]
 
 pbmc1_sub <- pbmc1_sub[, colData(pbmc1_sub)$predicted_celltype == "B_cell"]
 pbmc2_sub <- pbmc2_sub[, colData(pbmc2_sub)$predicted_celltype == "B_cell"]
+pbmc1_sub <- pbmc1_sub[, 1:85]
+pbmc2_sub <- pbmc2_sub[, 1:85]
 
 # List for multi-sample analysis
 bcell_list <- list(pbmc1_sub, pbmc2_sub)
@@ -162,7 +164,7 @@ swadj <- symmetrize(wadj, weight_function = "mean")
 binary_adj <- cutoff_adjacency(
     count_matrices = bcell_list,
     weighted_adjm_list = swadj,
-    n = 2,
+    n = 1,
     method = method,
     quantile_threshold = 0.99,
     nCores = 1
@@ -175,8 +177,7 @@ plotg(binary_adj)
 
 With only two PBMC datasets, our consensus network will include edges that 
 appear in both batches, providing high confidence in the regulatory 
-relationships. This is different from the simulation study where we had three 
-conditions and used a majority vote.
+relationships.
 
 ```{r consensus, fig.alt="plot consensus Graph"}
 # Consensus by vote
