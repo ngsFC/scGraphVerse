@@ -1,3 +1,5 @@
+#' @importFrom stats setNames quantile sd glm.fit na.omit pchisq
+#' @importFrom utils head modifyList
 # plotg
 #' @keywords internal
 #' @noRd

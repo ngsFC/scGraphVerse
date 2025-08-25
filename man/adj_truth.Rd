@@ -5,7 +5,7 @@
 \alias{adj_truth}
 \title{Toy adjacency matrix for examples}
 \format{
-A matrix of dimension 20x20.
+A matrix of dimension 10x10.
 }
 \usage{
 data(adj_truth)

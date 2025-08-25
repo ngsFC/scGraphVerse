@@ -7,7 +7,7 @@
 #'   \code{c("TP53", "BRCA1", ...)}.
 #' @param species Integer. NCBI taxonomy ID of the species. Default is
 #'   \code{9606} (human).
-#' @param required_score Integer in [0,1000]. Minimum confidence score for
+#' @param required_score Integer in \\[0,1000\\]. Minimum confidence score for
 #'   interactions. Default is \code{400}.
 #' @param keep_all_genes Logical. If \code{TRUE} (default), includes all input
 #'   genes in the final matrix even if unmapped.
@@ -38,6 +38,7 @@
 #' @importFrom STRINGdb STRINGdb
 #' @importFrom httr POST content
 #' @importFrom jsonlite fromJSON
+#' @importFrom stats setNames
 #' @export
 #'
 #' @examples
