@@ -34,15 +34,12 @@
 #' @export
 #'
 #' @examples
-#' # Initialize Python environment (adjust python_path as needed)
-#' modules <- init_py()
-#'
-#' # Initialize with automatic installation of missing packages
-#' modules <- init_py(install_missing = TRUE)
-#' 
-#' # Use specific Python 3.8 installation for optimal GRNBoost2 compatibility
-#' modules <- init_py(python_path = "/usr/bin/python3.8",
-#'                   install_missing = TRUE)
+#' # Initialize Python environment (handles missing modules gracefully)
+#' tryCatch({
+#'   modules <- init_py(required = FALSE)
+#' }, error = function(e) {
+#'   message("Python environment not available: ", e$message)
+#' })
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE,
