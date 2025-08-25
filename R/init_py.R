@@ -122,22 +122,32 @@ init_py <- function(
         )
     }
 
-    modules <- list(
-        arboreto = reticulate::import(
-            "arboreto.algo",
-            delay_load = TRUE
-        ),
-        pandas = reticulate::import(
-            "pandas",
-            delay_load = TRUE
-        ),
-        numpy = reticulate::import(
-            "numpy",
-            delay_load = TRUE
+    modules <- tryCatch({
+        list(
+            arboreto = reticulate::import(
+                "arboreto.algo",
+                delay_load = TRUE
+            ),
+            pandas = reticulate::import(
+                "pandas",
+                delay_load = TRUE
+            ),
+            numpy = reticulate::import(
+                "numpy",
+                delay_load = TRUE
+            )
         )
-    )
+    }, error = function(e) {
+        if (required) {
+            stop("Failed to load Python modules: ", e$message)
+        } else {
+            if (verbose) message("Python modules not available: ", e$message)
+            return(NULL)
+        }
+    })
 
-    
-    if (verbose) message("Python modules successfully loaded.")
+    if (!is.null(modules) && verbose) {
+        message("Python modules successfully loaded.")
+    }
     return(modules)
 }
