@@ -11,7 +11,7 @@ Authors@R: c(
     person("Daniela", "De Canditiis", 
            role = "aut"),
     person("Claudia", "Angelini", 
-           role = "aut"))
+           role = c("aut", "fnd")))
 Description: A package for inferring, comparing, and visualizing gene regulatory networks 
     from single-cell RNA sequencing data. It integrates multiple methods (GENIE3, 
     GRNBoost2, ZILGM, PCzinb, and JRF) for robust network inference, supports consensus 
@@ -28,12 +28,14 @@ biocViews: GeneRegulation, NetworkInference, SingleCell, RNASeq, Visualization, 
 URL: https://ngsFC.github.io/scGraphVerse
 BugReports: https://github.com/ngsFC/scGraphVerse/issues
 Depends: 
-    R (>= 4.4.0)
+    R (>= 4.5.0)
 Imports:
     AnnotationDbi,
     BiocParallel (>= 1.30.0),
     doParallel,
     GENIE3,
+    GenomeInfoDb,
+    GenomicRanges,
     Matrix,
     RColorBrewer,
     ReactomePA,

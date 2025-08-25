@@ -92,7 +92,7 @@ library(celldex)
 We select 50 top-expressed T-cell genes and fetch high-confidence edges 
 (score ≥ 900) from STRINGdb as our ground truth.
 
-```{r, fig.alt="Network visualization gtruth"}
+```{r ground-truth-network, fig.alt="Network visualization gtruth"}
 # Note: This section requires internet connectivity for external data downloads
 # To run this section, set eval=TRUE and ensure internet connectivity
 
@@ -290,7 +290,7 @@ consensus <- create_consensus(binary_listj, method = "vote")
 plotg(list(consensus))
 ```
 
-```{r communities adj_truth, fig.alt="Community detection adj_truth"}
+```{r communities-adj-truth, fig.alt="Community detection adj_truth"}
 # Compare consensus to truth
 evaluate_consensus <- compare_consensus(
     consensus_matrix = consensus,
