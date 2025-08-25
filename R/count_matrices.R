@@ -6,6 +6,8 @@
 #' @format A list with 3 SingleCellExperiment objects,
 #' each of dimension 35 genes x 40 cells.
 #' @usage data(count_matrices)
+#' @importFrom GenomeInfoDb seqinfo
+#' @importFrom GenomicRanges GRanges
 #' @examples
 #' data(count_matrices)
 #' str(count_matrices)

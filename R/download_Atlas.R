@@ -36,5 +36,7 @@ download_Atlas <- function(file_url) {
     }
 
     raw_data <- httr::content(response, as = "raw")
-    readRDS(gzcon(rawConnection(raw_data)))
+    con <- gzcon(rawConnection(raw_data))
+    on.exit(close(con))
+    readRDS(con)
 }
