@@ -58,7 +58,7 @@
 #' )
 #' head(binary_listj[[1]])
 #'
-#' consensus <- create_consensus(binary_listj, method = "vote")
+#' consensus <- create_consensus(binary_listj, method = "union")
 #' head(consensus)
 #' em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
 edge_mining <- function(

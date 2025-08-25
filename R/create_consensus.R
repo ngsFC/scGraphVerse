@@ -75,7 +75,7 @@
 #' )
 #' head(binary_listj[[1]])
 #'
-#' consensus <- create_consensus(binary_listj, method = "vote")
+#' consensus <- create_consensus(binary_listj, method = "union")
 #' head(consensus)
 create_consensus <- function(
     adj_matrix_list,
