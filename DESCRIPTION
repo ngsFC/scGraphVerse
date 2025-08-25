@@ -1,6 +1,6 @@
 Package: scGraphVerse
 Title: scGraphVerse: A Gene Regulatory Network Analysis Package
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: c(
     person("Francesco", "Cecere", 
            email = "francesco.cecerengs@gmail.com", 
@@ -34,8 +34,6 @@ Imports:
     BiocParallel (>= 1.30.0),
     doParallel,
     GENIE3,
-    GenomeInfoDb,
-    GenomicRanges,
     Matrix,
     RColorBrewer,
     ReactomePA,
@@ -84,6 +82,8 @@ Suggests:
     SingleR,
     TENxPBMCData,
     scater,
+    GenomeInfoDb,
+    GenomicRanges,
 VignetteBuilder: knitr
 LazyData: false
 SystemRequirements: Python (>= 3.6) and arboreto Python package for GRNBoost2 method. 
