@@ -1,6 +1,6 @@
 Package: scGraphVerse
 Title: scGraphVerse: A Gene Regulatory Network Analysis Package
-Version: 0.99.4
+Version: 0.99.5
 Authors@R: c(
     person("Francesco", "Cecere", 
            email = "francesco.cecerengs@gmail.com", 
@@ -42,8 +42,10 @@ Imports:
     SingleCellExperiment,
     SummarizedExperiment,
     clusterProfiler,
+    DOSE,
     distributions3,
     dplyr,
+    enrichplot,
     fmsb,
     ggraph,
     ggplot2,
