@@ -54,7 +54,6 @@ Requires the \pkg{igraph}, \pkg{ggraph}, \pkg{patchwork},
 }
 \examples{
 data(count_matrices)
-data(adj_truth)
 networks <- infer_networks(
     count_matrices_list = count_matrices,
     method = "GENIE3",
@@ -80,13 +79,8 @@ consensus <- create_consensus(binary_listj, method = "union")
 
 compare_consensus(
     consensus,
-    false_plot = TRUE
+    false_plot = FALSE
 )
 
-compare_consensus(
-    consensus,
-    reference_matrix = adj_truth,
-    false_plot = TRUE
-)
 
 }
