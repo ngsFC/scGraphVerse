@@ -76,7 +76,7 @@ binary_listj <- cutoff_adjacency(
 )
 head(binary_listj[[1]])
 
-consensus <- create_consensus(binary_listj, method = "vote")
+consensus <- create_consensus(binary_listj, method = "union")
 
 compare_consensus(
     consensus,

@@ -66,7 +66,7 @@ binary_listj <- cutoff_adjacency(
 )
 head(binary_listj[[1]])
 
-consensus <- create_consensus(binary_listj, method = "vote")
+consensus <- create_consensus(binary_listj, method = "union")
 comm_cons <- community_path(consensus)
 comm_truth <- community_path(adj_truth)
 
