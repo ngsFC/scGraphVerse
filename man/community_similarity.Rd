@@ -58,7 +58,7 @@ swadj_list <- symmetrize(wadj_list, weight_function = "mean")
 binary_listj <- cutoff_adjacency(
     count_matrices = count_matrices,
     weighted_adjm_list = swadj_list,
-    n = 2,
+    n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
