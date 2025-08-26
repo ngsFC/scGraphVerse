@@ -48,7 +48,7 @@
 #' data(count_matrices)
 #' genes <- selgene(
 #'     object = count_matrices[[1]],
-#'     top_n = 20,
+#'     top_n = 5,
 #'     cell_type = "T_cells",
 #'     cell_type_col = "CELL_TYPE",
 #'     remove_rib = TRUE,

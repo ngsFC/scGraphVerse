@@ -18,10 +18,10 @@ A list with slot \code{logMu},
 Given the parameters of a NB regression model, this function parses the
 model and computes the vector of log(mu), and the dimensions of
 the different components of the vector of parameters. See
-\code{nb.loglik.regression} for details of the NB regression model
+\code{\link{nb.loglik.regression}} for details of the NB regression model
 and its parameters.
 }
 \seealso{
-\code{nb.loglik.regression}
+\code{\link{nb.loglik.regression}}
 }
 \keyword{internal}

@@ -61,6 +61,8 @@
 #' @importFrom org.Hs.eg.db org.Hs.eg.db
 #' @importFrom clusterProfiler enrichKEGG
 #' @importFrom ReactomePA enrichPathway
+#' @importFrom DOSE setReadable
+#' @importFrom enrichplot dotplot
 #' @importFrom ggraph ggraph geom_edge_link geom_node_point
 #' @importFrom ggplot2 aes scale_color_manual labs theme_minimal
 #'   theme element_text
