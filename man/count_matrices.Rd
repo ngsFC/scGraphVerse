@@ -5,7 +5,7 @@
 \alias{count_matrices}
 \title{Toy list of SingleCellExperiment objects}
 \format{
-A list with 3 SingleCellExperiment objects,
+A list with 2 SingleCellExperiment objects,
 each of dimension 10 genes x 10 cells.
 }
 \usage{

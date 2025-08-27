@@ -3,7 +3,7 @@
 #' A simulated dataset generated using zinb_simdata() for demonstrating
 #' functions in the scGraphVerse package.
 #'
-#' @format A list with 3 SingleCellExperiment objects,
+#' @format A list with 2 SingleCellExperiment objects,
 #' each of dimension 10 genes x 10 cells.
 #' @usage data(count_matrices)
 #' @examples
