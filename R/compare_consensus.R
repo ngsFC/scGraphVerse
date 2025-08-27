@@ -45,6 +45,7 @@
 #'
 #' @examples
 #' data(count_matrices)
+#' data(adj_truth)
 #' networks <- infer_networks(
 #'     count_matrices_list = count_matrices,
 #'     method = "GENIE3",
@@ -70,7 +71,8 @@
 #'
 #' compare_consensus(
 #'     consensus,
-#'     false_plot = FALSE
+#'     false_plot = FALSE,
+#'     reference_matrix = adj_truth
 #' )
 #'
 #'
