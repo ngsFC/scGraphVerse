@@ -80,7 +80,7 @@ plotg(adj)
 consensus <- create_consensus(adj, method = "union")
 
 # Visualize the consensus! 🎨
-plotg(list(consensus))
+plotg(consensus)
 
 ```
 
