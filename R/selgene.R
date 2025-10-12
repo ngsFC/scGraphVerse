@@ -2,7 +2,7 @@
 #'
 #' Identifies and returns the top \code{n} most highly expressed genes across
 #' all cells or within a specific cell type. Supports objects of class
-#' \linkS4class{Seurat}, \linkS4class{SingleCellExperiment}, or a numeric
+#' Seurat, \linkS4class{SingleCellExperiment}, or a numeric
 #' expression matrix (genes × cells).
 #'
 #' The function assumes that log-normalized values are available in the
@@ -45,9 +45,9 @@
 #'
 #' @examples
 #'
-#' data(count_matrices)
+#' data(toy_counts)
 #' genes <- selgene(
-#'     object = count_matrices[[1]],
+#'     object = toy_counts[[1]],
 #'     top_n = 5,
 #'     cell_type = "T_cells",
 #'     cell_type_col = "CELL_TYPE",
@@ -55,8 +55,7 @@
 #'     remove_mt = TRUE,
 #'     assay = "counts"
 #' )
-#' @seealso \linkS4class{Seurat}, \linkS4class{SingleCellExperiment}
-#' @importFrom Seurat DefaultAssay
+#' @seealso \linkS4class{SingleCellExperiment}
 #' @importFrom methods slotNames
 #' @importFrom SummarizedExperiment assay assayNames
 #' @export

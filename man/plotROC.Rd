@@ -4,16 +4,16 @@
 \alias{plotROC}
 \title{Plot ROC Curves for Inferred Networks}
 \usage{
-plotROC(matrices_list, ground_truth, plot_title, is_binary = FALSE)
+plotROC(predicted_se, ground_truth, plot_title, is_binary = FALSE)
 }
 \arguments{
-\item{matrices_list}{A list of square matrices representing predicted
-interactions. Each must share dimnames with \code{ground_truth}; entries
-may be binary (0/1) or continuous weights.}
+\item{predicted_se}{A \linkS4class{SummarizedExperiment} object containing
+predicted adjacency matrices as assays. Each matrix must share dimnames
+with \code{ground_truth};entries may be binary (0/1) or continuous weights.}
 
 \item{ground_truth}{A square binary matrix indicating true interactions (1)
-in the upper triangle. Must match dims and names of each element of
-\code{matrices_list}.}
+in the upper triangle. Must match dims and names of each assay in
+\code{predicted_se}.}
 
 \item{plot_title}{Character string. Title for the ROC plot.}
 
@@ -27,8 +27,8 @@ A list with:\cr
 }
 \description{
 Computes and visualizes Receiver Operating Characteristic (ROC) curves for
-a list of predicted adjacency matrices compared against a binary ground
-truth network.
+predicted adjacency matrices stored in a \linkS4class{SummarizedExperiment}
+object, compared against a binary ground truth network.
 }
 \details{
 For binary matrices, a single TPR/FPR point is computed per
@@ -36,22 +36,26 @@ matrix. For weighted ones, a full ROC curve is computed from continuous
 scores. Diagonals are ignored; symmetry is not enforced.
 }
 \examples{
-data(count_matrices)
-data(adj_truth)
+data(toy_counts)
+data(toy_adj_matrix)
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate and symmetrize adjacency matrices (returns SummarizedExperiment)
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
+# plotROC now accepts SummarizedExperiment directly
 roc_res <- plotROC(
-    swadj_list,
-    adj_truth,
+    swadj_se,
+    toy_adj_matrix,
     plot_title = "ROC Curve: GENIE3",
     is_binary = FALSE
 )

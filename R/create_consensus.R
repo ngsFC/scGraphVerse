@@ -1,10 +1,12 @@
 #' Create a Consensus Adjacency Matrix from Multiple Networks
 #'
-#' Builds a consensus adjacency matrix from a list of networks using one
-#' of three methods: \code{"vote"}, \code{"union"}, or \code{"INet"}.
+#' Builds a consensus adjacency matrix from networks stored in a
+#' \linkS4class{SummarizedExperiment} using one of three methods:
+#' \code{"vote"}, \code{"union"}, or \code{"INet"}.
 #'
-#' @param adj_matrix_list A list of binary adjacency matrices (square,
-#'   0/1) with identical dimensions and matching row/column names.
+#' @param adj_matrix_list A \linkS4class{SummarizedExperiment} object
+#'   containing binary adjacency matrices (square, 0/1) with identical
+#'   dimensions and matching row/column names, or a list of such matrices.
 #' @param method Character string specifying the consensus strategy. One of:
 #'   \itemize{
 #'     \item \code{"vote"} (default): An edge is included if supported
@@ -14,8 +16,9 @@
 #'     \item \code{"INet"}: Combines normalized weighted matrices using
 #'       \code{\link[INetTool]{consensusNet}}.
 #'   }
-#' @param weighted_list A list of weighted adjacency matrices (required if
-#'   \code{method = "INet"}).
+#' @param weighted_list A \linkS4class{SummarizedExperiment} object containing
+#'   weighted adjacency matrices (required if \code{method = "INet"}), or a
+#'   list of such matrices.
 #' @param theta Numeric. Tuning parameter passed to \code{consensusNet}
 #'   (default: \code{0.04}).
 #' @param threshold Numeric between 0 and 1. Threshold for "vote" and
@@ -29,8 +32,9 @@
 #' @param verbose Logical. If TRUE, display verbose output for INet method.
 #'   Default is \code{FALSE}.
 #'
-#' @return A square consensus adjacency matrix (binary or weighted,
-#'   depending on the method).
+#' @return A \linkS4class{SummarizedExperiment} object with a single assay
+#'   containing the consensus adjacency matrix (binary or weighted, depending
+#'   on the method). Metadata includes consensus method and parameters.
 #'
 #' @details Consensus construction depends on the selected method:
 #'   \describe{
@@ -48,38 +52,41 @@
 #' provided with matching dimensions.
 #'
 #' @importFrom igraph as_adjacency_matrix
-#' @importFrom INetTool consensusNet
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
+#' data(toy_counts)
 #'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 #'
-#' binary_listj <- cutoff_adjacency(
-#'     count_matrices = count_matrices,
-#'     weighted_adjm_list = swadj_list,
+#' # Apply cutoff
+#' binary_se <- cutoff_adjacency(
+#'     count_matrices = toy_counts,
+#'     weighted_adjm_list = swadj_se,
 #'     n = 1,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.95,
 #'     nCores = 1,
 #'     debug = TRUE
 #' )
-#' head(binary_listj[[1]])
+#' head(binary_se[[1]])
 #'
-#' consensus <- create_consensus(binary_listj, method = "union")
+#' consensus <- create_consensus(binary_se, method = "union")
 #' head(consensus)
 create_consensus <- function(
     adj_matrix_list,
-    method = "vote",
+    method = c("vote", "union", "INet"),
     weighted_list = NULL,
     theta = 0.04,
     threshold = 0.5,
@@ -87,6 +94,19 @@ create_consensus <- function(
     tolerance = 0.1,
     nitermax = 50,
     verbose = FALSE) {
+    method <- match.arg(method)
+
+    if (inherits(adj_matrix_list, "SummarizedExperiment")) {
+        adj_matrix_list <- .extract_networks_from_se(adj_matrix_list)
+    }
+
+    if (!is.null(weighted_list) && inherits(
+        weighted_list,
+        "SummarizedExperiment"
+    )) {
+        weighted_list <- .extract_networks_from_se(weighted_list)
+    }
+
     consensus_matrix <- Reduce("+", adj_matrix_list)
 
     if (method == "vote") {
@@ -133,7 +153,14 @@ create_consensus <- function(
             function(mat) mat / max(mat, na.rm = TRUE)
         )
 
-        Con <- consensusNet(
+        if (!requireNamespace("INetTool", quietly = TRUE)) {
+            stop(
+                "Package 'INetTool' is required for method = 'INet'. ",
+                "Install it with: BiocManager::install('INetTool')"
+            )
+        }
+
+        Con <- INetTool::consensusNet(
             list_norm,
             theta     = theta,
             ncores    = ncores,
@@ -143,13 +170,23 @@ create_consensus <- function(
             verbose   = verbose
         )
         consensus_matrix <- as.matrix(
-            as_adjacency_matrix(Con$graphConsensus)
-        )
-    } else {
-        stop(
-            "Invalid method. Choose 'vote', 'union', or 'INet'."
+            igraph::as_adjacency_matrix(Con$graphConsensus)
         )
     }
 
-    consensus_matrix
+    # Return as SummarizedExperiment
+    build_network_se(
+        networks = list(consensus = consensus_matrix),
+        networkData = S4Vectors::DataFrame(
+            network = "consensus",
+            n_edges = sum(consensus_matrix > 0),
+            n_input_networks = length(adj_matrix_list),
+            row.names = "consensus"
+        ),
+        metadata = list(
+            type = if (method == "INet") "weighted" else "binary",
+            method = method,
+            threshold = threshold
+        )
+    )
 }

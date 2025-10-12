@@ -4,13 +4,16 @@
 #' community detection methods, and performs pathway enrichment for each
 #' detected community.
 #'
-#' @param adj_matrix A square adjacency matrix. Row and column names must
-#'   correspond to gene symbols.
+#' @param adj_matrix A square adjacency matrix or a
+#'   \linkS4class{SummarizedExperiment} object containing a single adjacency
+#'   matrix. Row and column names must correspond to gene symbols.
 #' @param methods A character vector of one or two community detection
 #'   methods supported by \pkg{robin}. If two are given, performance is
 #'   compared and the best is selected. Default: \code{"louvain"}.
 #' @param pathway_db Character string specifying the pathway database to use:
 #'   \code{"KEGG"} or \code{"Reactome"}. Default: \code{"KEGG"}.
+#' @param organism Character string specifying the organism: \code{"human"} or
+#'   \code{"mouse"}. Default: \code{"human"}.
 #' @param genes_path Integer. Minimum number of genes per community to run
 #'   enrichment analysis. Default: \code{5}.
 #' @param plot Logical. If \code{TRUE}, generates a plot of detected
@@ -56,60 +59,111 @@
 #'
 #' @importFrom igraph graph_from_adjacency_matrix V degree
 #'   induced_subgraph vcount ecount
-#' @importFrom robin membershipCommunities robinCompare robinAUC
-#' @importFrom AnnotationDbi mapIds
-#' @importFrom org.Hs.eg.db org.Hs.eg.db
-#' @importFrom clusterProfiler enrichKEGG
-#' @importFrom ReactomePA enrichPathway
-#' @importFrom DOSE setReadable
-#' @importFrom enrichplot dotplot
-#' @importFrom ggraph ggraph geom_edge_link geom_node_point
-#' @importFrom ggplot2 aes scale_color_manual labs theme_minimal
-#'   theme element_text
-#' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices colorRampPalette
 #' @importFrom BiocParallel bpparam
+#' @importFrom SummarizedExperiment assay
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
-#' data(adj_truth)
+#' data(toy_counts)
+#'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate and symmetrize adjacency matrices (returns SummarizedExperiment)
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 #'
-#' binary_listj <- cutoff_adjacency(
-#'     count_matrices = count_matrices,
-#'     weighted_adjm_list = swadj_list,
+#' # Apply cutoff (returns SummarizedExperiment)
+#' binary_se <- cutoff_adjacency(
+#'     count_matrices = toy_counts,
+#'     weighted_adjm_list = swadj_se,
 #'     n = 1,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.95,
 #'     nCores = 1,
 #'     debug = TRUE
 #' )
-#' head(binary_listj[[1]])
 #'
-#' consensus <- create_consensus(binary_listj, method = "union")
+#' # Create consensus (returns SummarizedExperiment)
+#' consensus <- create_consensus(binary_se, method = "union")
+#'
+#' # community_path now accepts SummarizedExperiment objects directly
 #' comm_cons <- community_path(consensus)
 #'
 community_path <- function(
     adj_matrix,
     methods = "louvain",
     pathway_db = "KEGG",
+    organism = c("human", "mouse"),
     genes_path = 5,
     plot = TRUE,
     verbose = TRUE,
     method_params = list(),
     comparison_params = list(),
     BPPARAM = BiocParallel::bpparam()) {
+
+    organism <- match.arg(organism)
+    # Check for optional packages
+    if (plot) {
+        if (!requireNamespace("ggraph", quietly = TRUE)) {
+            stop(
+                "Package 'ggraph' is required for plotting. ",
+                "Install it with: BiocManager::install('ggraph') ",
+                "or set plot = FALSE"
+            )
+        }
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+            stop(
+                "Package 'ggplot2' is required for plotting. ",
+                "Install it with: BiocManager::install('ggplot2') ",
+                "or set plot = FALSE"
+            )
+        }
+    }
+
+    if (length(methods) > 1 && !requireNamespace("robin", quietly = TRUE)) {
+        stop(
+            "Package 'robin' is required for comparing multiple methods. ",
+            "Install it with: BiocManager::install('robin') ",
+            "or use a single method"
+        )
+    }
+
+    if (pathway_db != "none") {
+        if (!requireNamespace("clusterProfiler", quietly = TRUE)) {
+            stop(
+                "Package 'clusterProfiler' is required . ",
+                "Install it with: BiocManager::install('clusterProfiler') ",
+                "or set pathway_db = 'none'"
+            )
+        }
+        if (!requireNamespace("org.Hs.eg.db", quietly = TRUE)) {
+            stop(
+                "Package 'org.Hs.eg.db' is required for pathway enrichment. ",
+                "Install it with: BiocManager::install('org.Hs.eg.db') ",
+                "or set pathway_db = 'none'"
+            )
+        }
+    }
+
+    # Handle SummarizedExperiment input
+    if (inherits(adj_matrix, "SummarizedExperiment")) {
+        adj_matrix <- SummarizedExperiment::assay(adj_matrix, 1)
+    }
+
+    # Validate input
     if (!is.matrix(adj_matrix) || nrow(adj_matrix) != ncol(adj_matrix)) {
-        stop("adj_matrix must be a square matrix.")
+        stop(
+            "adj_matrix must be a square matrix or a SummarizedExperiment ",
+            "containing a square matrix."
+        )
     }
     if (is.null(rownames(adj_matrix))) {
         stop("adj_matrix must have row names (gene symbols).")
@@ -137,7 +191,7 @@ community_path <- function(
 
     if (verbose) message("Running pathway enrichment...")
     pathway_results <- .enrich_communities(
-        graph, non_iso, pathway_db, genes_path
+        graph, non_iso, pathway_db, organism, genes_path
     )
 
     list(

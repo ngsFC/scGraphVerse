@@ -19,9 +19,8 @@ infer_networks(
 )
 }
 \arguments{
-\item{count_matrices_list}{A list of expression matrices (genes × cells)
-or \linkS4class{Seurat} or \linkS4class{SingleCellExperiment}
-objects.}
+\item{count_matrices_list}{A \linkS4class{MultiAssayExperiment} object
+containing expression data from multiple experiments or conditions.}
 
 \item{method}{Character string. Inference method to use. One of:
 \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
@@ -127,10 +126,11 @@ al., 2010).
 }
 }
 \examples{
-data("count_matrices")
+data("toy_counts")
 
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )

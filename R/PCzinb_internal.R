@@ -1,22 +1,22 @@
 #' Internal PCzinb Network Inference Function with BiocParallel
 #'
-#' This function provides the core PCzinb (PC algorithm for 
+#' This function provides the core PCzinb (PC algorithm for
 #' Zero-Inflated models)
-#' network inference functionality with BiocParallel support for 
+#' network inference functionality with BiocParallel support for
 #' parallelization.
-#' It implements PC algorithms for count data using Poisson, 
+#' It implements PC algorithms for count data using Poisson,
 #' Negative Binomial,
 #' and Zero-Inflated Negative Binomial models.
 #'
 #' @param X A matrix of expression data (samples × genes).
-#' @param method The algorithm to use: "poi" (Poisson), 
+#' @param method The algorithm to use: "poi" (Poisson),
 #'   "nb" (Negative Binomial),
-#'   "zinb0" (ZINB with structure only in mu), or "zinb1" (ZINB with 
+#'   "zinb0" (ZINB with structure only in mu), or "zinb1" (ZINB with
 #'   structure in both mu and pi).
-#' @param alpha Significance level for conditional independence tests. 
+#' @param alpha Significance level for conditional independence tests.
 #'   Default: 2*pnorm(n^0.2, lower.tail=FALSE).
 #' @param maxcard Maximum cardinality of conditioning sets. Default: 2.
-#' @param extend If TRUE, considers union of tests; if FALSE, considers 
+#' @param extend If TRUE, considers union of tests; if FALSE, considers
 #'   intersection. Default: TRUE.
 #' @param nCores Number of cores for parallelization. Uses BiocParallel backend.
 #' @param verbose Logical. If TRUE, print progress messages. Default: FALSE.
@@ -25,25 +25,24 @@
 #' @return An adjacency matrix representing the inferred network structure.
 #'
 #' @details
-#' PCzinb performs structure learning using PC algorithms adapted for 
+#' PCzinb performs structure learning using PC algorithms adapted for
 #' count data.
 #' Different methods handle different distributional assumptions:
 #' \itemize{
 #'   \item "poi": Poisson distribution
 #'   \item "nb": Negative Binomial distribution
 #'   \item "zinb0": Zero-Inflated NB with structure only in mean parameter
-#'   \item "zinb1": Zero-Inflated NB with structure in both mean and 
+#'   \item "zinb1": Zero-Inflated NB with structure in both mean and
 #'     zero-inflation parameters
 #' }
 #'
-#' The algorithm uses conditional independence tests appropriate for each 
+#' The algorithm uses conditional independence tests appropriate for each
 #' distribution
-#' to determine network structure, with BiocParallel used for 
+#' to determine network structure, with BiocParallel used for
 #' parallelization.
 #'
 #' @importFrom BiocParallel bpparam bplapply MulticoreParam SerialParam
 #' @importFrom stats pnorm
-#' @importFrom methods setMethod signature
 #' @keywords internal
 #' @noRd
 PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
@@ -67,64 +66,130 @@ PCzinb_internal <- function(X, method = c("poi", "nb", "zinb0", "zinb1"),
     return(result)
 }
 
-#' @rdname PCzinb
-#' @importFrom SummarizedExperiment assay assayNames `assay<-`
-#' @importClassesFrom SummarizedExperiment SummarizedExperiment
+#' Structure learning for count data using PC algorithms
+#'
+#' This function performs structure learning for count data using various
+#' PC algorithms adapted for different distributional assumptions including
+#' Poisson, Negative Binomial, and Zero-Inflated Negative Binomial models.
+#'
+#' @param x A matrix of count data (n × p), SummarizedExperiment, or
+#'   SingleCellExperiment object. For matrix input, rows are samples and
+#'   columns are genes.
+#' @param method The algorithm used to estimate the graph: `poi` (Poisson),
+#'   `nb` (Negative Binomial), `zinb0` (Zero-Inflated NB with structure only
+#'   in mu), or `zinb1` (Zero-Inflated NB with structure in both mu and pi).
+#' @param alpha The significance level of the tests. Default:
+#'   2 * pnorm(nrow(x)^0.2, lower.tail = FALSE).
+#' @param maxcard The upper bound of the cardinality of the conditional sets K.
+#'   Default: 2.
+#' @param extend If TRUE, considers the union of the tests; if FALSE, considers
+#'   the intersection. Default: TRUE.
+#' @param nCores Number of cores for parallel processing. Default: 1.
+#' @param whichAssay The assay to use as input (for SummarizedExperiment or
+#'   SingleCellExperiment objects). Default: "processed".
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return
+#' \itemize{
+#'   \item If x is a matrix: the estimated adjacency matrix of the graph
+#'   \item If x is a SummarizedExperiment: the object with adjacency matrix
+#'     stored in metadata as `adj_mat`
+#'   \item If x is a SingleCellExperiment: the object with adjacency matrix
+#'     stored as rowPair
+#' }
+#'
+#' @details
+#' PCzinb performs structure learning using PC algorithms for count data.
+#' Different methods handle different distributional assumptions:
+#' \itemize{
+#'   \item `poi`: Poisson distribution
+#'   \item `nb`: Negative Binomial distribution
+#'   \item `zinb0`: Zero-Inflated NB with structure only in mean parameter
+#'   \item `zinb1`: Zero-Inflated NB with structure in both mean and
+#'     zero-inflation parameters
+#' }
+#'
+#' For SummarizedExperiment and SingleCellExperiment inputs, if the specified
+#' `whichAssay` is "processed" but not found, the function will use the first
+#' assay and issue a warning recommending QPtransform().
+#'
+#' @importFrom SummarizedExperiment assay assayNames
 #' @importFrom S4Vectors metadata `metadata<-`
-#' @param ... Arguments to pass to the matrix method.
-#' @param whichAssay The assay to use as input for the matrix method.
+#' @importFrom SingleCellExperiment `rowPair<-`
 #' @importClassesFrom Matrix dgCMatrix
+#' @importFrom stats pnorm
 #' @export
+#'
 #' @examples
+#' # Matrix input
+#' mat <- matrix(rpois(50, 5), nrow = 10)
+#' PCzinb(mat, method = "poi")
+#'
+#' # SummarizedExperiment input
 #' library(SummarizedExperiment)
 #' se <- SummarizedExperiment(matrix(rpois(50, 5), ncol = 10))
-#' PCzinb(se, method = "poi")
-setMethod(
-    f = "PCzinb",
-    signature = signature(x = "SummarizedExperiment"),
-    definition = function(x, whichAssay = "processed", ...) {
-        if (whichAssay == "processed" & !whichAssay %in% assayNames(x)) {
+#' se_result <- PCzinb(se, method = "poi")
+#'
+#' # SingleCellExperiment input
+#' library(SingleCellExperiment)
+#' sce <- SingleCellExperiment(matrix(rpois(50, 5), ncol = 10))
+#' sce_result <- PCzinb(sce, method = "poi")
+#' rowPair(sce_result)
+PCzinb <- function(x,
+    method = c("poi", "nb", "zinb0", "zinb1"),
+    alpha = NULL,
+    maxcard = 2,
+    extend = TRUE,
+    nCores = 1,
+    whichAssay = "processed",
+    ...) {
+    # Dispatch based on class
+    if (inherits(x, "SingleCellExperiment")) {
+        # SingleCellExperiment method
+        if (whichAssay == "processed" && !whichAssay %in% assayNames(x)) {
             warning(
                 "We recommend to use QPtransform() before learning the graph."
             )
             whichAssay <- 1
         }
-        adj <- PCzinb(t(assay(x, whichAssay)), ...)
+        adj <- PCzinb(
+            t(assay(x, whichAssay)),
+            method = method,
+            alpha = alpha,
+            maxcard = maxcard,
+            extend = extend,
+            nCores = nCores
+        )
+        rowPair(x) <- as(adj, "dgCMatrix")
+        return(x)
+    } else if (inherits(x, "SummarizedExperiment")) {
+        # SummarizedExperiment method
+        if (whichAssay == "processed" && !whichAssay %in% assayNames(x)) {
+            warning(
+                "We recommend to use QPtransform() before learning the graph."
+            )
+            whichAssay <- 1
+        }
+        adj <- PCzinb(
+            t(assay(x, whichAssay)),
+            method = method,
+            alpha = alpha,
+            maxcard = maxcard,
+            extend = extend,
+            nCores = nCores
+        )
         metadata(x)$adj_mat <- as(adj, "dgCMatrix")
         rownames(metadata(x)$adj_mat) <- rownames(x)
         colnames(metadata(x)$adj_mat) <- rownames(x)
-
         return(x)
-    }
-)
-
-#' @param x the matrix of counts (n times p) or a SummarizedExperiment 
-#'   containing such matrix (transposed).
-#' @param alpha the significant level of the tests
-#' @param maxcard the uper bound of the cardinality of the conditional sets K
-#' @param extend if TRUE it considers the union of the tests, otherwise it
-#'   considers the intersection.
-#' @param method the algorithm used to estimate the graph: `poi`, `nb`, `zinb0`,
-#'   or `zinb1`. See details below.
-#' @return if x is a matrix, the estimated adjacency matrix of the graph; if x
-#'   is a SummarizedExperiment, a SummarizedExperiment object with the adjacency
-#'   matrix as metadata.
-#' @rdname PCzinb
-#' @importFrom stats pnorm
-#' @export
-#' @examples
-#' mat <- matrix(rpois(50, 5), nrow = 10)
-#' PCzinb(mat, method = "poi")
-setMethod(
-    f = "PCzinb",
-    signature = signature(x = "matrix"),
-    definition = function(x,
-        method = c("poi", "nb", "zinb0", "zinb1"),
-        alpha = 2 * pnorm(nrow(x)^.2, lower.tail = FALSE),
-        maxcard = 2,
-        extend = TRUE,
-        nCores = 1) {
+    } else if (is.matrix(x)) {
+        # Matrix method (core implementation)
         method <- match.arg(method)
+
+        # Set default alpha if not provided
+        if (is.null(alpha)) {
+            alpha <- 2 * pnorm(nrow(x)^0.2, lower.tail = FALSE)
+        }
 
         switch(method,
             poi = pois.wald(x, maxcard, alpha, extend, nCores),
@@ -132,36 +197,13 @@ setMethod(
             zinb0 = zinb0.noT(x, maxcard, alpha, extend, nCores),
             zinb1 = zinb1.noT(x, maxcard, alpha, extend, nCores)
         )
+    } else {
+        stop(
+            "x must be a matrix, SummarizedExperiment, or ",
+            "SingleCellExperiment object"
+        )
     }
-)
-
-#' @rdname PCzinb
-#' @importFrom SingleCellExperiment `rowPair<-`
-#' @importClassesFrom SingleCellExperiment SingleCellExperiment
-#' @param ... Arguments to pass to the matrix method.
-#' @param whichAssay The assay to use as input for the matrix method.
-#' @export
-#' @examples
-#' library(SingleCellExperiment)
-#' se <- SingleCellExperiment(matrix(rpois(50, 5), ncol = 10))
-#' se <- PCzinb(se, method = "poi")
-#' rowPair(se)
-setMethod(
-    f = "PCzinb",
-    signature = signature(x = "SingleCellExperiment"),
-    definition = function(x, whichAssay = "processed", ...) {
-        if (whichAssay == "processed" & !whichAssay %in% assayNames(x)) {
-            warning(
-                "We recommend to use QPtransform() before learning the graph."
-            )
-            whichAssay <- 1
-        }
-        adj <- PCzinb(t(assay(x, whichAssay)), ...)
-        rowPair(x) <- as(adj, "dgCMatrix")
-
-        return(x)
-    }
-)
+}
 
 #' Structure learning with negative binomial model using glm
 #'
@@ -212,19 +254,20 @@ nb.wald <- function(X, maxcard, alpha, extend, nCores = 1) {
                             ))
                             data <- data.frame(cbind(X[, i], X_new))
                             colnames(data) <- paste(
-                                "V", seq_len(ncard + 2), sep = ""
+                                "V", seq_len(ncard + 2),
+                                sep = ""
                             )
                             fmla <- as.formula(paste(
-                                "V1 ~ ", 
+                                "V1 ~ ",
                                 paste(colnames(data)[-1], collapse = "+")
                             ))
                             fitadd <- try(
-                                glm.nb(fmla, data = data, link = "log"), 
+                                glm.nb(fmla, data = data, link = "log"),
                                 silent = TRUE
                             )
                             if (is(fitadd, "try-error")) {
                                 fitadd <- glm(
-                                    X[, i] ~ scale(X_new), 
+                                    X[, i] ~ scale(X_new),
                                     family = negative.binomial(theta = 1)
                                 )
                             }
@@ -358,7 +401,7 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
     if (length(colnames(X)) > 0) {
         nodes <- colnames(X)
     } else {
-        nodes <- seq(1, dim(X)[2], 1)
+        nodes <- seq_len(dim(X)[2])
     }
     p <- length(nodes)
     pa_list <- list()
@@ -385,7 +428,7 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
     ### estimate the adjacency matrix
     Adj <- matrix(0, nrow = p, ncol = p)
     colnames(Adj) <- rownames(Adj) <- nodes
-    # Use BiocParallel instead of foreach 
+    # Use BiocParallel instead of foreach
     # (assuming nCores parameter is available)
     BPPARAM <- BiocParallel::SerialParam() # Default to serial for compatibility
     Adj.est <- BiocParallel::bplapply(seq_len(p), function(i) {
@@ -434,9 +477,9 @@ Poisk2 <- function(X, order, criterion = "BIC", maxcard) {
     list(adjm = Adj.est, graphN = as(Adj.est, "graphNEL"))
 }
 
-# Find a single dispersion parameter for a count by 1-dimensional 
+# Find a single dispersion parameter for a count by 1-dimensional
 # optimization of the likelihood
-# Given a vector of count, this function computes a single dispersion 
+# Given a vector of count, this function computes a single dispersion
 # parameter (log(theta)) the counts under a zero-inflated negative binomial
 #' (ZINB) model. The ZINB distribution is parametrized by three
 #' parameters: the mean value and the dispersion of the negative binomial
@@ -520,7 +563,8 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
 
     j <- ncol(A.mu)
     if (j > 0) {
-        logMu <- logMu + A.mu %*% alpha[(i + 1):(i + j)]
+        idx <- seq_len(j) + i
+        logMu <- logMu + A.mu %*% alpha[idx]
         dim.alpha[1] <- j
         start.alpha[1] <- i + 1
         i <- i + j
@@ -528,7 +572,8 @@ zinb.regression.parseModel <- function(alpha, A.mu, A.pi) {
 
     j <- ncol(A.pi)
     if (j > 0) {
-        logitPi <- logitPi - A.pi %*% alpha[(i + 1):(i + j)]
+        idx <- seq_len(j) + i
+        logitPi <- logitPi - A.pi %*% alpha[idx]
         dim.alpha[2] <- j
         start.alpha[2] <- i + 1
         i <- i + j
@@ -612,7 +657,8 @@ zinb.loglik.dispersion.gradient <- function(zeta, Y, mu, logitPi) {
     grad
 }
 
-zinb.loglik.regression <- function(alpha, Y,
+zinb.loglik.regression <- function(
+    alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     A.pi = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
@@ -628,7 +674,8 @@ zinb.loglik.regression <- function(alpha, Y,
     z
 }
 
-zinb.loglik.regression.gradient <- function(alpha, Y,
+zinb.loglik.regression.gradient <- function(
+    alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     A.pi = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
@@ -684,7 +731,7 @@ zinb.loglik.regression.gradient <- function(alpha, Y,
             wres_pi[Y1] <- muz[Y1]
         }
         if (has0) {
-            wres_pi[Y0] <- -(1 - exp(clogdens0)) * muz[Y0] * 
+            wres_pi[Y0] <- -(1 - exp(clogdens0)) * muz[Y0] *
                 (1 - muz[Y0]) / dens0
         }
     }
@@ -711,12 +758,12 @@ zinb.loglik.regression.gradient <- function(alpha, Y,
     grad
 }
 
-# Find a single dispersion parameter for a count by 1-dimensional 
+# Find a single dispersion parameter for a count by 1-dimensional
 # optimization of the likelihood
 # Given a vector of count, this function computes a single dispersion parameter
 # (log(theta)) the counts under a  negative binomial
 #' (NB) model. The NB distribution is parametrized by two
-#' parameters: the mean value and the dispersion of the negative binomial 
+#' parameters: the mean value and the dispersion of the negative binomial
 #' distribution
 #'
 #' @param Y the vector of counts
@@ -759,7 +806,7 @@ nb.OptimizeDispersion <- function(mu, Y, n) {
 #' Given a vector of counts, this function computes the sum of the
 #' log-probabilities of the counts under a  negative binomial
 #' (NB) model. The NB distribution is parametrized by two
-#' parameters: the mean value and the dispersion of the negative binomial 
+#' parameters: the mean value and the dispersion of the negative binomial
 #' distribution
 #' @param Y the vector of counts
 #' @param mu the vector of mean parameters of the negative binomial
@@ -822,7 +869,8 @@ nb.regression.parseModel <- function(alpha, A.mu) {
 
     j <- ncol(A.mu)
     if (j > 0) {
-        logMu <- logMu + A.mu %*% alpha[(i + 1):(i + j)]
+        idx <- seq_len(j) + i
+        logMu <- logMu + A.mu %*% alpha[idx]
         dim.alpha[1] <- j
     }
 
@@ -849,7 +897,8 @@ nb.regression.parseModel <- function(alpha, A.mu) {
 #'   log-likelihood of a vector of parameters \eqn{\alpha = a_\mu}
 #' @return the log-likelihood.
 #' @keywords internal
-nb.loglik.regression <- function(alpha, Y,
+nb.loglik.regression <- function(
+    alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
     # Parse the model
@@ -878,7 +927,8 @@ nb.loglik.regression <- function(alpha, Y,
 #' @seealso \code{\link{nb.loglik.regression}}
 #' @return The gradient of the log-likelihood.
 #' @keywords internal
-nb.loglik.regression.gradient <- function(alpha, Y,
+nb.loglik.regression.gradient <- function(
+    alpha, Y,
     A.mu = matrix(nrow = length(Y), ncol = 0),
     C.theta = matrix(0, nrow = length(Y), ncol = 1)) {
     # Parse the model
@@ -977,7 +1027,7 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
         iter <- 1
         local.lik <- rep(NA, iter.theta)
         zeta.i <- rep(mean(X[, i])^2 / (var(X[, i]) - mean(X[, i])), n)
-        # 2. Estimate parameters of ZINB model with zeta.i given by the 
+        # 2. Estimate parameters of ZINB model with zeta.i given by the
         # first step
         fitadd <- try(fitadd <- optim_fun0noT(
             beta_mu = rep(1, p), gamma_pi = 1, Y = X[, i],
@@ -1000,7 +1050,7 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             C.theta = zeta.i
         )
         for (iter in 2:iter.theta) {
-            # 1. Estimate zeta with initial value alpha=fitadd given by 
+            # 1. Estimate zeta with initial value alpha=fitadd given by
             # previuous iteration
             r <- zinb.regression.parseModel(
                 alpha = fitadd, A.mu = cbind(rep(1, n), X[, -i]),
@@ -1009,7 +1059,7 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             zeta.temp <- zinbOptimizeDispersion(
                 mu = r$logMu, logitPi = r$logitPi, Y = X[, i], n
             )
-            # 2. Estimate parameters of ZINB model with zeta given by the 
+            # 2. Estimate parameters of ZINB model with zeta given by the
             # first step
             fitadd.temp <- optim_fun0noT(
                 beta_mu = fitadd[seq_len(p)],
@@ -1029,7 +1079,7 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             } else {
                 break
             }
-            if (abs((local.lik[iter] - local.lik[iter - 1]) / 
+            if (abs((local.lik[iter] - local.lik[iter - 1]) /
                 local.lik[iter - 1]) < stop.epsilon) {
                 break
             }
@@ -1084,14 +1134,14 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                                 beta_mu = beta_mu, gamma_pi, Y = X[, i],
                                 X_mu = scale(
                                     X[, c(neighbor[j], condset.temp[[k]])]
-                                ), 
+                                ),
                                 zeta[, i], n
                             )
                             # calculate loglikelihood of new model
                             zinb.loglik.add <- zinb.loglik.regression(
                                 alpha = fitadd, Y = X[, i],
                                 A.mu = cbind(
-                                    rep(1, n), 
+                                    rep(1, n),
                                     X_mu = scale(
                                         X[, c(neighbor[j], condset.temp[[k]])]
                                     )
@@ -1103,15 +1153,15 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                             if (length(condset.temp[[k]]) > 0) {
                                 fitnoadd <- optim_fun0noT(
                                     beta_mu = beta_mu[-2], gamma_pi, Y = X[, i],
-                                    X_mu = scale(X[, condset.temp[[k]]]), 
+                                    X_mu = scale(X[, condset.temp[[k]]]),
                                     zeta[, i], n
                                 )
-                                # calculate loglikelihood of model without 
+                                # calculate loglikelihood of model without
                                 # adding new edges
                                 zinb.loglik.noadd <- zinb.loglik.regression(
                                     alpha = fitnoadd, Y = X[, i],
                                     A.mu = cbind(
-                                        rep(1, n), 
+                                        rep(1, n),
                                         X_mu = scale(X[, condset.temp[[k]]])
                                     ),
                                     A.pi = matrix(rep(1, n), n, 1),
@@ -1119,11 +1169,11 @@ zinb0.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                                 )
                             } else {
                                 fitnoadd <- optim_fun0noT(
-                                    beta_mu = beta_mu[c(1, 2)], 
+                                    beta_mu = beta_mu[c(1, 2)],
                                     gamma_pi, Y = X[, i],
                                     X_mu = rep(0, n), zeta[, i], n
                                 )
-                                # calculate loglikelihood of model without 
+                                # calculate loglikelihood of model without
                                 # adding new edges
                                 zinb.loglik.noadd <- zinb.loglik.regression(
                                     alpha = fitadd, Y = X[, i],
@@ -1197,7 +1247,7 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
         local.lik <- rep(NA, iter.theta)
         # 1. Estimate zeta
         zeta.i <- rep(mean(X[, i])^2 / (var(X[, i]) - mean(X[, i])), n)
-        # 2. Estimate parameters of ZINB model with zeta.i given by the 
+        # 2. Estimate parameters of ZINB model with zeta.i given by the
         # first step
         fitadd <- try(fitadd <- optim_funnoT(
             beta_mu = rep(1, p), gamma_pi = rep(1, p), Y = X[, i],
@@ -1220,7 +1270,7 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             C.theta = zeta.i
         )
         for (iter in 2:iter.theta) {
-            # 1. Estimate zeta with initial value alpha=fitadd given by 
+            # 1. Estimate zeta with initial value alpha=fitadd given by
             # previuous iteration
             r <- zinb.regression.parseModel(
                 alpha = fitadd, A.mu = cbind(rep(1, n), X[, -i]),
@@ -1229,11 +1279,11 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             zeta.temp <- zinbOptimizeDispersion(
                 mu = r$logMu, logitPi = r$logitPi, Y = X[, i], n
             )
-            # 2. Estimate parameters of ZINB model with zeta given by the 
+            # 2. Estimate parameters of ZINB model with zeta given by the
             # first step
             fitadd.temp <- optim_funnoT(
                 beta_mu = fitadd[seq_len(p)],
-                gamma_pi = fitadd[(p + 1):(2 * p)], Y = X[, i],
+                gamma_pi = fitadd[seq_len(p) + p], Y = X[, i],
                 X_mu = X[, -i], zeta.temp, n
             )
             local.lik[iter] <- zinb.loglik.regression(
@@ -1249,7 +1299,7 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
             } else {
                 break
             }
-            if (abs((local.lik[iter] - local.lik[iter - 1]) / 
+            if (abs((local.lik[iter] - local.lik[iter - 1]) /
                 local.lik[iter - 1]) < stop.epsilon) {
                 break
             }
@@ -1304,20 +1354,20 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                                 beta_mu = beta_mu, gamma_pi, Y = X[, i],
                                 X_mu = scale(
                                     X[, c(neighbor[j], condset.temp[[k]])]
-                                ), 
+                                ),
                                 zeta[, i], n
                             )
                             # calculate loglikelihood of new model
                             zinb.loglik.add <- zinb.loglik.regression(
                                 alpha = fitadd, Y = X[, i],
                                 A.mu = cbind(
-                                    rep(1, n), 
+                                    rep(1, n),
                                     X_mu = scale(
                                         X[, c(neighbor[j], condset.temp[[k]])]
                                     )
                                 ),
                                 A.pi = cbind(
-                                    rep(1, n), 
+                                    rep(1, n),
                                     X_mu = scale(
                                         X[, c(neighbor[j], condset.temp[[k]])]
                                     )
@@ -1327,32 +1377,32 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                             # fit model without adding new edges
                             if (length(condset.temp[[k]]) > 0) {
                                 fitnoadd <- optim_funnoT(
-                                    beta_mu = beta_mu[-2], gamma_pi[-1], 
+                                    beta_mu = beta_mu[-2], gamma_pi[-1],
                                     Y = X[, i],
-                                    X_mu = scale(X[, condset.temp[[k]]]), 
+                                    X_mu = scale(X[, condset.temp[[k]]]),
                                     zeta[, i], n
                                 )
-                                # calculate loglikelihood of model without 
+                                # calculate loglikelihood of model without
                                 # adding new edges
                                 zinb.loglik.noadd <- zinb.loglik.regression(
                                     alpha = fitnoadd, Y = X[, i],
                                     A.mu = cbind(
-                                        rep(1, n), 
+                                        rep(1, n),
                                         X_mu = scale(X[, condset.temp[[k]]])
                                     ),
                                     A.pi = cbind(
-                                        rep(1, n), 
+                                        rep(1, n),
                                         X_mu = scale(X[, condset.temp[[k]]])
                                     ),
                                     C.theta = zeta[, i]
                                 )
                             } else {
                                 fitnoadd <- optim_funnoT(
-                                    beta_mu = beta_mu[c(1, 2)], 
+                                    beta_mu = beta_mu[c(1, 2)],
                                     gamma_pi, Y = X[, i],
                                     X_mu = rep(0, n), zeta[, i], n
                                 )
-                                # calculate loglikelihood of model without 
+                                # calculate loglikelihood of model without
                                 # adding new edges
                                 zinb.loglik.noadd <- zinb.loglik.regression(
                                     alpha = fitadd, Y = X[, i],
@@ -1367,7 +1417,8 @@ zinb1.noT <- function(X, maxcard, alpha, extend, nCores = 1) {
                             )
 
                             if (pchisq(
-                                goodfit.Deviance, 2, lower.tail = FALSE
+                                goodfit.Deviance, 2,
+                                lower.tail = FALSE
                             ) > alpha) {
                                 adj[neighbor[j], i] <- 0
                                 indcond <- TRUE

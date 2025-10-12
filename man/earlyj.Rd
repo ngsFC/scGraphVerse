@@ -7,35 +7,34 @@
 earlyj(input_list, rowg = TRUE)
 }
 \arguments{
-\item{input_list}{A list of matrices, \linkS4class{Seurat} objects,
-or \linkS4class{SingleCellExperiment} objects. All elements must be of the
-same class.}
+\item{input_list}{A \linkS4class{MultiAssayExperiment} object containing
+expression data from multiple experiments or conditions.}
 
 \item{rowg}{Logical. If \code{TRUE} (default), genes are assumed to be rows
 and cells columns.
 If \code{FALSE}, matrices are transposed before renaming and combining.}
 }
 \value{
-A combined matrix, Seurat object, or SingleCellExperiment object with
-modified (unique) cell names.
+A \linkS4class{MultiAssayExperiment} object containing a single merged
+experiment with modified (unique) cell names.
 }
 \description{
-Modifies cell identifiers of each element in a list of matrices,
-\linkS4class{Seurat} objects, or \linkS4class{SingleCellExperiment} objects
-by appending a unique matrix index (e.g., "-m1", "-m2", etc.).
-After renaming, the datasets are merged into a single object.
+Extracts expression data from a \linkS4class{MultiAssayExperiment} object,
+modifies cell identifiers by appending a unique experiment index
+(e.g., "-m1", "-m2", etc.), and merges the datasets into a single object.
 }
 \details{
 For matrices, this function optionally transposes the input before combining.
 For \code{Seurat} and \code{SingleCellExperiment} objects, only features
 (genes) common across all input datasets are retained before merging.
 The cell names are suffixed with "-m1", "-m2", etc., according to their
-original list position.
+original list position. The result is returned as a MultiAssayExperiment
+with a single merged experiment.
 }
 \examples{
-data(count_matrices)
+data(toy_counts)
 
-earlym <- earlyj(count_matrices)
-head(earlym)
+merged_mae <- earlyj(toy_counts)
+merged_mae
 
 }

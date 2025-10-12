@@ -6,7 +6,7 @@
 \usage{
 create_consensus(
   adj_matrix_list,
-  method = "vote",
+  method = c("vote", "union", "INet"),
   weighted_list = NULL,
   theta = 0.04,
   threshold = 0.5,
@@ -17,8 +17,9 @@ create_consensus(
 )
 }
 \arguments{
-\item{adj_matrix_list}{A list of binary adjacency matrices (square,
-0/1) with identical dimensions and matching row/column names.}
+\item{adj_matrix_list}{A \linkS4class{SummarizedExperiment} object
+containing binary adjacency matrices (square, 0/1) with identical
+dimensions and matching row/column names, or a list of such matrices.}
 
 \item{method}{Character string specifying the consensus strategy. One of:
 \itemize{
@@ -30,8 +31,9 @@ matrix.
 \code{\link[INetTool]{consensusNet}}.
 }}
 
-\item{weighted_list}{A list of weighted adjacency matrices (required if
-\code{method = "INet"}).}
+\item{weighted_list}{A \linkS4class{SummarizedExperiment} object containing
+weighted adjacency matrices (required if \code{method = "INet"}), or a
+list of such matrices.}
 
 \item{theta}{Numeric. Tuning parameter passed to \code{consensusNet}
 (default: \code{0.04}).}
@@ -52,12 +54,14 @@ Default is \code{50}.}
 Default is \code{FALSE}.}
 }
 \value{
-A square consensus adjacency matrix (binary or weighted,
-depending on the method).
+A \linkS4class{SummarizedExperiment} object with a single assay
+containing the consensus adjacency matrix (binary or weighted, depending
+on the method). Metadata includes consensus method and parameters.
 }
 \description{
-Builds a consensus adjacency matrix from a list of networks using one
-of three methods: \code{"vote"}, \code{"union"}, or \code{"INet"}.
+Builds a consensus adjacency matrix from networks stored in a
+\linkS4class{SummarizedExperiment} using one of three methods:
+\code{"vote"}, \code{"union"}, or \code{"INet"}.
 }
 \details{
 Consensus construction depends on the selected method:
@@ -76,29 +80,33 @@ For "INet", both binary and weighted adjacency matrices must be
 provided with matching dimensions.
 }
 \examples{
-data(count_matrices)
+data(toy_counts)
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
+head(binary_se[[1]])
 
-consensus <- create_consensus(binary_listj, method = "union")
+consensus <- create_consensus(binary_se, method = "union")
 head(consensus)
 }

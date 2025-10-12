@@ -21,13 +21,13 @@ processing. Defaults to the number of available workers from the
 current \pkg{BiocParallel} backend.}
 }
 \value{
-A list of square numeric adjacency matrices. Each matrix has
-genes as row and column names, and weights as values. Diagonal
-entries are set to zero (no self-interactions).
+A \linkS4class{SummarizedExperiment} object where each assay is a
+square numeric adjacency matrix (p×p genes). Diagonal entries are set to
+zero (no self-interactions).
 }
 \description{
-Constructs adjacency matrices from a list of data frames, each
-representing weighted gene–gene interactions.
+Constructs adjacency matrices from a list of data frames (network edge lists)
+and returns them in a \linkS4class{SummarizedExperiment} object.
 }
 \details{
 The function first identifies all unique genes across all data
@@ -40,15 +40,17 @@ Missing weights (\code{NA}) are ignored during construction. Only
 gene pairs matching the global gene list are inserted.
 }
 \examples{
-data("count_matrices")
+data("toy_counts")
 
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-head(wadj_list[[1]])
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks) # returns SummarizedExperiment
+head(wadj_se[[1]])
 }

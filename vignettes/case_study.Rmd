@@ -27,17 +27,10 @@ knitr::opts_chunk$set(
     collapse = TRUE,
     comment = "#>",
     fig.width = 6,
-    fig.height = 5
+    fig.height = 5,
+    eval = TRUE
 )
 library(scGraphVerse)
-library(Seurat)
-library(tidyverse)
-library(TENxPBMCData)
-library(scater)
-library(AnnotationDbi)
-library(org.Hs.eg.db)
-library(SingleR)
-library(celldex)
 ```
 
 # 1. Dataset and Preprocessing
@@ -59,171 +52,216 @@ selection effects.
 This preprocessing ensures we have clean, comparable data for network inference.
 
 ```{r loaddata}
-# 1. Load PBMC data
-pbmc_obj <- TENxPBMCData("pbmc3k")
-pbmc_obj1 <- TENxPBMCData("pbmc4k")
+# Note: This vignette requires external packages from Suggests
+# Install if needed:
+# BiocManager::install(c("TENxPBMCData", "scater", "SingleR", "celldex"))
 
-sce <- logNormCounts(pbmc_obj)
-symbols_tenx <- rowData(sce)$Symbol_TENx
-valid <- !is.na(symbols_tenx) & symbols_tenx != ""
-sce <- sce[valid, ]
-rownames(sce) <- make.unique(symbols_tenx[valid])
-logcounts(sce) <- as.matrix(logcounts(sce))
-colnames(sce) <- paste0("cell_", seq_len(ncol(sce)))
+# Helper function to preprocess PBMC data
+preprocess_pbmc <- function(pbmc_obj) {
+    sce <- scater::logNormCounts(pbmc_obj)
+    symbols_tenx <- SummarizedExperiment::rowData(sce)$Symbol_TENx
+    valid <- !is.na(symbols_tenx) & symbols_tenx != ""
+    sce <- sce[valid, ]
+    rownames(sce) <- make.unique(symbols_tenx[valid])
+    SummarizedExperiment::assay(sce, "logcounts") <-
+        as.matrix(SummarizedExperiment::assay(sce, "logcounts"))
+    colnames(sce) <- paste0("cell_", seq_len(ncol(sce)))
+    return(sce)
+}
 
-sce1 <- logNormCounts(pbmc_obj1)
-symbols_tenx1 <- rowData(sce1)$Symbol_TENx
-valid1 <- !is.na(symbols_tenx1) & symbols_tenx1 != ""
-sce1 <- sce1[valid1, ]
-rownames(sce1) <- make.unique(symbols_tenx1[valid1])
-logcounts(sce1) <- as.matrix(logcounts(sce1))
-colnames(sce1) <- paste0("cell_", seq_len(ncol(sce1)))
+# 1. Load and preprocess PBMC data
+if (requireNamespace("TENxPBMCData", quietly = TRUE)) {
+    pbmc_obj <- TENxPBMCData::TENxPBMCData("pbmc3k")
+    pbmc_obj1 <- TENxPBMCData::TENxPBMCData("pbmc4k")
 
-# 2. Cell type annotation
-ref <- celldex::HumanPrimaryCellAtlasData()
-pred1 <- SingleR(test = sce1, ref = ref, labels = ref$label.main)
-colData(sce1)$predicted_celltype <- pred1$labels
+    sce <- preprocess_pbmc(pbmc_obj)
+    sce1 <- preprocess_pbmc(pbmc_obj1)
 
-pred <- SingleR(test = sce, ref = ref, labels = ref$label.main)
-colData(sce)$predicted_celltype <- pred$labels
+    # 2. Cell type annotation
+    if (requireNamespace("celldex", quietly = TRUE) &&
+        requireNamespace("SingleR", quietly = TRUE)) {
+        ref <- celldex::HumanPrimaryCellAtlasData()
+        pred1 <- SingleR::SingleR(test = sce1, ref = ref, labels=ref$label.main)
+        SummarizedExperiment::colData(sce1)$pcell <- pred1$labels
 
-# 3. Select top 100 B-cell genes
-genes <- selgene(
-    object = sce,
-    top_n = 100,
-    cell_type = "B_cell",
-    cell_type_col = "predicted_celltype",
-    remove_rib = TRUE,
-    remove_mt = TRUE
-)
+        pred <- SingleR::SingleR(test = sce, ref = ref, labels=ref$label.main)
+        SummarizedExperiment::colData(sce)$pcell <- pred$labels
 
-genes1 <- selgene(
-    object = sce1,
-    top_n = 100,
-    cell_type = "B_cell",
-    cell_type_col = "predicted_celltype",
-    remove_rib = TRUE,
-    remove_mt = TRUE
-)
+        # 3. Select top 100 B-cell genes
+        genes <- selgene(
+            object = sce,
+            top_n = 100,
+            cell_type = "B_cell",
+            cell_type_col = "pcell",
+            remove_rib = TRUE,
+            remove_mt = TRUE
+        )
 
-# 4. Find intersection
-commong <- intersect(genes, genes1)
+        genes1 <- selgene(
+            object = sce1,
+            top_n = 100,
+            cell_type = "B_cell",
+            cell_type_col = "pcell",
+            remove_rib = TRUE,
+            remove_mt = TRUE
+        )
 
+        # 4. Find intersection
+        commong <- intersect(genes, genes1)
 
-# 5. Subset data
-pbmc1_sub <- subset(sce, features = commong)
-pbmc2_sub <- subset(sce1, features = commong)
+        # 5. Subset data
+        pbmc1_sub <- sce[
+            commong,
+            SummarizedExperiment::colData(sce)$pcell == "B_cell"
+        ]
+        pbmc2_sub <- sce1[
+            commong,
+            SummarizedExperiment::colData(sce1)$pcell == "B_cell"
+        ]
 
-pbmc1_sub <- pbmc1_sub[commong, ]
-pbmc2_sub <- pbmc2_sub[commong, ]
+        pbmc1_sub <- pbmc1_sub[, 1:85]
+        pbmc2_sub <- pbmc2_sub[, 1:85]
 
-pbmc1_sub <- pbmc1_sub[, colData(pbmc1_sub)$predicted_celltype == "B_cell"]
-pbmc2_sub <- pbmc2_sub[, colData(pbmc2_sub)$predicted_celltype == "B_cell"]
-pbmc1_sub <- pbmc1_sub[, 1:85]
-pbmc2_sub <- pbmc2_sub[, 1:85]
-
-# List for multi-sample analysis
-bcell_list <- list(pbmc1_sub, pbmc2_sub)
-
+        # Create MultiAssayExperiment for multi-sample analysis
+        bcell_mae <- create_mae(list(pbmc1 = pbmc1_sub, pbmc2 = pbmc2_sub))
+    }
+}
 ```
 
 # 2. Network Inference
 
-Now we'll infer gene regulatory networks from our preprocessed B cell data 
-using GENIE3. Unlike the simulation study where we had control over all 
-parameters, here we're working with real biological data that presents unique 
+Now we'll infer gene regulatory networks from our preprocessed B cell data
+using GENIE3. Unlike the simulation study where we had control over all
+parameters, here we're working with real biological data that presents unique
 challenges: B cells have distinct expression patterns, lower total gene counts
 compared to the full transcriptome, and batch effects between the two PBMC
 datasets.
 
+The function now accepts a `MultiAssayExperiment` object as input, which
+provides a structured way to handle multiple experimental conditions.
+
 ```{r genie3}
 # Choose method: "GENIE3", "GRNBoost2", "ZILGM", "PCzinb" or "JRF"
 method <- "GENIE3"
-networks <- infer_networks(
-    count_matrices_list = bcell_list,
-    method = method,
-    nCores = 1
-)
-
+if (exists("bcell_mae")) {
+    networks <- infer_networks(
+        count_matrices_list = bcell_mae,
+        method = method,
+        nCores = 1
+    )
+}
 ```
 
 ## 2.1. Building Adjacency Matrices
 
-Here we apply a more stringent threshold (99th percentile) compared to the 
+Here we apply a more stringent threshold (99th percentile) compared to the
 simulation study (95th percentile). This is appropriate for real data analysis
-where we expect higher noise levels and want to focus on the most confident 
-regulatory relationships. With B cell data, we're particularly interested in 
+where we expect higher noise levels and want to focus on the most confident
+regulatory relationships. With B cell data, we're particularly interested in
 high-confidence edges controlling B cell function.
 
+The functions now return and work with `SummarizedExperiment` objects for
+better data organization and metadata tracking.
+
 ```{r adjacency, fig.alt="plot Graphs"}
-# Weighted adjacency
-wadj <- generate_adjacency(networks)
-# Symmetrize
-swadj <- symmetrize(wadj, weight_function = "mean")
-# Binary cutoff (top 1%)
-binary_adj <- cutoff_adjacency(
-    count_matrices = bcell_list,
-    weighted_adjm_list = swadj,
-    n = 1,
-    method = method,
-    quantile_threshold = 0.99,
-    nCores = 1
-)
-# Plot
-plotg(binary_adj)
+if (exists("networks")) {
+    # Weighted adjacency (returns SummarizedExperiment)
+    wadj_se <- generate_adjacency(networks)
+
+    # Symmetrize (returns SummarizedExperiment)
+    swadj_se <- symmetrize(wadj_se, weight_function = "mean")
+
+    # Binary cutoff (top 1%, returns SummarizedExperiment)
+    binary_se <- cutoff_adjacency(
+        count_matrices = bcell_mae,
+        weighted_adjm_list = swadj_se,
+        n = 1,
+        method = method,
+        quantile_threshold = 0.99,
+        nCores = 1
+    )
+
+    # Plot
+    if (requireNamespace("ggraph", quietly = TRUE)) {
+        plotg(binary_se)
+    }
+}
 ```
 
 # 3. Consensus and Community Detection
 
-With only two PBMC datasets, our consensus network will include edges that 
-appear in both batches, providing high confidence in the regulatory 
+With only two PBMC datasets, our consensus network will include edges that
+appear in both batches, providing high confidence in the regulatory
 relationships.
 
 ```{r consensus, fig.alt="plot consensus Graph"}
-# Consensus by vote
-consensus <- create_consensus(binary_adj, method = "vote")
+if (exists("binary_se")) {
+    # Consensus by vote
+    consensus <- create_consensus(binary_se, method = "vote")
 
-plotg(list(consensus))
+    # Plot consensus network
+    if (requireNamespace("ggraph", quietly = TRUE)) {
+        plotg(consensus)
+    }
+}
 ```
 
+Here we demonstrate the use of `classify_edges()` and 
+`plot_network_comparison()` for detailed network comparison analysis.
+The `false_plot` parameter controls whether to include 
+false positive/negative plots.
 
-Here we demonstrate two key features not shown in the simulation study: 
-**network comparison with external databases** and the `false_plot` 
-parameter in `compare_consensus()`.
+```{r comparecommunity, fig.alt="comparing Graphs with reference"}
+if (exists("consensus")) {
+    # Note: For comparison with external databases like STRINGdb,
+    # use stringdb_adjacency() to fetch reference networks
 
-```{r comparecommunity, fig.alt="comparing Graphs with STRINGdb"}
-# Note: This requires internet connection for STRINGdb
-# To run this section, set eval=TRUE and ensure internet connectivity
-compare_consensus(consensus_matrix = consensus, false_plot = TRUE)
-
-# Community detection
-communities <- community_path(consensus)
+    # Community detection
+    if (requireNamespace("igraph", quietly = TRUE)) {
+        communities <- community_path(consensus)
+    }
+}
 ```
 
 # 4. Validation with STRINGdb
 
-Unlike the simulation study where we used STRINGdb to create ground truth, here 
-we use it for validation of our inferred B cell regulatory network. 
-The `keep_all_genes = TRUE` parameter ensures we retain information for all 
-genes in our dataset, even those not found in STRING, which is important for 
+Unlike the simulation study where we used STRINGdb to create ground truth, here
+we use it for validation of our inferred B cell regulatory network.
+The `keep_all_genes = TRUE` parameter ensures we retain information for all
+genes in our dataset, even those not found in STRING, which is important for
 comprehensive edge mining analysis.
 
 ```{r stringdb}
 # Note: This requires internet connection for STRINGdb downloads
-# To run this section, set eval=TRUE and ensure internet connectivity
-str <- stringdb_adjacency(
-    genes = rownames(consensus),
-    species = 9606,
-    required_score = 900,
-    keep_all_genes = TRUE
-)$binary
-ground_truth <- symmetrize(list(str), weight_function = "mean")[[1]]
+# This section requires the STRINGdb package from Suggests
+if (exists("consensus") && requireNamespace("STRINGdb", quietly = TRUE)) {
+    str_result <- stringdb_adjacency(
+        genes = rownames(consensus),
+        species = 9606,
+        required_score = 900,
+        keep_all_genes = TRUE
+    )
 
-# Edge mining: TP rates
-em <- edge_mining(list(consensus),
-    query_edge_types = "TP",
-    ground_truth = ground_truth
-)
+    # Extract binary adjacency and symmetrize
+    str_binary <- str_result$binary
+    ground_truth_se <- symmetrize(
+        build_network_se(list(string_network = str_binary)),
+        weight_function = "mean"
+    )
+    ground_truth <- SummarizedExperiment::assay(ground_truth_se, 1)
+
+    # Edge mining: TP rates (returns list of dataframes)
+    em <- edge_mining(
+        consensus,
+        ground_truth = ground_truth,
+        query_edge_types = "TP"
+    )
+
+    # Display results
+    if (length(em) > 0) {
+        print(head(em[[1]]))
+    }
+}
 ```
 
 # 5. Conclusion

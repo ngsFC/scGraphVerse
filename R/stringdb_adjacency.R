@@ -35,16 +35,15 @@
 #'
 #' @note Requires packages: \pkg{STRINGdb}, \pkg{httr}, \pkg{jsonlite}.
 #'
-#' @importFrom STRINGdb STRINGdb
 #' @importFrom httr POST content
 #' @importFrom jsonlite fromJSON
 #' @importFrom stats setNames
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
+#' data(toy_counts)
 #' genes <- selgene(
-#'     object = count_matrices[[1]],
+#'     object = toy_counts[[1]],
 #'     top_n = 5,
 #'     cell_type = "T_cells",
 #'     cell_type_col = "CELL_TYPE",
@@ -60,30 +59,46 @@
 #'     keep_all_genes = FALSE
 #' )
 #' wadj_truth <- str_res$weighted
-#' adj_truth <- str_res$binary
+#' toy_adj_matrix <- str_res$binary
 stringdb_adjacency <- function(
     genes,
     species = 9606,
     required_score = 400,
     keep_all_genes = TRUE,
     verbose = TRUE) {
-    if (!requireNamespace("STRINGdb", quietly = TRUE)) {
-        stop("Package 'STRINGdb' is required. Please install it.")
-    }
-    if (!requireNamespace("httr", quietly = TRUE)) {
-        stop("Package 'httr' is required. Please install it.")
-    }
-    if (!requireNamespace("jsonlite", quietly = TRUE)) {
-        stop("Package 'jsonlite' is required. Please install it.")
-    }
+    BiocBaseUtils::checkInstalled("STRINGdb")
+    BiocBaseUtils::checkInstalled("httr")
+    BiocBaseUtils::checkInstalled("jsonlite")
 
     if (length(genes) == 0) {
         stop("Please provide at least one gene in 'genes'.")
     }
 
+    # Configure download method to handle SSL certificate issues
+    # This is needed due to expired certificates on stringdb-downloads.org
+    # Save original settings to restore later
+    orig_download_method <- getOption("download.file.method")
+    orig_download_extra <- getOption("download.file.extra")
+
+    # Set options for download.file to skip SSL verification
+    options(download.file.method = "curl")
+    options(download.file.extra = "-k") # -k flag skips SSL verification
+
+    # Also configure httr for API calls
+    httr::set_config(httr::config(ssl_verifypeer = FALSE))
+
+    # Ensure options are restored on exit
+    on.exit(
+        {
+            options(download.file.method = orig_download_method)
+            options(download.file.extra = orig_download_extra)
+        },
+        add = TRUE
+    )
+
     if (verbose) message("Initializing STRINGdb...")
 
-    string_db <- STRINGdb$new(
+    string_db <- STRINGdb::STRINGdb$new(
         version = "11.5",
         species = species,
         score_threshold = required_score,
@@ -106,7 +121,7 @@ stringdb_adjacency <- function(
         if (length(unmapped_genes) > 0 && keep_all_genes) {
             message(
                 length(unmapped_genes),
-                " genes were not found in STRING but will be included as ",
+                " genes were not found,included as ",
                 "zero rows/columns."
             )
         }

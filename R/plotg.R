@@ -6,8 +6,9 @@
 #' \pkg{ggraph}.
 #'
 #' @param adj_matrix_list A list of square, symmetric adjacency matrices
-#'   with zeros on the diagonal (no self-loops). Each matrix represents an
-#'   undirected graph.
+#'   with zeros on the diagonal (no self-loops), or a
+#'   \linkS4class{SummarizedExperiment} object containing such matrices as
+#'   assays. Each matrix represents an undirected graph.
 #'
 #' @return A grid of plots displaying all valid graphs in the input list.
 #'
@@ -26,49 +27,51 @@
 #'
 #' @importFrom igraph graph_from_adjacency_matrix delete_vertices V
 #'   degree vcount ecount
-#' @importFrom ggraph ggraph geom_edge_link geom_node_point
-#' @importFrom gridExtra grid.arrange
-#' @importFrom ggplot2 labs theme_minimal theme element_text
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
+#' data(toy_counts)
 #'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 #'
-#' binary_listj <- cutoff_adjacency(
-#'     count_matrices = count_matrices,
-#'     weighted_adjm_list = swadj_list,
+#' # Apply cutoff
+#' binary_se <- cutoff_adjacency(
+#'     count_matrices = toy_counts,
+#'     weighted_adjm_list = swadj_se,
 #'     n = 1,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.95,
 #'     nCores = 1,
 #'     debug = TRUE
 #' )
-#' head(binary_listj[[1]])
-#' plotg(binary_listj)
+#' head(binary_se[[1]])
+#' plotg(binary_se)
 plotg <- function(
     adj_matrix_list) {
-    if (!requireNamespace("igraph", quietly = TRUE)) {
-        stop("The 'igraph' package is required but not installed.")
-    }
-    if (!requireNamespace("ggraph", quietly = TRUE)) {
-        stop("The 'ggraph' package is required but not installed.")
-    }
-    if (!requireNamespace("gridExtra", quietly = TRUE)) {
-        stop("The 'gridExtra' package is required but not installed.")
+    BiocBaseUtils::checkInstalled("ggraph")
+    BiocBaseUtils::checkInstalled("ggplot2")
+    BiocBaseUtils::checkInstalled("gridExtra")
+
+    # Accept SummarizedExperiment and extract assays
+    if (inherits(adj_matrix_list, "SummarizedExperiment")) {
+        adj_matrix_list <- as.list(
+            SummarizedExperiment::assays(adj_matrix_list)
+        )
     }
 
     if (!is.list(adj_matrix_list)) {
-        stop("Input must be a list of adjacency matrices.")
+        stop("Input must be a list of matrices or a SummarizedExperiment.")
     }
 
     plot_list <- list()

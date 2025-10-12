@@ -1,171 +1,82 @@
 #' Compare Consensus and Reference Graphs or STRINGdb Networks
 #'
-#' Compares a consensus adjacency matrix to a reference network, either
-#' provided manually or generated from STRINGdb. Visualizes True Positives
-#' (TP), False Negatives (FN), and optionally False Positives (FP) edges.
+#' Convenience wrapper that classifies edges and visualizes the comparison
+#' between consensus and reference networks. For more control, use the
+#' individual functions: \code{\link{classify_edges}} and
+#' \code{\link{plot_network_comparison}}.
 #'
-#' @param consensus_matrix A binary square adjacency matrix representing the
-#'   consensus network. Row and column names should correspond to gene
-#'   symbols.
-#' @param reference_matrix Optional. A binary square adjacency matrix
-#'   representing the reference (ground truth) network. If \code{NULL}, a
-#'   STRINGdb high-confidence physical interaction network (human, score >
-#'   900) is used.
-#' @param false_plot Logical. If \code{TRUE}, an additional plot of False
-#'   Positives (FP) is generated. Default is \code{FALSE}.
+#' @param consensus_matrix A \linkS4class{SummarizedExperiment} object
+#'   representing the consensus network.
+#' @param reference_matrix Optional. A \linkS4class{SummarizedExperiment} obj
+#'   representing the reference network. If \code{NULL}, STRINGdb is queried.
+#' @param false_plot Logical. If \code{TRUE}, displays False Positives plot.
+#'   Default is \code{FALSE}.
 #'
-#' @return A \code{ggplot} object visualizing the comparison. If
-#'   \code{false_plot = TRUE}, a combined plot of True Positives / False
-#'   Negatives and False Positives is returned.
+#' @return A \code{ggplot} object visualizing the comparison.
 #'
-#' @details If no \code{reference_matrix} is provided, the function
-#'   automatically queries STRINGdb to generate a high-confidence physical
-#'   interaction network.
+#' @details If no \code{reference_matrix} is provided, STRINGdb is queried
+#'   to generate a high-confidence physical interaction network.
 #'
-#'   The plots differentiate:
-#'     \itemize{
-#'       \item Confirmed Edges (TP or CE): Present in both consensus and
-#'         reference.
-#'       \item Missing Edges (FN or ME): Present in reference but absent in
-#'         consensus.
-#'       \item Extra Edges (FP or EE): Present in consensus but absent in
-#'         reference (only if \code{false_plot = TRUE}).
-#'     }
+#' @seealso \code{\link{classify_edges}}, \code{\link{plot_network_comparison}}
 #'
-#' @note Requires the \pkg{igraph}, \pkg{ggraph}, \pkg{patchwork},
-#'   \pkg{Matrix}, and \pkg{STRINGdb} packages.
+#' @note Requires \pkg{ggraph} and \pkg{ggplot2}. If \code{reference_matrix}
+#'   is NULL, also requires \pkg{STRINGdb}. If \code{false_plot = TRUE},
+#'   requires \pkg{patchwork}.
 #'
-#' @importFrom igraph degree V graph_from_adjacency_matrix as_edgelist
-#'   graph_from_edgelist delete_vertices
-#' @importFrom ggraph ggraph geom_edge_link geom_node_point
-#' @importFrom patchwork wrap_plots
-#' @importFrom Matrix Matrix
-#' @importFrom STRINGdb STRINGdb
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
-#' data(adj_truth)
+#' data(toy_counts)
+#' data(toy_adj_matrix)
+#'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 #'
-#' binary_listj <- cutoff_adjacency(
-#'     count_matrices = count_matrices,
-#'     weighted_adjm_list = swadj_list,
+#' # Apply cutoff
+#' binary_se <- cutoff_adjacency(
+#'     count_matrices = toy_counts,
+#'     weighted_adjm_list = swadj_se,
 #'     n = 1,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.95,
 #'     nCores = 1,
 #'     debug = TRUE
 #' )
-#' head(binary_listj[[1]])
+#' head(binary_se[[1]])
 #'
-#' consensus <- create_consensus(binary_listj, method = "union")
+#' consensus <- create_consensus(binary_se, method = "union")
 #'
+#' # Wrap reference matrix in SummarizedExperiment
+#' ref_se <- build_network_se(list(reference = toy_adj_matrix))
+#'
+#' # Compare consensus to reference
 #' compare_consensus(
 #'     consensus,
-#'     false_plot = FALSE,
-#'     reference_matrix = adj_truth
+#'     reference_matrix = ref_se,
+#'     false_plot = FALSE
 #' )
-#'
 #'
 compare_consensus <- function(
     consensus_matrix,
     reference_matrix = NULL,
     false_plot = FALSE) {
-    if (!is.matrix(consensus_matrix)) {
-        stop("consensus_matrix must be a binary adjacency matrix.")
-    }
-
-    use_STRINGdb <- is.null(reference_matrix)
-
-    if (use_STRINGdb) {
-        if (is.null(rownames(consensus_matrix))) {
-            stop("consensus_matrix must have row names to query STRINGdb.")
-        }
-        adj <- stringdb_adjacency(
-            genes          = rownames(consensus_matrix),
-            species        = 9606,
-            required_score = 900,
-            keep_all_genes = TRUE
-        )$binary
-        reference_matrix <- symmetrize(
-            list(
-                adj[
-                    rownames(consensus_matrix),
-                    rownames(consensus_matrix)
-                ]
-            ),
-            "mean"
-        )[[1]]
-    }
-
-    if (!is.matrix(reference_matrix)) {
-        stop("reference_matrix must be a binary adjacency matrix.")
-    }
-    if (!identical(
-        dim(consensus_matrix),
-        dim(reference_matrix)
-    )) {
-        stop("Matrices must have the same dimensions.")
-    }
-
-    graph_ref <- igraph::graph_from_adjacency_matrix(
-        reference_matrix,
-        mode = "undirected",
-        diag = FALSE
-    )
-    graph_cons <- igraph::graph_from_adjacency_matrix(
+    # Classify edges
+    edge_class <- classify_edges(
         consensus_matrix,
-        mode = "undirected",
-        diag = FALSE
+        reference_matrix,
+        use_stringdb = is.null(reference_matrix)
     )
 
-    ref_edges <- .edge_to_str(igraph::as_edgelist(graph_ref))
-    cons_edges <- .edge_to_str(igraph::as_edgelist(graph_cons))
-
-    if (use_STRINGdb) {
-        TP_label <- "CE (Confirmed Edges)"
-        FN_label <- "ME (Missing Edges)"
-        FP_label <- "EE (Extra Edges)"
-    } else {
-        TP_label <- "TP (True Positives)"
-        FN_label <- "FN (False Negatives)"
-        FP_label <- "FP (False Positives)"
-    }
-
-    edge_colors <- ifelse(
-        ref_edges %in% cons_edges,
-        "red",
-        "blue"
-    )
-    plot_tp_fn <- .plot_tp_fn_graph(
-        graph_ref,
-        edge_colors,
-        TP_label,
-        FN_label
-    )
-
-    if (!false_plot) {
-        return(plot_tp_fn)
-    }
-
-    fp_edges <- setdiff(cons_edges, ref_edges)
-    if (length(fp_edges) == 0) {
-        return(plot_tp_fn)
-    }
-
-    plot_fp <- .plot_fp_graph(fp_edges, FP_label)
-    return(patchwork::wrap_plots(
-        plot_tp_fn,
-        plot_fp,
-        nrow = 1
-    ))
+    # Create visualization
+    plot_network_comparison(edge_class, show_fp = false_plot)
 }

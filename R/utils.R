@@ -55,8 +55,8 @@ Nodes:",
         igraph::V(graph_ref)[igraph::degree(graph_ref) == 0]
     )
 
-    ggraph(graph_clean, layout = "fr") +
-        ggraph::geom_edge_link(aes(color = I(edge_colors)), width = 0.7) +
+    ggraph::ggraph(graph_clean, layout = "fr") +
+        ggraph::geom_edge_link(ggplot2::aes(color=I(edge_colors)),width=0.7) +
         ggraph::geom_node_point(color = "steelblue", size = 1.5) +
         ggplot2::labs(
             title = paste(
@@ -84,7 +84,7 @@ Nodes:",
         igraph::V(graph_fp)[igraph::degree(graph_fp) == 0]
     )
 
-    ggraph(graph_fp, layout = "fr") +
+    ggraph::ggraph(graph_fp, layout = "fr") +
         ggraph::geom_edge_link(color = "purple", width = 1) +
         ggraph::geom_node_point(color = "steelblue", size = 2) +
         ggplot2::labs(title = paste(FP_label, ":", nrow(fp_mat))) +
@@ -244,8 +244,11 @@ Nodes:",
 .merge_matrix_list <- function(input_list, rowg) {
     lapply(seq_along(input_list), function(i) {
         mat <- input_list[[i]]
-        if (!is.matrix(mat) || nrow(mat) == 0 || ncol(mat) == 0) {
-            stop("Each matrix must be a non-empty numeric matrix.")
+        # Accept both regular matrices and sparse matrices
+        is_valid <- is.matrix(mat) || inherits(mat, "dgCMatrix") ||
+            inherits(mat, "Matrix")
+        if (!is_valid || nrow(mat) == 0 || ncol(mat) == 0) {
+            stop("Each element must be a non-empty matrix or sparse matrix.")
         }
         if (!rowg) mat <- t(mat)
         if (is.null(colnames(mat))) {
@@ -259,6 +262,13 @@ Nodes:",
 #' @noRd
 
 .merge_seurat_list <- function(input_list) {
+    if (!requireNamespace("Seurat", quietly = TRUE)) {
+        stop(
+            "Package 'Seurat' is required but not installed. ",
+            "Install it with: BiocManager::install('Seurat')"
+        )
+    }
+
     common_features <- Reduce(intersect, lapply(input_list, rownames))
     if (length(common_features) == 0) stop("No common feat among Seurat objs.")
 
@@ -316,14 +326,20 @@ Nodes:",
         {
             shuffled <- .shuffle_matrix_rows(mat)
 
+            # Wrap shuffled matrix in MAE for infer_networks
+            shuffled_mae <- create_mae(list(shuffled = shuffled))
 
-            inferred <- infer_networks(list(shuffled),
+            inferred <- infer_networks(shuffled_mae,
                 method = method,
                 grnboost_modules = grnboost_modules
             )
             adjm <- generate_adjacency(inferred)
-            symm <- symmetrize(adjm, weight_function = weight_function)[[1]]
-            quantile(symm[upper.tri(symm)], quantile_threshold, names = FALSE)
+            symm <- symmetrize(adjm, weight_function = weight_function)
+            # Extract first assay from SE
+            symm_mat <- SummarizedExperiment::assays(symm)[[1]]
+            quantile(symm_mat[upper.tri(symm_mat)], quantile_threshold,
+                names = FALSE
+            )
         },
         error = function(e) {
             stop("Shuffled netinf failed (", method, "):", conditionMessage(e))
@@ -340,16 +356,20 @@ Nodes:",
     # Shuffle ALL matrices together (joint null distribution)
     shuffled_list <- lapply(matrices_list, .shuffle_matrix_rows)
 
+    # Wrap in MAE for infer_networks
+    shuffled_mae <- create_mae(shuffled_list)
+
     # Run joint inference on shuffled data
-    joint_networks <- infer_networks(shuffled_list, method = method)
+    joint_networks <- infer_networks(shuffled_mae, method = method)
 
     # Generate adjacency matrices for each condition
-    adjm_list <- generate_adjacency(joint_networks)
+    adjm_se <- generate_adjacency(joint_networks)
 
-    # Symmetrize each condition's adjacency matrix
-    symm_list <- lapply(adjm_list, function(adjm) {
-        symmetrize(list(adjm), weight_function = weight_function)[[1]]
-    })
+    # Symmetrize (returns SE)
+    symm_se <- symmetrize(adjm_se, weight_function = weight_function)
+
+    # Extract matrices from SE
+    symm_list <- as.list(SummarizedExperiment::assays(symm_se))
 
     # Calculate condition-specific cutoffs from joint null distribution
     cutoffs <- vapply(symm_list, function(symm_adjm) {
@@ -435,25 +455,25 @@ Nodes:",
     total_matrices <- length(unique(roc_data$Matrix))
     colors <- scales::hue_pal()(total_matrices)
 
-    p <- ggplot() +
-        labs(
+    p <- ggplot2::ggplot() +
+        ggplot2::labs(
             title = title,
             x = "False Positive Rate (1 - Specificity)",
             y = "True Positive Rate (Sensitivity)"
         ) +
-        theme_minimal() +
-        theme(
-            plot.title = element_text(hjust = 0.5),
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+            plot.title = ggplot2::element_text(hjust = 0.5),
             legend.position = "bottom"
         ) +
-        geom_abline(
+        ggplot2::geom_abline(
             slope = 1,
             intercept = 0,
             linetype = "dashed",
             color = "grey"
         ) +
-        geom_line(
-            data = roc_data, aes(
+        ggplot2::geom_line(
+            data = roc_data, ggplot2::aes(
                 x = FPR,
                 y = TPR,
                 color = Matrix
@@ -462,14 +482,14 @@ Nodes:",
         )
 
     if (!is.null(binary_points)) {
-        p <- p + geom_point(
+        p <- p + ggplot2::geom_point(
             data = binary_points,
-            aes(x = FPR, y = TPR),
+            ggplot2::aes(x = FPR, y = TPR),
             size = 2, color = "blue"
         )
     }
 
-    p + scale_color_manual(values = colors)
+    p + ggplot2::scale_color_manual(values = colors)
 }
 
 
@@ -479,6 +499,12 @@ Nodes:",
 
 .extract_expression <- function(object, assay = NULL) {
     if (inherits(object, "Seurat")) {
+        if (!requireNamespace("Seurat", quietly = TRUE)) {
+            stop(
+                "Package 'Seurat' is required but not installed. ",
+                "Install it with: BiocManager::install('Seurat')"
+            )
+        }
         assay_name <- Seurat::DefaultAssay(object)
         seurat_assay <- object[[assay_name]]
         slots_avail <- methods::slotNames(seurat_assay)
@@ -523,6 +549,12 @@ Nodes:",
 
 .filter_by_cell_type <- function(expr, object, cell_type, cell_type_col) {
     if (inherits(object, "Seurat")) {
+        if (!requireNamespace("Seurat", quietly = TRUE)) {
+            stop(
+                "Package 'Seurat' is required but not installed. ",
+                "Install it with: BiocManager::install('Seurat')"
+            )
+        }
         meta <- object@meta.data
     } else if (inherits(object, "SingleCellExperiment")) {
         meta <- as.data.frame(SummarizedExperiment::colData(object))
@@ -591,6 +623,12 @@ Nodes:",
 .convert_counts_list <- function(count_matrices_list) {
     lapply(count_matrices_list, function(obj) {
         if (inherits(obj, "Seurat")) {
+            if (!requireNamespace("Seurat", quietly = TRUE)) {
+                stop(
+                    "Package 'Seurat' is required but not installed. ",
+                    "Install it with: BiocManager::install('Seurat')"
+                )
+            }
             as.matrix(Seurat::GetAssayData(obj,
                 assay = "RNA",
                 slot = "counts"
@@ -1291,7 +1329,7 @@ Nodes: ",
 
 .enrich_communities <- function(graph,
                                 non_isolated_nodes,
-                                pathway_db, genes_path) {
+                                pathway_db, organism, genes_path) {
     pathway_results <- list()
     non_isolated_genes <- igraph::V(graph)$name[non_isolated_nodes]
 
@@ -1306,7 +1344,14 @@ Nodes: ",
             next
         }
 
-        entrez <- AnnotationDbi::mapIds(org.Hs.eg.db,
+        # Select organism database
+        org_db <- if (organism == "human") {
+            org.Hs.eg.db::org.Hs.eg.db
+        } else {
+            org.Mm.eg.db::org.Mm.eg.db
+        }
+
+        entrez <- AnnotationDbi::mapIds(org_db,
             keys = genes,
             column = "ENTREZID",
             keytype = "SYMBOL",
@@ -1315,17 +1360,21 @@ Nodes: ",
         entrez <- na.omit(entrez)
 
         if (length(entrez) >= genes_path) {
+            # Set organism codes for pathway databases
+            kegg_org <- if (organism == "human") "hsa" else "mmu"
+            reactome_org <- organism  # "human" or "mouse"
+
             enrich <- tryCatch(
                 {
                     switch(pathway_db,
                         "KEGG" = clusterProfiler::enrichKEGG(
                             gene = entrez,
-                            organism = "hsa",
+                            organism = kegg_org,
                             keyType = "kegg"
                         ),
                         "Reactome" = ReactomePA::enrichPathway(
                             gene = entrez,
-                            organism = "human"
+                            organism = reactome_org
                         ),
                         NULL
                     )
@@ -1354,3 +1403,109 @@ Nodes: ",
 
 # Define global variables to avoid R CMD check NOTEs for ggplot2 aes() usage
 utils::globalVariables(c("FPR", "TPR", "community"))
+
+# MultiAssayExperiment utility functions
+#' @keywords internal
+#' @noRd
+.create_sample_map_for_mae <- function(sce_list, exp_names) {
+    map_list <- lapply(seq_along(sce_list), function(i) {
+        sce <- sce_list[[i]]
+        exp_name <- exp_names[i]
+
+        sample_ids <- colnames(sce)
+        if (is.null(sample_ids)) {
+            sample_ids <- paste0(exp_name, "_cell_", seq_len(ncol(sce)))
+        }
+
+        S4Vectors::DataFrame(
+            assay = exp_name,
+            primary = sample_ids,
+            colname = sample_ids
+        )
+    })
+
+    do.call(rbind, map_list)
+}
+
+#' @keywords internal
+#' @noRd
+.convert_to_sce_list <- function(datasets) {
+    lapply(datasets, function(x) {
+        if (is.matrix(x) || inherits(x, "dgCMatrix")) {
+            SingleCellExperiment::SingleCellExperiment(assays = list(
+                counts = x
+            ))
+        } else if (inherits(x, "Seurat")) {
+            if (!requireNamespace("Seurat", quietly = TRUE)) {
+                stop(
+                    "Package 'Seurat' is required but not installed. ",
+                    "Install it with: BiocManager::install('Seurat')"
+                )
+            }
+            counts <- Seurat::GetAssayData(x, slot = "counts")
+            SingleCellExperiment::SingleCellExperiment(assays = list(
+                counts = counts
+            ))
+        } else if (inherits(x, "SingleCellExperiment")) {
+            x
+        } else {
+            stop("Unsupported object type: ", class(x))
+        }
+    })
+}
+
+#' @keywords internal
+#' @noRd
+.extract_from_mae <- function(mae) {
+    exps <- MultiAssayExperiment::experiments(mae)
+    lapply(exps, function(sce) {
+        SummarizedExperiment::assay(sce, "counts")
+    })
+}
+
+# Network SummarizedExperiment utility functions
+#' @keywords internal
+#' @noRd
+.validate_network_list <- function(networks) {
+    if (!is.list(networks)) {
+        stop("networks must be a list of matrices")
+    }
+
+    dims <- lapply(networks, dim)
+    if (length(unique(dims)) > 1) {
+        stop("All networks must have the same dimensions")
+    }
+
+    gene_names <- rownames(networks[[1]])
+    if (is.null(gene_names)) {
+        stop("Networks must have rownames (gene names)")
+    }
+
+    all_same <- all(vapply(networks, function(x) {
+        identical(rownames(x), gene_names) && identical(colnames(x), gene_names)
+    }, logical(1)))
+
+    if (!all_same) {
+        stop("All networks must have identical row and column names")
+    }
+
+    gene_names
+}
+
+#' @keywords internal
+#' @noRd
+.extract_networks_from_se <- function(network_se) {
+    if (!inherits(network_se, "SummarizedExperiment")) {
+        stop("Input must be a SummarizedExperiment object")
+    }
+    assays_list <- SummarizedExperiment::assays(network_se)
+    as.list(assays_list)
+}
+
+#' @keywords internal
+#' @noRd
+.is_network_se <- function(obj) {
+    inherits(obj, "SummarizedExperiment") &&
+        !is.null(S4Vectors::metadata(obj)$object_type) &&
+        S4Vectors::metadata(obj)$object_type == "network_collection"
+}

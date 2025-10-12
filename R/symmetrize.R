@@ -1,9 +1,11 @@
-#' Symmetrize a List of Square Matrices
+#' Symmetrize Adjacency Matrices in a SummarizedExperiment
 #'
-#' Symmetrizes each square matrix in a list by ensuring entries (i, j) and
-#' (j, i) are identical, using a specified combination function.
+#' Symmetrizes each adjacency matrix in a \linkS4class{SummarizedExperiment}
+#' by ensuring entries (i, j) and (j, i) are identical, using a specified
+#' combination function.
 #'
-#' @param matrix_list A list of square numeric matrices to symmetrize.
+#' @param matrix_list A \linkS4class{SummarizedExperiment} object containing
+#'   adjacency matrices to symmetrize.
 #' @param weight_function Character string or function. Method to combine
 #'   entries (i, j) and (j, i). Options include \code{"mean"},
 #'   \code{"max"}, \code{"min"}, or a user-defined function.
@@ -11,8 +13,9 @@
 #'   processing. Defaults to the number of available workers in the current
 #'   \pkg{BiocParallel} backend.
 #'
-#' @return A list of symmetric matrices, where for each matrix
-#'   \eqn{A[i, j] = A[j, i]} for all \eqn{i \neq j}.
+#' @return A \linkS4class{SummarizedExperiment} object with symmetrized
+#'   adjacency matrices, where for each matrix \eqn{A[i, j] = A[j, i]} for
+#'   all \eqn{i \neq j}.
 #'
 #' @details For each pair of off-diagonal elements (i, j) and (j, i):
 #'   \itemize{
@@ -29,25 +32,30 @@
 #' @export
 #'
 #' @examples
-#' data("count_matrices")
+#' data("toy_counts")
 #'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 symmetrize <- function(
     matrix_list,
     weight_function = "mean",
     nCores = 1) {
-    if (!is.list(matrix_list) ||
-        !all(vapply(matrix_list, is.matrix, logical(1)))) {
-        stop("matrix_list must be a list of matrices")
+    if (!inherits(matrix_list, "SummarizedExperiment")) {
+        stop("matrix_list must be a SummarizedExperiment object")
     }
+
+    metadata_orig <- S4Vectors::metadata(matrix_list)
+    matrix_list <- .extract_networks_from_se(matrix_list)
 
     weight_function <- match.fun(weight_function)
 
@@ -78,5 +86,8 @@ symmetrize <- function(
         BPPARAM = BiocParallel::MulticoreParam(nCores)
     )
 
-    symmetrized_matrices
+    build_network_se(
+        networks = symmetrized_matrices,
+        metadata = c(metadata_orig, list(symmetrized = TRUE))
+    )
 }

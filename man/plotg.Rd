@@ -8,8 +8,9 @@ plotg(adj_matrix_list)
 }
 \arguments{
 \item{adj_matrix_list}{A list of square, symmetric adjacency matrices
-with zeros on the diagonal (no self-loops). Each matrix represents an
-undirected graph.}
+with zeros on the diagonal (no self-loops), or a
+\linkS4class{SummarizedExperiment} object containing such matrices as
+assays. Each matrix represents an undirected graph.}
 }
 \value{
 A grid of plots displaying all valid graphs in the input list.
@@ -36,27 +37,31 @@ This function requires the following packages:
 an informative error will be thrown.
 }
 \examples{
-data(count_matrices)
+data(toy_counts)
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
-plotg(binary_listj)
+head(binary_se[[1]])
+plotg(binary_se)
 }

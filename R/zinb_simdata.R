@@ -44,12 +44,12 @@
 #' @export
 #'
 #' @examples
-#' data(adj_truth)
-#' nodes <- nrow(adj_truth)
+#' data(toy_adj_matrix)
+#' nodes <- nrow(toy_adj_matrix)
 #' sims <- zinb_simdata(
 #'     n = 50,
 #'     p = nodes,
-#'     B = adj_truth,
+#'     B = toy_adj_matrix,
 #'     mu_range = list(c(1, 4), c(1, 7), c(1, 10)),
 #'     mu_noise = c(1, 3, 5),
 #'     theta = c(1, 0.7, 0.5),

@@ -7,9 +7,10 @@
 #' @param ground_truth A square binary adjacency matrix representing the
 #'   ground truth network. Values must be 0 or 1. Only the upper triangle is
 #'   used for evaluation.
-#' @param predicted_list A list of predicted adjacency matrices to evaluate.
-#'   Each matrix must have the same dimensions and row/column names as
-#'   \code{ground_truth}.
+#' @param predicted_list A list of predicted adjacency matrices to evaluate,
+#'   or a \linkS4class{SummarizedExperiment} object containing such matrices
+#'   as assays. Each matrix must have the same dimensions and row/column
+#'   names as \code{ground_truth}.
 #' @param zero_diag Logical. If \code{TRUE} (default), sets the diagonal of
 #'   \code{ground_truth} to zero before evaluation, removing self-loops.
 #'
@@ -27,27 +28,30 @@
 #'
 #' @note Requires the \pkg{fmsb}, \pkg{dplyr}, and \pkg{tidyr} packages.
 #'
-#' @importFrom fmsb radarchart
 #' @importFrom dplyr select
 #' @importFrom tidyr all_of
 #' @export
 #'
 #' @examples
-#' data(count_matrices)
-#' data(adj_truth)
+#' data(toy_counts)
+#' data(toy_adj_matrix)
 #'
+#'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks)
+#' swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 #'
-#' binary_listj <- cutoff_adjacency(
-#'     count_matrices = count_matrices,
-#'     weighted_adjm_list = swadj_list,
+#' # Apply cutoff
+#' binary_se <- cutoff_adjacency(
+#'     count_matrices = toy_counts,
+#'     weighted_adjm_list = swadj_se,
 #'     n = 1,
 #'     method = "GENIE3",
 #'     quantile_threshold = 0.95,
@@ -55,12 +59,19 @@
 #'     debug = TRUE
 #' )
 #'
-#' pscores_data <- pscores(adj_truth, binary_listj)
+#' pscores_data <- pscores(toy_adj_matrix, binary_se)
 #'
 pscores <- function(
     ground_truth,
     predicted_list,
     zero_diag = TRUE) {
+    BiocBaseUtils::checkInstalled("fmsb")
+
+    # Accept SummarizedExperiment and extract assays
+    if (inherits(predicted_list, "SummarizedExperiment")) {
+        predicted_list <- as.list(SummarizedExperiment::assays(predicted_list))
+    }
+
     ground_truth <- as.matrix(ground_truth)
     if (zero_diag) diag(ground_truth) <- 0
     gt_u <- ground_truth[upper.tri(ground_truth)]

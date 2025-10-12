@@ -5,9 +5,8 @@
 #' \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
 #' \code{"JRF"}, or \code{"PCzinb"}.
 #'
-#' @param count_matrices_list A list of expression matrices (genes × cells)
-#'   or \linkS4class{Seurat} or \linkS4class{SingleCellExperiment}
-#'   objects.
+#' @param count_matrices_list A \linkS4class{MultiAssayExperiment} object
+#'   containing expression data from multiple experiments or conditions.
 #' @param method Character string. Inference method to use. One of:
 #'   \code{"GENIE3"}, \code{"GRNBoost2"}, \code{"ZILGM"},
 #'   \code{"JRF"}, or \code{"PCzinb"}.
@@ -70,7 +69,7 @@
 #'
 #'   Parallelization behavior:
 #'   \itemize{
-#'     \item \strong{GENIE3}: No external parallelization; internal 
+#'     \item \strong{GENIE3}: No external parallelization; internal
 #'       \code{nCores} parameter controls computation.
 #'     \item \strong{ZILGM}: Uses \code{nCores} parameter for internal
 #'       parallelization.
@@ -96,17 +95,17 @@
 #'
 #' @importFrom BiocParallel bplapply MulticoreParam SerialParam bpworkers
 #'   bpparam
-#' @importFrom Seurat GetAssayData
 #' @importFrom SummarizedExperiment assay
 #' @importFrom parallel makeCluster stopCluster
 #' @importFrom doParallel registerDoParallel
 #' @export
 #'
 #' @examples
-#' data("count_matrices")
+#' data("toy_counts")
 #'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
@@ -124,6 +123,12 @@ infer_networks <- function(
     pczinb_params = list(),
     verbose = FALSE) {
     method <- match.arg(method)
+
+    if (!inherits(count_matrices_list, "MultiAssayExperiment")) {
+        stop("count_matrices_list must be a MultiAssayExperiment object")
+    }
+
+    count_matrices_list <- .extract_from_mae(count_matrices_list)
     count_matrices_list <- .convert_counts_list(count_matrices_list)
     n_matrices <- length(count_matrices_list)
 
@@ -135,30 +140,49 @@ infer_networks <- function(
     jrf_params <- .merge_jrf_params(jrf_params)
     pczinb_params <- .merge_pczinb_params(pczinb_params)
 
-    if (method %in% c("GENIE3", "ZILGM")) {
+    if (method == "GENIE3") {
         results <- vector("list", n_matrices)
         for (i in seq_len(n_matrices)) {
             mat <- count_matrices_list[[i]]
-            if (method == "GENIE3") {
-                if (verbose) {
-                    message("Running GENIE3 on matrix ", i, "/", n_matrices)
-                }
-                results[[i]] <- .run_genie3(mat, nCores, genie3_params)
-            } else {
-                if (verbose) {
-                    message("Running ZILGM on matrix ", i, "/", n_matrices)
-                }
-                results[[i]] <- .run_zilgm(mat, adjm, nCores, zilgm_params)
+            if (verbose) {
+                message("Running GENIE3 on matrix ", i, "/", n_matrices)
             }
+            results[[i]] <- .run_genie3(mat, nCores, genie3_params)
         }
         return(results)
+    }
+
+    if (method == "ZILGM") {
+        results <- vector("list", n_matrices)
+        for (i in seq_len(n_matrices)) {
+            mat <- count_matrices_list[[i]]
+            if (verbose) {
+                message("Running ZILGM on matrix ", i, "/", n_matrices)
+            }
+            results[[i]] <- .run_zilgm(mat, adjm, nCores, zilgm_params)
+        }
+        # ZILGM returns adjacency matrices, wrap in SummarizedExperiment
+        if (is.null(names(results))) {
+            names(results) <- paste0("network_", seq_along(results))
+        }
+        return(build_network_se(
+            networks = results,
+            networkData = S4Vectors::DataFrame(
+                network = names(results),
+                n_edges = vapply(results, function(x) sum(x > 0), numeric(1)),
+                row.names = names(results)
+            ),
+            metadata = list(type = "weighted", method = "ZILGM")
+        ))
     }
 
     if (method == "JRF") {
         norm_list <- lapply(
             count_matrices_list,
             function(mat) {
-                t(apply(mat, 1, function(x) { (x - mean(x)) / sd(x) }))
+                t(apply(mat, 1, function(x) {
+                    (x - mean(x)) / sd(x)
+                }))
             }
         )
         if (verbose) message("Running JRF on all matrices jointly")
@@ -168,8 +192,7 @@ infer_networks <- function(
     if (method == "GRNBoost2") {
         if (!requireNamespace("reticulate", quietly = TRUE)) {
             stop(
-                "'reticulate' package is required for method = 'GRNBoost2'.
-",
+                "'reticulate' package is required for method = 'GRNBoost2'.\n",
                 "Install with: install.packages('reticulate')",
                 call. = FALSE
             )
@@ -185,12 +208,9 @@ infer_networks <- function(
 
         if (!python_available) {
             stop(
-                "Python is not available or not properly configured.
-",
-                "Please ensure Python is installed and accessible.
-",
-                "You may need to restart R after installing Python.
-",
+                "Python is not available or not properly configured.\n",
+                "Please ensure Python is installed and accessible.\n",
+                "You may need to restart R after installing Python.\n",
                 "For setup help, see: ",
                 "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
@@ -206,18 +226,12 @@ infer_networks <- function(
 
         if (!arboreto_available) {
             stop(
-                "Python package 'arboreto' is required for GRNBoost2.
-",
-                "Install options:
-",
-                "  1. Automatic: init_py(install_missing = TRUE)
-",
-                "  2. Manual pip: pip install arboreto
-",
-                "  3. Manual conda: conda install -c bioconda arboreto
-",
-                "  4. From R: reticulate::py_install('arboreto')
-",
+                "Python package 'arboreto' is required for GRNBoost2.\n",
+                "Install options:\n",
+                "  1. Automatic: init_py(install_missing = TRUE)\n",
+                "  2. Manual pip: pip install arboreto\n",
+                "  3. Manual conda: conda install -c bioconda arboreto\n",
+                "  4. From R: reticulate::py_install('arboreto')\n",
                 "For detailed setup instructions, see: ",
                 "vignette('python-setup', package = 'scGraphVerse')",
                 call. = FALSE
@@ -236,13 +250,26 @@ infer_networks <- function(
 
     if (method == "PCzinb") {
         if (verbose) message("Running PCzinb on ", n_matrices, " matrices")
-        return(.run_parallel_networks(
+        results <- .run_parallel_networks(
             count_matrices_list,
             method,
             nCores,
             adjm,
             grnboost_modules,
             pczinb_params
+        )
+        # PCzinb returns adjacency matrices, wrap in SummarizedExperiment
+        if (is.null(names(results))) {
+            names(results) <- paste0("network_", seq_along(results))
+        }
+        return(build_network_se(
+            networks = results,
+            networkData = S4Vectors::DataFrame(
+                network = names(results),
+                n_edges = vapply(results, function(x) sum(x > 0), numeric(1)),
+                row.names = names(results)
+            ),
+            metadata = list(type = "weighted", method = "PCzinb")
         ))
     }
 }
