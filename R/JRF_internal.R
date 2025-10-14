@@ -165,7 +165,7 @@
     proxts = proxts, msets = double(if (labelts) ntree else 1),
     coef = double(2), oob.times = integer(n),
     inbag = if (keep.inbag) matrix(integer(n * ntree), n) else integer(1),
-    as.integer(nclasses), PACKAGE = "scGraphVerse"
+    as.integer(nclasses)
     )[c(
         16:28,
         36:41
