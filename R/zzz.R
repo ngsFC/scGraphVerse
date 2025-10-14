@@ -1,3 +1,8 @@
-# Package hooks removed to avoid startup noise
-# Users can find package information with ?scGraphVerse or
-# packageDescription("scGraphVerse")
+# Package load hook to load compiled C code
+.onLoad <- function(libname, pkgname) {
+    library.dynam("scGraphVerse", pkgname, libname)
+}
+
+.onUnload <- function(libpath) {
+    library.dynam.unload("scGraphVerse", libpath)
+}
