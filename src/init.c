@@ -18,5 +18,5 @@ void R_init_scGraphVerse(DllInfo *dll)
 {
     /* Register only regRF function like JRF package */
     R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
-    R_useDynamicSymbols(dll, FALSE);
+    R_useDynamicSymbols(dll, TRUE);
 }
