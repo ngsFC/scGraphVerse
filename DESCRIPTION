@@ -1,6 +1,6 @@
 Package: scGraphVerse
 Title: scGraphVerse: A Gene Regulatory Network Analysis Package
-Version: 0.99.17
+Version: 0.99.18
 Authors@R: c(
     person("Francesco", "Cecere", 
            email = "francesco.cecerengs@gmail.com", 
@@ -33,6 +33,7 @@ Imports:
     BiocBaseUtils,
     BiocParallel (>= 1.30.0),
     doParallel,
+    doRNG,
     GENIE3,
     Matrix,
     MultiAssayExperiment,
