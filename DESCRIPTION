@@ -59,6 +59,7 @@ Imports:
     mpath
 Suggests:
     AnnotationDbi,
+    BiocStyle,
     clusterProfiler,
     DOSE,
     enrichplot,
