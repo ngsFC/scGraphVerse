@@ -1,5 +1,18 @@
 # scGraphVerse News
 
+## scGraphVerse 0.99.21 (2025-10-21)
+
+### Bug Fixes
+- Added `doRNG` to Imports to support GENIE3 parallel processing with `nCores > 1`
+- Fixed igraph deprecation warning by using `mode = "max"` instead of `mode = "undirected"` for asymmetric matrices
+- Fixed ggplot2 deprecation warning by replacing `size` with `linewidth` in `geom_line()` calls
+- Added `BiocStyle` to Suggests for vignette building
+- Added `useDynLib(scGraphVerse, .registration = TRUE)` to NAMESPACE for proper C code registration
+
+### Improvements
+- Enhanced NAMESPACE imports to satisfy R CMD check requirements
+- Improved vignette dependency management
+
 ## scGraphVerse 0.99.0 (Development Version)
 
 ### 🚀 Enhanced Parameter Support & Internal Dependencies
