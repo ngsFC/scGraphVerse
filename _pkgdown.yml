@@ -14,7 +14,7 @@ navbar:
 home:
   title: "scGraphVerse"
   description: >
-    A toolkit for gene regulatory network inference, consensus, and visualization
+    A toolkit for gene network inference, consensus, and visualization
     from single-cell RNA-seq data.
   links:
     - text: GitHub Repository
@@ -25,11 +25,14 @@ home:
 reference:
   - title: "Toy data"
     contents:
-      - adj_truth
-      - count_matrices
+      - toy_adj_matrix
+      - toy_counts
   - title: "Infer Networks"
     contents:
+      - create_mae
+      - build_network_se
       - infer_networks
+      - PCzinb
       - cutoff_adjacency
       - generate_adjacency
       - earlyj
@@ -41,10 +44,15 @@ reference:
       - community_similarity
       - plotROC
       - pscores
+      - classify_edges
+      - compute_community_metrics
+      - compute_topology_metrics
   - title: "Simulation & Visualization"
     contents:
       - zinb_simdata
       - plotg
+      - plot_community_comparison
+      - plot_network_comparison
   - title: "Data and Utility Functions"
     contents:
       - download_Atlas

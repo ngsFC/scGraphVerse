@@ -35,53 +35,62 @@
 #'
 #' @examples
 #' # Initialize Python environment (handles missing modules gracefully)
-#' tryCatch({
-#'   modules <- init_py(required = FALSE)
-#' }, error = function(e) {
-#'   message("Python environment not available: ", e$message)
-#' })
+#' tryCatch(
+#'     {
+#'         modules <- init_py(required = FALSE)
+#'     },
+#'     error = function(e) {
+#'         message("Python environment not available: ", e$message)
+#'     }
+#' )
 init_py <- function(
     python_path = "/usr/bin/python3",
     required = TRUE,
     install_missing = FALSE,
     install_method = "auto",
     verbose = TRUE) {
-    
     reticulate::use_python(python_path, required = required)
-    
+
     # Check Python version compatibility for GRNBoost2
     if (verbose) {
-        tryCatch({
-            py_version <- reticulate::py_config()$version
-            if (verbose) message("Using Python version: ", py_version)
-            
-            # Extract major.minor.patch version
-            version_parts <- strsplit(py_version, "\\.")[[1]]
-            major <- as.numeric(version_parts[1])
-            minor <- as.numeric(version_parts[2])
-            
-            # Check if not using recommended Python 3.8.x
-            if (!(major == 3 && minor == 8)) {
-                message("Python ", major, ".", minor, " detected.")
-                message("GRNBoost2 works best with Python 3.8.x")
-                message("Consider installing Python 3.8:")
-                message("  - Ubuntu/Debian: sudo apt install python3.8")
-                message("  - macOS: brew install python@3.8") 
-                message("  - Windows: Download Python 3.8 from python.org")
-                message("  - Then use: modules <- init_py(",
-                        "python_path = 'path/to/python3.8')")
-            } else {
-                message("Using Python 3.8.x - optimal for GRNBoost2")
+        tryCatch(
+            {
+                py_version <- reticulate::py_config()$version
+                if (verbose) message("Using Python version: ", py_version)
+
+                # Extract major.minor.patch version
+                version_parts <- strsplit(py_version, "\\.")[[1]]
+                major <- as.numeric(version_parts[1])
+                minor <- as.numeric(version_parts[2])
+
+                # Check if not using recommended Python 3.8.x
+                if (!(major == 3 && minor == 8)) {
+                    message(
+                        "Python ", major, ".", minor, " detected.\n",
+                        "GRNBoost2 works best with Python 3.8.x\n",
+                        "Consider installing Python 3.8:\n",
+                        "  - Ubuntu/Debian: sudo apt install python3.8\n",
+                        "  - macOS: brew install python@3.8\n",
+                        "  - Windows: Download Python 3.8 from python.org\n",
+                        "  - Then use: modules <- init_py(",
+                        "python_path = 'path/to/python3.8')"
+                    )
+                } else {
+                    message("Using Python 3.8.x - optimal for GRNBoost2")
+                }
+            },
+            error = function(e) {
+                if (verbose) message("Could not check Python version")
             }
-        }, error = function(e) {
-            if (verbose) message("Could not check Python version")
-        })
+        )
     }
 
     if (install_missing && !reticulate::py_module_available("arboreto")) {
         if (verbose) {
-            message("Installing Python package 'arboreto' for GRNBoost2...")
-            message("This may take a few minutes.")
+            message(
+                "Installing Python package 'arboreto' for GRNBoost2...\n",
+                "This may take a few minutes."
+            )
         }
 
         tryCatch(
@@ -90,8 +99,9 @@ init_py <- function(
                     if (verbose) message("Trying conda installation...")
                     tryCatch(
                         {
-                            reticulate::conda_install("arboreto", 
-                                                        channel = "bioconda")
+                            reticulate::conda_install("arboreto",
+                                channel = "bioconda"
+                            )
                             if (verbose) message("Successfully installed.")
                         },
                         error = function(e) {
@@ -112,8 +122,10 @@ init_py <- function(
             },
             error = function(e) {
                 if (verbose) {
-                    message("Installation failed: ", e$message)
-                    message("Try manual installation: pip install arboreto")
+                    message(
+                        "Installation failed: ", e$message, "\n",
+                        "Try manual installation: pip install arboreto"
+                    )
                 }
                 if (required) {
                     stop("Python package 'arboreto' installation failed")
@@ -122,29 +134,32 @@ init_py <- function(
         )
     }
 
-    modules <- tryCatch({
-        list(
-            arboreto = reticulate::import(
-                "arboreto.algo",
-                delay_load = TRUE
-            ),
-            pandas = reticulate::import(
-                "pandas",
-                delay_load = TRUE
-            ),
-            numpy = reticulate::import(
-                "numpy",
-                delay_load = TRUE
+    modules <- tryCatch(
+        {
+            list(
+                arboreto = reticulate::import(
+                    "arboreto.algo",
+                    delay_load = TRUE
+                ),
+                pandas = reticulate::import(
+                    "pandas",
+                    delay_load = TRUE
+                ),
+                numpy = reticulate::import(
+                    "numpy",
+                    delay_load = TRUE
+                )
             )
-        )
-    }, error = function(e) {
-        if (required) {
-            stop("Failed to load Python modules: ", e$message)
-        } else {
-            if (verbose) message("Python modules not available: ", e$message)
-            return(NULL)
+        },
+        error = function(e) {
+            if (required) {
+                stop("Failed to load Python modules: ", e$message)
+            } else {
+                if (verbose) message("Python modules not available:",e$message)
+                return(NULL)
+            }
         }
-    })
+    )
 
     if (!is.null(modules) && verbose) {
         message("Python modules successfully loaded.")

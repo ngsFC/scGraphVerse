@@ -4,8 +4,8 @@
 #' demonstrating functions in the scGraphVerse package.
 #'
 #' @format A matrix of dimension 10x10.
-#' @usage data(adj_truth)
+#' @usage data(toy_adj_matrix)
 #' @examples
-#' data(adj_truth)
-#' str(adj_truth)
-"adj_truth"
+#' data(toy_adj_matrix)
+#' str(toy_adj_matrix)
+"toy_adj_matrix"

@@ -1,7 +1,7 @@
 #' Generate Adjacency Matrices from Gene Interaction Tables
 #'
-#' Constructs adjacency matrices from a list of data frames, each
-#' representing weighted gene–gene interactions.
+#' Constructs adjacency matrices from a list of data frames (network edge lists)
+#' and returns them in a \linkS4class{SummarizedExperiment} object.
 #'
 #' @param df_list A list of data frames. Each data frame must have three
 #'   columns:
@@ -15,9 +15,9 @@
 #'   processing. Defaults to the number of available workers from the
 #'   current \pkg{BiocParallel} backend.
 #'
-#' @return A list of square numeric adjacency matrices. Each matrix has
-#'   genes as row and column names, and weights as values. Diagonal
-#'   entries are set to zero (no self-interactions).
+#' @return A \linkS4class{SummarizedExperiment} object where each assay is a
+#'   square numeric adjacency matrix (p×p genes). Diagonal entries are set to
+#'   zero (no self-interactions).
 #'
 #' @details The function first identifies all unique genes across all data
 #'   frames to define the matrix dimensions. For each interaction table,
@@ -32,17 +32,19 @@
 #' @export
 #'
 #' @examples
-#' data("count_matrices")
+#' data("toy_counts")
 #'
+#' # Infer networks (toy_counts is already a MultiAssayExperiment)
 #' networks <- infer_networks(
-#'     count_matrices_list = count_matrices,
+#'     count_matrices_list = toy_counts,
 #'     method = "GENIE3",
 #'     nCores = 1
 #' )
 #' head(networks[[1]])
 #'
-#' wadj_list <- generate_adjacency(networks)
-#' head(wadj_list[[1]])
+#' # Generate adjacency matrices
+#' wadj_se <- generate_adjacency(networks) # returns SummarizedExperiment
+#' head(wadj_se[[1]])
 generate_adjacency <- function(
     df_list,
     nCores = 1) {
@@ -108,5 +110,23 @@ generate_adjacency <- function(
         BPPARAM = BPPARAM
     )
 
-    adjacency_matrix_list
+    if (is.null(names(adjacency_matrix_list))) {
+        names(adjacency_matrix_list) <- paste0(
+            "network_",
+            seq_along(adjacency_matrix_list)
+        )
+    }
+
+    build_network_se(
+        networks = adjacency_matrix_list,
+        networkData = S4Vectors::DataFrame(
+            network = names(adjacency_matrix_list),
+            n_edges = vapply(
+                adjacency_matrix_list, function(x) sum(x > 0),
+                numeric(1)
+            ),
+            row.names = names(adjacency_matrix_list)
+        ),
+        metadata = list(type = "weighted")
+    )
 }

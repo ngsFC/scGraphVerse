@@ -8,7 +8,7 @@ cutoff_adjacency(
   count_matrices,
   weighted_adjm_list,
   n,
-  method = "GENIE3",
+  method = c("GENIE3", "GRNBoost2", "JRF"),
   quantile_threshold = 0.99,
   weight_function = "mean",
   nCores = 1,
@@ -17,12 +17,11 @@ cutoff_adjacency(
 )
 }
 \arguments{
-\item{count_matrices}{A list of expression matrices (genes × cells) or
-\linkS4class{Seurat} or \linkS4class{SingleCellExperiment}
-objects.}
+\item{count_matrices}{A \linkS4class{MultiAssayExperiment} object
+containing expression data from multiple experiments or conditions.}
 
-\item{weighted_adjm_list}{A list of weighted adjacency matrices (one per
-expression matrix) to threshold.}
+\item{weighted_adjm_list}{A \linkS4class{SummarizedExperiment} object
+containing weighted adjacency matrices (one per experiment) to threshold.}
 
 \item{n}{Integer. Number of shuffled replicates generated per original
 expression matrix.}
@@ -48,8 +47,9 @@ using reticulate.}
 Default is \code{FALSE}.}
 }
 \value{
-A list of binary (thresholded) adjacency matrices, each
-corresponding to an input weighted matrix.
+A \linkS4class{SummarizedExperiment} object where each assay is a
+binary (thresholded) adjacency matrix corresponding to an input weighted
+matrix. Metadata includes cutoff values and method parameters.
 }
 \description{
 Applies a cutoff to weighted adjacency matrices using a percentile
@@ -78,26 +78,30 @@ al., 2010).
 }
 }
 \examples{
-data(count_matrices)
+data(toy_counts)
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
+head(binary_se[[1]])
 }

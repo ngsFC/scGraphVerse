@@ -51,11 +51,11 @@ devtools::install_github("ngsFC/scGraphVerse")
 
 ```r
 # Load example data 📊
-data("count_matrices")
+data("toy_counts")
 
 # Infer networks 🧠
 networks <- infer_networks(
-  count_matrices_list = count_matrices,
+  count_matrices_list = toy_counts,
   method = "GENIE3",
   nCores = 1
 )
@@ -65,7 +65,7 @@ wadj <- symmetrize(wadj, weight_function = "mean", nCores = 1)
 
 # Network cutoff 
 adj <- cutoff_adjacency(
-  count_matrices,
+  toy_counts,
   wadj,
   n = 2,
   method = "GENIE3",
@@ -80,7 +80,7 @@ plotg(adj)
 consensus <- create_consensus(adj, method = "union")
 
 # Visualize the consensus! 🎨
-plotg(list(consensus))
+plotg(consensus)
 
 ```
 

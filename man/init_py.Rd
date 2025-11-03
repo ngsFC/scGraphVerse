@@ -51,9 +51,12 @@ package using the specified method if not found.
 }
 \examples{
 # Initialize Python environment (handles missing modules gracefully)
-tryCatch({
-  modules <- init_py(required = FALSE)
-}, error = function(e) {
-  message("Python environment not available: ", e$message)
-})
+tryCatch(
+    {
+        modules <- init_py(required = FALSE)
+    },
+    error = function(e) {
+        message("Python environment not available: ", e$message)
+    }
+)
 }

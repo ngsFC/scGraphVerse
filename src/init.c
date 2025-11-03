@@ -16,7 +16,7 @@ static const R_CMethodDef CEntries[] = {
 
 void R_init_scGraphVerse(DllInfo *dll)
 {
-    /* Register only regRF function like JRF package */
+    /* Register C routines but allow dynamic symbol lookup for compatibility */
     R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
     R_useDynamicSymbols(dll, TRUE);
 }

@@ -8,7 +8,7 @@ library(celldex)
 
 sce <- TENxPBMCData("pbmc3k")
 
-sce <- logNormCounts(pbmc_obj)
+sce <- logNormCounts(sce)
 symbols_tenx <- rowData(sce)$Symbol_TENx
 valid <- !is.na(symbols_tenx) & symbols_tenx != ""
 sce <- sce[valid, ]
@@ -56,11 +56,19 @@ sims <- zinb_simdata(
     depth_range = c(0.8 * nodes * 3, 1.2 * nodes * 3)
 )
 
-count_matrices <- lapply(sims, t)
-count_matrices <- lapply(count_matrices, function(mat) {
+# Create list of SingleCellExperiment objects
+sce_list <- lapply(sims, t)
+sce_list <- lapply(sce_list, function(mat) {
     col_data <- DataFrame(CELL_TYPE = rep("T_cells", ncol(mat)))
     SingleCellExperiment(assays = list(counts = mat), colData = col_data)
 })
 
-usethis::use_data(count_matrices, overwrite = TRUE)
-usethis::use_data(adj_truth, overwrite = TRUE)
+# Convert to MultiAssayExperiment
+toy_counts <- create_mae(sce_list)
+
+# Rename adj_truth to toy_adj_matrix
+toy_adj_matrix <- adj_truth
+
+# Save datasets
+usethis::use_data(toy_counts, overwrite = TRUE)
+usethis::use_data(toy_adj_matrix, overwrite = TRUE)

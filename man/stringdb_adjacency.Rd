@@ -57,9 +57,9 @@ Genes not mapped to STRING are optionally retained as zero rows/columns if
 Requires packages: \pkg{STRINGdb}, \pkg{httr}, \pkg{jsonlite}.
 }
 \examples{
-data(count_matrices)
+data(toy_counts)
 genes <- selgene(
-    object = count_matrices[[1]],
+    object = toy_counts[[1]],
     top_n = 5,
     cell_type = "T_cells",
     cell_type_col = "CELL_TYPE",
@@ -75,5 +75,5 @@ str_res <- stringdb_adjacency(
     keep_all_genes = FALSE
 )
 wadj_truth <- str_res$weighted
-adj_truth <- str_res$binary
+toy_adj_matrix <- str_res$binary
 }

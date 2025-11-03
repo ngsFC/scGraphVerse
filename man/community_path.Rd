@@ -8,6 +8,7 @@ community_path(
   adj_matrix,
   methods = "louvain",
   pathway_db = "KEGG",
+  organism = c("human", "mouse"),
   genes_path = 5,
   plot = TRUE,
   verbose = TRUE,
@@ -17,8 +18,9 @@ community_path(
 )
 }
 \arguments{
-\item{adj_matrix}{A square adjacency matrix. Row and column names must
-correspond to gene symbols.}
+\item{adj_matrix}{A square adjacency matrix or a
+\linkS4class{SummarizedExperiment} object containing a single adjacency
+matrix. Row and column names must correspond to gene symbols.}
 
 \item{methods}{A character vector of one or two community detection
 methods supported by \pkg{robin}. If two are given, performance is
@@ -26,6 +28,9 @@ compared and the best is selected. Default: \code{"louvain"}.}
 
 \item{pathway_db}{Character string specifying the pathway database to use:
 \code{"KEGG"} or \code{"Reactome"}. Default: \code{"KEGG"}.}
+
+\item{organism}{Character string specifying the organism: \code{"human"} or
+\code{"mouse"}. Default: \code{"human"}.}
 
 \item{genes_path}{Integer. Minimum number of genes per community to run
 enrichment analysis. Default: \code{5}.}
@@ -83,30 +88,36 @@ enrichment is done via \pkg{clusterProfiler} (KEGG) or via
 \code{genes_path} are excluded.
 }
 \examples{
-data(count_matrices)
-data(adj_truth)
+data(toy_counts)
+
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate and symmetrize adjacency matrices (returns SummarizedExperiment)
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff (returns SummarizedExperiment)
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
 
-consensus <- create_consensus(binary_listj, method = "union")
+# Create consensus (returns SummarizedExperiment)
+consensus <- create_consensus(binary_se, method = "union")
+
+# community_path now accepts SummarizedExperiment objects directly
 comm_cons <- community_path(consensus)
 
 }

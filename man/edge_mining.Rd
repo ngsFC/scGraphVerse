@@ -16,7 +16,8 @@ edge_mining(
 }
 \arguments{
 \item{predicted_list}{A list of predicted adjacency matrices (row and
-column names are gene symbols).}
+column names are gene symbols), or a \linkS4class{SummarizedExperiment}
+object containing adjacency matrices.}
 
 \item{ground_truth}{A 0/1 adjacency matrix with row and column names.}
 
@@ -55,31 +56,35 @@ matrix, identifies edge types (TP, FP, FN), and queries PubMed for each
 gene pair. Returns counts of hits, PMIDs, and query status.
 }
 \examples{
-data(count_matrices)
-data(adj_truth)
+data(toy_counts)
+data(toy_adj_matrix)
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
+head(binary_se[[1]])
 
-consensus <- create_consensus(binary_listj, method = "union")
+consensus <- create_consensus(binary_se, method = "union")
 head(consensus)
-em <- edge_mining(list(consensus), adj_truth, query_edge_types = "TP")
+em <- edge_mining(consensus, toy_adj_matrix, query_edge_types = "TP")
 }

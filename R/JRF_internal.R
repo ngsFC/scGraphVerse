@@ -31,7 +31,7 @@
     if (classRF && !addclass && length(unique(y)) < 2) {
         stop("Need at least two classes to do classification.")
     }
-    n <- ncol(y) # EXACT: ncol(y), not ncol(x)
+    n <- ncol(y) 
     p <- nrow(x) / nclasses
     if (n == 0) {
         stop("data (x) has 0 rows")
@@ -151,7 +151,7 @@
     as.integer(do.trace), as.integer(proximity), as.integer(oob.prox),
     as.integer(corr.bias), ypred = double(n * nclasses),
     impout = impout, impmat = impmat, impSD = impSD,
-    prox = prox, ndbigtree=integer(ntree), nodestatus=matrix(integer(nrnodes *
+    prox = prox, ndbigtree = integer(ntree),nodestatus=matrix(integer(nrnodes *
         nt * nclasses), ncol = nt), leftDaughter = matrix(integer(nrnodes *
         nt * nclasses), ncol = nt), rightDaughter = matrix(integer(nrnodes *
         nt * nclasses), ncol = nt), nodepred = matrix(double(nrnodes *
@@ -165,7 +165,7 @@
     proxts = proxts, msets = double(if (labelts) ntree else 1),
     coef = double(2), oob.times = integer(n),
     inbag = if (keep.inbag) matrix(integer(n * ntree), n) else integer(1),
-    as.integer(nclasses), PACKAGE = "scGraphVerse"
+    as.integer(nclasses)
     )[c(
         16:28,
         36:41
@@ -197,7 +197,7 @@
     out <- list(
         call = cl, type = "regression", predicted = 0,
         mse = rfout$mse, rsq = 1 - rfout$mse / (var(y[1, ]) *
-            (n - 1)/n),oob.times=rfout$oob.times, importance=if (importance) {
+            (n - 1) / n),oob.times=rfout$oob.times,importance=if (importance) {
             matrix(
                 rfout$impout,
                 p * nclasses, 2
@@ -334,7 +334,7 @@
     sampsize <- rep(0, nclasses)
 
     for (j in seq_len(nclasses)) sampsize[j] <- dim(X[[j]])[2]
-    tot <- max(sampsize) # EXACT: uses max(), not sum()
+    tot <- max(sampsize) 
     p <- dim(X[[1]])[1]
 
     genes.name <- rownames(X[[1]])
@@ -363,7 +363,6 @@
             ] <- X[[c]][-j, ]
         }
 
-        # EXACT function call - sampsize and nclasses as explicit parameters
         jrf.out <- .jrf_onetarget(
             x = covar, y = y, mtry = mtry,
             importance = TRUE, sampsize = sampsize,

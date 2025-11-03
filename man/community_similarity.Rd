@@ -29,46 +29,56 @@ the ground truth network.
 }
 }
 \description{
-Evaluates similarity between a ground truth community structure and one
-or more predicted community structures. Computes community assignment
-metrics (VI, NMI, ARI) and raw topological properties (Modularity,
-Number of Communities, Density, Transitivity). Visualizes results via a
-radar plot for community assignment and bar plots for topology.
+Convenience wrapper that computes community assignment metrics,
+topological properties, and optionally visualizes the comparison.
+For more control, use the individual functions:
+\code{\link{compute_community_metrics}},
+\code{\link{compute_topology_metrics}}, and
+\code{\link{plot_community_comparison}}.
 }
 \details{
-This function requires the \strong{igraph} and \strong{fmsb}
-packages. Community similarity is measured using variation of
-information (VI), normalized mutual information (NMI), and adjusted
-Rand index (ARI). Topological properties are compared by directly
-plotting raw values without normalization.
+This function requires the \strong{igraph} package. If
+\code{plot = TRUE}, the \strong{fmsb} package is also required.
+Community similarity is measured using variation of information (VI),
+normalized mutual information (NMI), and adjusted Rand index (ARI).
 }
 \examples{
-data(count_matrices)
-data(adj_truth)
+data(toy_counts)
+data(toy_adj_matrix)
+
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
+head(binary_se[[1]])
 
-consensus <- create_consensus(binary_listj, method = "union")
+consensus <- create_consensus(binary_se, method = "union")
 comm_cons <- community_path(consensus)
-comm_truth <- community_path(adj_truth)
+comm_truth <- community_path(toy_adj_matrix)
 
 sim_score <- community_similarity(comm_truth, list(comm_cons))
+}
+\seealso{
+\code{\link{compute_community_metrics}},
+\code{\link{compute_topology_metrics}},
+\code{\link{plot_community_comparison}}
 }

@@ -54,7 +54,8 @@
 #' @importFrom stats optimize optim
 #' @keywords internal
 #' @noRd
-zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
+zilgm_internal <- function(
+    X, lambda = NULL, nlambda = 50,
     family = c("Poisson", "NBI", "NBII"),
     update_type = c("IRLS", "MM"),
     sym = c("AND", "OR"), theta = NULL,
@@ -79,7 +80,8 @@ zilgm_internal <- function(X, lambda = NULL, nlambda = 50,
     return(result)
 }
 
-zilgm <- function(X, lambda = NULL, nlambda = 50,
+zilgm <- function(
+    X, lambda = NULL, nlambda = 50,
     family = c("Poisson", "NBI", "NBII"),
     update_type = c("IRLS", "MM"),
     sym = c("AND", "OR"), theta = NULL,
@@ -240,7 +242,8 @@ zilgm <- function(X, lambda = NULL, nlambda = 50,
 
 
 
-zigm_network <- function(X,
+zigm_network <- function(
+    X,
     lambda = NULL,
     family = c("Poisson", "NBI", "NBII"),
     update_type = c("IRLS", "MM"),
@@ -313,7 +316,8 @@ zigm_network <- function(X,
 }
 
 
-zigm_wrapper <- function(jth, X, lambda, family, update_type,
+zigm_wrapper <- function(
+    jth, X, lambda, family, update_type,
     theta, weights, penalty.factor,
     init_select, fun, n, p, nlambda,
     thresh, verbose = 0, ...) {
@@ -459,7 +463,8 @@ p_bvec_obj <- function(y, weights, bvec, mu, lambda, penalty.factor) {
     return(pnl + penalty)
 }
 
-nb_bvec_obj <- function(y, weights, bvec, mu, theta = NULL,
+nb_bvec_obj <- function(
+    y, weights, bvec, mu, theta = NULL,
     lambda, penalty.factor) {
     penalty <- lambda * sum(abs(penalty.factor * bvec[-1]))
     pnl <- -sum(weights * log(dNBI(
@@ -470,7 +475,8 @@ nb_bvec_obj <- function(y, weights, bvec, mu, theta = NULL,
 }
 
 
-p_objective <- function(y, weights, prob, bvec, mu, lambda,
+p_objective <- function(
+    y, weights, prob, bvec, mu, lambda,
     penalty.factor, posz) {
     penalty <- lambda * sum(abs(penalty.factor * bvec[-1]))
     pnl <- -sum(weights * log(prob * posz + (1 - prob) *
@@ -478,7 +484,8 @@ p_objective <- function(y, weights, prob, bvec, mu, lambda,
     return(pnl + penalty)
 }
 
-nb_objective <- function(y, weights, prob, bvec, mu, theta = NULL,
+nb_objective <- function(
+    y, weights, prob, bvec, mu, theta = NULL,
     lambda, penalty.factor, posz) {
     penalty <- lambda * sum(abs(penalty.factor * bvec[-1]))
     pnl <- -sum(weights * log(prob * posz + (1 - prob) *
@@ -489,7 +496,8 @@ nb_objective <- function(y, weights, prob, bvec, mu, theta = NULL,
     return(pnl + penalty)
 }
 
-nb2_objective <- function(y, weights, prob, bvec, mu,
+nb2_objective <- function(
+    y, weights, prob, bvec, mu,
     sigma = NULL, lambda, penalty.factor, posz) {
     penalty <- lambda * sum(abs(penalty.factor * bvec[-1]))
     pnl <- -sum(weights * log(prob * posz + (1 - prob) *
@@ -549,8 +557,10 @@ sigma_ml <- function(y, mu, weights = NULL) {
         weights <- rep(1 / n, n)
     }
     NB2_theta <- function(sigma, mu, y, weights) {
-        return(sum(n * weights * dNBII(y = y, sigma = sigma, mu = mu, 
-            log = TRUE)))
+        return(sum(n * weights * dNBII(
+            y = y, sigma = sigma, mu = mu,
+            log = TRUE
+        )))
     }
     # start = c(0.01)
     fit <- optimize(NB2_theta,
@@ -564,7 +574,8 @@ sigma_ml <- function(y, mu, weights = NULL) {
 
 
 
-wlasso <- function(X, y, eta0 = 0, wID = rep(1, nrow(X)), 
+wlasso <- function(
+    X, y, eta0 = 0, wID = rep(1, nrow(X)),
     weight = rep(1, ncol(X)),
     maxStep = 1e3, eps = 1e-10, stand.scale = FALSE, trace = FALSE) {
     # trace <- TRUE
@@ -622,8 +633,10 @@ wlasso <- function(X, y, eta0 = 0, wID = rep(1, nrow(X)),
         BetaMatr[Step, ] <- Beta
         LamTrace[Step] <- eta
         if (trace) {
-            current_status(Step, V, Beta, eta, Sign, wgcorr, Residual, 
-                ObjValTrace)
+            current_status(
+                Step, V, Beta, eta, Sign, wgcorr, Residual,
+                ObjValTrace
+            )
         }
         if (eta <= eta0) {
             conv <- TRUE
@@ -633,15 +646,17 @@ wlasso <- function(X, y, eta0 = 0, wID = rep(1, nrow(X)),
             break
         }
         nV <- length(V)
-        d_beta <- rderiv(XV = X[, V, drop = FALSE], wmat, nV, 
-            weight[V] * Sign[V], eps = eps)
+        d_beta <- rderiv(
+            XV = X[, V, drop = FALSE], wmat, nV,
+            weight[V] * Sign[V], eps = eps
+        )
         if (trace) {
             message(paste(d_beta, collapse = " "))
         }
         if (sum(abs(d_beta)) < eps) {
             break
         }
-        d_wgcorr <- 1/weight*drop(tX%*%wmat%*%X[, V, drop = FALSE] %*% d_beta)
+        d_wgcorr <- 1 / weight * drop(tX%*%wmat%*%X[,V,drop = FALSE]%*%d_beta)
         d_wgcorr[abs(d_wgcorr) < eps] <- 0
         Events <- Find.Event(p, V, Beta, eta, eta0, wgcorr, d_wgcorr, Sign,
             d_beta,
@@ -735,7 +750,8 @@ wlasso <- function(X, y, eta0 = 0, wID = rep(1, nrow(X)),
         conv = conv
     ))
 }
-current_status <- function(Step, V, Beta, eta, Sign, wgcorr, Residual,
+current_status <- function(
+    Step, V, Beta, eta, Sign, wgcorr, Residual,
     ObjValTrace) {
     message(
         "V >>> ", paste(V, collapse = " "),
@@ -771,7 +787,8 @@ rderiv <- function(XV, wmat, nV, wSignV, eps = 1e-8) {
     }
     return(sol)
 }
-Find.Event <- function(p, V, Beta, eta, eta0, wgcorr, d_wgcorr, Sign,
+Find.Event <- function(
+    p, V, Beta, eta, eta0, wgcorr, d_wgcorr, Sign,
     d_beta, trace = FALSE, eps = 1e-10) {
     nV <- length(V)
     # 1: Active variable becomes inactive.
@@ -835,7 +852,8 @@ Find.Event <- function(p, V, Beta, eta, eta0, wgcorr, d_wgcorr, Sign,
 
 # Poisson regression with l1 regularization using MM algorithm
 # glmreg_fit = mpath:::glmreg_fit
-wlasso_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
+wlasso_p <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL,
     mu0 = NULL, lambda, thresh = 1e-6, maxit = 100,
     n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -891,7 +909,8 @@ wlasso_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
 
 
 # Poisson regression with l1 regularization for x with 1 columns using IRLS
-glm_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL,
+glm_p <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL,
     lambda, thresh = 1e-6, maxit = 100, n = NROW(x), p = NCOL(x)) {
     bobj <- glm.fit(
         x = cbind(1, x), y = y, family = "poisson", intercept = TRUE,
@@ -906,7 +925,8 @@ glm_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL, mu0 = NULL,
 }
 
 
-irls_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
+irls_p <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL,
     mu0 = NULL, lambda, thresh = 1e-7, maxit = 100,
     n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -962,7 +982,8 @@ irls_p <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
 }
 
 
-pglm_p_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
+pglm_p_mm <- function(
+    y, x, weights, penalty.factor = NULL, bvec0 = NULL,
     eta0 = NULL, mu0 = NULL, lambda, thresh = 1e-6,
     maxit = 100, n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -1018,7 +1039,8 @@ pglm_p_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
     return(list(bvec = bvec, mu = mu, eta = eta, iter = i))
 }
 
-pglm_p_irls <- function(y, x, weights, bvec0 = NULL, eta0 = NULL, mu0 = NULL,
+pglm_p_irls <- function(
+    y, x, weights, bvec0 = NULL, eta0 = NULL, mu0 = NULL,
     lambda, penalty.factor = rep(1, NCOL(x)), thresh = 1e-6,
     maxit = 1e+3, n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -1053,7 +1075,8 @@ pglm_p_irls <- function(y, x, weights, bvec0 = NULL, eta0 = NULL, mu0 = NULL,
     return(list(bvec = bvec, mu = mu, eta = eta))
 }
 
-zilgm_poisson <- function(y, x, lambda, weights = NULL,
+zilgm_poisson <- function(
+    y, x, lambda, weights = NULL,
     update_type = c("IRLS", "MM"), penalty.factor = NULL,
     thresh = 1e-6, EM_tol = 1e-5, EM_iter = 3e+2,
     tol = 1e-6, maxit = 3e+2, theta = NULL) {
@@ -1194,7 +1217,8 @@ zilgm_poisson <- function(y, x, lambda, weights = NULL,
 
 # NB regression with l1 regularization for x with 1 columns
 # glmreg_fit = mpath:::glmreg_fit
-wlasso_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
+wlasso_nb <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL,
     mu0 = NULL, theta0 = NULL, lambda, thresh = 1e-6,
     maxit = 100, n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -1252,7 +1276,8 @@ wlasso_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
     return(list(bvec = bvec, mu = mu, eta = eta, theta = theta0, iter = i))
 }
 
-glm_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
+glm_nb <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL,
     mu0 = NULL, theta0 = NULL, lambda, thresh = 1e-6,
     maxit = 100, n = NROW(x), p = NCOL(x)) {
     bobj <- glm.fit(
@@ -1269,7 +1294,8 @@ glm_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
 }
 
 
-irls_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
+irls_nb <- function(
+    y, x, weights, penalty.factor = NULL, eta0 = NULL,
     mu0 = NULL, theta0 = NULL, lambda, thresh = 1e-6,
     maxit = 100, n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -1331,7 +1357,8 @@ irls_nb <- function(y, x, weights, penalty.factor = NULL, eta0 = NULL,
 }
 
 # NB regression with l1 regularization using MM algorithm
-pglm_nb_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
+pglm_nb_mm <- function(
+    y, x, weights, penalty.factor = NULL, bvec0 = NULL,
     eta0 = NULL, mu0 = NULL, theta0 = NULL, lambda,
     thresh = 1e-6, maxit = 100, n = NROW(x), p = NCOL(x)) {
     fun_call <- match.call()
@@ -1391,7 +1418,8 @@ pglm_nb_mm <- function(y, x, weights, penalty.factor = NULL, bvec0 = NULL,
 
 
 # NB regression with l1 regularization using IRLS algorithm
-pglm_nb_irls <- function(y, x, weights, theta0 = NULL, bvec0 = NULL,
+pglm_nb_irls <- function(
+    y, x, weights, theta0 = NULL, bvec0 = NULL,
     eta0 = NULL, mu0 = NULL, lambda,
     penalty.factor = rep(1, NCOL(x)), thresh = 1e-6,
     maxit = 1e+3, n = NROW(x), p = NCOL(x)) {
@@ -1432,7 +1460,8 @@ pglm_nb_irls <- function(y, x, weights, theta0 = NULL, bvec0 = NULL,
 
 
 
-zilgm_negbin <- function(y, x, lambda, weights = NULL,
+zilgm_negbin <- function(
+    y, x, lambda, weights = NULL,
     update_type = c("IRLS", "MM"), penalty.factor = NULL,
     thresh = 1e-6, EM_tol = 1e-5, EM_iter = 3e+2,
     tol = 1e-6, maxit = 3e+2, theta = NULL) {
@@ -1491,8 +1520,10 @@ zilgm_negbin <- function(y, x, lambda, weights = NULL,
     bvec0 <- c(eta0[1], rep(0, p))
 
     theta0 <- 1e+8
-    prob0 <- (sum(pos_zero) - sum(dNBI(0, mu = mu0, theta = theta0,
-        log = FALSE)))
+    prob0 <- (sum(pos_zero) - sum(dNBI(0,
+        mu = mu0, theta = theta0,
+        log = FALSE
+    )))
     prob0 <- ifelse(prob0 < 1e-10, 1e-10, ifelse(prob0 > 1, 1, prob0))
 
     erisk_prev <- 1e+150
@@ -1617,7 +1648,8 @@ zilgm_negbin <- function(y, x, lambda, weights = NULL,
     return(out)
 }
 
-zilgm_negbin2 <- function(y, x, lambda, weights = NULL,
+zilgm_negbin2 <- function(
+    y, x, lambda, weights = NULL,
     update_type = c("IRLS", "MM"), penalty.factor = NULL,
     tol = 1e-6, EM_tol = 1e-5, EM_iter = 3e+2,
     thresh = 1e-6, maxit = 3e+2, theta = NULL) {
@@ -1677,8 +1709,10 @@ zilgm_negbin2 <- function(y, x, lambda, weights = NULL,
 
     # theta0 = sigma_ml(y = y, mu = mu0)
     theta0 <- 1e-4
-    prob0 <- (sum(pos_zero) - sum(dNBII(0, mu = mu0, sigma = theta0,
-        log = FALSE)))
+    prob0 <- (sum(pos_zero) - sum(dNBII(0,
+        mu = mu0, sigma = theta0,
+        log = FALSE
+    )))
     prob0 <- ifelse(prob0 < 1e-10, 1e-10, ifelse(prob0 > 1, 1, prob0))
 
     erisk_prev <- 1e+150

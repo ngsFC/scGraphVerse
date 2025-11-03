@@ -11,78 +11,75 @@ compare_consensus(
 )
 }
 \arguments{
-\item{consensus_matrix}{A binary square adjacency matrix representing the
-consensus network. Row and column names should correspond to gene
-symbols.}
+\item{consensus_matrix}{A \linkS4class{SummarizedExperiment} object
+representing the consensus network.}
 
-\item{reference_matrix}{Optional. A binary square adjacency matrix
-representing the reference (ground truth) network. If \code{NULL}, a
-STRINGdb high-confidence physical interaction network (human, score >
-900) is used.}
+\item{reference_matrix}{Optional. A \linkS4class{SummarizedExperiment} obj
+representing the reference network. If \code{NULL}, STRINGdb is queried.}
 
-\item{false_plot}{Logical. If \code{TRUE}, an additional plot of False
-Positives (FP) is generated. Default is \code{FALSE}.}
+\item{false_plot}{Logical. If \code{TRUE}, displays False Positives plot.
+Default is \code{FALSE}.}
 }
 \value{
-A \code{ggplot} object visualizing the comparison. If
-\code{false_plot = TRUE}, a combined plot of True Positives / False
-Negatives and False Positives is returned.
+A \code{ggplot} object visualizing the comparison.
 }
 \description{
-Compares a consensus adjacency matrix to a reference network, either
-provided manually or generated from STRINGdb. Visualizes True Positives
-(TP), False Negatives (FN), and optionally False Positives (FP) edges.
+Convenience wrapper that classifies edges and visualizes the comparison
+between consensus and reference networks. For more control, use the
+individual functions: \code{\link{classify_edges}} and
+\code{\link{plot_network_comparison}}.
 }
 \details{
-If no \code{reference_matrix} is provided, the function
-automatically queries STRINGdb to generate a high-confidence physical
-interaction network.
-
-The plots differentiate:
-\itemize{
-\item Confirmed Edges (TP or CE): Present in both consensus and
-reference.
-\item Missing Edges (FN or ME): Present in reference but absent in
-consensus.
-\item Extra Edges (FP or EE): Present in consensus but absent in
-reference (only if \code{false_plot = TRUE}).
-}
+If no \code{reference_matrix} is provided, STRINGdb is queried
+to generate a high-confidence physical interaction network.
 }
 \note{
-Requires the \pkg{igraph}, \pkg{ggraph}, \pkg{patchwork},
-\pkg{Matrix}, and \pkg{STRINGdb} packages.
+Requires \pkg{ggraph} and \pkg{ggplot2}. If \code{reference_matrix}
+is NULL, also requires \pkg{STRINGdb}. If \code{false_plot = TRUE},
+requires \pkg{patchwork}.
 }
 \examples{
-data(count_matrices)
-data(adj_truth)
+data(toy_counts)
+data(toy_adj_matrix)
+
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 
-binary_listj <- cutoff_adjacency(
-    count_matrices = count_matrices,
-    weighted_adjm_list = swadj_list,
+# Apply cutoff
+binary_se <- cutoff_adjacency(
+    count_matrices = toy_counts,
+    weighted_adjm_list = swadj_se,
     n = 1,
     method = "GENIE3",
     quantile_threshold = 0.95,
     nCores = 1,
     debug = TRUE
 )
-head(binary_listj[[1]])
+head(binary_se[[1]])
 
-consensus <- create_consensus(binary_listj, method = "union")
+consensus <- create_consensus(binary_se, method = "union")
 
+# Wrap reference matrix in SummarizedExperiment
+ref_se <- build_network_se(list(reference = toy_adj_matrix))
+
+# Compare consensus to reference
 compare_consensus(
     consensus,
-    false_plot = FALSE,
-    reference_matrix = adj_truth
+    reference_matrix = ref_se,
+    false_plot = FALSE
 )
 
-
+}
+\seealso{
+\code{\link{classify_edges}}, \code{\link{plot_network_comparison}}
 }

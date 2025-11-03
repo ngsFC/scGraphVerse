@@ -2,12 +2,13 @@
 % Please edit documentation in R/symmetrize.R
 \name{symmetrize}
 \alias{symmetrize}
-\title{Symmetrize a List of Square Matrices}
+\title{Symmetrize Adjacency Matrices in a SummarizedExperiment}
 \usage{
 symmetrize(matrix_list, weight_function = "mean", nCores = 1)
 }
 \arguments{
-\item{matrix_list}{A list of square numeric matrices to symmetrize.}
+\item{matrix_list}{A \linkS4class{SummarizedExperiment} object containing
+adjacency matrices to symmetrize.}
 
 \item{weight_function}{Character string or function. Method to combine
 entries (i, j) and (j, i). Options include \code{"mean"},
@@ -18,12 +19,14 @@ processing. Defaults to the number of available workers in the current
 \pkg{BiocParallel} backend.}
 }
 \value{
-A list of symmetric matrices, where for each matrix
-\eqn{A[i, j] = A[j, i]} for all \eqn{i \neq j}.
+A \linkS4class{SummarizedExperiment} object with symmetrized
+adjacency matrices, where for each matrix \eqn{A[i, j] = A[j, i]} for
+all \eqn{i \neq j}.
 }
 \description{
-Symmetrizes each square matrix in a list by ensuring entries (i, j) and
-(j, i) are identical, using a specified combination function.
+Symmetrizes each adjacency matrix in a \linkS4class{SummarizedExperiment}
+by ensuring entries (i, j) and (j, i) are identical, using a specified
+combination function.
 }
 \details{
 For each pair of off-diagonal elements (i, j) and (j, i):
@@ -38,15 +41,18 @@ Parallelization is managed via \pkg{BiocParallel} for improved
 performance.
 }
 \examples{
-data("count_matrices")
+data("toy_counts")
 
+
+# Infer networks (toy_counts is already a MultiAssayExperiment)
 networks <- infer_networks(
-    count_matrices_list = count_matrices,
+    count_matrices_list = toy_counts,
     method = "GENIE3",
     nCores = 1
 )
 head(networks[[1]])
 
-wadj_list <- generate_adjacency(networks)
-swadj_list <- symmetrize(wadj_list, weight_function = "mean")
+# Generate adjacency matrices
+wadj_se <- generate_adjacency(networks)
+swadj_se <- symmetrize(wadj_se, weight_function = "mean")
 }
