@@ -478,7 +478,7 @@ Nodes:",
                 y = TPR,
                 color = Matrix
             ),
-            size = 1.2
+            linewidth = 1.2
         )
 
     if (!is.null(binary_points)) {

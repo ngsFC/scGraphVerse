@@ -98,6 +98,7 @@
 #' @importFrom SummarizedExperiment assay
 #' @importFrom parallel makeCluster stopCluster
 #' @importFrom doParallel registerDoParallel
+#' @importFrom doRNG %dorng%
 #' @export
 #'
 #' @examples

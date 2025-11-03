@@ -125,12 +125,12 @@ classify_edges <- function(
     # Create graphs
     graph_ref <- igraph::graph_from_adjacency_matrix(
         reference_matrix,
-        mode = "undirected",
+        mode = "max",
         diag = FALSE
     )
     graph_cons <- igraph::graph_from_adjacency_matrix(
         consensus_matrix,
-        mode = "undirected",
+        mode = "max",
         diag = FALSE
     )
 

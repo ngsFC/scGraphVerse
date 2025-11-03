@@ -27,3 +27,4 @@ src/*.dll
 *.BiocCheck/
 /doc/
 /Meta/
+tests/testthat/Rplots.pdf
