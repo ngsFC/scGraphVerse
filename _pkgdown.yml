@@ -1,4 +1,123 @@
 url: https://ngsfc.github.io/scGraphVerse/
+
 template:
   bootstrap: 5
+  bootswatch: flatly
+  theme: arrow-light
+  bslib:
+    primary: "#0054AD"
+    border-radius: 0.5rem
+    btn-border-radius: 0.25rem
 
+home:
+  title: scGraphVerse - Gene Network Analysis for Single-Cell Data
+  description: >
+    Infer, compare, and visualize gene regulatory networks from single-cell RNA-seq data
+
+navbar:
+  structure:
+    left: [intro, reference, articles, tutorials, news]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: Vignettes
+      - text: Case Study
+        href: articles/case_study.html
+      - text: Simulation Study
+        href: articles/simulation_study.html
+
+reference:
+- title: Network Inference
+  desc: >
+    Core functions for inferring gene regulatory networks from single-cell data
+  contents:
+  - infer_networks
+  - create_consensus
+  - compare_consensus
+  - PCzinb
+
+- title: Data Preparation
+  desc: >
+    Functions for preparing and organizing input data
+  contents:
+  - create_mae
+  - build_network_se
+
+- title: Network Analysis
+  desc: >
+    Tools for analyzing network structure and properties
+  contents:
+  - compute_topology_metrics
+  - compute_community_metrics
+  - community_similarity
+  - classify_edges
+  - edge_mining
+  - community_path
+
+- title: Visualization
+  desc: >
+    Plotting functions for networks and analysis results
+  contents:
+  - plotg
+  - plot_network_comparison
+  - plot_community_comparison
+  - plotROC
+
+- title: Network Utilities
+  desc: >
+    Helper functions for network manipulation and processing
+  contents:
+  - symmetrize
+  - generate_adjacency
+  - cutoff_adjacency
+  - stringdb_adjacency
+  - selgene
+  - pscores
+
+- title: Setup and Configuration
+  desc: >
+    Functions for initializing Python dependencies and downloading reference data
+  contents:
+  - init_py
+  - download_Atlas
+
+- title: Example Data
+  desc: >
+    Toy datasets for testing and examples
+  contents:
+  - toy_counts
+  - toy_adj_matrix
+  - zinb_simdata
+
+- title: Internal Functions
+  desc: >
+    Internal helper functions (not typically called directly by users)
+  contents:
+  - earlyj
+  - nb.loglik
+  - nb.loglik.dispersion
+  - nb.loglik.regression
+  - nb.loglik.regression.gradient
+  - nb.OptimizeDispersion
+  - nb.regression.parseModel
+  - zinb0.noT
+  - zinb1.noT
+  - zinbOptimizeDispersion
+  - zinb.regression.parseModel
+
+authors:
+  Francesco Cecere:
+    href: https://github.com/ngsFC
+  Annamaria Carissimo:
+    href: https://www.icar.cnr.it/
+  Daniela De Canditiis:
+    href: https://www.icar.cnr.it/
+  Claudia Angelini:
+    href: https://www.icar.cnr.it/
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
