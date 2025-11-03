@@ -14,7 +14,7 @@
 
 ## 🎯 Overview
 
-> **scGraphVerse** is a comprehensive R package for inferring, evaluating, and visualizing gene regulatory networks (GRNs) from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, consensus construction, and rich visualizations optimized for single-cell expression analysis.
+> **scGraphVerse** is a comprehensive R package for inferring, evaluating, and visualizing gene networks from single-cell RNA sequencing data. It provides an integrated framework with multiple inference algorithms, consensus construction, and rich visualizations optimized for single-cell expression analysis.
 
 ### ⚡ Key Features
 
@@ -28,13 +28,13 @@
 
 ## 🚀 Installation
 
-### 💻 Development Version
+### 💻 Bioconductor release 3.22
 
 ```r
-# Install development version
-if (!require("devtools")) install.packages("devtools")
-devtools::install_github("ngsFC/scGraphVerse")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 
+BiocManager::install("scGraphVerse")
 ```
 
 ### 🔬 Inference Algorithms
