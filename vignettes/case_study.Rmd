@@ -234,32 +234,44 @@ comprehensive edge mining analysis.
 ```{r stringdb}
 # Note: This requires internet connection for STRINGdb downloads
 # This section requires the STRINGdb package from Suggests
+
+# STRING's API can be unreachable from CI runners (rate limiting, firewalls),
+# so the live query is wrapped in tryCatch to avoid failing the whole
+# pkgdown build when the external service is temporarily unavailable.
 if (exists("consensus") && requireNamespace("STRINGdb", quietly = TRUE)) {
-    str_result <- stringdb_adjacency(
-        genes = rownames(consensus),
-        species = 9606,
-        required_score = 900,
-        keep_all_genes = TRUE
+    str_result <- tryCatch(
+        stringdb_adjacency(
+            genes = rownames(consensus),
+            species = 9606,
+            required_score = 900,
+            keep_all_genes = TRUE
+        ),
+        error = function(e) {
+            message("Skipping STRINGdb validation: ", conditionMessage(e))
+            NULL
+        }
     )
 
-    # Extract binary adjacency and symmetrize
-    str_binary <- str_result$binary
-    ground_truth_se <- symmetrize(
-        build_network_se(list(string_network = str_binary)),
-        weight_function = "mean"
-    )
-    ground_truth <- SummarizedExperiment::assay(ground_truth_se, 1)
+    if (!is.null(str_result)) {
+        # Extract binary adjacency and symmetrize
+        str_binary <- str_result$binary
+        ground_truth_se <- symmetrize(
+            build_network_se(list(string_network = str_binary)),
+            weight_function = "mean"
+        )
+        ground_truth <- SummarizedExperiment::assay(ground_truth_se, 1)
 
-    # Edge mining: TP rates (returns list of dataframes)
-    em <- edge_mining(
-        consensus,
-        ground_truth = ground_truth,
-        query_edge_types = "TP"
-    )
+        # Edge mining: TP rates (returns list of dataframes)
+        em <- edge_mining(
+            consensus,
+            ground_truth = ground_truth,
+            query_edge_types = "TP"
+        )
 
-    # Display results
-    if (length(em) > 0) {
-        print(head(em[[1]]))
+        # Display results
+        if (length(em) > 0) {
+            print(head(em[[1]]))
+        }
     }
 }
 ```
